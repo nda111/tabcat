@@ -59,7 +59,6 @@
   "content_scripts": [
     {
       "matches": [
-        "https://ghyeok.com/tabcat/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
@@ -75,7 +74,6 @@
         "_favicon/*"
       ],
       "matches": [
-        "https://ghyeok.com/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ]

@@ -8,12 +8,12 @@ tabcat has two parts, kept on two branches of this repository:
 | Branch | Contents | Role |
 |---|---|---|
 | `main` | browser extension (this branch) | Owns the data (`chrome.storage.local`) and every tab operation. Popup, context menu, shortcuts, auto-suspend. |
-| [`gh-pages`](../../tree/gh-pages) | web dashboard | A static web page (no backend) served by GitHub Pages at <https://ghyeok.com/tabcat/> (the account's custom domain for `nda111.github.io`). Renders and edits the data through the extension bridge. |
+| [`pages`](../../tree/pages) | web dashboard | A static web page (no backend) that can be served by any static host. Renders and edits the data through the extension bridge. |
 
 ```
 web page (allowed origins only)           extension
 ┌───────────────────────┐ postMessage ┌─────────────┐  port   ┌──────────────────┐
-│ js/app.js (gh-pages)  │◀──────────▶│ content.js  │◀──────▶│ background.js    │
+│ js/app.js (pages)     │◀──────────▶│ content.js  │◀──────▶│ background.js    │
 │ UI, drag & drop       │             │ (bridge)    │         │ storage + tabs   │
 └───────────────────────┘             └─────────────┘         └──────────────────┘
 ```
@@ -22,28 +22,28 @@ web page (allowed origins only)           extension
 
 1. **Load the extension**: open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*,
    and select the root of a `main` checkout.
-2. **Open the dashboard**: <https://ghyeok.com/tabcat/>, the popup's *Open dashboard* button, or `Alt+Shift+D`.
+2. **Serve the dashboard**: check out the `pages` branch and serve it with any static server
+   (see *Development*), then open it directly, via the popup's *Open dashboard* button, or `Alt+Shift+D`.
 
 Allowed dashboard origins (see `content_scripts[0].matches` and `web_accessible_resources[0].matches` in
 `manifest.json`):
 
-- `https://ghyeok.com/tabcat/*`
-- `http://localhost/*`, `http://127.0.0.1/*` (any port, for local development)
+- `http://localhost/*`, `http://127.0.0.1/*` (any port)
 
 To host the dashboard elsewhere, add its exact origin to both lists and reload the extension.
 Avoid broad wildcards such as `https://*.github.io/*`: any page on a matching origin could talk to the bridge.
 
 ## Development
 
-Recommended local layout: the `gh-pages` branch checked out as a worktree in `web/` (ignored on `main`).
+Recommended local layout: the `pages` branch checked out as a worktree in `web/` (ignored on `main`).
 
 ```sh
 git clone git@github.com:nda111/tabcat.git && cd tabcat
-git worktree add web gh-pages
+git worktree add web pages
 python3 -m http.server 8080 -d web      # dashboard at http://localhost:8080/
 ```
 
-Commit extension changes from the repository root (`main`) and dashboard changes from `web/` (`gh-pages`).
+Commit extension changes from the repository root (`main`) and dashboard changes from `web/` (`pages`).
 The extension remembers the last dashboard URL that connected, so a local dashboard opens via the popup too.
 
 ## Data model
