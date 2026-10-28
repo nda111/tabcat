@@ -1,0 +1,84 @@
+{
+  "manifest_version": 3,
+  "name": "tabcat",
+  "short_name": "tabcat",
+  "version": "0.1.0",
+  "description": "Save, organize and suspend tabs: Workspace → Category → Group → Folder/Link, managed from a web dashboard.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "tabcat",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "tabs",
+    "storage",
+    "unlimitedStorage",
+    "contextMenus",
+    "alarms",
+    "favicon"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
+      "description": "Open tabcat popup"
+    },
+    "open-dashboard": {
+      "suggested_key": {
+        "default": "Alt+Shift+D"
+      },
+      "description": "Open tabcat dashboard"
+    },
+    "save-tab": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Save current tab"
+    },
+    "save-window": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "Save all tabs in window as a new group"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://nda111.github.io/tabcat/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "_favicon/*"
+      ],
+      "matches": [
+        "https://nda111.github.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ]
+    }
+  ]
+}

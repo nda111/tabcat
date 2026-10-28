@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tabcat</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body class="popup">
+  <div class="brand"><img src="icons/icon32.png" alt=""> tabcat <span class="muted small" id="stats"></span></div>
+
+  <section class="card">
+    <div class="current">
+      <img id="cur-icon" alt="">
+      <input id="cur-name" placeholder="Name">
+    </div>
+    <div class="muted small url" id="cur-url"></div>
+    <label class="small">Save to
+      <select id="target"></select>
+    </label>
+    <label class="check small"><input type="checkbox" id="close"> Close tab after saving</label>
+    <button class="btn primary wide" id="save-tab">💾 Save this tab</button>
+  </section>
+
+  <div class="grid">
+    <button class="btn" id="save-window" title="Save all tabs of this window as a new group">🗂️ Save window</button>
+    <button class="btn" id="suspend" title="Unload inactive tabs from memory">💤 Suspend tabs</button>
+    <button class="btn" id="dedupe">🧹 Close duplicates</button>
+    <button class="btn" id="open">🐱 Open dashboard</button>
+  </div>
+  <p class="muted small" id="msg"></p>
+</body>
+</html>
