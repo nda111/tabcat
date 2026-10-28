@@ -8,7 +8,7 @@ tabcat has two parts, kept on two branches of this repository:
 | Branch | Contents | Role |
 |---|---|---|
 | `main` | browser extension (this branch) | Owns the data (`chrome.storage.local`) and every tab operation. Popup, context menu, shortcuts, auto-suspend. |
-| [`gh-pages`](../../tree/gh-pages) | web dashboard | A static web page (no backend) served by GitHub Pages at <https://nda111.github.io/tabcat/>. Renders and edits the data through the extension bridge. |
+| [`gh-pages`](../../tree/gh-pages) | web dashboard | A static web page (no backend) served by GitHub Pages at <https://ghyeok.com/tabcat/> (the account's custom domain for `nda111.github.io`). Renders and edits the data through the extension bridge. |
 
 ```
 web page (allowed origins only)           extension
@@ -22,12 +22,12 @@ web page (allowed origins only)           extension
 
 1. **Load the extension**: open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*,
    and select the root of a `main` checkout.
-2. **Open the dashboard**: <https://nda111.github.io/tabcat/>, the popup's *Open dashboard* button, or `Alt+Shift+D`.
+2. **Open the dashboard**: <https://ghyeok.com/tabcat/>, the popup's *Open dashboard* button, or `Alt+Shift+D`.
 
 Allowed dashboard origins (see `content_scripts[0].matches` and `web_accessible_resources[0].matches` in
 `manifest.json`):
 
-- `https://nda111.github.io/tabcat/*`
+- `https://ghyeok.com/tabcat/*`
 - `http://localhost/*`, `http://127.0.0.1/*` (any port, for local development)
 
 To host the dashboard elsewhere, add its exact origin to both lists and reload the extension.

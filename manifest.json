@@ -59,7 +59,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://nda111.github.io/tabcat/*",
+        "https://ghyeok.com/tabcat/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
@@ -75,7 +75,7 @@
         "_favicon/*"
       ],
       "matches": [
-        "https://nda111.github.io/*",
+        "https://ghyeok.com/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ]
