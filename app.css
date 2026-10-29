@@ -139,14 +139,15 @@ body.resizing { cursor: col-resize; user-select: none; }
 .group-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
 .group-sym.none { background: var(--panel-2); color: var(--muted); }
 .group-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.group-line { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.group-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
 .group-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-line .count { color: var(--muted); font-size: 11px; }
 .group-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
-.collapse-btn { color: var(--muted); }
+.collapse-btn { color: var(--muted); align-self: center; }
 .collapse-btn .ico { transition: transform .12s; }
 .group.collapsed .collapse-btn .ico { transform: rotate(-90deg); }
-.group-tools { display: flex; gap: 2px; margin-left: -5px; }
+.group-tools { display: flex; align-items: center; gap: 2px; margin-left: -5px; }
+.tools-split { width: 1px; height: 14px; margin: 0 4px; background: var(--border); }
 .group-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
 .group-tools .icon-btn:hover, .group-tools .icon-btn.hover { color: var(--accent); }
 /* hover-only actions take no space until shown, so names truncate as late as possible */
