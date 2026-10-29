@@ -172,8 +172,9 @@ function render() {
   const catChanged = before.board && before.board !== currentCat()?.id;
   renderSidebar();
   renderHead();
-  crossfade(wsChanged && $('#cat-bar'), renderCats);
-  crossfade(catChanged && $('#board'), renderBoard);
+  crossfade(wsChanged && $('#cat-bar'), renderCats); // category buttons: old fade out as new fade in
+  if (catChanged || boardSwitch) switchBoard(); // groups: old ones leave, then the new ones arrive
+  else renderBoard();
   animateLayout(before);
   restoreHover();
 }
@@ -183,6 +184,24 @@ function render() {
 // iOS-like springs: a little overshoot, then settle.
 const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
 const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
+
+// Switching category / workspace: the current groups leave as if deleted, then the new
+// category's groups arrive as if added (a little staggered). Renders during the switch just wait
+// for it, then the latest state is drawn.
+let boardSwitch = null;
+function switchBoard() {
+  if (boardSwitch) return; // already leaving; the timer draws the latest state
+  const old = [...document.querySelectorAll('#board .group, #board .add-group')];
+  old.forEach((el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.92)' }],
+    { duration: 150, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }));
+  boardSwitch = setTimeout(() => {
+    boardSwitch = null;
+    renderBoard();
+    [...document.querySelectorAll('#board .group')].forEach((el, i) => el.animate(
+      [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }],
+      { duration: 340, easing: SPRING, delay: Math.min(i, 10) * 25, fill: 'backwards' }));
+  }, old.length ? 150 : 0);
+}
 
 // Re-render `el` with `draw` while a snapshot of its old content fades out on top of it and the
 // new content fades in (both at once). With no element, just draws.
