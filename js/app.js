@@ -247,7 +247,8 @@ function snapshotLayout() {
 function animateLayout(before) {
   if (!before) return;
   const wsChanged = before.ws !== currentWs()?.id; // (switchCats() handles the category bar itself)
-  try { animateMoves(before, wsChanged); } finally { openExpanded(); morphNote(); }
+  const held = holdNote();
+  try { animateMoves(before, wsChanged); } finally { openExpanded(); growNote(held); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -1026,27 +1027,33 @@ function startNoteEdit(id) {
 }
 
 // A note just saved: the rendered note grows / shrinks from the editor's height while its text fades in.
+// It is held at the editor's height while the layout is measured, so nothing below it gets a FLIP
+// slide on top of the height change (which would overshoot); they just follow the note.
 let noteMorph = null; // { id, height }
-function morphNote() {
-  if (!noteMorph) return;
+function holdNote() {
+  if (!noteMorph) return null;
   const { id, height } = noteMorph;
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
-  if (!group || group.querySelector('.note-edit')) return; // not drawn yet (or editing again)
+  if (!group || group.querySelector('.note-edit')) return null; // not drawn yet (or editing again)
   noteMorph = null;
   const note = group.querySelector('.note');
-  if (!note) return;
+  if (!note) return null;
+  Object.assign(note.style, { height: `${height}px`, overflow: 'hidden' });
+  return { note, height };
+}
+function growNote(held) {
+  if (!held) return;
+  const { note, height } = held;
   const grow = () => {
     note.style.height = '';
     const to = note.getBoundingClientRect().height;
-    note.style.overflow = 'hidden';
     note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
       .finished.catch(() => {}).then(() => { note.style.overflow = ''; });
     for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
   };
-  // math changes the note's size once typeset: hold the editor's height until then, so the note
-  // goes straight to its final size instead of shrinking to the raw TeX and growing back
+  // math changes the note's size once typeset: keep holding until then, so the note goes straight
+  // to its final size instead of shrinking to the raw TeX and growing back
   if (![...note.querySelectorAll('.math')].some((m) => !m.querySelector('mjx-container'))) return grow();
-  Object.assign(note.style, { height: `${height}px`, overflow: 'hidden' });
   for (const child of note.children) child.style.opacity = '0';
   mathReady().then(() => {
     for (const child of note.children) child.style.opacity = '';
