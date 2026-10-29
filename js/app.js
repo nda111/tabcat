@@ -679,8 +679,9 @@ function reveal(node, anc) {
 async function renderTabs() {
   if (drag) { pendingTabsRender = true; return; }
   pendingTabsRender = false;
+  const seq = ++tabsRenderSeq;
   const data = await run(B.call('getTabs'));
-  if (!data) return;
+  if (!data || seq !== tabsRenderSeq) return; // a newer render is on its way
   currentWindowId = data.currentWindowId;
   const wins = data.windows.sort((a, b) => (b.id === currentWindowId) - (a.id === currentWindowId));
   // same rules as the extension: suspendTabs skips active/pinned/audible/non-web tabs,
@@ -725,7 +726,35 @@ async function renderTabs() {
   // always shown (so the row never reshuffles); greyed out when there is nothing to do
   $('#btn-suspend').disabled = !suspendable;
   $('#btn-dedupe').disabled = !dupes;
+  // closed tabs / windows shrink away first; the rest then slide to their new places, new ones pop in
+  const live = new Set(all.map((t) => String(t.id)));
+  const wins_ = new Set(wins.map((w) => String(w.id)));
+  const gone = [...document.querySelectorAll('#windows .tab-row')].filter((r) => !live.has(r.dataset.tab))
+    .concat([...document.querySelectorAll('#windows .win')].filter((w) => !wins_.has(w.dataset.window)));
+  if (gone.length) {
+    await Promise.all(gone.map((el) => {
+      el.style.overflow = 'hidden';
+      return el.animate([{ opacity: 1, height: `${el.getBoundingClientRect().height}px` }, { opacity: 0, height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px' }],
+        { duration: 200, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+    }));
+    if (seq !== tabsRenderSeq) return;
+  }
+  const keyOf = (el) => (el.matches('.tab-row') ? `t${el.dataset.tab}` : `w${el.dataset.window}`);
+  const hadRows = document.querySelectorAll('#windows .tab-row').length > 0;
+  const before = new Map([...document.querySelectorAll('#windows .tab-row, #windows .win')].map((el) => [keyOf(el), el.getBoundingClientRect()]));
   $('#windows').replaceChildren(...blocks);
+  for (const el of document.querySelectorAll('#windows .tab-row, #windows .win')) {
+    const a = before.get(keyOf(el));
+    if (!a) {
+      if (hadRows && el.matches('.tab-row')) el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
+      continue;
+    }
+    const b = el.getBoundingClientRect();
+    const parentMoved = el.matches('.tab-row') && before.get(keyOf(el.closest('.win')));
+    const pdy = parentMoved ? parentMoved.top - el.closest('.win').getBoundingClientRect().top : 0;
+    const dy = a.top - b.top - pdy;
+    if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 360, easing: SPRING });
+  }
   restoreHover();
 }
 
@@ -768,6 +797,7 @@ function fitActions() {
 new ResizeObserver(fitActions).observe($('.panel-actions'));
 
 let tabsTimer;
+let tabsRenderSeq = 0;
 function scheduleTabs() { clearTimeout(tabsTimer); tabsTimer = setTimeout(renderTabs, 80); }
 
 /* ================= mutations ================= */
