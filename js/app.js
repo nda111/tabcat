@@ -316,7 +316,9 @@ function renderGroup(g) {
   }
   // header: a big symbol on the left; beside it the name line (name, count, actions, collapse)
   // above a row of add buttons
-  return h('div', { class: 'group' + (g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
+  // an empty group is just its header: nothing to expand, so no collapse toggle either
+  const empty = !g.items.length && !g.note && !editing;
+  return h('div', { class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
     h('div', {
       class: 'group-head', draggable: 'true',
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
@@ -326,7 +328,7 @@ function renderGroup(g) {
       h('div', { class: 'node-line' },
         h('span', { class: 'name' }, g.name),
         h('span', { class: 'count' }, T.countLinks(g)),
-        Object.assign(btn(icon('chevron'), g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
+        !empty && Object.assign(btn(icon('chevron'), g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
       // always-visible tools: add buttons | divider | everything else
       h('div', { class: 'node-tools' },
         btn(icon('linkPlus'), 'Add link', () => addLink(g.id)),

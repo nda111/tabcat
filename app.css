@@ -146,7 +146,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-bottom: 1px solid var(--border);
   cursor: grab; user-select: none;
 }
-.group.collapsed .group-head { border-bottom: 0; }
+.group.collapsed .group-head, .group.empty-group .group-head { border-bottom: 0; }
 .node-sym {
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
   font-size: 28px; line-height: 1;
@@ -168,7 +168,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 /* hover-only actions take no space until shown, so names truncate as late as possible */
 .head-actions { display: none; }
 .group-head:hover .head-actions, .group-head.hover .head-actions, .folder-head:hover .head-actions, .folder-head.hover .head-actions { display: flex; }
-.group.collapsed .group-body { display: none; }
+.group.collapsed .group-body, .group.empty-group .group-body { display: none; }
 
 .note { padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); font-size: 12.5px; cursor: text; }
 .note:empty { display: none; }
