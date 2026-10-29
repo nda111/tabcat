@@ -2,6 +2,15 @@ import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 
 const $ = (sel) => document.querySelector(sel);
+// Shrink back into the toolbar button, then close. (When Chrome closes the popup itself, e.g. on a
+// click elsewhere, it disappears at once: a closing popup gets no time to animate.)
+function closePopup(delay = 0) {
+  setTimeout(() => {
+    document.body.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.55)' }],
+      { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => window.close());
+  }, delay);
+}
+
 const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
 
 (async function init() {
@@ -36,7 +45,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     const named = { ...tab, title: $('#cur-name').value.trim() || tab.title };
     msg('Saved ✔');
     await chrome.runtime.sendMessage({ cmd: 'saveTabs', args: { tabs: [named], parentId: groupId, close: $('#close').checked } });
-    setTimeout(() => window.close(), 500);
+    closePopup(450);
   });
 
   $('#save-window').addEventListener('click', async () => {
@@ -48,7 +57,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   $('#dedupe').addEventListener('click', async () => msg(`Closed ${await A.closeDuplicates()} duplicates`));
   $('#open').addEventListener('click', async () => {
     await chrome.runtime.sendMessage({ cmd: 'openDashboard' });
-    window.close();
+    closePopup();
   });
 })();
 
