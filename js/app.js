@@ -278,15 +278,16 @@ function fittingColumns() {
 const visibleColumns = () => Math.min(boardColumns(), fittingColumns());
 
 // Stored column of a group (unplaced groups go round-robin by position).
-const columnOf = (cat, g, i) => Math.min(g.column ?? i % boardColumns(), boardColumns() - 1);
+const columnOf = (cat, g, i) => Math.min(g.column ?? i % boardColumns(), MAX_COLUMNS - 1);
 
 // Visible column i holds stored column i; dropping into it stores i.
 const storedColumn = (cat, n, i) => i;
 
-// Groups per visible column, keeping the category's order within each column. When the board is
-// too narrow, the columns that don't fit are stacked, one after another, under the last visible one.
+// Groups per visible column, keeping the category's order within each column. Columns beyond the
+// visible ones (fewer columns set, or a narrow window) are stacked, one after another, under the
+// last visible column, so every column's groups stay together and come back when there is room.
 function layoutColumns(cat, n) {
-  const all = Array.from({ length: boardColumns() }, () => []);
+  const all = Array.from({ length: MAX_COLUMNS }, () => []);
   cat.groups.forEach((g, i) => all[columnOf(cat, g, i)].push(g));
   return [...all.slice(0, n - 1), all.slice(n - 1).flat()];
 }
@@ -974,10 +975,19 @@ function resolveGroupDrop(e, el, d) {
         beforeId: before ? card.dataset.id : null, afterId: before ? null : card.dataset.id, line: hLine(r, before),
       };
     }
-    // empty space in a column: the end of that column
+    // between or below cards: the slot nearest the pointer (the gaps between cards count too)
+    const next = cards.find((c) => { const r = c.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+    if (next) {
+      const gi = cat.groups.findIndex((g) => g.id === next.dataset.id);
+      return {
+        action: 'column', categoryId: cat.id, column: columnOf(cat, cat.groups[gi], gi),
+        beforeId: next.dataset.id, line: hLine(next.getBoundingClientRect(), true),
+      };
+    }
     const last = cards.at(-1);
     return {
-      action: 'column', categoryId: cat.id, column, beforeId: null,
+      action: 'column', categoryId: cat.id, column: last ? columnOf(cat, ...groupAt(cat, last.dataset.id)) : column,
+      afterId: last?.dataset.id || null,
       line: last ? hLine(last.getBoundingClientRect(), false) : hLine(col.getBoundingClientRect(), true),
     };
   }
@@ -987,6 +997,8 @@ function resolveGroupDrop(e, el, d) {
   if (ws) return { action: 'toWorkspace', workspaceId: ws.dataset.id, el: ws };
   return null;
 }
+
+const groupAt = (cat, id) => { const i = cat.groups.findIndex((g) => g.id === id); return [cat.groups[i], i]; };
 
 // Moves group `id` into `column` of its category: before `beforeId`, after `afterId`, or to the end.
 function moveToColumn(id, t) {
