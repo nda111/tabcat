@@ -206,7 +206,14 @@ function animateLayout(before) {
   for (const el of els) {
     const d = deltas.get(el);
     if (!d) {
-      if (sameBoard && before.rects.size && el.closest('#board') && !el.parentElement.closest('[data-id]')) {
+      // a new link / folder inside a group or folder that was already there: pop in, drawn on top
+      const holder = el.parentElement.closest('[data-id]');
+      if (sameBoard && holder && el.closest('#board') && before.rects.has(holder.dataset.id)) {
+        const anim = el.animate([{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING });
+        raiseWhile(el, anim);
+        continue;
+      }
+      if (sameBoard && before.rects.size && el.closest('#board') && !holder) {
         const card = el.matches('.group') && before.rects.get(`add:${el.closest('.col')?.dataset.col}`);
         const r = el.getBoundingClientRect();
         if (card && Math.abs(card.top - r.top) < 30) {
@@ -361,7 +368,6 @@ function renderBoard() {
   // each column: groups with clickable gaps between them ("new group here"), then a tail whose
   // New group card shows when the pointer is below the column's last group
   board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => {
-    const column = storedColumn(cat, n, i);
     return h('div', { class: 'col', dataset: { col: i } },
       list.flatMap((g, k) => [
         k > 0 && h('div', {
@@ -373,7 +379,7 @@ function renderBoard() {
       h('div', { class: 'col-tail' },
         h('div', {
           class: 'add-group', dataset: { col: i, id: `add:${i}` },
-          onclick: () => addGroup(cat, column),
+          onclick: (e) => { const end = columnEnd(cat, e.currentTarget.closest('.col')); addGroup(cat, end.column, { afterId: end.afterId }); },
         }, icon('plus', 28))));
   })));
   sizeAddCards(board);
@@ -1058,9 +1064,9 @@ async function addNode(type, parentId, title, extra = {}) {
   if (v) apply({ op: 'create', parentId, node: { type, ...extra, ...v } });
 }
 // A new group in `column`: before group `beforeId`, or at the end of that column.
-async function addGroup(cat, column = null, { beforeId = null } = {}) {
+async function addGroup(cat, column = null, { beforeId = null, afterId = null } = {}) {
   const v = await openEditor('group', {}, 'New group');
-  if (v) apply({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId }), node: { type: 'group', column, ...v } });
+  if (v) apply({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId, afterId }), node: { type: 'group', column, ...v } });
 }
 const addLink = (parentId) => addNode('link', parentId, 'New link');
 const addFolder = (parentId) => addNode('folder', parentId, 'New folder');
@@ -1312,8 +1318,7 @@ function resolveItemDrop(e, el, d) {
         line: { x: r.left + 4, y: r.top + r.height / 2 - 1, w: r.width - 8, h: 2 } };
     }
     const col = el.closest('.col') || board.querySelector('.col:last-child');
-    return { mode: 'newGroup', categoryId: cat.id, column: storedColumn(cat, +board.dataset.cols, +col.dataset.col),
-      el: col.querySelector('.add-group') };
+    return { mode: 'newGroup', categoryId: cat.id, ...columnEnd(cat, col), el: col.querySelector('.add-group') };
   }
   return null;
 }
@@ -1366,6 +1371,14 @@ function resolveGroupDrop(e, el, d) {
 }
 
 const groupAt = (cat, id) => { const i = cat.groups.findIndex((g) => g.id === id); return [cat.groups[i], i]; };
+
+// The slot at the bottom of visible column `col`: right after its last group, in that group's own
+// column (a narrowed board stacks several stored columns into the last visible one).
+function columnEnd(cat, col) {
+  const last = [...col.querySelectorAll(':scope > .group')].at(-1);
+  if (!last) return { column: storedColumn(cat, +$('#board').dataset.cols, +col.dataset.col), afterId: null };
+  return { column: columnOf(cat, ...groupAt(cat, last.dataset.id)), afterId: last.dataset.id };
+}
 
 // Moves groups `ids` (in that order, stacked) into `column` of their category: before `beforeId`,
 // after `afterId`, or to the end of the column.
@@ -1433,7 +1446,7 @@ function targetOps(t, groupName) {
   if (t.action === 'toWorkspace') return [{ op: 'firstCategory', workspaceId: t.workspaceId }];
   if (t.mode === 'newGroup') {
     const cat = T.locate(state, t.categoryId).node;
-    return [{ op: 'create', parentId: t.categoryId, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
+    return [{ op: 'create', parentId: t.categoryId, index: columnIndex(cat, t.column, { beforeId: t.beforeId, afterId: t.afterId }),
       node: { type: 'group', name: groupName || suggestName('group'), column: t.column ?? null } }];
   }
   return [];
@@ -1473,10 +1486,12 @@ async function performDrop(d, t, e) {
     // one update that creates the group with its tabs already inside, so it appears filled
     // (two updates would show an empty group first and then make it jump)
     const cat = T.locate(state, t.categoryId).node;
-    await run(B.call('saveTabs', { tabIds, close: settings.closeOnSave, newGroup: {
-      categoryId: cat.id, column: t.column ?? null, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
+    const id = await run(B.call('saveTabs', { tabIds, close: settings.closeOnSave, newGroup: {
+      categoryId: cat.id, column: t.column ?? null, index: columnIndex(cat, t.column, { beforeId: t.beforeId, afterId: t.afterId }),
       name: d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : suggestName('group'),
     } }));
+    // pin the column explicitly (a no-op normally; fixes the placement with an older extension)
+    if (id && t.column != null) await apply({ op: 'patch', id, fields: { column: t.column } });
     return;
   }
   let pid = t.parentId;
@@ -2061,7 +2076,7 @@ async function refresh() {
 }
 
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
-const MIN_EXTENSION = '0.2.0';
+const MIN_EXTENSION = '0.2.1';
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
   for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
