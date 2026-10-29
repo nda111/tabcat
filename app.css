@@ -238,7 +238,8 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
   background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.22);
 }
 .tip-head { display: flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
-.tip-head img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+.tip-icon { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 5px; background: #fff; }
+.tip-icon img { width: 16px; height: 16px; display: block; }
 .tip-sub { opacity: .72; margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
 body.ws-collapsed .brand { justify-content: center; padding: 0 0 10px; position: relative; }

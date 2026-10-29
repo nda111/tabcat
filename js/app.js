@@ -380,7 +380,7 @@ async function renderTabs() {
       h('div', { class: 'win-head', draggable: 'true', title: `${label}\nDrag onto a group to save it` },
         h('span', { class: 'grow' }, label),
         h('span', { class: 'win-count' }, w.tabs.length),
-        btn(icon('save'), 'Save window', () => saveWindow(w.id)),
+        btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
         w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
       w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
@@ -1203,9 +1203,12 @@ function showTip(el) {
   tipEl = el;
   if (el.title) { el.dataset.tip = el.title; el.removeAttribute('title'); }
   const [head, ...rest] = el.dataset.tip.split('\n').filter((l) => l.trim());
-  const img = el.matches('.tab-row') && el.querySelector(':scope > img')?.src;
+  // tab rows: reuse the row's favicon with the same fallbacks, on a light chip so dark icons stay visible
+  const rowImg = el.matches('.tab-row') && el.querySelector(':scope > img');
+  const fav = rowImg ? iconImg(el.dataset.url, rowImg.currentSrc || rowImg.src) : null;
+  fav?.removeAttribute('loading');
   tip.replaceChildren(
-    h('div', { class: 'tip-head' }, img && h('img', { src: img, alt: '' }), h('span', {}, head)),
+    h('div', { class: 'tip-head' }, fav && h('span', { class: 'tip-icon' }, fav), h('span', {}, head)),
     ...rest.map((line) => h('div', { class: 'tip-sub' }, line)));
   tip.hidden = false;
   const r = el.getBoundingClientRect();
