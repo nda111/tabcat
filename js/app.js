@@ -131,7 +131,7 @@ function hideToast() {
   clearTimeout(toastTimer);
   if (t.hidden) return;
   t.animate([{ opacity: 1, transform: 'translateX(-50%)' }, { opacity: 0, transform: 'translate(-50%, 8px)' }],
-    { duration: 220, easing: 'ease-in', fill: 'forwards' })
+    { duration: 160, easing: 'ease-in', fill: 'forwards' })
     .finished.then((a) => { t.hidden = true; a.cancel(); }, () => {});
 }
 
@@ -219,8 +219,21 @@ function animateLayout(before) {
     if (Math.abs(dx) + Math.abs(dy) < 1 && !resize) continue;
     const from = { transform: `translate(${dx}px, ${dy}px)` }, to = { transform: 'none' };
     if (resize) { from.width = `${d[2]}px`; to.width = `${d[3]}px`; }
-    el.animate([from, to], { duration: 420, easing: SPRING });
+    const anim = el.animate([from, to], { duration: 420, easing: SPRING });
+    if (movingIds.has(el.dataset.id)) raiseWhile(el, anim); // what the user moved passes over the rest
   }
+}
+
+// Ids the user just moved (drag & drop): their slide is drawn above everything else on the board.
+let movingIds = new Set();
+function markMoving(ids) {
+  const marked = (movingIds = new Set(ids));
+  setTimeout(() => { if (movingIds === marked) movingIds = new Set(); }, 1500);
+}
+function raiseWhile(el, anim) {
+  el.style.position ||= 'relative';
+  el.style.zIndex = '50';
+  anim.finished.catch(() => {}).then(() => { el.style.zIndex = ''; if (el.style.position === 'relative') el.style.position = ''; });
 }
 
 // Re-lay the category bar and board (e.g. a new column count), sliding groups to their new places.
@@ -350,7 +363,7 @@ function renderBoard() {
       ]),
       h('div', { class: 'col-tail' },
         h('div', {
-          class: 'add-group', dataset: { col: i }, title: 'New group\nOr drop tabs here',
+          class: 'add-group', dataset: { col: i },
           onclick: () => addGroup(cat, column),
         }, icon('plus', 28))));
   })));
@@ -1008,8 +1021,10 @@ function showMenu(e, entries) {
   e.stopPropagation();
   const menu = $('#menu');
   if (menu.dataset.closing != null) { delete menu.dataset.closing; menu.getAnimations().forEach((a) => a.cancel()); }
+  // each entry may have a one-letter shortcut (shown on the right; press it while the menu is open)
   menu.replaceChildren(...entries.filter(Boolean).map((it) => (it === '-' ? h('hr') :
-    h('button', { class: it.danger ? 'danger' : '', onclick: () => { hideMenu(); it.fn(); } }, it.icon && icon(it.icon), it.label))));
+    h('button', { class: it.danger ? 'danger' : '', dataset: { key: it.key || '' }, onclick: () => { hideMenu(); it.fn(); } },
+      it.icon && icon(it.icon), h('span', { class: 'menu-label' }, it.label), it.key && h('kbd', {}, it.key)))));
   menu.hidden = false;
   const r = menu.getBoundingClientRect();
   menu.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + 'px';
@@ -1021,7 +1036,7 @@ function hideMenu() {
   if (menu.hidden || menu.dataset.closing != null) return;
   menu.dataset.closing = '';
   menu.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }],
-    { duration: 130, easing: 'ease-in', fill: 'forwards' })
+    { duration: 100, easing: 'ease-in', fill: 'forwards' })
     .finished.then((a) => {
       if (menu.dataset.closing == null) return;
       delete menu.dataset.closing;
@@ -1032,23 +1047,23 @@ function hideMenu() {
 
 function nodeMenu(e, node) {
   const n = T.countLinks(node);
-  const open = n ? [{ icon: 'open', label: `Open all (${n})`, fn: () => openAll(node) },
-    { icon: 'window', label: 'Open all in new window', fn: () => openAll(node, true) }] : [];
-  const del = { icon: 'trash', label: 'Delete', danger: true, fn: () => deleteNode(node) };
-  const edit = { icon: 'edit', label: 'Edit…', fn: () => editNode(node) };
+  const open = n ? [{ icon: 'open', label: `Open all (${n})`, key: 'O', fn: () => openAll(node) },
+    { icon: 'window', label: 'Open all in new window', key: 'W', fn: () => openAll(node, true) }] : [];
+  const del = { icon: 'trash', label: 'Delete', key: 'D', danger: true, fn: () => deleteNode(node) };
+  const edit = { icon: 'edit', label: 'Edit…', key: 'E', fn: () => editNode(node) };
   const menus = {
-    workspace: [edit, { icon: 'category', label: 'New category', fn: () => addCategory(node) }, ...open,
-      { icon: 'download', label: 'Export…', fn: () => exportData(node.id) }, '-', del],
-    category: [edit, { icon: 'group', label: 'New group', fn: () => addGroup(node) }, ...open, '-', del],
-    group: [edit, { icon: 'note', label: 'Edit note', fn: () => startNoteEdit(node.id) },
-      { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add folder', fn: () => addFolder(node.id) },
-      { icon: 'tabs', label: 'Add all tabs of this window', fn: () => addWindowTabs(node.id) },
-      ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) },
-      { icon: 'dedupe', label: 'Remove duplicate links', fn: () => dedupeLinks(node) }, '-', del],
-    folder: [edit, { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: 'Add subfolder', fn: () => addFolder(node.id) },
-      ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) }, '-', del],
-    link: [{ icon: 'open', label: 'Open', fn: () => openLink(node) }, { icon: 'window', label: 'Open in new window', fn: () => openLink(node, { shiftKey: true }) },
-      edit, { icon: 'copy', label: 'Copy URL', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
+    workspace: [edit, { icon: 'category', label: 'New category', key: 'C', fn: () => addCategory(node) }, ...open,
+      { icon: 'download', label: 'Export…', key: 'X', fn: () => exportData(node.id) }, '-', del],
+    category: [edit, { icon: 'group', label: 'New group', key: 'G', fn: () => addGroup(node) }, ...open, '-', del],
+    group: [edit, { icon: 'note', label: 'Edit note', key: 'N', fn: () => startNoteEdit(node.id) },
+      { icon: 'link', label: 'Add link', key: 'L', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add folder', key: 'F', fn: () => addFolder(node.id) },
+      { icon: 'tabs', label: 'Add all tabs of this window', key: 'T', fn: () => addWindowTabs(node.id) },
+      ...open, { icon: 'sort', label: 'Sort links by name', key: 'S', fn: () => sortItems(node) },
+      { icon: 'dedupe', label: 'Remove duplicate links', key: 'U', fn: () => dedupeLinks(node) }, '-', del],
+    folder: [edit, { icon: 'link', label: 'Add link', key: 'L', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: 'Add subfolder', key: 'F', fn: () => addFolder(node.id) },
+      ...open, { icon: 'sort', label: 'Sort links by name', key: 'S', fn: () => sortItems(node) }, '-', del],
+    link: [{ icon: 'open', label: 'Open', key: 'O', fn: () => openLink(node) }, { icon: 'window', label: 'Open in new window', key: 'W', fn: () => openLink(node, { shiftKey: true }) },
+      edit, { icon: 'copy', label: 'Copy URL', key: 'C', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
   };
   showMenu(e, menus[node.type]);
 }
@@ -1098,7 +1113,9 @@ function clearSelection() {
 // Rubber-band selection: starts on empty board space (not on a card, gap or button).
 $('#board').addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || !$('#board').dataset.parent) return;
-  if (e.target.closest('.group, .add-group, .gap-slot, button, input, textarea, a')) return;
+  // (the New group card and the gaps add a group on a plain click, but pressing and moving
+  // there starts a box selection like the rest of the empty board)
+  if (e.target.closest('.group, button, input, textarea, a')) return;
   // plain: select what the box covers; Ctrl/⌘: add it; Shift: invert it
   const mode = e.shiftKey ? 'invert' : e.ctrlKey || e.metaKey ? 'add' : 'replace';
   const base = mode === 'replace' ? new Set() : new Set(selected);
@@ -1127,6 +1144,8 @@ $('#board').addEventListener('pointerdown', (e) => {
     box.remove();
     document.body.classList.remove('selecting');
     if (!moved && !base.size) clearSelection(); // a plain click on empty space deselects
+    // a box selection must not also count as a click on what it started on (e.g. New group)
+    if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
   };
   addEventListener('pointermove', onMove);
   addEventListener('pointerup', onUp);
@@ -1375,6 +1394,7 @@ async function performDrop(d, t, e) {
     if (r) await run(B.call('openUrls', { urls: T.collectLinks(r.node).map((l) => l.url), windowId: t.windowId }));
     return;
   }
+  if (d.kind === 'node') markMoving(d.ids || [d.id]);
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
   if (t.action === 'column') return moveToColumn(d.ids || [d.id], t);
   const pre = targetOps(t, d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : null);
@@ -1520,7 +1540,7 @@ for (const dlg of document.querySelectorAll('dialog')) {
     if (!dlg.open || closing) return;
     const id = (closing = Date.now());
     dlg.dataset.closing = '';
-    const opts = { duration: 160, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' };
+    const opts = { duration: 120, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' };
     const anims = [
       dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.95)' }], opts),
       dlg.animate([{ opacity: 1 }, { opacity: 0 }], { ...opts, pseudoElement: '::backdrop' }),
@@ -1924,6 +1944,20 @@ $('#btn-dedupe').addEventListener('click', async () => {
 
 
 document.addEventListener('keydown', (e) => {
+  const menu = $('#menu');
+  if (!menu.hidden && menu.dataset.closing == null) {
+    // context menu: its letter runs an entry, arrows move between entries, Enter runs the focused one
+    const items = [...menu.querySelectorAll('button')];
+    const hit = !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 &&
+      items.find((b) => b.dataset.key && b.dataset.key === e.key.toUpperCase());
+    if (hit) { e.preventDefault(); hit.click(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const i = items.indexOf(document.activeElement);
+      items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length + (i < 0 && e.key === 'ArrowUp' ? 1 : 0)) % items.length].focus();
+      return;
+    }
+  }
   if (e.key === 'Escape') hideMenu();
   const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
   const dialogOpen = !!document.querySelector('dialog[open]');

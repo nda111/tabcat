@@ -440,6 +440,9 @@ dialog .field-label { display: block; font-weight: 600; }
   border-radius: 5px; cursor: pointer;
 }
 .ctx-menu .ico { color: var(--muted); }
+.ctx-menu .menu-label { flex: 1; }
+.ctx-menu kbd { margin-left: 16px; color: var(--muted); font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+.ctx-menu button:focus-visible { outline: none; background: var(--hover); }
 .ctx-menu button.danger .ico { color: inherit; }
 .ctx-menu button:hover, .ctx-menu button.hover { background: var(--hover); }
 .ctx-menu button.danger { color: var(--danger); }
@@ -519,13 +522,13 @@ dialog .field-label { display: block; font-weight: 600; }
 :root { --spring-soft: cubic-bezier(.34, 1.25, .64, 1); }
 .side-panel { transition: width .4s var(--spring-soft); }
 body.resizing .side-panel { transition: none; } /* follow the pointer exactly while resizing */
-dialog[open] { animation: pop-in .32s var(--spring-soft); }
-dialog[open]::backdrop { animation: fade-in .2s ease-out; }
-#menu:not([hidden]) { animation: pop-in .2s var(--spring-soft); transform-origin: top left; }
-#toast:not([hidden]) { animation: toast-in .36s var(--spring-soft); }
+dialog[open] { animation: pop-in .24s var(--spring-soft); }
+dialog[open]::backdrop { animation: fade-in .16s ease-out; }
+#menu:not([hidden]) { animation: pop-in .15s var(--spring-soft); transform-origin: top left; }
+#toast:not([hidden]) { animation: toast-in .28s var(--spring-soft); }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px) scale(.98); } to { opacity: 1; transform: translateX(-50%); } }
 #tip:not([hidden]) { animation: fade-in .12s ease-out; }
-#search-results:not([hidden]) { animation: rise-in .28s var(--spring-soft); transform-origin: bottom center; }
+#search-results:not([hidden]) { animation: rise-in .22s var(--spring-soft); transform-origin: bottom center; }
 @keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
