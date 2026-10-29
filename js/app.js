@@ -168,10 +168,12 @@ function render() {
   if (drag || document.activeElement?.classList.contains('note-edit')) { pendingRender = true; return; }
   pendingRender = false;
   const before = snapshotLayout();
+  const wsChanged = before.ws && before.ws !== currentWs()?.id;
+  const catChanged = before.board && before.board !== currentCat()?.id;
   renderSidebar();
   renderHead();
-  renderCats();
-  renderBoard();
+  crossfade(wsChanged && $('#cat-bar'), renderCats);
+  crossfade(catChanged && $('#board'), renderBoard);
   animateLayout(before);
   restoreHover();
 }
@@ -181,6 +183,27 @@ function render() {
 // iOS-like springs: a little overshoot, then settle.
 const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
 const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
+
+// Re-render `el` with `draw` while a snapshot of its old content fades out on top of it and the
+// new content fades in (both at once). With no element, just draws.
+function crossfade(el, draw) {
+  if (!el) return draw();
+  const r = el.getBoundingClientRect();
+  const ghost = el.cloneNode(true);
+  ghost.removeAttribute('id');
+  ghost.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+  Object.assign(ghost.style, {
+    position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
+    margin: '0', pointerEvents: 'none', zIndex: '15', background: getComputedStyle(el).backgroundColor,
+  });
+  document.body.append(ghost);
+  ghost.scrollTop = el.scrollTop;
+  ghost.scrollLeft = el.scrollLeft;
+  draw();
+  const opts = { duration: 220, easing: 'ease' };
+  el.animate([{ opacity: 0 }, { opacity: 1 }], opts);
+  ghost.animate([{ opacity: 1 }, { opacity: 0 }], { ...opts, fill: 'forwards' }).finished.catch(() => {}).then(() => ghost.remove());
+}
 
 // Where every movable element was before a re-render (FLIP: First).
 function snapshotLayout() {
@@ -196,12 +219,7 @@ function snapshotLayout() {
 // (FLIP: Last, Invert, Play). Nested elements move relative to their moving parent.
 function animateLayout(before) {
   if (!before) return;
-  const wsChanged = before.ws !== currentWs()?.id;
-  const boardChanged = before.board !== $('#board').dataset.parent;
-  // switching workspace / category: the new content eases in as a whole (no per-item pops)
-  const ease = { duration: 260, easing: 'cubic-bezier(.2, .8, .3, 1)' };
-  if (wsChanged) $('#cat-bar').animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], ease);
-  if (boardChanged && before.board) $('#board .columns')?.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], ease);
+  const wsChanged = before.ws !== currentWs()?.id; // (crossfade() handles the switch itself)
   try { animateMoves(before, wsChanged); } finally { openExpanded(); }
 }
 
@@ -429,6 +447,7 @@ function renderBoard() {
   board.dataset.parent = cat.id;
   const n = visibleColumns();
   board.dataset.cols = n;
+  board.classList.toggle('empty-cat', !cat.groups.length);
   const cols = layoutColumns(cat, n);
   // each column: groups with clickable gaps between them ("new group here"), then a tail whose
   // New group card shows when the pointer is below the column's last group
@@ -892,6 +911,11 @@ $('#windows').addEventListener('pointerdown', (e) => {
   addEventListener('pointermove', onMove);
   addEventListener('pointerup', onUp);
 });
+
+// a click anywhere outside the open-tab rows (and their menu) ends the tab selection
+document.addEventListener('pointerdown', (e) => {
+  if (pickedTabs.size && !e.target.closest('#windows .tab-row, #menu')) clearTabs();
+}, true);
 
 async function closePickedTabs(ids) {
   clearTabs();
