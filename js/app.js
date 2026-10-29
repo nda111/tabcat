@@ -117,11 +117,22 @@ function highlight(text, q) {
 let toastTimer;
 function toast(msg, actionLabel, action) {
   const t = $('#toast');
+  t.getAnimations().forEach((a) => a.cancel()); // a new toast replaces one that is fading out
   t.replaceChildren(h('span', {}, msg));
-  if (actionLabel) t.append(h('button', { onclick: () => { t.hidden = true; action(); } }, actionLabel));
+  if (actionLabel) t.append(h('button', { onclick: () => { hideToast(); action(); } }, actionLabel));
   t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.hidden = true; }, 6000);
+  toastTimer = setTimeout(hideToast, 6000);
+}
+
+// Fade the toast out (and drop it a little) before hiding it.
+function hideToast() {
+  const t = $('#toast');
+  clearTimeout(toastTimer);
+  if (t.hidden) return;
+  t.animate([{ opacity: 1, transform: 'translateX(-50%)' }, { opacity: 0, transform: 'translate(-50%, 8px)' }],
+    { duration: 220, easing: 'ease-in', fill: 'forwards' })
+    .finished.then((a) => { t.hidden = true; a.cancel(); }, () => {});
 }
 
 // Run an extension call, surfacing failures as a toast.
@@ -190,7 +201,7 @@ function animateLayout(before) {
     const prev = before.rects.get(el.dataset.id);
     if (!prev) continue;
     const r = el.getBoundingClientRect();
-    if (r.width) deltas.set(el, [prev.left - r.left, prev.top - r.top]);
+    if (r.width) deltas.set(el, [prev.left - r.left, prev.top - r.top, prev.width, r.width]);
   }
   for (const el of els) {
     const d = deltas.get(el);
@@ -203,9 +214,21 @@ function animateLayout(before) {
     const parent = el.parentElement.closest('[data-id]');
     const pd = (parent && deltas.get(parent)) || [0, 0];
     const dx = d[0] - pd[0], dy = d[1] - pd[1];
-    if (Math.abs(dx) + Math.abs(dy) < 1) continue;
-    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 420, easing: SPRING });
+    // group cards also ease to their new width (e.g. after the column count changed)
+    const resize = el.matches('#board .group') && Math.abs(d[2] - d[3]) > 1;
+    if (Math.abs(dx) + Math.abs(dy) < 1 && !resize) continue;
+    const from = { transform: `translate(${dx}px, ${dy}px)` }, to = { transform: 'none' };
+    if (resize) { from.width = `${d[2]}px`; to.width = `${d[3]}px`; }
+    el.animate([from, to], { duration: 420, easing: SPRING });
   }
+}
+
+// Re-lay the category bar and board (e.g. a new column count), sliding groups to their new places.
+function relayoutBoard() {
+  const before = snapshotLayout();
+  renderCats();
+  renderBoard();
+  animateLayout(before);
 }
 
 // Shrink-and-fade elements about to be deleted, so the removal is visible before the re-render.
@@ -281,7 +304,7 @@ function renderCats() {
 const boardColumns = () => Math.min(MAX_COLUMNS, Math.max(1, settings.columns || 3));
 async function setColumns(v) {
   const s = await run(B.call('saveSettings', { columns: Math.min(MAX_COLUMNS, Math.max(1, v)) }));
-  if (s) { settings = s; fillSettings(); renderCats(); renderBoard(); }
+  if (s) { settings = s; fillSettings(); relayoutBoard(); }
 }
 
 function columnControl() {
@@ -1453,6 +1476,38 @@ for (const dlg of document.querySelectorAll('dialog')) {
     if (downOutside && outside(e)) dlg.close();
     downOutside = false;
   });
+
+  // Closing animates too: every close (code, Esc, a dialog-form submit) shrinks and fades the
+  // dialog and its backdrop first, then really closes it.
+  const nativeClose = dlg.close.bind(dlg);
+  const nativeShow = dlg.showModal.bind(dlg);
+  let closing = 0; // id of the close in progress (0: none); reopening cancels it
+  dlg.showModal = () => {
+    if (closing) { closing = 0; delete dlg.dataset.closing; dlg.getAnimations().forEach((a) => a.cancel()); }
+    if (!dlg.open) nativeShow();
+  };
+  dlg.close = (value) => {
+    if (!dlg.open || closing) return;
+    const id = (closing = Date.now());
+    dlg.dataset.closing = '';
+    const opts = { duration: 160, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' };
+    const anims = [
+      dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.95)' }], opts),
+      dlg.animate([{ opacity: 1 }, { opacity: 0 }], { ...opts, pseudoElement: '::backdrop' }),
+    ];
+    Promise.all(anims.map((a) => a.finished)).then(() => {
+      if (closing !== id) return; // reopened meanwhile
+      closing = 0;
+      delete dlg.dataset.closing;
+      nativeClose(value);
+      anims.forEach((a) => a.cancel());
+    }, () => {});
+  };
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); dlg.close(); }); // Esc
+  // a <form method="dialog"> submit that nobody handled (Done / Close buttons)
+  dlg.addEventListener('submit', (e) => {
+    if (!e.defaultPrevented && e.target.method === 'dialog') { e.preventDefault(); dlg.close(); }
+  });
 }
 
 function fillSettings() {
@@ -1477,7 +1532,7 @@ $('#settings-form').addEventListener('change', async (e) => {
     theme: f.theme.value,
     columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
-  if (s) { settings = s; applyTheme(); renderCats(); renderBoard(); }
+  if (s) { settings = s; applyTheme(); relayoutBoard(); }
 });
 
 /* ---------- export / import ---------- */

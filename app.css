@@ -75,7 +75,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;
 }
 .panel-toggle:hover, .panel-toggle.hover { background: var(--hover); color: var(--text); }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 8px 8px; min-height: 36px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 8px 9px; min-height: 36px; }
 .brand-logo { display: grid; place-items: center; width: 22px; height: 22px; flex: none; }
 .brand-logo img { width: 22px; height: 22px; }
 .brand-name { flex: 1; }
@@ -85,7 +85,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 #ws-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .ws-item {
-  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 7px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 11px; border-radius: 7px; cursor: pointer;
   user-select: none;
 }
 .ws-item:hover, .ws-item.hover { background: var(--hover); }
@@ -114,7 +114,7 @@ body.ws-collapsed .ws-add { display: flex; }
 .keys { border-collapse: collapse; }
 .keys td { padding: 3px 14px 3px 0; vertical-align: top; }
 .keys td:first-child { white-space: nowrap; }
-.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 7px; cursor: pointer; color: var(--muted); }
+.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px 6px 12px; border-radius: 7px; cursor: pointer; color: var(--muted); }
 .side-btn:hover, .side-btn.hover { background: var(--hover); color: var(--text); }
 
 /* ---------- main ---------- */
@@ -271,7 +271,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 
 /* ---------- open tabs panel ---------- */
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
-.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 8px 12px 6px 8px; }
+.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 8px 12px 6px 10px; }
 .panel-title { flex: 1; min-width: 0; }
 /* a chunk moves to the next line as a unit, and wraps inside only if it is wider than the whole line */
 .chunk { display: inline-block; max-width: 100%; }
@@ -280,7 +280,12 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
 .panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
-@container (max-width: 250px) { .panel-actions .label { display: none; } }
+/* labels slide away (rather than vanish) when the panel gets narrow, and slide back when it widens */
+.panel-actions .label {
+  display: inline-block; max-width: 140px; overflow: hidden; white-space: nowrap;
+  transition: max-width .3s var(--spring-soft), opacity .2s ease, margin .3s var(--spring-soft);
+}
+@container (max-width: 250px) { .panel-actions .label { max-width: 0; opacity: 0; margin-left: -5px; } }
 .side-btn .sym { display: inline-flex; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
@@ -291,7 +296,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 .win-head .grow { flex: 1; min-width: 0; }
 .win-count { display: none; }
 body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing: 0; }
-.tab-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: grab; }
+.tab-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: 6px; cursor: grab; }
 .tab-row:hover, .tab-row.hover { background: var(--hover); }
 .tab-row.active { background: var(--accent-soft); }
 .tab-row.discarded { opacity: .55; }
@@ -310,8 +315,10 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 .tip-icon { display: grid; place-items: center; flex: none; }
 .tip-icon img { width: 16px; height: 16px; display: block; }
 .tip-sub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-body.ws-collapsed #sidebar { width: 56px; padding: 8px 6px 12px; align-items: stretch; }
-body.ws-collapsed .brand { justify-content: center; padding: 0 0 8px; position: relative; }
+/* collapsed rails keep every icon at the same x as when expanded (centre line 28px): while the width
+   animates, icons stay put instead of drifting with a centred layout */
+body.ws-collapsed #sidebar { width: 56px; align-items: stretch; }
+body.ws-collapsed .brand { position: relative; }
 body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label,
 body.ws-collapsed .ws-item .name, body.ws-collapsed .ws-item .count, body.ws-collapsed .side-btn .label { display: none; }
 /* collapsed: the logo turns into the expand button on hover (the toggle sits on top of it) */
@@ -319,16 +326,17 @@ body.ws-collapsed #ws-toggle { position: absolute; left: 50%; top: 0; transform:
 body.ws-collapsed .brand:hover #ws-toggle { opacity: 1; background: var(--hover); }
 body.ws-collapsed .brand:hover .brand-logo { visibility: hidden; }
 body.ws-collapsed .side-title { display: none; }
-body.ws-collapsed :is(.ws-item, .ws-add) { justify-content: center; width: 36px; height: 36px; padding: 0; margin: 0 auto 2px; } /* square, like the buttons below */
-body.ws-collapsed .ws-item .sym { width: auto; font-size: 17px; }
-body.ws-collapsed .side-btn { justify-content: center; width: 36px; height: 36px; padding: 0; margin: 0 auto; } /* square, icon size unchanged */
+body.ws-collapsed :is(.ws-item, .ws-add) { width: 36px; height: 36px; padding: 0 0 0 9px; margin: 0 0 2px 2px; } /* square, like the buttons below */
+body.ws-collapsed .ws-add { justify-content: center; padding: 0; }
+body.ws-collapsed .ws-item .sym { font-size: 17px; }
+body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 10px; margin-left: 2px; } /* square, icon size unchanged */
 body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }
-body.tabs-collapsed .panel-head { justify-content: center; padding: 8px 0 4px; }
+body.tabs-collapsed .panel-head { padding: 8px 0 4px 10px; }
 body.tabs-collapsed .panel-title { display: none; }
-body.tabs-collapsed .panel-toggle.square { align-self: center; }
-body.tabs-collapsed .panel-actions { flex-direction: column; align-items: center; padding: 0 0 6px; gap: 2px; }
+
+body.tabs-collapsed .panel-actions { flex-direction: column; align-items: flex-start; padding: 0 0 6px 14px; gap: 2px; }
 body.tabs-collapsed .panel-actions .btn { border: 0; background: transparent; padding: 4px 6px; }
 body.tabs-collapsed .panel-actions .btn:hover { background: var(--hover); }
 body.tabs-collapsed .panel-actions .label { display: none; }
@@ -336,9 +344,9 @@ body.tabs-collapsed #windows { padding: 0 6px 20px; }
 body.tabs-collapsed .win { margin: 0 0 6px; border-top: 1px solid var(--border); border-radius: 0; }
 body.tabs-collapsed .win-head { justify-content: center; padding: 3px 0 2px; }
 body.tabs-collapsed .win-head > :not(.win-count) { display: none; }
-body.tabs-collapsed .tab-row { justify-content: center; padding: 6px 0; }
+body.tabs-collapsed .tab-row { padding: 6px 0 6px 14px; }
 body.tabs-collapsed .tab-row > :not(img) { display: none; }
-body.tabs-collapsed .tab-row img { width: 18px; height: 18px; }
+
 body.tabs-collapsed #tabs-panel .resizer { display: none; }
 
 /* ---------- dialogs, menu, toast ---------- */
