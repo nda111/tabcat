@@ -2235,7 +2235,7 @@ function openSettings() {
 }
 
 $('#settings-form').addEventListener('change', async (e) => {
-  if (e.target.id === 'import-file') return;
+  if (e.target.type === 'file') return; // the import pickers (their own handlers save what they read)
   const f = e.currentTarget;
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
