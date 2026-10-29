@@ -18,7 +18,9 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   $('#close').checked = settings.closeOnSave;
   $('#close').addEventListener('change', () => S.saveSettings({ closeOnSave: $('#close').checked }));
 
-  if (tab && A.isSaveable(tab)) {
+  if (tab && A.isDashboard(tab.url || tab.pendingUrl || '')) {
+    $('#save-card').hidden = true; // on the dashboard itself there is no tab to save
+  } else if (tab && A.isSaveable(tab)) {
     $('#cur-name').value = tab.title || tab.url;
     $('#cur-url').textContent = tab.url;
     $('#cur-icon').src = tab.favIconUrl || S.faviconFor(tab.url);
