@@ -1840,7 +1840,7 @@ function applyRailTitles() {
 }
 
 const PANEL_FLIP = '.brand-logo, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
-let panelAnimTimer;
+const panelAnimTimer = {};
 
 for (const p of Object.values(PANELS)) {
   $(p.toggle).addEventListener('click', () => {
@@ -1861,9 +1861,10 @@ for (const p of Object.values(PANELS)) {
 function switchPanel(p) {
   const els = [...$(p.el).querySelectorAll(PANEL_FLIP)];
   const before = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
-  document.body.classList.add('panel-anim');
-  clearTimeout(panelAnimTimer);
-  panelAnimTimer = setTimeout(() => document.body.classList.remove('panel-anim'), 450);
+  const panel = $(p.el);
+  panel.classList.add('panel-anim'); // only this panel: the other one must not replay its fade-ins
+  clearTimeout(panelAnimTimer[p.el]);
+  panelAnimTimer[p.el] = setTimeout(() => panel.classList.remove('panel-anim'), 450);
   ui[p.collapsed] = !ui[p.collapsed];
   applyPanels();
   flipFrom(before);

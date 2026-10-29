@@ -532,13 +532,14 @@ dialog[open]::backdrop { animation: fade-in .2s ease-out; }
 
 /* while a side panel opens / closes: text keeps to one line (clipped by the panel) instead of
    wrapping at the in-between widths, so rows don't jump around */
-body.panel-anim .side-panel :is(.brand-name, .side-title, .ws-item, .side-btn, .panel-title, #tab-stats, .win-head .grow, .tab-row) { white-space: nowrap; }
-body.panel-anim .side-panel .chunk { display: inline; }
-body.panel-anim .panel-actions { flex-wrap: nowrap; }
+.side-panel.panel-anim :is(.brand-name, .side-title, .ws-item, .side-btn, .panel-title, #tab-stats, .win-head .grow, .tab-row) { white-space: nowrap; }
+.side-panel.panel-anim .chunk { display: inline; }
+.side-panel.panel-anim .panel-actions { flex-wrap: nowrap; }
 /* things that only exist in one state fade in instead of popping (only during a toggle, not on re-renders) */
-body.panel-anim.ws-collapsed .ws-add,
-body.panel-anim:not(.ws-collapsed) :is(.side-title, .side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
-body.panel-anim:not(.tabs-collapsed) :is(.panel-title, .win-head .grow, .tab-row .name) { animation: fade-in .3s ease-out; }
+/* (scoped to the panel being toggled, so the other panel doesn't replay it) */
+body.ws-collapsed #sidebar.panel-anim .ws-add,
+body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-title, .side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
+body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .tab-row .name) { animation: fade-in .3s ease-out; }
 #ws-toggle, .brand-logo { transition: opacity .15s; }
 
 /* collapsing: labels fade out first (the panel already narrows), then the rail layout takes over */
