@@ -279,7 +279,8 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
 .panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 12px 8px 10px; }
 .panel-title { flex: 1; min-width: 0; }
-.chunk { white-space: nowrap; }
+/* a chunk moves to the next line as a unit, and wraps inside only if it is wider than the whole line */
+.chunk { display: inline-block; max-width: 100%; }
 /* sized to the one-line title + stats; stays put when the stats wrap */
 .panel-toggle.square { width: 36px; height: 36px; align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
@@ -290,7 +291,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
 .win-head {
-  display: flex; align-items: center; gap: 6px; padding: 6px; font-size: 12px;
+  display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; /* buttons stay at the top when the name wraps */
   color: var(--muted); cursor: grab; user-select: none;
 }
 .win-head .grow { flex: 1; min-width: 0; }
