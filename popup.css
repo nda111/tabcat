@@ -80,3 +80,15 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
   background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 12px; font-weight: 600;
 }
 .sym-glyph { display: block; text-box: trim-both cap alphabetic; }
+
+/* motion: the popup content springs in; the Save to list opens with a short rise */
+:root { --spring-soft: cubic-bezier(.34, 1.25, .64, 1); }
+body.popup > * { animation: popup-in .32s var(--spring-soft) both; }
+body.popup > :nth-child(2) { animation-delay: .03s; }
+body.popup > :nth-child(3) { animation-delay: .06s; }
+.picker-panel:not([hidden]) { animation: popup-in .24s var(--spring-soft); transform-origin: top center; }
+#msg:not([hidden]) { animation: popup-in .24s var(--spring-soft); }
+.btn, .picker-btn, .picker-item { transition: background .12s, border-color .12s, transform .12s; }
+.btn:active, .picker-btn:active { transform: scale(.97); }
+.chev { transition: transform .25s var(--spring-soft); }
+@keyframes popup-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
