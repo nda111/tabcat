@@ -1,20 +1,30 @@
-// Full emoji picker (emoji-picker-element: search, categories, skin tones, recents),
-// loaded from the CDN the first time it is opened.
+// Emoji search backed by emoji-picker-element's database (emojibase data, cached in IndexedDB),
+// loaded from the CDN on first use.
 
-const PICKER_URL = 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+const DB_URL = 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/database.js';
 const DATA_URL = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1.8.0/en/emojibase/data.json';
 let loading = null;
 
-function load() {
-  if (!loading) loading = import(PICKER_URL).catch((err) => { loading = null; throw err; });
+function db() {
+  if (!loading) {
+    loading = import(DB_URL)
+      .then(({ default: Database }) => new Database({ dataSource: DATA_URL }))
+      .catch((err) => { loading = null; throw err; });
+  }
   return loading;
 }
 
-export async function createEmojiPicker(onPick) {
-  const { Picker } = await load();
-  const picker = new Picker({ dataSource: DATA_URL });
-  const theme = document.documentElement.dataset.theme; // follows the system theme when unset
-  if (theme) picker.classList.add(theme);
-  picker.addEventListener('emoji-click', (e) => onPick(e.detail.unicode));
-  return picker;
+const pick = (e) => ({ unicode: e.unicode, name: e.annotation || e.name || '' });
+
+export async function searchEmoji(query, limit = 80) {
+  const found = await (await db()).getEmojiBySearchQuery(query);
+  return found.filter((e) => e.unicode).slice(0, limit).map(pick);
+}
+
+export async function favoriteEmoji(limit) {
+  return (await (await db()).getTopFavoriteEmoji(limit)).filter((e) => e.unicode).map(pick);
+}
+
+export async function recordEmoji(unicode) {
+  try { await (await db()).incrementFavoriteEmojiCount(unicode); } catch { /* best effort */ }
 }

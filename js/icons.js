@@ -16,7 +16,8 @@ const PATHS = {
   folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
   category: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/>',
   group: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
-  windows: '<path d="M3 14V5a2 2 0 0 1 2-2h10M6 17V8a2 2 0 0 1 2-2h10"/><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M9 13h12"/>',
+  windows: '<path d="M5.5 14H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2.5"/>'
+    + '<path d="M10 18.5H7.5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2V10"/><rect x="10" y="10" width="13" height="13" rx="2"/>',
   tabs: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v5"/>',
   sort: '<path d="M3 6h11M3 12h7M3 18h4M18 6v14M15 17l3 3 3-3"/>',
   copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',

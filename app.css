@@ -299,15 +299,30 @@ dialog legend { font-size: 11px; color: var(--muted); text-transform: uppercase;
 .pick-row .twisty-gap { width: 18px; flex: none; }
 #picker-tree li.closed > .pick-row .twisty { transform: rotate(-90deg); }
 .error { color: var(--danger); min-height: 1em; margin: 4px 0 0; font-size: 12px; }
-.emoji-row { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
-.emoji-row button { border: 0; background: transparent; cursor: pointer; font-size: 16px; border-radius: 5px; padding: 2px 4px; }
-.emoji-row button:hover, .emoji-row button.hover { background: var(--hover); }
-.sym-input { display: flex; gap: 6px; align-items: center; }
-.sym-input input { width: 70px !important; text-align: center; font-size: 16px; }
+.sym-row { display: flex; gap: 8px; align-items: stretch; margin-top: 4px; }
+.sym-wrap { position: relative; flex: none; }
+dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
+.sym-clear {
+  position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
+  border: 1px solid var(--border); border-radius: 50%; background: var(--panel); color: var(--muted); cursor: pointer;
+  opacity: 0; transition: opacity .1s;
+}
+.sym-wrap:hover .sym-clear, .sym-wrap:focus-within .sym-clear { opacity: 1; }
+.sym-wrap.empty .sym-clear { display: none; }
+.sym-clear:hover { color: var(--text); }
+dialog input.emoji-search { flex: 1; min-width: 0; }
+.emoji-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 2px; margin-top: 6px;
+  max-height: 156px; overflow-y: auto; padding: 2px;
+}
+.emoji-grid button {
+  height: 34px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; font-size: 20px; padding: 0;
+}
+.emoji-grid button:hover, .emoji-grid button.hover { background: var(--hover); }
+.emoji-grid button.selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.emoji-status:empty { display: none; }
 dialog .field { margin-bottom: 10px; }
 dialog .field-label { display: block; font-weight: 500; }
-.emoji-picker-box { margin-top: 6px; font-size: 12px; color: var(--muted); }
-.emoji-picker-box emoji-picker { width: 100%; height: 320px; --num-columns: 9; --border-radius: 8px; --border-color: var(--border); }
 .icon-preview { display: flex; gap: 8px; align-items: center; }
 .icon-preview img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 .icon-preview input { flex: 1; min-width: 0; }

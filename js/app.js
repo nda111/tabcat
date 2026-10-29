@@ -2,7 +2,7 @@ import * as B from './bridge.js';
 import * as T from './tree.js';
 import { renderMarkdown, toggleTask } from './markdown.js';
 import { typesetMath } from './math.js';
-import { createEmojiPicker } from './emoji.js';
+import { searchEmoji, favoriteEmoji, recordEmoji } from './emoji.js';
 import { icon, hydrateIcons } from './icons.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -286,8 +286,9 @@ function renderFolder(f) {
   return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
       class: 'folder-head', draggable: 'true',
+      // click toggles; editing lives in the buttons/menu so rapid clicks never open the editor
       onclick: () => toggleCollapse(f),
-      ondblclick: (e) => { e.stopPropagation(); editNode(f); },
+      ondblclick: (e) => e.stopPropagation(),
       oncontextmenu: (e) => nodeMenu(e, f),
     },
     h('span', { class: 'twisty' }, '▾'),
@@ -295,6 +296,7 @@ function renderFolder(f) {
     h('span', { class: 'name' }, f.name),
     h('span', { class: 'count' }, T.countLinks(f)),
     h('span', { class: 'head-actions' },
+      btn(icon('edit'), 'Edit folder', () => editNode(f)),
       btn(icon('open'), 'Open all links', () => openAll(f)),
       btn(plus(), 'Add link', () => addLink(f.id)),
       btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
@@ -446,6 +448,74 @@ async function saveWindow(windowId) {
 
 /* ---------- editor dialog ---------- */
 
+// Symbol field: a square showing the emoji (clearable), a search box, and a grid that shows
+// recent/common emoji when the box is empty and live search results while typing.
+function symbolField(label, input, err) {
+  input.classList.add('sym-box');
+  input.maxLength = 16;
+  const grid = h('div', { class: 'emoji-grid' });
+  const status = h('div', { class: 'emoji-status muted small' });
+  const search = h('input', { type: 'search', class: 'emoji-search', placeholder: 'Search emoji (e.g. rocket, cat, book)', autocomplete: 'off' });
+  const clear = h('button', { type: 'button', class: 'sym-clear', title: 'Remove symbol', onclick: () => set('') }, icon('close', 11));
+  const wrap = h('div', { class: 'sym-wrap' }, input, clear);
+
+  function set(em) {
+    input.value = em;
+    err.textContent = '';
+    sync();
+    if (em) recordEmoji(em);
+  }
+  function sync() {
+    wrap.classList.toggle('empty', !input.value);
+    for (const b of grid.children) b.classList.toggle('selected', b.dataset.emoji === input.value);
+  }
+  function show(list, note = '') {
+    grid.replaceChildren(...list.map((e) => h('button', {
+      type: 'button', title: e.name || e.unicode, dataset: { emoji: e.unicode }, onclick: () => set(e.unicode),
+    }, e.unicode)));
+    status.textContent = note;
+    sync();
+  }
+
+  const defaults = () => EMOJIS.map((unicode) => ({ unicode }));
+  async function showDefaults() {
+    show(defaults());
+    try {
+      const recent = await favoriteEmoji(16);
+      if (search.value.trim()) return;
+      const seen = new Set();
+      show([...recent, ...defaults()].filter((e) => !seen.has(e.unicode) && seen.add(e.unicode)).slice(0, 40));
+    } catch { /* offline: keep the built-in list */ }
+  }
+
+  let seq = 0;
+  let timer;
+  search.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = search.value.trim();
+    if (!q) return void showDefaults();
+    timer = setTimeout(async () => {
+      const mine = ++seq;
+      try {
+        const found = await searchEmoji(q);
+        if (mine === seq) show(found, found.length ? '' : 'No emoji found.');
+      } catch {
+        if (mine === seq) show([], 'Could not load the emoji list (offline?). You can still paste an emoji into the box.');
+      }
+    }, 120);
+  });
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); grid.querySelector('button')?.click(); }
+    if (e.key === 'Escape' && search.value) { e.preventDefault(); search.value = ''; showDefaults(); }
+  });
+  input.addEventListener('input', sync);
+  showDefaults();
+
+  // a div, not a label: clicks in the grid must not move focus to the symbol box
+  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (single emoji, optional)'),
+    h('div', { class: 'sym-row' }, wrap, search), grid, status);
+}
+
 const ICON_SIZE = 64;
 
 // Downscales an uploaded image to a small square PNG data URL, so it stays cheap to store and sync.
@@ -485,30 +555,7 @@ function openEditor(type, data = {}, title) {
       : h('input', { name: key, type: 'text', required: required ? true : null, autocomplete: 'off' });
     input.value = data[key] || '';
     inputs[key] = input;
-    if (kind === 'emoji') {
-      const box = h('div', { class: 'emoji-picker-box', hidden: true });
-      let picker = null;
-      const togglePicker = async () => {
-        if (!box.hidden) { box.hidden = true; return; }
-        box.hidden = false;
-        if (picker) return void picker.shadowRoot?.querySelector('input')?.focus();
-        box.textContent = 'Loading emoji…';
-        try {
-          picker = await createEmojiPicker((em) => { input.value = em; box.hidden = true; err.textContent = ''; });
-          box.replaceChildren(picker);
-          requestAnimationFrame(() => picker.shadowRoot?.querySelector('input')?.focus());
-        } catch {
-          box.textContent = 'Could not load the emoji list (offline?). You can still type or paste an emoji.';
-        }
-      };
-      // a div, not a label: clicks inside the picker must not refocus the text input
-      return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (single emoji, optional)'),
-        h('div', { class: 'sym-input' }, input,
-          h('button', { type: 'button', class: 'btn small', onclick: togglePicker }, icon('search', 13), 'All emoji…'),
-          btn(icon('close'), 'Clear', () => { input.value = ''; })),
-        h('div', { class: 'emoji-row' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => { input.value = em; } }, em))),
-        box);
-    }
+    if (kind === 'emoji') return symbolField(label, input, err);
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
       input.placeholder = 'Image URL, or upload a file. Empty: site favicon';
