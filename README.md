@@ -70,7 +70,7 @@ Workspace  (Name*, Symbol, Description)
 
 | Area | Features |
 |---|---|
-| Dashboard | Workspace sidebar · open-tabs panel (both resizable and collapsible to icon rails) · category tabs · board of group cards in 1–7 columns (setting); drag a group to any column |
+| Dashboard | Workspace sidebar · open-tabs panel (both resizable and collapsible to icon rails) · category tabs · board of group cards in a fixed 1–7 columns (setting; scrolls sideways when narrow); drag a group into any column |
 | Drag & drop | Open tab → exact position in a group/folder · window header → save whole window · drop on empty board → new group · move/reorder links and folders, nest folders · reorder groups, drop a group onto another to merge them, drop on a category tab or workspace to move · reorder categories and workspaces · saved link → open-tabs panel opens it · drag a URL from the address bar or another page |
 | Memory | Close tabs after saving (setting) · save & close a window · suspend (discard) inactive tabs · auto-suspend after N minutes · close duplicate tabs |
 | Organizing | Markdown notes with clickable task checkboxes and MathJax math (`$…$`, `$$…$$`) · collapse · sort by name · remove duplicate links · context menus · undo delete |
