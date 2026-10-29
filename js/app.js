@@ -78,7 +78,9 @@ function chunks(parts) {
 // A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge.
 function symbolEl(symbol, fallback = '') {
   const s = symbol || fallback;
-  return h('span', { class: T.isLetterSymbol(s) ? 'sym sym-letter' : 'sym' }, s);
+  return T.isLetterSymbol(s)
+    ? h('span', { class: 'sym sym-letter' }, h('span', { class: 'sym-glyph' }, s))
+    : h('span', { class: 'sym' }, s);
 }
 
 function iconImg(url, icon) {

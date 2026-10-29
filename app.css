@@ -136,6 +136,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
   font-size: 28px; line-height: 1;
 }
+.sym-glyph { display: block; text-box: trim-both cap alphabetic; } /* centre the capital itself, whatever the font metrics */
 .node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
 .node-sym.none { background: var(--panel-2); color: var(--muted); }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
