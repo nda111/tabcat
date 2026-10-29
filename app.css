@@ -188,7 +188,8 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 /* the header's empty space toggles the group: hover tint there, not over the name, symbol or buttons */
 .group-head { border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; transition: background .1s; }
 .group.collapsed .group-head { border-radius: calc(var(--radius) - 1px); }
-.group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover, button:hover)) { background: var(--hover); cursor: pointer; }
+.group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover)) { background: var(--hover); }
+.group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover, button:hover)) { cursor: pointer; }
 .node-sym {
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
   font-size: 28px; line-height: 1;
@@ -559,3 +560,6 @@ body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .gr
 }
 #tabs-panel .panel-head .chunk { display: inline; }
 #tabs-panel .panel-actions { flex-wrap: nowrap; }
+
+/* links / folders picked inside a group */
+.item.picked > :is(.link-row, .folder-head) { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }

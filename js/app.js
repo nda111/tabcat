@@ -153,6 +153,8 @@ function currentCat(ws = currentWs()) {
 }
 function select(wsId, catId) {
   selected.clear();
+  pickedItems.clear();
+  pickedGroup = null;
   if (wsId) ui.ws = wsId;
   if (wsId && catId) ui.cat[wsId] = catId;
   saveUi();
@@ -194,6 +196,10 @@ function snapshotLayout() {
 // (FLIP: Last, Invert, Play). Nested elements move relative to their moving parent.
 function animateLayout(before) {
   if (!before) return;
+  try { animateMoves(before); } finally { openExpanded(); }
+}
+
+function animateMoves(before) {
   const sameBoard = before.board === $('#board').dataset.parent;
   const deltas = new Map();
   const els = [...document.querySelectorAll(MOVABLE)];
@@ -208,7 +214,9 @@ function animateLayout(before) {
     const d = deltas.get(el);
     if (!d) {
       // a new link / folder inside a group or folder that was already there: pop in, drawn on top
+      // (not when it only became visible because its group / folder is being expanded)
       const holder = el.parentElement.closest('[data-id]');
+      if (expanding && el.parentElement.closest(`[data-id="${CSS.escape(expanding)}"]`)) continue;
       if (sameBoard && holder && el.closest('#board') && before.rects.has(holder.dataset.id)) {
         const anim = el.animate([{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING });
         raiseWhile(el, anim);
@@ -268,11 +276,23 @@ function relayoutBoard() {
 }
 
 // Shrink-and-fade elements about to be deleted, so the removal is visible before the re-render.
+// It also closes up the space it took (and a group's gap), so the re-render that removes it moves nothing.
 function animateOut(ids) {
   const els = ids.map((id) => document.querySelector(`#board [data-id="${CSS.escape(id)}"], #ws-list [data-id="${CSS.escape(id)}"], #cat-bar [data-id="${CSS.escape(id)}"]`)).filter(Boolean);
-  return Promise.all(els.map((el) => el.animate(
-    [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.9)' }],
-    { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished)).catch(() => {});
+  const opts = { duration: 230, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' };
+  return Promise.all(els.map((el) => {
+    const r = el.getBoundingClientRect();
+    el.style.overflow = 'hidden';
+    const across = el.closest('#cat-bar'); // tabs sit in a row: close up the width instead
+    const size = across ? 'width' : 'height';
+    const anims = [el.animate([
+      { opacity: 1, transform: 'none', [size]: `${across ? r.width : r.height}px` },
+      { opacity: 0, transform: 'scale(.96)', [size]: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px' },
+    ], opts)];
+    const gap = el.matches('.group') && [el.previousElementSibling, el.nextElementSibling].find((x) => x?.matches('.gap-slot'));
+    if (gap) anims.push(gap.animate([{ height: '14px' }, { height: '0px' }], opts));
+    return Promise.all(anims.map((a) => a.finished));
+  })).catch(() => {});
 }
 
 // Re-rendering replaces the nodes under the mouse, and the browser only re-applies :hover after the
@@ -393,6 +413,9 @@ function renderBoard() {
   // keep the selection to groups still on this board
   for (const id of selected) if (!cat.groups.some((g) => g.id === id)) selected.delete(id);
   document.body.classList.toggle('select-mode', selected.size > 0);
+  for (const id of pickedItems) if (!board.querySelector(`.item[data-id="${CSS.escape(id)}"]`)) pickedItems.delete(id);
+  if (!pickedItems.size) pickedGroup = null;
+  document.body.classList.toggle('item-select', pickedItems.size > 0);
   typesetMath(board);
 }
 
@@ -507,10 +530,10 @@ function renderItems(items, parentId, depth) {
 }
 
 function renderLink(l) {
-  return h('li', { class: 'item link', draggable: 'true', dataset: { id: l.id, type: 'link' } },
+  return h('li', { class: 'item link' + (pickedItems.has(l.id) ? ' picked' : ''), draggable: 'true', dataset: { id: l.id, type: 'link' } },
     h('div', {
       class: 'link-row', title: [l.name || l.url, l.url, l.description].filter(Boolean).join('\n'),
-      onclick: (e) => openLink(l, e),
+      onclick: (e) => { if (!itemClick(e, l)) openLink(l, e); },
       onauxclick: (e) => { if (e.button === 1) { e.preventDefault(); openLink(l, { ctrlKey: true }); } },
       oncontextmenu: (e) => nodeMenu(e, l),
     },
@@ -525,11 +548,11 @@ function renderLink(l) {
 // One compact row (folders sit among links): chevron, symbol, name, count; the action buttons
 // appear on hover and take no space otherwise.
 function renderFolder(f, depth) {
-  return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : ''), dataset: { id: f.id, type: 'folder' } },
+  return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : '') + (pickedItems.has(f.id) ? ' picked' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
       class: 'folder-head', draggable: 'true',
       // click toggles; editing lives in the buttons/menu so rapid clicks never open the editor
-      onclick: () => toggleCollapse(f),
+      onclick: (e) => { if (!itemClick(e, f)) toggleCollapse(f); },
       ondblclick: (e) => e.stopPropagation(),
       oncontextmenu: (e) => nodeMenu(e, f),
     },
@@ -760,7 +783,36 @@ async function openAll(node, newWindow = false) {
   run(B.call('openUrls', { urls, newWindow }));
 }
 
-const toggleCollapse = (node) => apply({ op: 'patch', id: node.id, fields: { collapsed: !node.collapsed } });
+// Collapse / expand a group or folder with its contents closing / opening smoothly.
+let expanding = null; // id whose contents should open up on the next render
+const contentsOf = (id) => {
+  const el = document.querySelector(`#board [data-id="${CSS.escape(id)}"]`);
+  return el && (el.matches('.group') ? el.querySelector(':scope > .group-body') : el.querySelector(':scope > .items'));
+};
+async function toggleCollapse(node) {
+  if (!node.collapsed) {
+    const body = contentsOf(node.id);
+    if (body) {
+      body.style.overflow = 'hidden';
+      body.style.minHeight = '0'; // (nested lists keep a small min-height for dropping)
+      await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
+        { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+    }
+  } else expanding = node.id;
+  apply({ op: 'patch', id: node.id, fields: { collapsed: !node.collapsed } });
+}
+// (called at the end of animateLayout)
+function openExpanded() {
+  if (!expanding) return;
+  const body = contentsOf(expanding);
+  expanding = null;
+  if (!body) return;
+  const h = body.getBoundingClientRect().height;
+  body.style.overflow = 'hidden';
+  body.style.minHeight = '0';
+  body.animate([{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }], { duration: 320, easing: SPRING })
+    .finished.catch(() => {}).then(() => { body.style.overflow = ''; body.style.minHeight = ''; });
+}
 
 function startNoteEdit(id) {
   editingNoteId = id;
@@ -1110,6 +1162,8 @@ function hideMenu() {
 }
 
 function nodeMenu(e, node) {
+  if (pickedItems.size > 1 && pickedItems.has(node.id)) return showMenu(e, itemsMenu());
+  if (selected.size > 1 && selected.has(node.id)) return showMenu(e, groupsMenu());
   const n = T.countLinks(node);
   const open = n ? [{ icon: 'open', label: `Open all (${n})`, key: 'O', fn: () => openAll(node) },
     { icon: 'window', label: 'Open all in new window', key: 'W', fn: () => openAll(node, true) }] : [];
@@ -1166,6 +1220,7 @@ function paintSelection() {
   document.body.classList.toggle('select-mode', selected.size > 0);
 }
 function toggleSelected(id) {
+  if (pickedItems.size) clearItems();
   if (!selected.delete(id)) selected.add(id);
   paintSelection();
 }
@@ -1207,7 +1262,7 @@ $('#board').addEventListener('pointerdown', (e) => {
     removeEventListener('pointerup', onUp);
     box.remove();
     document.body.classList.remove('selecting');
-    if (!moved && !base.size) clearSelection(); // a plain click on empty space deselects
+    if (!moved && !base.size) { clearSelection(); clearItems(); } // a plain click on empty space deselects
     // a box selection must not also count as a click on what it started on (e.g. New group)
     if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
   };
@@ -1231,6 +1286,125 @@ async function deleteSelected() {
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
     toast(`Deleted ${label}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
   }
+}
+
+/* ================= item selection ================= */
+
+// Links and folders selected inside one group: Shift-click toggles one; Shift-drag (or any drag on
+// empty space in that group while something is picked) draws a box. The group of the first pick
+// is the only one that can take part until the selection is cleared (Esc, or a click elsewhere).
+const pickedItems = new Set();
+let pickedGroup = null;
+
+const groupOf = (id) => T.locate(state, id)?.ancestors.find((a) => a.type === 'group')?.id ?? null;
+
+function paintItems() {
+  for (const el of document.querySelectorAll('#board .item')) el.classList.toggle('picked', pickedItems.has(el.dataset.id));
+  document.body.classList.toggle('item-select', pickedItems.size > 0);
+}
+function clearItems() {
+  pickedItems.clear();
+  pickedGroup = null;
+  paintItems();
+}
+function toggleItem(id) {
+  const gid = groupOf(id);
+  if (pickedGroup && gid !== pickedGroup) return; // outside the group of the first pick
+  if (selected.size) clearSelection();
+  pickedGroup = gid;
+  if (!pickedItems.delete(id)) pickedItems.add(id);
+  if (!pickedItems.size) pickedGroup = null;
+  paintItems();
+}
+
+// Click on a link / folder: returns true when it was a selection click (so it must not open / toggle).
+function itemClick(e, node) {
+  if (e.shiftKey || (pickedItems.size && groupOf(node.id) === pickedGroup)) { toggleItem(node.id); return true; }
+  if (pickedItems.size) clearItems();
+  return false;
+}
+
+// Box selection inside the group of the selection.
+$('#board').addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  const body = e.target.closest('.group-body');
+  if (!body || e.target.closest('button, input, textarea, a, .note')) return;
+  const gid = body.closest('.group').dataset.id;
+  const active = pickedItems.size && pickedGroup === gid;
+  if (!e.shiftKey && !(active && !e.target.closest('.item'))) return;
+  if (pickedGroup && pickedGroup !== gid) return;
+  e.preventDefault(); // no native drag of the item under the pointer
+  const base = new Set(pickedItems);
+  const x0 = e.clientX, y0 = e.clientY;
+  const bound = body.getBoundingClientRect();
+  const box = h('div', { id: 'marquee' });
+  let moved = false;
+  const onMove = (ev) => {
+    if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+    if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const x1 = clamp(ev.clientX, bound.left, bound.right), y1 = clamp(ev.clientY, bound.top, bound.bottom);
+    const r = { left: Math.min(x0, x1), top: Math.min(y0, y1), right: Math.max(x0, x1), bottom: Math.max(y0, y1) };
+    Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
+    pickedItems.clear();
+    base.forEach((id) => pickedItems.add(id));
+    for (const row of body.querySelectorAll('.link-row, .folder-head')) {
+      const c = row.getBoundingClientRect();
+      if (c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top) pickedItems.add(row.closest('.item').dataset.id);
+    }
+    pickedGroup = pickedItems.size ? gid : null;
+    if (selected.size) clearSelection();
+    paintItems();
+  };
+  const onUp = () => {
+    removeEventListener('pointermove', onMove);
+    removeEventListener('pointerup', onUp);
+    box.remove();
+    document.body.classList.remove('selecting');
+    if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+  };
+  addEventListener('pointermove', onMove);
+  addEventListener('pointerup', onUp);
+});
+
+const pickedNodes = () => [...pickedItems].map((id) => T.locate(state, id)?.node).filter(Boolean);
+
+async function deleteItems() {
+  const nodes = pickedNodes();
+  clearItems();
+  if (!nodes.length) return;
+  const snapshot = structuredClone(state);
+  await animateOut(nodes.map((n) => n.id));
+  if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
+    toast(`Deleted ${plural(nodes.length, 'item')}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+  }
+}
+
+function itemsMenu() {
+  const nodes = pickedNodes();
+  const urls = [...new Set(nodes.flatMap((n) => T.collectLinks(n).map((l) => l.url)))];
+  return [
+    urls.length && { icon: 'open', label: `Open ${plural(urls.length, 'link')}`, key: 'O', fn: () => run(B.call('openUrls', { urls })) },
+    urls.length && { icon: 'window', label: 'Open in new window', key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
+    urls.length && { icon: 'copy', label: 'Copy URLs', key: 'C', fn: () => navigator.clipboard.writeText(urls.join('\n')).then(() => toast(`Copied ${plural(urls.length, 'URL')}`)) },
+    { icon: 'close', label: 'Clear selection', key: 'X', fn: clearItems },
+    '-',
+    { icon: 'trash', label: `Delete ${plural(nodes.length, 'item')}`, key: 'D', danger: true, fn: deleteItems },
+  ];
+}
+
+function groupsMenu() {
+  const groups = [...selected].map((id) => T.locate(state, id)?.node).filter(Boolean);
+  const urls = [...new Set(groups.flatMap((g) => T.collectLinks(g).map((l) => l.url)))];
+  return [
+    urls.length && { icon: 'open', label: `Open ${plural(urls.length, 'link')}`, key: 'O', fn: () => run(B.call('openUrls', { urls })) },
+    urls.length && { icon: 'window', label: 'Open in new window', key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
+    { icon: 'chevron', label: 'Collapse', key: 'C', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: true } }))) },
+    { icon: 'chevron', label: 'Expand', key: 'E', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: false } }))) },
+    { icon: 'close', label: 'Clear selection', key: 'X', fn: clearSelection },
+    '-',
+    { icon: 'trash', label: `Delete ${plural(groups.length, 'group')}`, key: 'D', danger: true, fn: deleteSelected },
+  ];
 }
 
 /* ================= drag & drop ================= */
@@ -2047,6 +2221,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideMenu();
   const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
   const dialogOpen = !!document.querySelector('dialog[open]');
+  if (!typing && !dialogOpen && pickedItems.size) {
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteItems(); return; }
+    if (e.key === 'Escape') { clearItems(); return; }
+  }
   if (!typing && !dialogOpen && selected.size) {
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
     if (e.key === 'Escape') { clearSelection(); return; }
