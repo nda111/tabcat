@@ -647,15 +647,9 @@ async function renderTabs() {
   });
   $('#tab-stats').replaceChildren(...chunks([plural(wins.length, 'window'), plural(all.length, 'tab'),
     sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean)));
-  const actions = [...document.querySelectorAll('.panel-actions .btn:not([hidden])')];
-  const actionRects = new Map(actions.map((el) => [el, el.getBoundingClientRect()]));
-  const wasHidden = { suspend: $('#btn-suspend').hidden, dedupe: $('#btn-dedupe').hidden };
-  $('#btn-suspend').hidden = !suspendable;
-  $('#btn-dedupe').hidden = !dupes;
-  flipFrom(actionRects); // buttons that stay slide to their new spots; new ones pop in
-  for (const [key, el] of [['suspend', $('#btn-suspend')], ['dedupe', $('#btn-dedupe')]]) {
-    if (wasHidden[key] && !el.hidden) el.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING });
-  }
+  // always shown (so the row never reshuffles); greyed out when there is nothing to do
+  $('#btn-suspend').disabled = !suspendable;
+  $('#btn-dedupe').disabled = !dupes;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -682,6 +676,21 @@ async function closeWindow(w, name) {
   }
   run(B.call('closeWindow', { windowId: w.id }));
 }
+
+// Labelled action buttons, or icons only as soon as the labelled row would not fit (measured on an
+// invisible copy, so the label slide animation never confuses the check).
+function fitActions() {
+  const row = $('.panel-actions');
+  const probe = row.cloneNode(true);
+  probe.classList.remove('icons-only');
+  Object.assign(probe.style, { position: 'absolute', visibility: 'hidden', left: '0', top: '0', width: 'max-content' });
+  probe.querySelectorAll('.label').forEach((l) => { l.style.transition = 'none'; });
+  row.parentElement.append(probe);
+  const fits = probe.getBoundingClientRect().width <= row.getBoundingClientRect().width + 0.5;
+  probe.remove();
+  row.classList.toggle('icons-only', !fits);
+}
+new ResizeObserver(fitActions).observe($('.panel-actions'));
 
 let tabsTimer;
 function scheduleTabs() { clearTimeout(tabsTimer); tabsTimer = setTimeout(renderTabs, 80); }
@@ -998,6 +1007,7 @@ function showMenu(e, entries) {
   e.preventDefault();
   e.stopPropagation();
   const menu = $('#menu');
+  if (menu.dataset.closing != null) { delete menu.dataset.closing; menu.getAnimations().forEach((a) => a.cancel()); }
   menu.replaceChildren(...entries.filter(Boolean).map((it) => (it === '-' ? h('hr') :
     h('button', { class: it.danger ? 'danger' : '', onclick: () => { hideMenu(); it.fn(); } }, it.icon && icon(it.icon), it.label))));
   menu.hidden = false;
@@ -1005,7 +1015,20 @@ function showMenu(e, entries) {
   menu.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + 'px';
   menu.style.top = Math.min(e.clientY, innerHeight - r.height - 8) + 'px';
 }
-function hideMenu() { $('#menu').hidden = true; }
+// Fade the menu out, then hide it (a menu reopened meanwhile cancels the fade).
+function hideMenu() {
+  const menu = $('#menu');
+  if (menu.hidden || menu.dataset.closing != null) return;
+  menu.dataset.closing = '';
+  menu.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }],
+    { duration: 130, easing: 'ease-in', fill: 'forwards' })
+    .finished.then((a) => {
+      if (menu.dataset.closing == null) return;
+      delete menu.dataset.closing;
+      menu.hidden = true;
+      a.cancel();
+    }, () => {});
+}
 
 function nodeMenu(e, node) {
   const n = T.countLinks(node);

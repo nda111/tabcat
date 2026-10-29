@@ -30,6 +30,11 @@
 [hidden] { display: none !important; }
 /* restored hover (see restoreHover in app.js) must apply instantly, not fade in */
 .hover, .hover * { transition: none !important; }
+/* hover tints fade in and out (rules that set their own transition later override this) */
+:is(.btn, .icon-btn, .side-btn, .panel-toggle, .ws-item, .ws-add, .cat-tab, .link-row, .folder-head, .tab-row, .result,
+    .ctx-menu button, .resizer, .add-group, .emoji-grid button, .pick-row, .picker-item, .search-btn) {
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease, opacity .16s ease;
+}
 html, body { height: 100%; margin: 0; }
 body {
   display: flex; background: var(--bg); color: var(--text);
@@ -288,7 +293,10 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
   display: inline-block; max-width: 140px; overflow: hidden; white-space: nowrap;
   transition: max-width .3s var(--spring-soft), opacity .2s ease, margin .3s var(--spring-soft);
 }
-@container (max-width: 250px) { .panel-actions .label { max-width: 0; opacity: 0; margin-left: -5px; } }
+/* icons only as soon as the labelled buttons would not fit in one row (set by fitActions()) */
+.panel-actions.icons-only .label { max-width: 0; opacity: 0; margin-left: -5px; }
+.panel-actions .btn:disabled { opacity: .45; cursor: default; }
+.panel-actions .btn:disabled:hover { background: var(--panel); }
 .side-btn .sym { display: inline-flex; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
@@ -538,10 +546,10 @@ body.panel-anim:not(.tabs-collapsed) :is(.panel-title, .win-head .grow, .tab-row
   .win-head .grow, .win-head .icon-btn, .tab-row .name, .tab-row .icon-btn, .panel-actions .label) { opacity: 0; transition: opacity .14s ease-out; }
 .side-panel.fading { white-space: nowrap; }
 
-/* the open-tabs panel never wraps text: titles, stats and window names stay on one line and end in
-   "…" when narrow, so rows (and favicons) keep their places while the panel resizes or toggles */
-#tabs-panel :is(.panel-title, .panel-title strong, #tab-stats, .win-head .grow) {
+/* the open-tabs header never wraps: title and stats stay on one line and end in "…" when narrow
+   (window names below still wrap by chunk) */
+#tabs-panel :is(.panel-title, .panel-title strong, #tab-stats) {
   display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-#tabs-panel .chunk { display: inline; }
+#tabs-panel .panel-head .chunk { display: inline; }
 #tabs-panel .panel-actions { flex-wrap: nowrap; }
