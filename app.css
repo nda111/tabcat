@@ -142,15 +142,16 @@ body.resizing { cursor: col-resize; user-select: none; }
 .group-line { display: flex; align-items: center; gap: 6px; min-height: 22px; }
 .group-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-line .count { color: var(--muted); font-size: 11px; }
-.group-line .head-actions { margin-left: auto; }
+.group-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
 .collapse-btn { color: var(--muted); }
 .collapse-btn .ico { transition: transform .12s; }
 .group.collapsed .collapse-btn .ico { transform: rotate(-90deg); }
 .group-tools { display: flex; gap: 2px; margin-left: -5px; }
 .group-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
 .group-tools .icon-btn:hover, .group-tools .icon-btn.hover { color: var(--accent); }
-.head-actions { display: flex; opacity: 0; transition: opacity .1s; }
-.group-head:hover .head-actions, .group-head.hover .head-actions, .folder-head:hover .head-actions, .folder-head.hover .head-actions { opacity: 1; }
+/* hover-only actions take no space until shown, so names truncate as late as possible */
+.head-actions { display: none; }
+.group-head:hover .head-actions, .group-head.hover .head-actions, .folder-head:hover .head-actions, .folder-head.hover .head-actions { display: flex; }
 .group.collapsed .group-body { display: none; }
 
 .note { padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); font-size: 12.5px; cursor: text; }
@@ -184,8 +185,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav-pad); border-radius: 4px; }
 .link-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-row .desc { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
-.link-row .head-actions { opacity: 0; }
-.link-row:hover .head-actions, .link-row.hover .head-actions { opacity: 1; }
+.link-row:hover .head-actions, .link-row.hover .head-actions { display: flex; }
 .folder-head { user-select: none; }
 .folder-head .twisty { width: 12px; color: var(--muted); font-size: 10px; transition: transform .1s; }
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }

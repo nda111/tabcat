@@ -286,7 +286,7 @@ function renderItems(items, parentId) {
 function renderLink(l) {
   return h('li', { class: 'item link', draggable: 'true', dataset: { id: l.id, type: 'link' } },
     h('div', {
-      class: 'link-row', title: l.url + (l.description ? '\n\n' + l.description : ''),
+      class: 'link-row', title: [l.name || l.url, l.url, l.description].filter(Boolean).join('\n'),
       onclick: (e) => openLink(l, e),
       onauxclick: (e) => { if (e.button === 1) { e.preventDefault(); openLink(l, { ctrlKey: true }); } },
       oncontextmenu: (e) => nodeMenu(e, l),
@@ -1213,7 +1213,8 @@ let tipHiddenAt = 0;
 
 function hideTip() {
   clearTimeout(tipTimer);
-  if (tipEl?.dataset.tip != null) { tipEl.title = tipEl.dataset.tip; delete tipEl.dataset.tip; }
+  if (tipEl?.dataset.trunc) { delete tipEl.dataset.trunc; delete tipEl.dataset.tip; } // a borrowed full-name tip
+  else if (tipEl?.dataset.tip != null) { tipEl.title = tipEl.dataset.tip; delete tipEl.dataset.tip; }
   if (!tip.hidden) tipHiddenAt = Date.now();
   tipEl = null;
   tip.hidden = true;
@@ -1248,7 +1249,15 @@ function showTip(el) {
   });
 }
 
+// Names without a tooltip of their own get one with the full name, but only while truncated.
+const TRUNC_NAMES = '.group-line .name, .folder-head .name';
+
 document.addEventListener('mouseover', (e) => {
+  const nm = e.target instanceof Element && e.target.closest(TRUNC_NAMES);
+  if (nm && nm !== tipEl && !nm.title && nm.scrollWidth > nm.clientWidth) {
+    nm.title = nm.textContent;
+    nm.dataset.trunc = '1';
+  }
   const el = e.target instanceof Element ? e.target.closest('[title], [data-tip]') : null;
   if (el === tipEl) return;
   hideTip();
