@@ -197,12 +197,11 @@ function renderSidebar() {
 function renderHead() {
   const ws = currentWs();
   const head = $('#ws-head');
-  if (!ws) { head.replaceChildren(h('h1', {}, 'No workspace')); head.onclick = null; return; }
+  if (!ws) { head.replaceChildren(h('h1', {}, 'No workspace')); return; }
+  // only the name / symbol edit the workspace; the space beside it is where search opens
   head.replaceChildren(
-    h('h1', {}, ws.symbol && symbolEl(ws.symbol), ws.name),
+    h('h1', { title: 'Edit workspace', onclick: () => editNode(ws) }, ws.symbol && symbolEl(ws.symbol), ws.name),
     h('span', { class: 'desc' }, ws.description || ''));
-  head.title = 'Click to edit workspace';
-  head.onclick = () => editNode(ws);
   head.oncontextmenu = (e) => nodeMenu(e, ws);
 }
 
@@ -219,6 +218,7 @@ function renderCats() {
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
     btn(plus(), 'New category', () => addCategory(ws)),
+    cur && h('span', { class: 'bar-split' }),
     cur && columnControl());
 }
 
@@ -420,28 +420,38 @@ function renderFolder(f, depth) {
 
 /* ---------- search ---------- */
 
-/* ---------- search palette ---------- */
+/* ---------- search ---------- */
 
-// Search opens in a centered palette over the board: results list links first, then workspaces,
-// categories, groups and folders; arrows move, Enter opens / reveals.
+// The magnifier button widens into a search field; results drop down beneath it. Arrows move,
+// Enter opens a link / reveals a group, Esc or a click elsewhere closes.
+const searchBox = $('#search-box');
 const search = $('#search');
 let hits = [];
 let hit = -1;
 
-function openPalette() {
-  const dlg = $('#palette');
-  if (!dlg.open) dlg.showModal();
+function openSearch() {
+  searchBox.classList.add('open');
+  search.tabIndex = 0;
+  search.focus();
   search.select();
-  renderPalette();
+  renderSearchResults();
 }
-const closePalette = () => $('#palette').open && $('#palette').close();
+function closeSearch() {
+  if (!searchBox.classList.contains('open')) return;
+  searchBox.classList.remove('open');
+  search.tabIndex = -1;
+  search.value = '';
+  search.blur();
+  $('#search-results').hidden = true;
+}
 
-function renderPalette() {
+function renderSearchResults() {
   const q = search.value.trim().toLowerCase();
-  const out = $('#palette-results');
+  const out = $('#search-results');
   hits = [];
   hit = -1;
-  if (!q || !state) { out.replaceChildren(h('p', { class: 'palette-empty muted' }, 'Type to search everything you saved.')); return; }
+  out.hidden = !q;
+  if (!q || !state) return;
   const links = [], containers = [];
   T.walk(state.workspaces, (n, anc) => {
     const path = anc.map((a) => a.name).join(' › ');
@@ -451,10 +461,10 @@ function renderPalette() {
       containers.push({ n, anc, path });
     }
   });
-  const row = (item, lead, sub, run) => {
+  const row = (item, lead, sub, act) => {
     const el = h('div', {
       class: 'result',
-      onclick: (e) => { closePalette(); run(e); },
+      onclick: (e) => { closeSearch(); act(e); },
       onmousemove: () => setHit(hits.indexOf(el), false),
     }, lead, h('span', { class: 'result-text' },
       h('span', { class: 'name' }, highlight(item.n.name || item.n.url, q)),
@@ -469,7 +479,8 @@ function renderPalette() {
       [TYPE_LABEL[it.n.type], it.path && ' · ' + it.path], () => reveal(it.n, it.anc)));
   const section = (title, rows) => (rows.length ? [h('h4', {}, title), ...rows] : []);
   const body = [...section(`Links · ${links.length}`, linkRows), ...section(`Workspaces, groups & folders · ${containers.length}`, contRows)];
-  out.replaceChildren(...(body.length ? body : [h('p', { class: 'palette-empty muted' }, 'No results.')]));
+  out.replaceChildren(...(body.length ? body : [h('p', { class: 'search-empty muted' }, 'No results.')]),
+    h('div', { class: 'search-foot muted small' }, '↑↓ move · Enter open · Ctrl+Enter background tab · Esc close'));
   setHit(0);
 }
 
@@ -480,16 +491,18 @@ function setHit(i, scroll = true) {
   if (scroll) hits[hit]?.scrollIntoView({ block: 'nearest' });
 }
 
-search.addEventListener('input', renderPalette);
+search.addEventListener('input', renderSearchResults);
 search.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') { e.preventDefault(); setHit(hit + 1); }
   else if (e.key === 'ArrowUp') { e.preventDefault(); setHit(hit - 1); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
   else if (e.key === 'Enter') {
     e.preventDefault();
     hits[hit]?.dispatchEvent(new MouseEvent('click', { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey }));
   }
 });
-$('#btn-search').addEventListener('click', openPalette);
+$('#btn-search').addEventListener('click', () => (searchBox.classList.contains('open') ? search.focus() : openSearch()));
+document.addEventListener('pointerdown', (e) => { if (!searchBox.contains(e.target)) closeSearch(); });
 
 function reveal(node, anc) {
   const ws = node.type === 'workspace' ? node : anc[0];
@@ -1736,7 +1749,7 @@ document.addEventListener('keydown', (e) => {
   if (!typing && !dialogOpen && e.key === '?') { e.preventDefault(); openGuide(); return; }
   if ((!typing && !dialogOpen && e.key === '/') || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
     e.preventDefault();
-    openPalette();
+    openSearch();
   }
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) hideMenu(); });
