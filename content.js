@@ -11,6 +11,7 @@
   const alive = () => { try { return !!chrome.runtime?.id; } catch { return false; } };
 
   let greeted = false;
+  let parked = false; // page is in the back/forward cache
   function hello() {
     greeted = true;
     toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: chrome.runtime.getManifest().version } });
@@ -26,7 +27,9 @@
     }
     port.onMessage.addListener(toPage);
     port.onDisconnect.addListener(() => {
+      void chrome.runtime.lastError; // read it so Chrome doesn't log "Unchecked runtime.lastError"
       port = null;
+      if (parked) return; // we closed it ourselves for the back/forward cache
       // the service worker may have been recycled; reconnect so push events keep flowing
       if (alive()) setTimeout(() => { if (!port && connect()) hello(); }, 200);
       else toPage({ event: 'disconnected' });
@@ -40,6 +43,20 @@
     if (!greeted) return; // page must say hello first
     if (!port && !connect()) { toPage({ reply: e.data.id, error: 'tabcat extension is not available (reload the page)' }); return; }
     port.postMessage({ id: e.data.id, cmd: e.data.cmd, args: e.data.args });
+  });
+
+  // A page in the back/forward cache may not hold a port (Chrome would close it with an error), so
+  // release it on the way in and reconnect on the way back; 'ready' makes the page refresh its data.
+  window.addEventListener('pagehide', (e) => {
+    if (!e.persisted || !port) return;
+    parked = true;
+    port.disconnect();
+    port = null;
+  });
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    parked = false;
+    if (greeted && !port && connect()) hello();
   });
 
   // Connect only once the page identifies itself as the dashboard (its 'hello'), so other pages
