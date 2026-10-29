@@ -52,8 +52,13 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
 
 // Emoji symbols show as text, letter/digit symbols as a badge.
 function setSym(el, s) {
-  el.textContent = s;
-  el.classList.toggle('sym-letter', S.isLetterSymbol(s));
+  const letter = S.isLetterSymbol(s);
+  el.classList.toggle('sym-letter', letter);
+  if (!letter) return void (el.textContent = s);
+  const glyph = document.createElement('span');
+  glyph.className = 'sym-glyph';
+  glyph.textContent = s;
+  el.replaceChildren(glyph);
 }
 
 // "Save to" picker: a button showing the chosen group or folder, opening a searchable list grouped

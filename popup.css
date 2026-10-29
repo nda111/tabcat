@@ -75,3 +75,4 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
   display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 5px;
   background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 12px; font-weight: 700;
 }
+.sym-glyph { display: block; text-box: trim-both cap alphabetic; }
