@@ -127,6 +127,21 @@ function render() {
   renderHead();
   renderCats();
   renderBoard();
+  restoreHover();
+}
+
+// Re-rendering replaces the nodes under the mouse, and the browser only re-applies :hover after the
+// mouse moves, so hover-only controls blink. Mirror the hover chain as a .hover class until then.
+let pointer = null;
+document.addEventListener('mousemove', (e) => {
+  pointer = [e.clientX, e.clientY];
+  for (const el of document.querySelectorAll('.hover')) el.classList.remove('hover');
+}, { passive: true });
+document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer = null; });
+
+function restoreHover() {
+  if (!pointer) return;
+  for (let el = document.elementFromPoint(...pointer); el; el = el.parentElement) el.classList.add('hover');
 }
 
 function renderSidebar() {
@@ -354,6 +369,7 @@ async function renderTabs() {
   });
   $('#tab-stats').textContent = `${total} tabs · ${sleeping} suspended · ${wins.length} window${wins.length === 1 ? '' : 's'}`;
   $('#windows').replaceChildren(...blocks);
+  restoreHover();
 }
 
 let tabsTimer;
