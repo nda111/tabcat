@@ -51,7 +51,12 @@ function h(tag, props = {}, ...kids) {
 }
 
 function btn(label, title, fn) {
-  return h('button', { class: 'icon-btn', title, type: 'button', onclick: (e) => { e.stopPropagation(); fn(e); } }, label);
+  // Rapid clicks must not reach a parent's double-click-to-edit handler.
+  return h('button', {
+    class: 'icon-btn', title, type: 'button',
+    onclick: (e) => { e.stopPropagation(); fn(e); },
+    ondblclick: (e) => e.stopPropagation(),
+  }, label);
 }
 
 function iconImg(url, icon) {
