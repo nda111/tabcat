@@ -97,10 +97,11 @@ body.resizing { cursor: col-resize; user-select: none; }
 #main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 #topbar { display: flex; align-items: center; gap: 12px; padding: 12px 18px 6px; }
 #ws-head { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; cursor: pointer; }
-#ws-head h1 { font-size: 20px; margin: 0; white-space: nowrap; }
+#ws-head h1 { font-size: 20px; margin: 0; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 #ws-head .desc { color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-wrap { flex: 0 1 320px; min-width: 140px; } /* gives way to the workspace title on narrow screens */
 .search-wrap input {
-  width: 320px; border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 6px 10px;
+  width: 100%; border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 6px 10px;
 }
 .search-wrap input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 
@@ -180,7 +181,9 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 /* ---------- items ---------- */
 .items { list-style: none; margin: 0; padding: 4px; min-height: 30px; }
-.items .items { padding: 0 0 0 16px; min-height: 6px; }
+.items .items { padding: 0 0 0 7px; margin-left: 7px; border-left: 1px solid var(--border); min-height: 6px; }
+/* nesting deeper than four levels stops indenting, so deep folders keep room for their names */
+.items .items .items .items .items .items { padding-left: 0; margin-left: 0; border-left: 0; }
 .item { border-radius: 6px; }
 .link-row, .folder-head {
   display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: pointer; min-width: 0;
