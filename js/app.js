@@ -422,7 +422,7 @@ function renderFolder(f, depth) {
 
 /* ---------- search ---------- */
 
-// "Search" in the sidebar turns into a field; results drop down over the board. Arrows move,
+// A search field floating at the bottom of the board; results open above it. Arrows move,
 // Enter opens a link / reveals a group, Esc or a click elsewhere closes.
 const searchBox = $('#search-box');
 const search = $('#search');
@@ -431,7 +431,6 @@ let hit = -1;
 
 function openSearch() {
   searchBox.classList.add('open');
-  search.tabIndex = 0;
   search.focus();
   search.select();
   renderSearchResults();
@@ -439,7 +438,6 @@ function openSearch() {
 function closeSearch() {
   if (!searchBox.classList.contains('open')) return;
   searchBox.classList.remove('open');
-  search.tabIndex = -1;
   search.value = '';
   search.blur();
   $('#search-results').hidden = true;
@@ -501,7 +499,7 @@ search.addEventListener('keydown', (e) => {
     hits[hit]?.dispatchEvent(new MouseEvent('click', { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey }));
   }
 });
-$('#btn-search').addEventListener('click', openSearch);
+search.addEventListener('focus', () => { if (!searchBox.classList.contains('open')) openSearch(); });
 document.addEventListener('pointerdown', (e) => { if (!searchBox.contains(e.target)) closeSearch(); });
 
 function reveal(node, anc) {
