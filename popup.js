@@ -7,7 +7,7 @@ const $ = (sel) => document.querySelector(sel);
 function closePopup(delay = 0) {
   setTimeout(() => {
     document.body.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.55)' }],
-      { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => window.close());
+      { duration: 130, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => window.close());
   }, delay);
 }
 

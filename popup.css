@@ -83,10 +83,10 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 
 /* motion: the popup grows out of the toolbar button (top right) and shrinks back into it on close */
 :root { --spring-soft: cubic-bezier(.34, 1.25, .64, 1); }
-body.popup { transform-origin: top right; animation: popup-grow .34s var(--spring-soft) both; }
+body.popup { transform-origin: top right; animation: popup-grow .26s var(--spring-soft) both; }
 @keyframes popup-grow { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: none; } }
-.picker-panel:not([hidden]) { animation: popup-in .24s var(--spring-soft); transform-origin: top center; }
-#msg:not([hidden]) { animation: popup-in .24s var(--spring-soft); }
+.picker-panel:not([hidden]) { animation: popup-in .18s var(--spring-soft); transform-origin: top center; }
+#msg:not([hidden]) { animation: popup-in .18s var(--spring-soft); }
 .btn, .picker-btn, .picker-item { transition: background .12s, border-color .12s, transform .12s; }
 .btn:active, .picker-btn:active { transform: scale(.97); }
 .chev { transition: transform .25s var(--spring-soft); }
