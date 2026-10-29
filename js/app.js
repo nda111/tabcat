@@ -1366,7 +1366,7 @@ function smartBox(e) {
       invert(selected, baseGroups, []);
       invert(pickedItems, baseItems, []); pickedGroup = baseItemGroup;
     }
-    box.classList.toggle('items', mode === 'items');
+    box.classList.toggle('picking-items', mode === 'items');
     paintSelection();
     paintItems();
   };
