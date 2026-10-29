@@ -172,7 +172,7 @@ function render() {
   const catChanged = before.board && before.board !== currentCat()?.id;
   renderSidebar();
   renderHead();
-  crossfade(wsChanged && $('#cat-bar'), renderCats); // category buttons: old fade out as new fade in
+  if (wsChanged) switchCats(); else renderCats();
   if (catChanged || boardSwitch) switchBoard(); // groups: old ones leave, then the new ones arrive
   else renderBoard();
   animateLayout(before);
@@ -184,6 +184,33 @@ function render() {
 // iOS-like springs: a little overshoot, then settle.
 const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
 const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
+
+// Switching workspace, the category bar: the column stepper stays put, the old category buttons
+// fade out where they were, the new ones settle in from just above, and "+" glides to its new place.
+function switchCats() {
+  const bar = $('#cat-bar');
+  const oldTabs = [...bar.querySelectorAll('.cat-tab')];
+  const ghosts = oldTabs.map((tab) => {
+    const r = tab.getBoundingClientRect();
+    const g = tab.cloneNode(true);
+    g.removeAttribute('data-id');
+    Object.assign(g.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, margin: '0', pointerEvents: 'none', zIndex: '15' });
+    return g;
+  });
+  const addBefore = bar.querySelector(':scope > .cat-add')?.getBoundingClientRect();
+  renderCats();
+  document.body.append(...ghosts);
+  ghosts.forEach((g) => g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out', fill: 'forwards' })
+    .finished.catch(() => {}).then(() => g.remove()));
+  [...bar.querySelectorAll('.cat-tab')].forEach((tab, i) => tab.animate(
+    [{ opacity: 0, transform: 'translateY(-10px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)', delay: 60 + Math.min(i, 8) * 30, fill: 'backwards' }));
+  const add = bar.querySelector(':scope > .cat-add');
+  if (add && addBefore) {
+    const dx = addBefore.left - add.getBoundingClientRect().left;
+    if (Math.abs(dx) > 1) add.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 380, easing: SPRING });
+  }
+}
 
 // Switching category / workspace: the current groups leave as if deleted, then the new
 // category's groups arrive as if added (a little staggered). Renders during the switch just wait
@@ -203,27 +230,6 @@ function switchBoard() {
   }, old.length ? 150 : 0);
 }
 
-// Re-render `el` with `draw` while a snapshot of its old content fades out on top of it and the
-// new content fades in (both at once). With no element, just draws.
-function crossfade(el, draw) {
-  if (!el) return draw();
-  const r = el.getBoundingClientRect();
-  const ghost = el.cloneNode(true);
-  ghost.removeAttribute('id');
-  ghost.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
-  Object.assign(ghost.style, {
-    position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`,
-    margin: '0', pointerEvents: 'none', zIndex: '15', background: getComputedStyle(el).backgroundColor,
-  });
-  document.body.append(ghost);
-  ghost.scrollTop = el.scrollTop;
-  ghost.scrollLeft = el.scrollLeft;
-  draw();
-  const opts = { duration: 220, easing: 'ease' };
-  el.animate([{ opacity: 0 }, { opacity: 1 }], opts);
-  ghost.animate([{ opacity: 1 }, { opacity: 0 }], { ...opts, fill: 'forwards' }).finished.catch(() => {}).then(() => ghost.remove());
-}
-
 // Where every movable element was before a re-render (FLIP: First).
 function snapshotLayout() {
   const rects = new Map();
@@ -238,7 +244,7 @@ function snapshotLayout() {
 // (FLIP: Last, Invert, Play). Nested elements move relative to their moving parent.
 function animateLayout(before) {
   if (!before) return;
-  const wsChanged = before.ws !== currentWs()?.id; // (crossfade() handles the switch itself)
+  const wsChanged = before.ws !== currentWs()?.id; // (switchCats() handles the category bar itself)
   try { animateMoves(before, wsChanged); } finally { openExpanded(); }
 }
 
@@ -426,7 +432,7 @@ function renderCats() {
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
-    btn(plus(), 'New category', () => addCategory(ws)));
+    Object.assign(btn(plus(), 'New category', () => addCategory(ws)), { className: 'icon-btn cat-add' }));
   // the column stepper sits at the bar's start, so it never moves as tabs come and go
   if (cur) bar.prepend(columnControl(), h('span', { class: 'bar-split' }));
 }
