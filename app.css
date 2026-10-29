@@ -120,7 +120,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 #board { flex: 1; overflow: auto; padding: 16px 18px 80px; }
 /* user-chosen columns: each column stacks its groups, so a card sits right under the one above */
 .columns { display: flex; align-items: stretch; gap: 14px; min-height: 100%; }
-.col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.col { flex: 1 1 0; min-width: 240px; display: flex; flex-direction: column; gap: 14px; } /* narrow window: scroll sideways */
 .col-ctl { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--muted); padding-left: 12px; }
 .col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); }
 .col-ctl .icon-btn:disabled { opacity: .35; cursor: default; }

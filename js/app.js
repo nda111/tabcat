@@ -225,8 +225,7 @@ function columnControl() {
     icon('columns', 15),
     Object.assign(btn(icon('minus', 13), 'Fewer columns', () => set(n - 1)), { disabled: n <= 1 }),
     h('span', { class: 'col-n' }, n),
-    // more columns only while they still fit the board's width
-    Object.assign(btn(icon('plus', 13), 'More columns', () => set(n + 1)), { disabled: n >= Math.min(MAX_COLUMNS, fittingColumns()) }));
+    Object.assign(btn(icon('plus', 13), 'More columns', () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
 }
 
 function renderBoard() {
@@ -263,19 +262,9 @@ function renderBoard() {
 /* ---------- board columns ---------- */
 
 const MAX_COLUMNS = 7;
-const COL_MIN = 280; // narrowest useful group card
-const COL_GAP = 14;
 
-// How many columns of at least COL_MIN fit the board's width.
-function fittingColumns() {
-  const board = $('#board');
-  const style = getComputedStyle(board);
-  const width = board.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-  return Math.max(1, Math.floor((width + COL_GAP) / (COL_MIN + COL_GAP)));
-}
-
-// The category's column count, reduced when the board is too narrow to fit them.
-const visibleColumns = () => Math.min(boardColumns(), fittingColumns());
+// The board always shows the set number of columns; a narrow window scrolls sideways instead.
+const visibleColumns = () => boardColumns();
 
 // Stored column of a group (unplaced groups go round-robin by position).
 const columnOf = (cat, g, i) => Math.min(g.column ?? i % boardColumns(), MAX_COLUMNS - 1);
@@ -283,25 +272,15 @@ const columnOf = (cat, g, i) => Math.min(g.column ?? i % boardColumns(), MAX_COL
 // Visible column i holds stored column i; dropping into it stores i.
 const storedColumn = (cat, n, i) => i;
 
-// Groups per visible column, keeping the category's order within each column. Columns beyond the
-// visible ones (fewer columns set, or a narrow window) are stacked, one after another, under the
-// last visible column, so every column's groups stay together and come back when there is room.
+// Groups per column, keeping the category's order within each column. Groups placed in columns
+// beyond the current count (it was lowered) stack, column by column, under the last one, and
+// return to their column when the count goes back up.
 function layoutColumns(cat, n) {
   const all = Array.from({ length: MAX_COLUMNS }, () => []);
   cat.groups.forEach((g, i) => all[columnOf(cat, g, i)].push(g));
   return [...all.slice(0, n - 1), all.slice(n - 1).flat()];
 }
 
-// When the board's width changes how many columns fit: re-lay the board and refresh the stepper.
-let lastFit = 0;
-new ResizeObserver(() => {
-  const fit = fittingColumns();
-  if (fit === lastFit) return;
-  lastFit = fit;
-  if (!state || drag) return;
-  renderCats();
-  if (!query) renderBoard();
-}).observe($('#board'));
 
 function renderGroup(g) {
   const editing = editingNoteId === g.id;
@@ -1552,11 +1531,23 @@ async function refresh() {
   renderTabs();
 }
 
+// Oldest extension this dashboard works with (an older one silently drops newer fields).
+const MIN_EXTENSION = '0.2.0';
+const olderThan = (a, b) => {
+  const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
+  return false;
+};
+
 async function init() {
   hydrateIcons();
   applyPanels();
-  if (!(await B.connect())) return showNoExtension();
+  const ext = await B.connect();
+  if (!ext) return showNoExtension();
   $('#no-ext').hidden = true;
+  if (olderThan(ext.version, MIN_EXTENSION)) {
+    toast(`The tabcat extension (${ext.version}) is older than this dashboard needs (${MIN_EXTENSION}): reload or update it.`);
+  }
   await refresh();
 }
 
