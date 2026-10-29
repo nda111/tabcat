@@ -267,6 +267,9 @@ function renderBoard() {
           onclick: () => addGroup(cat, column),
         }, icon('plus', 28))));
   })));
+  // keep the selection to groups still on this board
+  for (const id of selected) if (!cat.groups.some((g) => g.id === id)) selected.delete(id);
+  document.body.classList.toggle('select-mode', selected.size > 0);
   typesetMath(board);
 }
 
@@ -325,12 +328,15 @@ function renderGroup(g) {
   return h('div', {
     class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : '') + (selected.has(g.id) ? ' selected' : ''),
     dataset: { id: g.id, type: 'group' },
+    // while groups are selected, a click anywhere on a card (de)selects it (its buttons and links are inert)
+    onclick: (e) => { if (selected.size && !e.target.closest('.group-head')) toggleSelected(g.id); },
   },
     h('div', {
       class: 'group-head', draggable: 'true',
       // empty header space toggles the group; the name and symbol edit it on double-click
       onclick: (e) => {
-        if (e.ctrlKey || e.metaKey) return void toggleSelected(g.id); // Ctrl/⌘-click: (de)select
+        // Ctrl/⌘/Shift-click, or any click while groups are selected: (de)select
+        if (e.ctrlKey || e.metaKey || e.shiftKey || selected.size) return void toggleSelected(g.id);
         if (!empty && !e.target.closest(HEAD_KEEP)) toggleCollapse(g);
       },
       ondblclick: (e) => { if (e.target.closest('.name, .node-sym')) editNode(g); },
@@ -878,13 +884,13 @@ const selected = new Set();
 
 function paintSelection() {
   for (const card of document.querySelectorAll('#board .group')) card.classList.toggle('selected', selected.has(card.dataset.id));
+  document.body.classList.toggle('select-mode', selected.size > 0);
 }
 function toggleSelected(id) {
   if (!selected.delete(id)) selected.add(id);
   paintSelection();
 }
 function clearSelection() {
-  if (!selected.size) return;
   selected.clear();
   paintSelection();
 }
@@ -893,7 +899,9 @@ function clearSelection() {
 $('#board').addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || query || !$('#board').dataset.parent) return;
   if (e.target.closest('.group, .add-group, .gap-slot, button, input, textarea, a')) return;
-  const base = e.ctrlKey || e.metaKey || e.shiftKey ? new Set(selected) : new Set();
+  // plain: select what the box covers; Ctrl/⌘: add it; Shift: invert it
+  const mode = e.shiftKey ? 'invert' : e.ctrlKey || e.metaKey ? 'add' : 'replace';
+  const base = mode === 'replace' ? new Set() : new Set(selected);
   const x0 = e.clientX, y0 = e.clientY;
   const box = h('div', { id: 'marquee' });
   let moved = false;
@@ -906,7 +914,10 @@ $('#board').addEventListener('pointerdown', (e) => {
     base.forEach((id) => selected.add(id));
     for (const card of document.querySelectorAll('#board .group')) {
       const c = card.getBoundingClientRect();
-      if (c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top) selected.add(card.dataset.id);
+      if (!(c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top)) continue;
+      const id = card.dataset.id;
+      if (mode === 'invert' && base.has(id)) selected.delete(id);
+      else selected.add(id);
     }
     paintSelection();
   };
@@ -1043,13 +1054,14 @@ function resolveGroupDrop(e, el, d) {
     const cat = T.locate(state, board.dataset.parent).node;
     const n = +board.dataset.cols;
     const column = storedColumn(cat, n, +col.dataset.col);
-    const cards = [...col.querySelectorAll(':scope > .group')].filter((c) => c.dataset.id !== d.id);
+    const moving = new Set(d.ids || [d.id]);
+    const cards = [...col.querySelectorAll(':scope > .group')].filter((c) => !moving.has(c.dataset.id));
     const card = el.closest('.group');
-    if (card && card.dataset.id === d.id) return null;
+    if (card && moving.has(card.dataset.id)) return null;
     if (card) {
-      // top / bottom edge: place before / after; the middle offers to merge the groups
+      // top / bottom edge: place before / after; the middle offers to merge (one group at a time)
       const r = card.getBoundingClientRect();
-      const edge = Math.min(36, r.height * 0.25);
+      const edge = d.ids ? r.height / 2 : Math.min(36, r.height * 0.25);
       if (e.clientY > r.top + edge && e.clientY < r.bottom - edge) return { action: 'merge', targetId: card.dataset.id, el: card };
       const before = e.clientY <= r.top + edge;
       // join the card's own column (differs from the visible one when narrow columns are stacked)
@@ -1084,11 +1096,29 @@ function resolveGroupDrop(e, el, d) {
 
 const groupAt = (cat, id) => { const i = cat.groups.findIndex((g) => g.id === id); return [cat.groups[i], i]; };
 
-// Moves group `id` into `column` of its category: before `beforeId`, after `afterId`, or to the end.
-function moveToColumn(id, t) {
+// Moves groups `ids` (in that order, stacked) into `column` of their category: before `beforeId`,
+// after `afterId`, or to the end of the column.
+function moveToColumn(ids, t) {
   const cat = T.locate(state, t.categoryId).node;
-  const index = columnIndex(cat, t.column, { beforeId: t.beforeId, afterId: t.afterId, skip: id });
-  return apply({ op: 'move', id, parentId: cat.id, index }, { op: 'patch', id, fields: { column: t.column } });
+  const order = cat.groups.map((g) => g.id); // simulated, to give each move op its index
+  const ops = [];
+  let prev = null;
+  ids.forEach((id) => {
+    let index;
+    if (prev) index = order.indexOf(prev) + 1;
+    else if (t.beforeId) index = order.indexOf(t.beforeId);
+    else if (t.afterId) index = order.indexOf(t.afterId) + 1;
+    else {
+      const rest = cat.groups.filter((g, i) => !ids.includes(g.id) && columnOf(cat, g, i) === t.column);
+      index = rest.length ? order.indexOf(rest.at(-1).id) + 1 : order.length;
+    }
+    ops.push({ op: 'move', id, parentId: cat.id, index }, { op: 'patch', id, fields: { column: t.column } });
+    const from = order.indexOf(id); // mirror moveNode: the index counts positions before removal
+    order.splice(from, 1);
+    order.splice(index > from ? index - 1 : index, 0, id);
+    prev = id;
+  });
+  return apply(...ops);
 }
 
 // Position in the category's group list for a slot in `column`: before `beforeId`, after `afterId`,
@@ -1145,12 +1175,12 @@ async function performDrop(d, t, e) {
     return;
   }
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
-  if (t.action === 'column') return moveToColumn(d.id, t);
+  if (t.action === 'column') return moveToColumn(d.ids || [d.id], t);
   const pre = targetOps(t, d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : null);
   const parentId = pre.length ? '$0' : t.parentId;
 
   if (d.kind === 'node') {
-    await apply(...pre, { op: 'move', id: d.id, parentId, index: t.index });
+    await apply(...pre, ...(d.ids || [d.id]).map((id) => ({ op: 'move', id, parentId, index: t.index })));
     return;
   }
   if (d.kind === 'external') {
@@ -1216,6 +1246,12 @@ document.addEventListener('dragstart', (e) => {
     const el = src.closest('[data-id]');
     if (!el) return;
     drag = { kind: 'node', id: el.dataset.id, type: el.dataset.type };
+    // dragging one of several selected groups moves them all, in their current order
+    if (drag.type === 'group' && selected.has(drag.id) && selected.size > 1) {
+      const cat = T.locate(state, drag.id).parent;
+      drag.ids = cat.groups.filter((g) => selected.has(g.id)).map((g) => g.id);
+      setTimeout(() => drag?.ids?.forEach((id) => $(`#board .group[data-id="${CSS.escape(id)}"]`)?.classList.add('dragging')), 0);
+    }
     const r = T.locate(state, drag.id);
     if (r?.node.type === 'link') {
       dt.setData('text/uri-list', r.node.url);

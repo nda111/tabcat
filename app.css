@@ -151,6 +151,11 @@ body.resizing { cursor: col-resize; user-select: none; }
 #marquee { position: fixed; z-index: 40; pointer-events: none; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 3px; }
 body.selecting { user-select: none; cursor: crosshair; }
 body.selecting #board * { pointer-events: none; } /* no hover effects or tooltips under the box */
+/* selection mode: a card's buttons, links and folders are inert; clicks (de)select the card */
+body.select-mode #board .group :is(button, a, input, .item, .note) { pointer-events: none; }
+body.select-mode #board .group-body { cursor: pointer; }
+body.select-mode #board .group :is(.icon-btn, .link-row, .folder-head) { opacity: .45; }
+body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 /* the header's empty space toggles the group: hover tint there, not over the name, symbol or buttons */
 .group-head { border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; transition: background .1s; }
 .group.collapsed .group-head { border-radius: calc(var(--radius) - 1px); }
