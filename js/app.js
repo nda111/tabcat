@@ -165,12 +165,14 @@ function render() {
 
 /* ---------- motion ---------- */
 
-// iOS-like springs: a little overshoot, then settle.
+// iOS-like springs: a little overshoot, then settle. Off when the system asks for reduced motion.
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
 const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
 
 // Where every movable element was before a re-render (FLIP: First).
 function snapshotLayout() {
+  if (reduceMotion.matches) return null;
   const rects = new Map();
   for (const el of document.querySelectorAll(MOVABLE)) {
     const r = el.getBoundingClientRect();
@@ -210,6 +212,7 @@ function animateLayout(before) {
 
 // Shrink-and-fade elements about to be deleted, so the removal is visible before the re-render.
 function animateOut(ids) {
+  if (reduceMotion.matches) return Promise.resolve();
   const els = ids.map((id) => document.querySelector(`#board [data-id="${CSS.escape(id)}"], #ws-list [data-id="${CSS.escape(id)}"], #cat-bar [data-id="${CSS.escape(id)}"]`)).filter(Boolean);
   return Promise.all(els.map((el) => el.animate(
     [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.9)' }],
