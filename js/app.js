@@ -22,7 +22,7 @@ const FIELDS = {
   category: [['name', 'Name', 'text', true]],
   group: [['name', 'Name', 'text', true], ['symbol', 'Symbol', 'emoji'], ['note', 'Note (markdown)', 'textarea']],
   folder: [['name', 'Name', 'text', true], ['symbol', 'Symbol', 'emoji']],
-  link: [['url', 'URL', 'url', true], ['name', 'Name', 'text', true], ['icon', 'Icon URL', 'icon'], ['description', 'Description', 'textarea']],
+  link: [['url', 'URL', 'url', true], ['name', 'Name', 'text', true], ['icon', 'Icon', 'icon'], ['description', 'Description', 'textarea']],
 };
 const TYPE_LABEL = { workspace: 'Workspace', category: 'Category', group: 'Group', folder: 'Folder', link: 'Link' };
 
@@ -418,6 +418,28 @@ async function saveWindow(windowId) {
 
 /* ---------- editor dialog ---------- */
 
+const ICON_SIZE = 64;
+
+// Downscales an uploaded image to a small square PNG data URL, so it stays cheap to store and sync.
+function imageToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, ICON_SIZE / Math.max(img.naturalWidth || ICON_SIZE, img.naturalHeight || ICON_SIZE));
+      const w = Math.max(1, Math.round((img.naturalWidth || ICON_SIZE) * scale));
+      const ht = Math.max(1, Math.round((img.naturalHeight || ICON_SIZE) * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = Math.max(w, ht);
+      canvas.getContext('2d').drawImage(img, (canvas.width - w) / 2, (canvas.height - ht) / 2, w, ht);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+
 function openEditor(type, data = {}, title) {
   const dlg = $('#editor');
   const form = $('#editor-form');
@@ -442,9 +464,22 @@ function openEditor(type, data = {}, title) {
     }
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
-      input.placeholder = 'Leave empty to use the site favicon';
+      input.placeholder = 'Image URL, or upload a file. Empty: site favicon';
       input.addEventListener('input', () => { preview.src = input.value || T.faviconFor(inputs.url.value); });
-      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input));
+      const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
+      file.addEventListener('change', async () => {
+        const f = file.files[0];
+        file.value = '';
+        if (!f) return;
+        try {
+          input.value = await imageToDataUrl(f);
+          input.dispatchEvent(new Event('input'));
+          err.textContent = '';
+        } catch { err.textContent = 'Could not read that image.'; }
+      });
+      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
+        h('button', { class: 'btn small', type: 'button', onclick: () => file.click() }, 'Upload'),
+        btn('✕', 'Clear', () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
