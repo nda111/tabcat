@@ -1809,11 +1809,28 @@ function applyRailTitles() {
   }
 }
 
+const PANEL_FLIP = '.brand-logo, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
+let panelAnimTimer;
+
 for (const p of Object.values(PANELS)) {
   $(p.toggle).addEventListener('click', () => {
+    // FLIP the panel's icons and rows from where they were to where the new layout puts them, so
+    // switching between the rail and the full panel reads as one continuous movement
+    const panel = $(p.el);
+    const els = [...panel.querySelectorAll(PANEL_FLIP)];
+    const before = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
+    document.body.classList.add('panel-anim');
+    clearTimeout(panelAnimTimer);
+    panelAnimTimer = setTimeout(() => document.body.classList.remove('panel-anim'), 450);
     ui[p.collapsed] = !ui[p.collapsed];
     hideTip();
     applyPanels();
+    for (const el of els) {
+      const a = before.get(el), b = el.getBoundingClientRect();
+      if (!a.width || !b.width) continue;
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 400, easing: SPRING });
+    }
     // if the pointer is still on the button, show its new label right away
     const under = pointer && document.elementFromPoint(...pointer);
     if (under && $(p.toggle).contains(under)) showTip($(p.toggle));

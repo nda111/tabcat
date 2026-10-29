@@ -65,9 +65,9 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 .icon-btn:hover, .icon-btn.hover { background: var(--hover); color: var(--text); }
 
 /* ---------- side panels (workspaces, open tabs) ---------- */
-.side-panel { position: relative; flex: none; background: var(--panel-2); border-right: 1px solid var(--border); min-height: 0; }
+.side-panel { position: relative; flex: none; background: var(--panel-2); border-right: 1px solid var(--border); min-height: 0; overflow: hidden; } /* clip, don't reflow, while the width animates */
 #sidebar { width: var(--ws-w, 220px); display: flex; flex-direction: column; padding: 8px 8px 12px; }
-.resizer { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
+.resizer { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
 .resizer:hover, .resizer.active { background: var(--accent); opacity: .5; }
 body.resizing { cursor: col-resize; user-select: none; }
 .panel-toggle {
@@ -518,3 +518,14 @@ dialog[open]::backdrop { animation: fade-in .2s ease-out; }
 @keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* while a side panel opens / closes: text keeps to one line (clipped by the panel) instead of
+   wrapping at the in-between widths, so rows don't jump around */
+body.panel-anim .side-panel :is(.brand-name, .side-title, .ws-item, .side-btn, .panel-title, #tab-stats, .win-head .grow, .tab-row) { white-space: nowrap; }
+body.panel-anim .side-panel .chunk { display: inline; }
+body.panel-anim .panel-actions { flex-wrap: nowrap; }
+/* things that only exist in one state fade in instead of popping (only during a toggle, not on re-renders) */
+body.panel-anim.ws-collapsed .ws-add,
+body.panel-anim:not(.ws-collapsed) :is(.side-title, .side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
+body.panel-anim:not(.tabs-collapsed) :is(.panel-title, .win-head .grow, .tab-row .name) { animation: fade-in .3s ease-out; }
+#ws-toggle, .brand-logo { transition: opacity .15s; }
