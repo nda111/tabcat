@@ -225,7 +225,8 @@ function switchBoard() {
   boardSwitch = setTimeout(() => {
     boardSwitch = null;
     renderBoard();
-    [...document.querySelectorAll('#board .group')].forEach((el, i) => el.animate(
+    // the groups, or an empty category's grey New group card
+    [...document.querySelectorAll('#board .group, #board.empty-cat .col:first-child .add-group')].forEach((el, i) => el.animate(
       [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }],
       { duration: 340, easing: SPRING, delay: Math.min(i, 10) * 25, fill: 'backwards' }));
   }, old.length ? 150 : 0);
