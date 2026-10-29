@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "tabcat",
   "short_name": "tabcat",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Save, organize and suspend tabs: Workspace → Category → Group → Folder/Link, managed from a web dashboard.",
   "icons": {
     "16": "icons/icon16.png",
