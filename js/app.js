@@ -114,25 +114,64 @@ function highlight(text, q) {
   return out;
 }
 
-let toastTimer;
+// Toasts stack above the search button, newest at the bottom: a new one rises in under the others,
+// which slide up; past TOAST_MAX the oldest is pushed up and out. Each fades out after its timeout.
+const TOAST_MAX = 3;
+const TOAST_GAP = 6;
+
 function toast(msg, actionLabel, action) {
-  const t = $('#toast');
-  t.getAnimations().forEach((a) => a.cancel()); // a new toast replaces one that is fading out
-  t.replaceChildren(h('span', {}, msg));
-  if (actionLabel) t.append(h('button', { onclick: () => { hideToast(); action(); } }, actionLabel));
-  t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(hideToast, 6000);
+  const stack = $('#toast');
+  stack.hidden = false;
+  const before = toastRects();
+  const item = h('div', { class: 'toast-item' }, h('span', {}, msg));
+  if (actionLabel) item.append(h('button', { onclick: () => { dismissToast(item); action(); } }, actionLabel));
+  stack.append(item);
+  const live = [...stack.children].filter((el) => !el.classList.contains('leaving'));
+  for (const old of live.slice(0, Math.max(0, live.length - TOAST_MAX))) pushOutToast(old, before.get(old), item);
+  slideToasts(before);
+  item.animate([{ opacity: 0, transform: 'translateY(10px) scale(.98)' }, { opacity: 1, transform: 'none' }],
+    { duration: 280, easing: 'cubic-bezier(.34, 1.2, .64, 1)' });
+  item.timer = setTimeout(() => dismissToast(item), 6000);
 }
 
-// Fade the toast out (and drop it a little) before hiding it.
-function hideToast() {
-  const t = $('#toast');
-  clearTimeout(toastTimer);
-  if (t.hidden) return;
-  t.animate([{ opacity: 1, transform: 'translateX(-50%)' }, { opacity: 0, transform: 'translate(-50%, 8px)' }],
+const toastRects = () => new Map([...$('#toast').children].map((el) => [el, el.getBoundingClientRect()]));
+
+// FLIP the toasts still in the stack from where they were.
+function slideToasts(before) {
+  for (const el of $('#toast').children) {
+    const was = before.get(el);
+    if (!was || el.classList.contains('leaving')) continue;
+    const now = el.getBoundingClientRect();
+    const dx = was.left - now.left, dy = was.top - now.top;
+    if (Math.abs(dx) + Math.abs(dy) < 1) continue;
+    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 300, easing: SPRING });
+  }
+}
+
+// Over the limit: lift the oldest out of the flow where it was and push it up out of sight.
+function pushOutToast(el, was, pusher) {
+  clearTimeout(el.timer);
+  el.classList.add('leaving');
+  el.style.position = 'absolute'; // out of the flow first: the stack shrinks, then place it against that
+  const box = $('#toast').getBoundingClientRect();
+  Object.assign(el.style, { left: `${was.left - box.left}px`, top: `${was.top - box.top}px`, width: `${was.width}px` });
+  const lift = pusher.getBoundingClientRect().height + TOAST_GAP;
+  el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-lift}px)` }],
+    { duration: 300, easing: SPRING, fill: 'forwards' }).finished.catch(() => {}).then(() => el.remove());
+}
+
+// Timed out (or acted on): fade out where it is, then the ones above close the gap.
+function dismissToast(el) {
+  if (el.classList.contains('leaving')) return;
+  clearTimeout(el.timer);
+  el.classList.add('leaving');
+  el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }],
     { duration: 160, easing: 'ease-in', fill: 'forwards' })
-    .finished.then((a) => { t.hidden = true; a.cancel(); }, () => {});
+    .finished.catch(() => {}).then(() => {
+      const before = toastRects();
+      el.remove();
+      slideToasts(before);
+    });
 }
 
 // Run an extension call, surfacing failures as a toast.

@@ -468,8 +468,11 @@ dialog .field-label { display: block; font-weight: 600; }
 
 #toast {
   position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 200; /* above the search button */
+  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
+}
+.toast-item {
   background: #2b2825; color: #fff; padding: 8px 14px; border-radius: 8px; display: flex; gap: 12px; align-items: center;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  box-shadow: 0 6px 24px rgba(0,0,0,.25); pointer-events: auto;
 }
 #toast button { background: transparent; border: 0; color: #ffb877; font-weight: 600; cursor: pointer; }
 
@@ -540,8 +543,6 @@ body.resizing .side-panel { transition: none; } /* follow the pointer exactly wh
 dialog[open] { animation: pop-in .24s var(--spring-soft); }
 dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 #menu:not([hidden]) { animation: pop-in .15s var(--spring-soft); transform-origin: top left; }
-#toast:not([hidden]) { animation: toast-in .28s var(--spring-soft); }
-@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px) scale(.98); } to { opacity: 1; transform: translateX(-50%); } }
 #tip:not([hidden]) { animation: fade-in .12s ease-out; }
 #search-results:not([hidden]) { animation: rise-in .22s var(--spring-soft); transform-origin: bottom center; }
 @keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
