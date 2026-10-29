@@ -248,14 +248,24 @@ function renderBoard() {
   const n = visibleColumns();
   board.dataset.cols = n;
   const cols = layoutColumns(cat, n);
-  // the New group card sits at the bottom of the column with the fewest groups
-  const addAt = cols.reduce((best, list, i) => (list.length < cols[best].length ? i : best), 0);
-  board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => h('div', { class: 'col', dataset: { col: i } },
-    list.map(renderGroup),
-    i === addAt && h('div', {
-      class: 'add-group', dataset: { col: i }, title: 'New group\nOr drop tabs here',
-      onclick: () => addGroup(cat, storedColumn(cat, n, i)),
-    }, icon('plus', 28))))));
+  // each column: groups with clickable gaps between them ("new group here"), then a tail whose
+  // New group card shows when the pointer is below the column's last group
+  board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => {
+    const column = storedColumn(cat, n, i);
+    return h('div', { class: 'col', dataset: { col: i } },
+      list.flatMap((g, k) => [
+        k > 0 && h('div', {
+          class: 'gap-slot', dataset: { before: g.id },
+          onclick: () => addGroup(cat, columnOf(cat, ...groupAt(cat, g.id)), { beforeId: g.id }),
+        }),
+        renderGroup(g),
+      ]),
+      h('div', { class: 'col-tail' },
+        h('div', {
+          class: 'add-group', dataset: { col: i }, title: 'New group\nOr drop tabs here',
+          onclick: () => addGroup(cat, column),
+        }, icon('plus', 28))));
+  })));
   typesetMath(board);
 }
 
@@ -776,7 +786,11 @@ async function addNode(type, parentId, title, extra = {}) {
   const v = await openEditor(type, {}, title);
   if (v) apply({ op: 'create', parentId, node: { type, ...extra, ...v } });
 }
-const addGroup = (cat, column = null) => addNode('group', cat.id, 'New group', { column });
+// A new group in `column`: before group `beforeId`, or at the end of that column.
+async function addGroup(cat, column = null, { beforeId = null } = {}) {
+  const v = await openEditor('group', {}, 'New group');
+  if (v) apply({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId }), node: { type: 'group', column, ...v } });
+}
 const addLink = (parentId) => addNode('link', parentId, 'New link');
 const addFolder = (parentId) => addNode('folder', parentId, 'New folder');
 
@@ -860,7 +874,7 @@ function showIndicator(t) {
     Object.assign(line.style, { left: t.line.x + 'px', top: t.line.y + 'px', width: t.line.w + 'px', height: t.line.h + 'px' });
     line.hidden = false;
   } else if (t.mode === 'newGroup') {
-    $('#board .add-group')?.classList.add('drop-new'); // the New group card stands for "new group"
+    t.el?.classList.add('drop-new'); // the column's New group card stands for "new group"
   } else if (t.el) {
     intoEl = t.el;
     intoEl.classList.add('drop-into');
@@ -925,8 +939,16 @@ function resolveItemDrop(e, el, d) {
   const board = el.closest('#board');
   if (board && board.dataset.parent) {
     const cat = T.locate(state, board.dataset.parent).node;
-    const addCard = board.querySelector('.add-group');
-    return { mode: 'newGroup', categoryId: cat.id, column: storedColumn(cat, +board.dataset.cols, +(addCard?.dataset.col || 0)) };
+    const slot = el.closest('.gap-slot');
+    if (slot) { // between two groups: a new group right there
+      const [g, i] = groupAt(cat, slot.dataset.before);
+      const r = slot.getBoundingClientRect();
+      return { mode: 'newGroup', categoryId: cat.id, column: columnOf(cat, g, i), beforeId: g.id,
+        line: { x: r.left + 4, y: r.top + r.height / 2 - 1, w: r.width - 8, h: 2 } };
+    }
+    const col = el.closest('.col') || board.querySelector('.col:last-child');
+    return { mode: 'newGroup', categoryId: cat.id, column: storedColumn(cat, +board.dataset.cols, +col.dataset.col),
+      el: col.querySelector('.add-group') };
   }
   return null;
 }
@@ -982,15 +1004,18 @@ const groupAt = (cat, id) => { const i = cat.groups.findIndex((g) => g.id === id
 // Moves group `id` into `column` of its category: before `beforeId`, after `afterId`, or to the end.
 function moveToColumn(id, t) {
   const cat = T.locate(state, t.categoryId).node;
-  const list = cat.groups;
-  let index;
-  if (t.beforeId) index = list.findIndex((g) => g.id === t.beforeId);
-  else if (t.afterId) index = list.findIndex((g) => g.id === t.afterId) + 1;
-  else {
-    const inColumn = list.filter((g, i) => g.id !== id && columnOf(cat, g, i) === t.column);
-    index = inColumn.length ? list.indexOf(inColumn.at(-1)) + 1 : list.length;
-  }
+  const index = columnIndex(cat, t.column, { beforeId: t.beforeId, afterId: t.afterId, skip: id });
   return apply({ op: 'move', id, parentId: cat.id, index }, { op: 'patch', id, fields: { column: t.column } });
+}
+
+// Position in the category's group list for a slot in `column`: before `beforeId`, after `afterId`,
+// or after the column's last group (ignoring `skip`, the group being moved).
+function columnIndex(cat, column, { beforeId, afterId, skip } = {}) {
+  const list = cat.groups;
+  if (beforeId) return list.findIndex((g) => g.id === beforeId);
+  if (afterId) return list.findIndex((g) => g.id === afterId) + 1;
+  const inColumn = list.filter((g, i) => g.id !== skip && columnOf(cat, g, i) === column);
+  return inColumn.length ? list.indexOf(inColumn.at(-1)) + 1 : list.length;
 }
 
 function resolveCatDrop(e, el, d) {
@@ -1023,7 +1048,9 @@ function targetOps(t, groupName) {
   if (t.action === 'toCategory') return [{ op: 'firstGroup', categoryId: t.categoryId }];
   if (t.action === 'toWorkspace') return [{ op: 'firstCategory', workspaceId: t.workspaceId }];
   if (t.mode === 'newGroup') {
-    return [{ op: 'create', parentId: t.categoryId, node: { type: 'group', name: groupName || 'New group', column: t.column ?? null } }];
+    const cat = T.locate(state, t.categoryId).node;
+    return [{ op: 'create', parentId: t.categoryId, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
+      node: { type: 'group', name: groupName || 'New group', column: t.column ?? null } }];
   }
   return [];
 }
