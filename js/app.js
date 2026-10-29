@@ -30,8 +30,13 @@ const TYPE_LABEL = { workspace: 'Workspace', category: 'Category', group: 'Group
 /* ================= utilities ================= */
 
 function loadUi() {
-  const base = { ws: null, cat: {}, tabsHidden: false };
-  try { return { ...base, ...JSON.parse(localStorage.getItem('tabcat:ui') || '{}') }; } catch { return base; }
+  const base = { ws: null, cat: {}, wsCollapsed: false, tabsCollapsed: false, wsWidth: null, tabsWidth: null };
+  try {
+    const saved = JSON.parse(localStorage.getItem('tabcat:ui') || '{}');
+    if (saved.tabsHidden) saved.tabsCollapsed = true; // the old "hide tabs panel" toggle
+    delete saved.tabsHidden;
+    return { ...base, ...saved };
+  } catch { return base; }
 }
 function saveUi() {
   try { localStorage.setItem('tabcat:ui', JSON.stringify(ui)); } catch { /* storage unavailable */ }
@@ -368,6 +373,9 @@ async function renderTabs() {
       btn('✕', 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
   });
   $('#tab-stats').textContent = `${total} tabs · ${sleeping} suspended · ${wins.length} window${wins.length === 1 ? '' : 's'}`;
+  const mini = $('#tab-stats-mini');
+  mini.replaceChildren(...[h('div', {}, `${total} 🗂️`), sleeping && h('div', {}, `${sleeping} 💤`)].filter(Boolean));
+  mini.title = $('#tab-stats').textContent;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -717,7 +725,10 @@ function resolveGroupDrop(e, el, d) {
     if (card.dataset.id === d.id) return null;
     const cards = [...board.querySelectorAll(':scope > .group')];
     const r = card.getBoundingClientRect();
-    const before = e.clientX < r.left + r.width / 2;
+    const x = (e.clientX - r.left) / r.width;
+    // outer quarters reorder; dropping onto the middle of a card offers to merge the groups
+    if (x > 0.25 && x < 0.75) return { action: 'merge', targetId: card.dataset.id, el: card };
+    const before = x <= 0.25;
     const idx = cards.indexOf(card);
     return { parentId: board.dataset.parent, index: before ? idx : idx + 1, line: vLine(r, before) };
   }
@@ -770,6 +781,7 @@ async function performDrop(d, t, e) {
     if (r) await run(B.call('openUrls', { urls: T.collectLinks(r.node).map((l) => l.url), windowId: t.windowId }));
     return;
   }
+  if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
   const pre = targetOps(t, d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : null);
   const parentId = pre.length ? '$0' : t.parentId;
 
@@ -794,6 +806,21 @@ async function performDrop(d, t, e) {
   let pid = t.parentId;
   if (pre.length) [pid] = (await apply(...pre)) || [];
   if (pid) await saveTabsTo(tabIds, pid, t.index);
+}
+
+// Moves every item (and the note) of group `fromId` to the end of group `intoId`, then deletes `fromId`.
+async function mergeGroups(fromId, intoId) {
+  const from = T.locate(state, fromId)?.node;
+  const into = T.locate(state, intoId)?.node;
+  if (!from || !into) return;
+  const label = (g) => `${g.symbol ? g.symbol + ' ' : ''}${g.name}`;
+  if (!confirm(`Merge “${label(from)}” (${T.countLinks(from)} links) into “${label(into)}”?\n“${label(from)}” will be removed.`)) return;
+  const note = [into.note, from.note].filter((n) => n && n.trim()).join('\n\n---\n\n');
+  const snapshot = structuredClone(state);
+  const ok = await apply(
+    { op: 'patch', id: intoId, fields: { items: [...into.items, ...from.items], note, collapsed: false } },
+    { op: 'remove', id: fromId });
+  if (ok) toast(`Merged into “${into.name}”`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
 }
 
 function endDrag() {
@@ -1062,11 +1089,59 @@ $('#import-settings-file').addEventListener('change', async (e) => {
 
 $('#add-ws').addEventListener('click', addWorkspace);
 $('#btn-settings').addEventListener('click', openSettings);
-$('#toggle-tabs').addEventListener('click', () => {
-  ui.tabsHidden = !ui.tabsHidden;
-  document.body.classList.toggle('tabs-hidden', ui.tabsHidden);
-  saveUi();
-});
+
+/* ---------- side panels: collapse and resize ---------- */
+
+const PANELS = {
+  ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'sidebar' },
+  tabs: { el: '#tabs-panel', toggle: '#tabs-toggle', width: 'tabsWidth', collapsed: 'tabsCollapsed', min: 200, max: 520, name: 'open tabs' },
+};
+
+function applyPanels() {
+  for (const [key, p] of Object.entries(PANELS)) {
+    const collapsed = !!ui[p.collapsed];
+    document.body.classList.toggle(`${key}-collapsed`, collapsed);
+    document.body.style.setProperty(`--${key}-w`, ui[p.width] ? ui[p.width] + 'px' : null);
+    $(p.toggle).title = `${collapsed ? 'Expand' : 'Collapse'} ${p.name}`;
+  }
+}
+
+for (const p of Object.values(PANELS)) {
+  $(p.toggle).addEventListener('click', () => {
+    ui[p.collapsed] = !ui[p.collapsed];
+    applyPanels();
+    saveUi();
+  });
+}
+
+for (const handle of document.querySelectorAll('.resizer')) {
+  const p = PANELS[handle.dataset.panel];
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const left = $(p.el).getBoundingClientRect().left;
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add('active');
+    document.body.classList.add('resizing');
+    const onMove = (ev) => {
+      ui[p.width] = Math.round(Math.min(p.max, Math.max(p.min, ev.clientX - left)));
+      applyPanels();
+    };
+    const onUp = () => {
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
+      handle.classList.remove('active');
+      document.body.classList.remove('resizing');
+      saveUi();
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  });
+  handle.addEventListener('dblclick', () => { ui[p.width] = null; applyPanels(); saveUi(); });
+}
+
 $('#btn-save-all').addEventListener('click', () => saveWindow(currentWindowId));
 $('#btn-suspend').addEventListener('click', () => suspend({}));
 $('#btn-dedupe').addEventListener('click', async () => {
@@ -1114,7 +1189,7 @@ async function refresh() {
 }
 
 async function init() {
-  document.body.classList.toggle('tabs-hidden', ui.tabsHidden);
+  applyPanels();
   if (!(await B.connect())) return showNoExtension();
   $('#no-ext').hidden = true;
   await refresh();

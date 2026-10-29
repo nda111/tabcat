@@ -52,13 +52,21 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 }
 .icon-btn:hover, .icon-btn.hover { background: var(--hover); color: var(--text); }
 
-/* ---------- sidebar ---------- */
-#sidebar {
-  width: 220px; flex: none; background: var(--panel-2); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; padding: 12px 8px;
+/* ---------- side panels (workspaces, open tabs) ---------- */
+.side-panel { position: relative; flex: none; background: var(--panel-2); border-right: 1px solid var(--border); min-height: 0; }
+#sidebar { width: var(--ws-w, 220px); display: flex; flex-direction: column; padding: 12px 8px; }
+.resizer { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
+.resizer:hover, .resizer.active { background: var(--accent); opacity: .5; }
+body.resizing { cursor: col-resize; user-select: none; }
+.panel-toggle {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+  border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; padding: 4px 8px 14px; }
-.brand img { width: 22px; height: 22px; }
+.panel-toggle:hover, .panel-toggle.hover { background: var(--hover); color: var(--text); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; padding: 0 0 10px 8px; min-height: 30px; }
+.brand-logo { display: grid; place-items: center; width: 22px; height: 22px; flex: none; }
+.brand-logo img { width: 22px; height: 22px; }
+.brand-name { flex: 1; }
 .side-title {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 0 8px 4px;
@@ -74,7 +82,7 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 .ws-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws-item .count { color: var(--muted); font-size: 11px; }
 .side-bottom { border-top: 1px solid var(--border); padding-top: 8px; }
-.side-btn { width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
+.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
 .side-btn:hover, .side-btn.hover { background: var(--hover); }
 
 /* ---------- main ---------- */
@@ -192,13 +200,13 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 
 /* ---------- open tabs panel ---------- */
-#tabs-panel {
-  width: 290px; flex: none; border-right: 1px solid var(--border); background: var(--panel-2);
-  display: flex; flex-direction: column; min-height: 0;
-}
-body.tabs-hidden #tabs-panel { display: none; }
-.panel-head { padding: 14px 12px 6px; }
+#tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; }
+.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 10px 8px 12px; }
+.panel-title { flex: 1; min-width: 0; }
+.panel-toggle.square { width: auto; height: auto; aspect-ratio: 1; align-self: stretch; }
+#tab-stats-mini { display: none; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
+.panel-actions .btn { display: inline-flex; gap: 4px; align-items: center; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
 .win-head {
@@ -213,6 +221,40 @@ body.tabs-hidden #tabs-panel { display: none; }
 .tab-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab-row .icon-btn { opacity: 0; }
 .tab-row:hover .icon-btn, .tab-row.hover .icon-btn { opacity: 1; }
+
+/* ---------- collapsed side panels: icon rails ---------- */
+body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
+body.ws-collapsed .brand { justify-content: center; padding: 0 0 10px; position: relative; }
+body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label,
+body.ws-collapsed .ws-item .name, body.ws-collapsed .ws-item .count, body.ws-collapsed .side-btn .label { display: none; }
+/* collapsed: the logo turns into the expand button on hover (the toggle sits on top of it) */
+body.ws-collapsed #ws-toggle { position: absolute; left: 50%; top: 0; transform: translateX(-50%); opacity: 0; }
+body.ws-collapsed .brand:hover #ws-toggle { opacity: 1; background: var(--hover); }
+body.ws-collapsed .brand:hover .brand-logo { visibility: hidden; }
+body.ws-collapsed .side-title { justify-content: center; padding: 0 0 4px; }
+body.ws-collapsed .ws-item { justify-content: center; padding: 7px 0; }
+body.ws-collapsed .ws-item .sym { width: auto; font-size: 17px; }
+body.ws-collapsed .side-btn { justify-content: center; padding: 6px 0; }
+body.ws-collapsed #sidebar .resizer { display: none; }
+
+body.tabs-collapsed #tabs-panel { width: 56px; }
+body.tabs-collapsed .panel-head { justify-content: center; padding: 12px 0 4px; }
+body.tabs-collapsed .panel-title { display: none; }
+body.tabs-collapsed .panel-toggle.square { width: 36px; height: 36px; align-self: center; }
+body.tabs-collapsed #tab-stats-mini { display: block; text-align: center; font-size: 10.5px; line-height: 1.3; padding: 0 2px 6px; }
+body.tabs-collapsed .panel-actions { flex-direction: column; align-items: center; padding: 0 0 6px; gap: 2px; }
+body.tabs-collapsed .panel-actions .btn { border: 0; background: transparent; padding: 4px 6px; }
+body.tabs-collapsed .panel-actions .btn:hover { background: var(--hover); }
+body.tabs-collapsed .panel-actions .label { display: none; }
+body.tabs-collapsed #windows { padding: 0 6px 20px; }
+body.tabs-collapsed .win { margin: 0; }
+body.tabs-collapsed .win + .win { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+body.tabs-collapsed .win-head { height: 6px; padding: 0; overflow: hidden; }
+body.tabs-collapsed .win-head > * { display: none; }
+body.tabs-collapsed .tab-row { justify-content: center; padding: 6px 0; }
+body.tabs-collapsed .tab-row > :not(img) { display: none; }
+body.tabs-collapsed .tab-row img { width: 18px; height: 18px; }
+body.tabs-collapsed #tabs-panel .resizer { display: none; }
 
 /* ---------- dialogs, menu, toast ---------- */
 dialog {
