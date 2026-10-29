@@ -1,6 +1,7 @@
 import * as B from './bridge.js';
 import * as T from './tree.js';
 import { renderMarkdown, toggleTask } from './markdown.js';
+import { typesetMath } from './math.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -190,6 +191,7 @@ function renderBoard() {
   board.replaceChildren(
     ...cat.groups.map(renderGroup),
     h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'Drop tabs here to create a group' }, '＋ New group'));
+  typesetMath(board);
 }
 
 function renderGroup(g) {

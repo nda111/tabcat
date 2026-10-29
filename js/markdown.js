@@ -1,17 +1,25 @@
 // Minimal, safe markdown renderer for group notes.
 // Input is HTML-escaped first; only a whitelisted subset is produced.
 // Task list items render as checkboxes carrying data-line (source line index) for toggling.
+// Math: $inline$, $$display$$ (inline or as a block spanning lines); typeset later by math.js.
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
 
 const SAFE_URL = /^(https?:|mailto:)/i;
 
+const mathInline = (tex) => `<span class="math">\\(${tex}\\)</span>`;
+const mathBlock = (tex) => `<span class="math display">\\[${tex}\\]</span>`;
+
 function inline(text) {
   // code spans and urls are stashed as placeholders so emphasis rules can't touch them
   const stash = [];
   const put = (html) => `\u0000${stash.push(html) - 1}\u0000`;
   let s = escapeHtml(text).replace(/`([^`]+)`/g, (_, c) => put(`<code>${c}</code>`));
+  s = s.replace(/\$\$([^$]+?)\$\$/g, (_, tex) => put(mathBlock(tex)));
+  // $...$ must hug its content and not be followed by a digit, so prices like "$5 and $10" stay text
+  s = s.replace(/(^|[^\\$])\$([^\s$](?:[^$]*?[^\s$\\])?)\$(?!\d)/g, (_, pre, tex) => pre + put(mathInline(tex)));
+  s = s.replace(/\\\$/g, '$'); // \$ is a literal dollar sign
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, url) =>
     SAFE_URL.test(url) ? `<a href="${put(url)}" target="_blank" rel="noopener">${label}</a>` : m);
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, pre, url) =>
@@ -29,6 +37,7 @@ export function renderMarkdown(src) {
   let list = null; // 'ul' | 'ol'
   let para = [];
   let code = null;
+  let math = null; // lines of an open $$ block
 
   const flushPara = () => { if (para.length) { out.push(`<p>${para.map(inline).join('<br>')}</p>`); para = []; } };
   const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
@@ -40,8 +49,19 @@ export function renderMarkdown(src) {
       else code.push(line);
       return;
     }
+    if (math !== null) {
+      const end = line.indexOf('$$');
+      if (end >= 0) { math.push(line.slice(0, end)); out.push(mathBlock(escapeHtml(math.join('\n')))); math = null; }
+      else math.push(line);
+      return;
+    }
     let m;
     if (/^```/.test(line)) { flushPara(); closeList(); code = []; return; }
+    if ((m = line.match(/^\s*\$\$(.*)$/))) {
+      const end = m[1].indexOf('$$');
+      if (end < 0) { flushPara(); closeList(); math = [m[1]]; return; }
+      if (!m[1].slice(end + 2).trim()) { flushPara(); closeList(); out.push(mathBlock(escapeHtml(m[1].slice(0, end)))); return; }
+    }
     if (!line.trim()) { flushPara(); closeList(); return; }
     if ((m = line.match(/^(#{1,6})\s+(.*)$/))) {
       flushPara(); closeList();
@@ -63,6 +83,7 @@ export function renderMarkdown(src) {
     para.push(line);
   });
   if (code !== null) out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+  if (math !== null) out.push(mathBlock(escapeHtml(math.join('\n'))));
   flushPara(); closeList();
   return out.join('');
 }
