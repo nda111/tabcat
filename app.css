@@ -56,6 +56,8 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
   border: 0; background: transparent; border-radius: 6px; cursor: pointer; color: var(--muted); line-height: 1;
 }
 .link-row, .folder-head, .tab-row, .win-head, .side-title, .pick-row { --btn: 24px; }
+/* hover-only buttons in list rows overlap the row's padding instead of making the row taller */
+:is(.link-row, .folder-head, .tab-row) .icon-btn { margin-block: -3px; }
 .ico { display: inline-flex; align-items: center; justify-content: center; }
 .ico svg { display: block; }
 [data-icon] { display: inline-flex; align-items: center; } /* static icon slots: centre the svg, not sit on the text baseline */
