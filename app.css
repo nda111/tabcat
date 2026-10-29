@@ -453,10 +453,21 @@ dialog .field-label { display: block; font-weight: 600; }
 .search-dock {
   --spring: cubic-bezier(.34, 1.45, .55, 1); /* overshoots a little, then settles */
   position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 20;
-  width: 48px; min-width: 48px; /* the spring's overshoot never squeezes the magnifier when closing */
+  width: 48px;
+  /* closing: glide back without undershooting (that would clip the magnifier), then .settle squishes it */
+  transition: width .3s cubic-bezier(.3, .8, .4, 1), bottom .3s cubic-bezier(.3, .8, .4, 1);
+}
+.search-dock.open {
+  width: min(600px, calc(100% - 36px)); bottom: 44px; /* rises a little as it opens */
   transition: width .42s var(--spring), bottom .42s var(--spring);
 }
-.search-dock.open { width: min(600px, calc(100% - 36px)); bottom: 44px; } /* rises a little as it opens */
+.search-dock.settle .search-field { animation: search-settle .38s ease-out; }
+@keyframes search-settle {
+  0% { transform: scale(1); }
+  35% { transform: scale(.86, 1.08); }
+  65% { transform: scale(1.06, .96); }
+  100% { transform: scale(1); }
+}
 .search-field {
   display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; overflow: hidden; cursor: pointer;
   border: 1px solid var(--border); border-radius: 24px; background: var(--panel); color: var(--muted);

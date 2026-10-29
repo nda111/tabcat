@@ -501,6 +501,11 @@ search.addEventListener('keydown', (e) => {
 });
 search.addEventListener('focus', () => { if (!searchBox.classList.contains('open')) openSearch(); });
 search.addEventListener('blur', () => closeSearch()); // losing focus springs it back to the magnifier
+// once it is back to a circle, a short squish gives the close the same bounce as the open
+searchBox.addEventListener('transitionend', (e) => {
+  if (e.propertyName === 'width' && !searchBox.classList.contains('open')) searchBox.classList.add('settle');
+});
+searchBox.addEventListener('animationend', () => searchBox.classList.remove('settle'));
 // keep focus in the field while a result is clicked
 $('#search-results').addEventListener('pointerdown', (e) => e.preventDefault());
 document.addEventListener('pointerdown', (e) => { if (!searchBox.contains(e.target)) closeSearch(); });
