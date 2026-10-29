@@ -1851,7 +1851,9 @@ for (const p of Object.values(PANELS)) {
       // fade the labels out while the panel starts to narrow, then switch to the rail layout
       panel.classList.add('fading');
       panel.style.width = '56px';
-      setTimeout(() => { panel.classList.remove('fading'); panel.style.width = ''; switchPanel(p); }, 150);
+      // switch while the faded, one-line state is still in place (measuring after removing it would
+      // catch a re-wrapped header and make the rows jump), then drop it
+      setTimeout(() => { switchPanel(p); panel.classList.remove('fading'); panel.style.width = ''; }, 150);
     } else switchPanel(p);
   });
 }
