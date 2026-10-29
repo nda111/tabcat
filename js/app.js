@@ -87,6 +87,7 @@ function symbolEl(symbol, fallback = '') {
 function noTip(el) {
   el.setAttribute('aria-label', el.title);
   el.removeAttribute('title');
+  el.dataset.noTip = ''; // and don't fall through to a parent's tooltip
   return el;
 }
 
@@ -1601,9 +1602,10 @@ document.addEventListener('mouseover', (e) => {
     nm.title = nm.textContent;
     nm.dataset.trunc = '1';
   }
-  const el = e.target instanceof Element ? e.target.closest('[title], [data-tip]') : null;
+  const el = e.target instanceof Element ? e.target.closest('[title], [data-tip], [data-no-tip]') : null;
   if (el === tipEl) return;
   hideTip();
+  if (el?.matches('[data-no-tip]')) return;
   if (!el || drag || el.closest('dialog, #menu')) return;
   tipEl = el;
   el.dataset.tip = el.title; // park now so the native tooltip never appears
