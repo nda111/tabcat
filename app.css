@@ -125,10 +125,10 @@ body.resizing { cursor: col-resize; user-select: none; }
 .gap-slot { flex: none; height: 14px; position: relative; cursor: pointer; }
 .gap-slot::after { content: ''; position: absolute; left: 4px; right: 4px; top: 6px; height: 2px; border-radius: 1px; background: var(--accent); opacity: 0; transition: opacity .1s; }
 .gap-slot:hover::after, .gap-slot.hover::after { opacity: 1; }
-/* below the last group: the New group card appears while the pointer is down there */
+/* below the last group: the New group card appears only while the pointer is on its spot */
 .col-tail { flex: 1; min-height: 120px; padding-top: 14px; }
 .col-tail .add-group { opacity: 0; transition: opacity .12s; }
-.col-tail:hover .add-group, .col-tail.hover .add-group, .col-tail .add-group.drop-new { opacity: 1; }
+.col-tail .add-group:hover, .col-tail .add-group.hover, .col-tail .add-group.drop-new { opacity: 1; }
 .col-ctl { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--muted); padding-left: 12px; }
 .col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); }
 .col-ctl .icon-btn:disabled { opacity: .35; cursor: default; }
