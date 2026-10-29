@@ -96,9 +96,12 @@ body.resizing { cursor: col-resize; user-select: none; }
   display: flex; justify-content: space-between; align-items: center;
   font-size: 12px; color: var(--muted); padding: 0 8px 4px;
 }
-/* rows sliding up during a toggle pass over the heading, not under it */
+/* rows sliding past the heading during a toggle pass over it, not under it */
 .side-title { position: relative; z-index: 0; }
 .ws-item { position: relative; z-index: 1; }
+/* ...and the list's scroll box would clip them where they start, up in the heading's place: while
+   the panel toggles, its box reaches 48px higher (same layout: the padding makes up for the margin) */
+#sidebar.panel-anim #ws-list { margin-top: -48px; padding-top: 48px; }
 #ws-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .ws-item {
   display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 11px; border-radius: 7px; cursor: pointer;
@@ -559,6 +562,7 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 @keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes surface-in { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: none; } }
 
 /* while a side panel opens / closes: text keeps to one line (clipped by the panel) instead of
    wrapping at the in-between widths, so rows don't jump around */
@@ -568,8 +572,10 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 /* things that only exist in one state fade in instead of popping (only during a toggle, not on re-renders) */
 /* (scoped to the panel being toggled, so the other panel doesn't replay it) */
 body.ws-collapsed #sidebar.panel-anim .ws-add,
-body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-title, .side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
+body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
 body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .tab-row .name) { animation: fade-in .3s ease-out; }
+/* the Workspaces heading surfaces from below the rows, as if rising from depth */
+body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in .38s cubic-bezier(.22, 1, .36, 1) .04s backwards; }
 #ws-toggle, .brand-logo { transition: opacity .15s; }
 
 /* collapsing: labels fade out first (the panel already narrows), then the rail layout takes over */
