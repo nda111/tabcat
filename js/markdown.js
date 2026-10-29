@@ -1,7 +1,8 @@
 // Minimal, safe markdown renderer for group notes.
 // Input is HTML-escaped first; only a whitelisted subset is produced.
 // Task list items render as checkboxes carrying data-line (source line index) for toggling.
-// Math: $inline$, $$display$$ (inline or as a block spanning lines); typeset later by math.js.
+// Math: $inline$ or \(inline\), $$display$$ or \[display\], and \begin{env}…\end{env} (inline or as
+// blocks spanning lines); typeset later by math.js.
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
@@ -10,6 +11,9 @@ const SAFE_URL = /^(https?:|mailto:)/i;
 
 const mathInline = (tex) => `<span class="math">\\(${tex}\\)</span>`;
 const mathBlock = (tex) => `<span class="math display">\\[${tex}\\]</span>`;
+const mathEnv = (tex) => `<span class="math display">${tex}</span>`; // \begin{…}…\end{…}, delimits itself
+const DISPLAY_ENV = /^(equation|align|alignat|gather|multline|flalign|eqnarray)\*?$/;
+const ENV = /\\begin\{([a-zA-Z]+\*?)\}[\s\S]*?\\end\{\1\}/g;
 
 function inline(text) {
   // code spans and urls are stashed as placeholders so emphasis rules can't touch them
@@ -17,6 +21,10 @@ function inline(text) {
   const put = (html) => `\u0000${stash.push(html) - 1}\u0000`;
   let s = escapeHtml(text).replace(/`([^`]+)`/g, (_, c) => put(`<code>${c}</code>`));
   s = s.replace(/\$\$([^$]+?)\$\$/g, (_, tex) => put(mathBlock(tex)));
+  s = s.replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => put(mathBlock(tex)));
+  s = s.replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => put(mathInline(tex)));
+  // equation-like environments are displays; others (pmatrix, cases, …) sit in the line
+  s = s.replace(ENV, (tex, env) => put(DISPLAY_ENV.test(env) ? mathEnv(tex) : mathInline(tex)));
   // $...$ must hug its content and not be followed by a digit, so prices like "$5 and $10" stay text
   s = s.replace(/(^|[^\\$])\$([^\s$](?:[^$]*?[^\s$\\])?)\$(?!\d)/g, (_, pre, tex) => pre + put(mathInline(tex)));
   s = s.replace(/\\\$/g, '$'); // \$ is a literal dollar sign
@@ -37,7 +45,8 @@ export function renderMarkdown(src) {
   let list = null; // 'ul' | 'ol'
   let para = [];
   let code = null;
-  let math = null; // lines of an open $$ block
+  let math = null; // an open display block spanning lines: { lines, end, wrap }
+  const closeMath = () => out.push(math.wrap(escapeHtml(math.lines.join('\n'))));
 
   const flushPara = () => { if (para.length) { out.push(`<p>${para.map(inline).join('<br>')}</p>`); para = []; } };
   const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
@@ -50,17 +59,26 @@ export function renderMarkdown(src) {
       return;
     }
     if (math !== null) {
-      const end = line.indexOf('$$');
-      if (end >= 0) { math.push(line.slice(0, end)); out.push(mathBlock(escapeHtml(math.join('\n')))); math = null; }
-      else math.push(line);
+      const end = line.indexOf(math.end);
+      if (end < 0) { math.lines.push(line); return; }
+      // an environment keeps its \end{…}; $$ and \] are just delimiters
+      math.lines.push(math.wrap === mathEnv ? line.slice(0, end + math.end.length) : line.slice(0, end));
+      closeMath();
+      math = null;
       return;
     }
     let m;
     if (/^```/.test(line)) { flushPara(); closeList(); code = []; return; }
     if ((m = line.match(/^\s*\$\$(.*)$/))) {
       const end = m[1].indexOf('$$');
-      if (end < 0) { flushPara(); closeList(); math = [m[1]]; return; }
+      if (end < 0) { flushPara(); closeList(); math = { lines: [m[1]], end: '$$', wrap: mathBlock }; return; }
       if (!m[1].slice(end + 2).trim()) { flushPara(); closeList(); out.push(mathBlock(escapeHtml(m[1].slice(0, end)))); return; }
+    }
+    if ((m = line.match(/^\s*\\\[(.*)$/)) && !m[1].includes('\\]')) {
+      flushPara(); closeList(); math = { lines: [m[1]], end: '\\]', wrap: mathBlock }; return;
+    }
+    if ((m = line.match(/^\s*\\begin\{([a-zA-Z]+\*?)\}/)) && !line.includes(`\\end{${m[1]}}`)) {
+      flushPara(); closeList(); math = { lines: [line.trim()], end: `\\end{${m[1]}}`, wrap: mathEnv }; return;
     }
     if (!line.trim()) { flushPara(); closeList(); return; }
     if ((m = line.match(/^(#{1,6})\s+(.*)$/))) {
@@ -83,7 +101,7 @@ export function renderMarkdown(src) {
     para.push(line);
   });
   if (code !== null) out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
-  if (math !== null) out.push(mathBlock(escapeHtml(math.join('\n'))));
+  if (math !== null) closeMath();
   flushPara(); closeList();
   return out.join('');
 }
