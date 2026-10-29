@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "탭을 저장·정리하고 일시 중지합니다. 워크스페이스 → 카테고리 → 그룹 → 폴더/링크 구조를 웹 대시보드에서 관리합니다."
+  },
+  "cmdPopup": {
+    "message": "tabcat 팝업 열기"
+  },
+  "cmdDashboard": {
+    "message": "tabcat 대시보드 열기"
+  },
+  "cmdSaveTab": {
+    "message": "현재 탭 저장"
+  },
+  "cmdSaveWindow": {
+    "message": "창의 모든 탭을 새 그룹으로 저장"
+  }
+}

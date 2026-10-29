@@ -1,30 +1,43 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
+import * as I from './lib/i18n.js';
 
 /* ================= setup ================= */
 
 chrome.runtime.onInstalled.addListener(async () => {
+  await init(); // sets the language first, so the seeded names are in it
   // seed initial data
   const r = await chrome.storage.local.get(S.KEY);
   if (!r[S.KEY]) await S.save(S.defaultState());
-
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: 'go-tabcat', title: 'Go tabcat', contexts: ['action'] });
-    chrome.contextMenus.create({ id: 'save-tab', title: 'Save this tab to tabcat', contexts: ['page', 'action'] });
-    chrome.contextMenus.create({ id: 'save-link', title: 'Save link to tabcat', contexts: ['link'] });
-    chrome.contextMenus.create({ id: 'save-window', title: 'Save all tabs in this window', contexts: ['page', 'action'] });
-    chrome.contextMenus.create({ id: 'suspend', title: 'Suspend other tabs (free memory)', contexts: ['page', 'action'] });
-    chrome.contextMenus.create({ id: 'dedupe', title: 'Close duplicate tabs', contexts: ['action'] });
-  });
-  init();
 });
+
+// Context menu entries, titled in the current language; rebuilt when the language changes.
+const MENUS = [
+  ['go-tabcat', 'menuOpen', ['action']],
+  ['save-tab', 'menuSaveTab', ['page', 'action']],
+  ['save-link', 'menuSaveLink', ['link']],
+  ['save-window', 'menuSaveWindow', ['page', 'action']],
+  ['suspend', 'menuSuspend', ['page', 'action']],
+  ['dedupe', 'menuDedupe', ['action']],
+];
+let menus = Promise.resolve();
+function buildMenus() {
+  // chained: two overlapping rebuilds would create the same ids twice
+  menus = menus.then(() => new Promise((done) => chrome.contextMenus.removeAll(() => {
+    for (const [id, key, contexts] of MENUS) chrome.contextMenus.create({ id, title: I.t(key), contexts }, () => void chrome.runtime.lastError);
+    done();
+  })));
+  return menus;
+}
 
 chrome.runtime.onStartup.addListener(init);
 init();
 
 async function init() {
   const s = await S.loadSettings();
+  I.setLang(s.language);
   A.setDashboardUrl(s.dashboardUrl);
+  await buildMenus();
   await chrome.alarms.clear('autosuspend');
   if (s.autoSuspendMinutes > 0) chrome.alarms.create('autosuspend', { periodInMinutes: 1 });
 }
@@ -213,7 +226,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes[S.SETTINGS_KEY]) {
     const o = changes[S.SETTINGS_KEY].oldValue || {};
     const n = { ...S.DEFAULT_SETTINGS, ...(changes[S.SETTINGS_KEY].newValue || {}) };
-    if (o.autoSuspendMinutes !== n.autoSuspendMinutes || o.dashboardUrl !== n.dashboardUrl) init();
+    if (o.autoSuspendMinutes !== n.autoSuspendMinutes || o.dashboardUrl !== n.dashboardUrl || o.language !== n.language) init();
     broadcast('settings', n);
   }
 });

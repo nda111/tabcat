@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "Enregistrez, organisez et suspendez vos onglets : espace de travail → catégorie → groupe → dossier/lien, gérés depuis un tableau de bord web."
+  },
+  "cmdPopup": {
+    "message": "Ouvrir la fenêtre tabcat"
+  },
+  "cmdDashboard": {
+    "message": "Ouvrir le tableau de bord tabcat"
+  },
+  "cmdSaveTab": {
+    "message": "Enregistrer l’onglet actuel"
+  },
+  "cmdSaveWindow": {
+    "message": "Enregistrer tous les onglets de la fenêtre dans un nouveau groupe"
+  }
+}

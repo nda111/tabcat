@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "Guarda, organiza y suspende pestañas: espacio de trabajo → categoría → grupo → carpeta/enlace, gestionado desde un panel web."
+  },
+  "cmdPopup": {
+    "message": "Abrir la ventana emergente de tabcat"
+  },
+  "cmdDashboard": {
+    "message": "Abrir el panel de tabcat"
+  },
+  "cmdSaveTab": {
+    "message": "Guardar la pestaña actual"
+  },
+  "cmdSaveWindow": {
+    "message": "Guardar todas las pestañas de la ventana como un grupo nuevo"
+  }
+}

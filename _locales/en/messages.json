@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "Save, organize and suspend tabs: Workspace → Category → Group → Folder/Link, managed from a web dashboard."
+  },
+  "cmdPopup": {
+    "message": "Open tabcat popup"
+  },
+  "cmdDashboard": {
+    "message": "Open tabcat dashboard"
+  },
+  "cmdSaveTab": {
+    "message": "Save current tab"
+  },
+  "cmdSaveWindow": {
+    "message": "Save all tabs in window as a new group"
+  }
+}

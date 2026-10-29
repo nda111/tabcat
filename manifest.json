@@ -2,8 +2,9 @@
   "manifest_version": 3,
   "name": "tabcat",
   "short_name": "tabcat",
-  "version": "0.2.3",
-  "description": "Save, organize and suspend tabs: Workspace → Category → Group → Folder/Link, managed from a web dashboard.",
+  "version": "0.2.4",
+  "default_locale": "en",
+  "description": "__MSG_extDescription__",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -35,25 +36,25 @@
       "suggested_key": {
         "default": "Alt+Shift+C"
       },
-      "description": "Open tabcat popup"
+      "description": "__MSG_cmdPopup__"
     },
     "open-dashboard": {
       "suggested_key": {
         "default": "Alt+Shift+D"
       },
-      "description": "Open tabcat dashboard"
+      "description": "__MSG_cmdDashboard__"
     },
     "save-tab": {
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "Save current tab"
+      "description": "__MSG_cmdSaveTab__"
     },
     "save-window": {
       "suggested_key": {
         "default": "Alt+Shift+A"
       },
-      "description": "Save all tabs in window as a new group"
+      "description": "__MSG_cmdSaveWindow__"
     }
   },
   "content_scripts": [

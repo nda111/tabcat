@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "Tabs speichern, ordnen und pausieren: Arbeitsbereich → Kategorie → Gruppe → Ordner/Link, verwaltet über ein Web-Dashboard."
+  },
+  "cmdPopup": {
+    "message": "tabcat-Popup öffnen"
+  },
+  "cmdDashboard": {
+    "message": "tabcat-Dashboard öffnen"
+  },
+  "cmdSaveTab": {
+    "message": "Aktuellen Tab speichern"
+  },
+  "cmdSaveWindow": {
+    "message": "Alle Tabs des Fensters als neue Gruppe speichern"
+  }
+}

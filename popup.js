@@ -1,5 +1,6 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
+import { setLang, getLang, t } from './lib/i18n.js';
 
 // accent colours (hue in oklch), as in the dashboard's Settings > Color
 const ACCENT_HUES = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
@@ -21,6 +22,11 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     chrome.tabs.query({ active: true, currentWindow: true }),
     S.load(), S.loadSettings(), chrome.tabs.query({}),
   ]);
+  setLang(settings.language);
+  document.documentElement.lang = getLang();
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
+  for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
   if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
   const hue = ACCENT_HUES[settings.accent];
   if (hue != null && settings.accent !== 'orange') {
@@ -29,7 +35,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   }
   A.setDashboardUrl(settings.dashboardUrl);
   const sleeping = all.filter((t) => t.discarded).length;
-  $('#stats').textContent = [`${all.length} tab${all.length === 1 ? '' : 's'}`, sleeping && `${sleeping} suspended`].filter(Boolean).join(' · ');
+  $('#stats').textContent = [t('tabCount', { n: all.length }), sleeping && t('sleeping', { n: sleeping })].filter(Boolean).join(' · ');
 
   const target = groupPicker(S.allTargets(state), settings.lastGroupId);
   $('#close').checked = settings.closeOnSave;
@@ -42,7 +48,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     $('#cur-url').textContent = tab.url;
     $('#cur-icon').src = tab.favIconUrl || S.faviconFor(tab.url);
   } else {
-    $('#cur-name').value = 'This page cannot be saved';
+    $('#cur-name').value = t('cannotSave');
     $('#cur-name').disabled = true;
     $('#save-tab').disabled = true;
   }
@@ -51,18 +57,18 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     const groupId = target.value || null;
     await S.saveSettings({ lastGroupId: groupId });
     const named = { ...tab, title: $('#cur-name').value.trim() || tab.title };
-    msg('Saved ✔');
+    msg(t('saved'));
     await chrome.runtime.sendMessage({ cmd: 'saveTabs', args: { tabs: [named], parentId: groupId, close: $('#close').checked } });
     closePopup(450);
   });
 
   $('#save-window').addEventListener('click', async () => {
-    msg('Saving window…');
+    msg(t('savingWindow'));
     const { result } = await chrome.runtime.sendMessage({ cmd: 'saveWindow', args: { windowId: tab.windowId, close: $('#close').checked } });
-    msg(result ? 'Window saved as a new group ✔' : 'Nothing to save');
+    msg(t(result ? 'windowSaved' : 'nothingToSave'));
   });
-  $('#suspend').addEventListener('click', async () => msg(`Suspended ${await A.suspendTabs({})} tabs`));
-  $('#dedupe').addEventListener('click', async () => msg(`Closed ${await A.closeDuplicates()} duplicates`));
+  $('#suspend').addEventListener('click', async () => msg(t('suspended', { n: await A.suspendTabs({}) })));
+  $('#dedupe').addEventListener('click', async () => msg(t('closedDupes', { n: await A.closeDuplicates() })));
   $('#open').addEventListener('click', async () => {
     await chrome.runtime.sendMessage({ cmd: 'openDashboard' });
     closePopup();
@@ -101,8 +107,8 @@ function groupPicker(entries, initialId) {
   function show(entry) {
     picker.value = entry ? entry.node.id : '';
     setSym($('#target-sym'), entry ? symOf(entry) : '📥');
-    $('#target-name').textContent = entry ? entry.node.name : 'Inbox (new)';
-    $('#target-path').textContent = entry ? pathOf(entry) : 'A new group will be created';
+    $('#target-name').textContent = entry ? entry.node.name : t('inboxNew');
+    $('#target-path').textContent = entry ? pathOf(entry) : t('newGroupNote');
   }
 
   function render() {
@@ -141,7 +147,7 @@ function groupPicker(entries, initialId) {
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'picker-empty';
-      empty.textContent = 'No matching groups or folders';
+      empty.textContent = t('noTargets');
       nodes.push(empty);
     }
     list.replaceChildren(...nodes);

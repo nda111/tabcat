@@ -25,6 +25,12 @@ body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 13px/1.45 Archivo, "Pretendard Adjusted", system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
+/* Japanese and Chinese: Pretendard carries Hanja but no kana or simplified forms, so mixing it with the
+   fallback would set one sentence in two fonts; those languages use the system CJK font instead (Noto Sans,
+   from Google Fonts, only where there is none: its files load only when a page uses it) */
+:root:lang(ja) body { font-family: Archivo, "Hiragino Sans", "Yu Gothic UI", Meiryo, "Noto Sans JP", sans-serif; }
+:root:lang(zh) body { font-family: Archivo, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+:root:lang(ko) body { word-break: keep-all; } /* break Korean between words, not inside them */
 button, input, select { font: inherit; color: inherit; }
 .muted { color: var(--muted); }
 .small { font-size: 11.5px; }
@@ -52,7 +58,8 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 .card label.check:last-of-type { margin-bottom: 10px; }
 .card label.check { display: flex; gap: 6px; align-items: center; }
 .wide { width: 100%; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.grid .btn { white-space: normal; text-align: center; } /* long labels (some languages) wrap inside */
 #msg { margin: 8px 0 0; text-align: center; }
 
 /* "Save to" group picker */

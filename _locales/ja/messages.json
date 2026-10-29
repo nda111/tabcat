@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "タブを保存・整理・休止。ワークスペース → カテゴリ → グループ → フォルダ/リンクを Web ダッシュボードで管理します。"
+  },
+  "cmdPopup": {
+    "message": "tabcat のポップアップを開く"
+  },
+  "cmdDashboard": {
+    "message": "tabcat のダッシュボードを開く"
+  },
+  "cmdSaveTab": {
+    "message": "現在のタブを保存"
+  },
+  "cmdSaveWindow": {
+    "message": "ウィンドウのタブをすべて新しいグループとして保存"
+  }
+}

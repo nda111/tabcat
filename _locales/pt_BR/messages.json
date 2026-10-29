@@ -1,0 +1,17 @@
+{
+  "extDescription": {
+    "message": "Salve, organize e suspenda abas: espaço de trabalho → categoria → grupo → pasta/link, gerenciados em um painel web."
+  },
+  "cmdPopup": {
+    "message": "Abrir o pop-up do tabcat"
+  },
+  "cmdDashboard": {
+    "message": "Abrir o painel do tabcat"
+  },
+  "cmdSaveTab": {
+    "message": "Salvar a aba atual"
+  },
+  "cmdSaveWindow": {
+    "message": "Salvar todas as abas da janela como um novo grupo"
+  }
+}
