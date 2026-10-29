@@ -33,10 +33,12 @@
 html, body { height: 100%; margin: 0; }
 body {
   display: flex; background: var(--bg); color: var(--text);
-  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font: 13px/1.45 Archivo, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   overflow: hidden;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
+/* type scale: Archivo 400 for text, 600 for names and headings, 400 italic for hints */
+h1, h2, h3, strong, b { font-weight: 600; }
 .muted { color: var(--muted); }
 .small { font-size: 11.5px; }
 kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 11px; background: var(--panel-2); }
@@ -69,7 +71,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;
 }
 .panel-toggle:hover, .panel-toggle.hover { background: var(--hover); color: var(--text); }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; padding: 0 0 10px 8px; min-height: 30px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 10px 8px; min-height: 30px; }
 .brand-logo { display: grid; place-items: center; width: 22px; height: 22px; flex: none; }
 .brand-logo img { width: 22px; height: 22px; }
 .brand-name { flex: 1; }
@@ -96,7 +98,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 #topbar { display: flex; align-items: center; gap: 12px; padding: 12px 18px 6px; }
 #ws-head { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; cursor: pointer; }
 #ws-head h1 { font-size: 20px; margin: 0; white-space: nowrap; }
-#ws-head .desc { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ws-head .desc { color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-wrap input {
   width: 320px; border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 6px 10px;
 }
@@ -200,7 +202,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .folder-head .head-actions { align-items: center; gap: 0; }
 .folder-head .head-actions .icon-btn { padding: 1px 4px; color: var(--muted); }
 .folder-head .head-actions .icon-btn:hover, .folder-head .head-actions .icon-btn.hover { color: var(--accent); }
-.items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; padding: 6px 8px; }
+.items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; font-style: italic; padding: 6px 8px; }
 .items .items:empty::after { content: 'Empty folder'; padding: 2px 8px; }
 
 
@@ -305,7 +307,7 @@ dialog {
 }
 dialog::backdrop { background: rgba(0,0,0,.3); }
 dialog h3 { margin: 0 0 12px; }
-dialog label { display: block; margin-bottom: 10px; font-weight: 500; }
+dialog label { display: block; margin-bottom: 10px; font-weight: 600; }
 dialog label.check { display: flex; gap: 8px; align-items: center; }
 dialog input:not([type=checkbox]), dialog textarea, dialog select {
   display: block; width: 100%; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--border);
@@ -336,11 +338,11 @@ dialog legend { font-size: 11px; color: var(--muted); text-transform: uppercase;
 .sym-row { display: flex; gap: 8px; align-items: stretch; margin-top: 4px; }
 .sym-wrap { position: relative; flex: none; }
 dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
-dialog input.sym-box.letter { font-weight: 700; color: var(--accent); }
+dialog input.sym-box.letter { font-weight: 600; color: var(--accent); }
 /* letter / digit symbols: a square badge about the size of an emoji */
 .sym-letter {
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: .35em; flex: none;
-  background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); font-size: .78em; font-weight: 700; line-height: 1; vertical-align: .1em;
+  background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); font-size: .78em; font-weight: 600; line-height: 1; vertical-align: .1em;
 }
 #ws-head h1 { display: flex; align-items: center; gap: 8px; }
 .sym-clear {
@@ -364,7 +366,7 @@ dialog input.emoji-search { flex: 1; min-width: 0; }
 .emoji-grid button.selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .emoji-status:empty { display: none; }
 dialog .field { margin-bottom: 10px; }
-dialog .field-label { display: block; font-weight: 500; }
+dialog .field-label { display: block; font-weight: 600; }
 .icon-preview { display: flex; gap: 8px; align-items: center; }
 .icon-preview img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 .icon-preview input { flex: 1; min-width: 0; }
