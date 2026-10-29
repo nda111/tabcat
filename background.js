@@ -143,6 +143,7 @@ const handlers = {
     return true;
   },
   closeTabs: ({ tabIds }) => chrome.tabs.remove(tabIds).then(() => true),
+  closeWindow: ({ windowId }) => chrome.windows.remove(windowId).then(() => true),
   openDashboard: () => openDashboard(),
 };
 
