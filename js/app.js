@@ -929,6 +929,25 @@ function imageToDataUrl(file) {
   });
 }
 
+// Friendly two-word names for things created without a name ("Quiet Otter", "Amber Comet", ...).
+const NAMED_BY_DEFAULT = new Set(['workspace', 'category', 'group', 'folder']);
+const NAME_ADJECTIVES = ['Amber', 'Brisk', 'Calm', 'Cosy', 'Curious', 'Gentle', 'Golden', 'Hazy', 'Lucky', 'Mellow',
+  'Misty', 'Nimble', 'Quiet', 'Rapid', 'Sunny', 'Swift', 'Tidy', 'Velvet', 'Witty', 'Bright', 'Silver', 'Cobalt', 'Coral', 'Jade'];
+const NAME_NOUNS = ['Otter', 'Maple', 'Comet', 'Pebble', 'Harbor', 'Meadow', 'Lantern', 'Falcon', 'Willow', 'Ember',
+  'Canyon', 'Fern', 'Orbit', 'Tabby', 'Whisker', 'Biscuit', 'Breeze', 'Cedar', 'Glacier', 'Puffin', 'Acorn', 'Harvest', 'Nebula', 'Lagoon'];
+
+// A random name not already used by another item of the same type.
+function suggestName(type) {
+  const taken = new Set();
+  if (state) T.walk(state.workspaces, (n) => { if (n.type === type) taken.add(n.name); });
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+  for (let i = 0; i < 50; i++) {
+    const name = `${pick(NAME_ADJECTIVES)} ${pick(NAME_NOUNS)}`;
+    if (!taken.has(name)) return name;
+  }
+  return `${pick(NAME_ADJECTIVES)} ${pick(NAME_NOUNS)} ${Math.floor(Math.random() * 90) + 10}`;
+}
+
 function openEditor(type, data = {}, title) {
   const dlg = $('#editor');
   const form = $('#editor-form');
@@ -937,7 +956,11 @@ function openEditor(type, data = {}, title) {
   $('#editor-title').textContent = title || `Edit ${TYPE_LABEL[type].toLowerCase()}`;
   err.textContent = '';
   const inputs = {};
+  // a new workspace / category / group / folder may be left unnamed: it gets the suggested name,
+  // shown faintly in the empty field so you see what you'll get
+  const suggestion = !data.id && NAMED_BY_DEFAULT.has(type) ? suggestName(type) : '';
   fields.replaceChildren(...FIELDS[type].map(([key, label, kind, required]) => {
+    if (key === 'name' && suggestion) required = false;
     const input = kind === 'textarea'
       ? h('textarea', {
         name: key, placeholder: 'Ctrl+Enter to save',
@@ -945,6 +968,7 @@ function openEditor(type, data = {}, title) {
       })
       : h('input', { name: key, type: 'text', required: required ? true : null, autocomplete: 'off' });
     input.value = data[key] || '';
+    if (key === 'name' && suggestion) input.placeholder = suggestion;
     inputs[key] = input;
     if (kind === 'emoji') return symbolField(label, input, err);
     if (kind === 'icon') {
@@ -996,6 +1020,7 @@ function openEditor(type, data = {}, title) {
         try { new URL(v.url); } catch { return void (err.textContent = 'URL is not valid.'); }
         if (!v.name) v.name = v.url;
       }
+      if (!v.name && suggestion) v.name = suggestion;
       if (!v.name) return void (err.textContent = 'Name is required.');
       if ('symbol' in v) v.symbol = T.normalizeSymbol(v.symbol);
       if ('symbol' in v && !T.isValidSymbol(v.symbol)) return void (err.textContent = 'Symbol must be one emoji, letter or digit.');
@@ -1409,7 +1434,7 @@ function targetOps(t, groupName) {
   if (t.mode === 'newGroup') {
     const cat = T.locate(state, t.categoryId).node;
     return [{ op: 'create', parentId: t.categoryId, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
-      node: { type: 'group', name: groupName || 'New group', column: t.column ?? null } }];
+      node: { type: 'group', name: groupName || suggestName('group'), column: t.column ?? null } }];
   }
   return [];
 }
@@ -1450,7 +1475,7 @@ async function performDrop(d, t, e) {
     const cat = T.locate(state, t.categoryId).node;
     await run(B.call('saveTabs', { tabIds, close: settings.closeOnSave, newGroup: {
       categoryId: cat.id, column: t.column ?? null, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
-      name: d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : 'New group',
+      name: d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : suggestName('group'),
     } }));
     return;
   }
