@@ -235,6 +235,8 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
   font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
 }
 .note-edit:focus { outline: none; }
+/* stands in for a note that was emptied while it closes up */
+.note-spacer { background: var(--panel-2); border-bottom: 1px solid var(--border); }
 /* the old note / editor text fading out over its replacement */
 .note-ghost {
   position: fixed; z-index: 5; margin: 0; overflow: hidden; pointer-events: none;

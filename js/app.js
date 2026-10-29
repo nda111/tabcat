@@ -1051,7 +1051,14 @@ function holdNote() {
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
   if (!group || !group.querySelector('.note-edit') !== !edit) return null; // not drawn yet
   noteMorph = null;
-  const note = group.querySelector(edit ? '.note-edit' : '.note');
+  let note = group.querySelector(edit ? '.note-edit' : '.note');
+  if (!note && !edit) {
+    // the note was emptied: a blank stand-in closes up in its place, so nothing below jumps
+    const body = group.querySelector('.group-body');
+    if (!body) return null;
+    note = h('div', { class: 'note-spacer' });
+    body.prepend(note);
+  }
   if (!note) return null;
   Object.assign(note.style, { height: `${height}px`, minHeight: '0', overflow: 'hidden' });
   const { ghost } = held0;
@@ -1071,7 +1078,10 @@ function growNote(held) {
     const to = note.getBoundingClientRect().height;
     note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
     note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
-      .finished.catch(() => {}).then(() => { note.style.overflow = ''; note.style.minHeight = ''; });
+      .finished.catch(() => {}).then(() => {
+        if (note.matches('.note-spacer')) note.remove();
+        else { note.style.overflow = ''; note.style.minHeight = ''; }
+      });
     const fade = { duration: 240, easing: 'ease-out' };
     if (note.matches('textarea')) note.animate([{ color: 'transparent' }, { color: getComputedStyle(note).color }], fade);
     else for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], fade);
@@ -1091,7 +1101,7 @@ function growNote(held) {
 function saveNote(id, before, after) {
   editingNoteId = null;
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
-  noteMorph = ta && after.trim() ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta) } : null;
+  noteMorph = ta ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta) } : null;
   if (after !== (before || '')) apply({ op: 'patch', id, fields: { note: after } });
   else render();
 }
