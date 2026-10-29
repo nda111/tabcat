@@ -177,6 +177,7 @@ body.ws-collapsed .ws-add { display: flex; }
 }
 .group.collapsed .group-head, .group.empty-group .group-head { border-bottom: 0; }
 .group.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+#marquee.items { border-style: dashed; } /* the box is picking links / folders */
 #marquee { position: fixed; z-index: 40; pointer-events: none; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 3px; }
 body.selecting { user-select: none; cursor: crosshair; }
 body.selecting #board * { pointer-events: none; } /* no hover effects or tooltips under the box */

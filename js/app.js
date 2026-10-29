@@ -1232,6 +1232,7 @@ function clearSelection() {
 // Rubber-band selection: starts on empty board space (not on a card, gap or button).
 $('#board').addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || !$('#board').dataset.parent) return;
+  if (e.shiftKey && !e.target.closest('button, input, textarea, a, .note')) return smartBox(e);
   // (the New group card and the gaps add a group on a plain click, but pressing and moving
   // there starts a box selection like the rest of the empty board)
   if (e.target.closest('.group, button, input, textarea, a')) return;
@@ -1324,15 +1325,70 @@ function itemClick(e, node) {
   return false;
 }
 
-// Box selection inside the group of the selection.
+// Shift-drag anywhere on the board: a box that works out what you mean as it grows. Covering two or
+// more groups, a group's whole header, or most of a group selects groups; a box within one group
+// selects its links / folders (within the group of an existing item selection). Shift inverts what
+// the box covers, as with clicks.
+function smartBox(e) {
+  e.preventDefault(); // no native drag of what is under the pointer
+  e.stopImmediatePropagation();
+  const baseGroups = new Set(selected), baseItems = new Set(pickedItems), baseItemGroup = pickedGroup;
+  const x0 = e.clientX, y0 = e.clientY;
+  const box = h('div', { id: 'marquee' });
+  let moved = false;
+  const meets = (a, r) => a.left < r.right && a.right > r.left && a.top < r.bottom && a.bottom > r.top;
+  const covers = (r, a) => r.left <= a.left && r.right >= a.right && r.top <= a.top && r.bottom >= a.bottom;
+  const overlap = (a, r) => Math.max(0, Math.min(a.right, r.right) - Math.max(a.left, r.left)) * Math.max(0, Math.min(a.bottom, r.bottom) - Math.max(a.top, r.top));
+  const invert = (set, base, ids) => { set.clear(); base.forEach((id) => set.add(id)); ids.forEach((id) => (base.has(id) ? set.delete(id) : set.add(id))); };
+  const onMove = (ev) => {
+    if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+    if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
+    const r = { left: Math.min(x0, ev.clientX), top: Math.min(y0, ev.clientY), right: Math.max(x0, ev.clientX), bottom: Math.max(y0, ev.clientY) };
+    Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
+    const hit = [...document.querySelectorAll('#board .group')].filter((c) => meets(c.getBoundingClientRect(), r));
+    let mode = 'none';
+    if (hit.length >= 2) mode = 'groups';
+    else if (hit.length === 1) {
+      const c = hit[0].getBoundingClientRect();
+      const head = hit[0].querySelector(':scope > .group-head').getBoundingClientRect();
+      mode = covers(r, head) || overlap(c, r) > 0.6 * c.width * c.height ? 'groups' : 'items';
+    }
+    if (mode === 'groups') {
+      pickedItems.clear(); pickedGroup = null;
+      invert(selected, baseGroups, hit.map((c) => c.dataset.id));
+    } else if (mode === 'items') {
+      selected.clear();
+      const gid = hit[0].dataset.id;
+      const rows = [...hit[0].querySelectorAll('.link-row, .folder-head')].filter((row) => meets(row.getBoundingClientRect(), r));
+      invert(pickedItems, baseItemGroup === gid ? baseItems : new Set(), rows.map((row) => row.closest('.item').dataset.id));
+      pickedGroup = pickedItems.size ? gid : null;
+    } else {
+      invert(selected, baseGroups, []);
+      invert(pickedItems, baseItems, []); pickedGroup = baseItemGroup;
+    }
+    box.classList.toggle('items', mode === 'items');
+    paintSelection();
+    paintItems();
+  };
+  const onUp = () => {
+    removeEventListener('pointermove', onMove);
+    removeEventListener('pointerup', onUp);
+    box.remove();
+    document.body.classList.remove('selecting');
+    if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+  };
+  addEventListener('pointermove', onMove);
+  addEventListener('pointerup', onUp);
+}
+
+// Box selection inside the group of the selection (without Shift: from empty space in that group).
 $('#board').addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
   const body = e.target.closest('.group-body');
   if (!body || e.target.closest('button, input, textarea, a, .note')) return;
   const gid = body.closest('.group').dataset.id;
   const active = pickedItems.size && pickedGroup === gid;
-  if (!e.shiftKey && !(active && !e.target.closest('.item'))) return;
-  if (pickedGroup && pickedGroup !== gid) return;
+  if (!active || e.target.closest('.item')) return; // (Shift-drags are handled by smartBox)
   e.preventDefault(); // no native drag of the item under the pointer
   const base = new Set(pickedItems);
   const x0 = e.clientX, y0 = e.clientY;
