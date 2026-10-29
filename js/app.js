@@ -189,17 +189,23 @@ function snapshotLayout() {
     const r = el.getBoundingClientRect();
     if (r.width) rects.set(el.dataset.id, r);
   }
-  return { rects, board: $('#board').dataset.parent };
+  return { rects, board: $('#board').dataset.parent, ws: $('#ws-list .ws-item.active')?.dataset.id };
 }
 
 // After a re-render, slide each element from its old place to its new one, and pop in new ones
 // (FLIP: Last, Invert, Play). Nested elements move relative to their moving parent.
 function animateLayout(before) {
   if (!before) return;
-  try { animateMoves(before); } finally { openExpanded(); }
+  const wsChanged = before.ws !== currentWs()?.id;
+  const boardChanged = before.board !== $('#board').dataset.parent;
+  // switching workspace / category: the new content eases in as a whole (no per-item pops)
+  const ease = { duration: 260, easing: 'cubic-bezier(.2, .8, .3, 1)' };
+  if (wsChanged) $('#cat-bar').animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], ease);
+  if (boardChanged && before.board) $('#board .columns')?.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], ease);
+  try { animateMoves(before, wsChanged); } finally { openExpanded(); }
 }
 
-function animateMoves(before) {
+function animateMoves(before, wsChanged = false) {
   const played = new Set(); // ids animated in this pass
   const sameBoard = before.board === $('#board').dataset.parent;
   const deltas = new Map();
@@ -215,6 +221,7 @@ function animateMoves(before) {
   for (const el of els) {
     if (el.matches('.add-group') || popping(el)) continue; // (the New group card is only measured)
     const d = deltas.get(el);
+    if (wsChanged && el.matches('.cat-tab')) continue; // the whole bar eases in instead
     if (!d && before.rects.size && el.matches('.ws-item, .cat-tab')) {
       // a new workspace / category: springs into the list (the board may have switched to it)
       play(played, el, [{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING }, true);
@@ -741,10 +748,15 @@ async function renderTabs() {
         w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id })),
         noTip(btn(icon('close'), 'Close window', () => closeWindow(w, name)))),
       w.tabs.map((t) => h('div', {
-        class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
+        class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
         title: [t.title || t.url, t.url, t.discarded ? 'Suspended' : t.active ? 'Active tab' : ''].filter(Boolean).join('\n'),
-        onclick: () => run(B.call('activateTab', { tabId: t.id })),
+        onclick: (e) => {
+          if (e.shiftKey) return void toggleTab(t.id); // Shift-click selects instead of switching
+          clearTabs();
+          run(B.call('activateTab', { tabId: t.id }));
+        },
+        oncontextmenu: (e) => showMenu(e, tabsMenu(pickedTabs.has(t.id) ? [...pickedTabs] : [t.id])),
       },
       iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
       h('span', { class: 'name' }, t.title || t.url),
@@ -770,6 +782,7 @@ async function renderTabs() {
     }));
     if (seq !== tabsRenderSeq) return;
   }
+  for (const id of pickedTabs) if (!live.has(String(id))) pickedTabs.delete(id);
   const keyOf = (el) => (el.matches('.tab-row') ? `t${el.dataset.tab}` : `w${el.dataset.window}`);
   const hadRows = document.querySelectorAll('#windows .tab-row').length > 0;
   const before = new Map([...document.querySelectorAll('#windows .tab-row, #windows .win')].map((el) => [keyOf(el), el.getBoundingClientRect()]));
@@ -826,6 +839,85 @@ function fitActions() {
   row.classList.toggle('icons-only', !fits);
 }
 new ResizeObserver(fitActions).observe($('.panel-actions'));
+
+/* ---------- open-tab selection ---------- */
+
+// Tabs picked in the open-tabs panel (Shift-click / Shift-drag a box, across windows). Dragging one
+// of them moves them all; right-click, Delete and Esc act on them.
+const pickedTabs = new Set();
+
+function paintTabs() {
+  for (const r of document.querySelectorAll('#windows .tab-row')) r.classList.toggle('picked', pickedTabs.has(+r.dataset.tab));
+}
+function toggleTab(id) {
+  if (!pickedTabs.delete(id)) pickedTabs.add(id);
+  paintTabs();
+}
+function clearTabs() {
+  if (!pickedTabs.size) return;
+  pickedTabs.clear();
+  paintTabs();
+}
+
+$('#windows').addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || !e.shiftKey || e.target.closest('button')) return;
+  e.preventDefault(); // no native drag of the row under the pointer
+  const base = new Set(pickedTabs);
+  const x0 = e.clientX, y0 = e.clientY;
+  const box = h('div', { id: 'marquee' });
+  let moved = false;
+  const onMove = (ev) => {
+    if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+    if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
+    const r = { left: Math.min(x0, ev.clientX), top: Math.min(y0, ev.clientY), right: Math.max(x0, ev.clientX), bottom: Math.max(y0, ev.clientY) };
+    Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
+    pickedTabs.clear();
+    base.forEach((id) => pickedTabs.add(id));
+    for (const row of document.querySelectorAll('#windows .tab-row')) {
+      const c = row.getBoundingClientRect();
+      if (c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top) {
+        const id = +row.dataset.tab;
+        if (base.has(id)) pickedTabs.delete(id); else pickedTabs.add(id); // Shift inverts, like elsewhere
+      }
+    }
+    paintTabs();
+  };
+  const onUp = () => {
+    removeEventListener('pointermove', onMove);
+    removeEventListener('pointerup', onUp);
+    box.remove();
+    document.body.classList.remove('selecting');
+    if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+  };
+  addEventListener('pointermove', onMove);
+  addEventListener('pointerup', onUp);
+});
+
+async function closePickedTabs(ids) {
+  clearTabs();
+  await run(B.call('closeTabs', { tabIds: ids }));
+}
+
+function tabsMenu(ids) {
+  const n = ids.length;
+  const what = n === 1 ? 'tab' : plural(n, 'tab');
+  const cat = currentCat();
+  return [
+    cat && { icon: 'group', label: `Save ${what} to a new group`, key: 'G', fn: async () => {
+      clearTabs();
+      await run(B.call('saveTabs', { tabIds: ids, close: settings.closeOnSave, newGroup: { categoryId: cat.id, name: suggestName('group'), column: 0 } }));
+    } },
+    { icon: 'suspend', label: `Suspend ${what}`, key: 'S', fn: async () => {
+      clearTabs();
+      const done = await run(B.call('discardTabs', { tabIds: ids }));
+      if (done != null) toast(`Suspended ${plural(done, 'tab')}`);
+    } },
+    { icon: 'windows', label: 'Move to a new window', key: 'W', fn: () => { clearTabs(); run(B.call('moveToNewWindow', { tabIds: ids })); } },
+    pickedTabs.size > 0 && { icon: 'close', label: 'Clear selection', key: 'X', fn: clearTabs },
+    '-',
+    { icon: 'trash', label: `Close ${what}`, key: 'D', danger: true, fn: () => closePickedTabs(ids) },
+  ];
+}
 
 let tabsTimer;
 let tabsRenderSeq = 0;
@@ -1833,7 +1925,11 @@ document.addEventListener('dragstart', (e) => {
   const dt = e.dataTransfer;
   dt.effectAllowed = 'copyMove';
   if (src.matches('.tab-row')) {
-    drag = { kind: 'tab', tabIds: [+src.dataset.tab] };
+    // dragging one of several selected tabs takes them all, in list order
+    const id = +src.dataset.tab;
+    const ids = pickedTabs.has(id) && pickedTabs.size > 1
+      ? [...document.querySelectorAll('#windows .tab-row.picked')].map((r) => +r.dataset.tab) : [id];
+    drag = { kind: 'tab', tabIds: ids };
     dt.setData('text/plain', src.dataset.url || '');
   } else if (src.matches('.win-head')) {
     drag = { kind: 'window', windowId: +src.closest('.win').dataset.window };
@@ -2328,6 +2424,7 @@ document.addEventListener('keydown', (e) => {
     const hit = !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 &&
       items.find((b) => b.dataset.key && b.dataset.key === e.key.toUpperCase());
     if (hit) { e.preventDefault(); hit.click(); return; }
+    if (e.key === 'Escape') { hideMenu(); return; } // closes the menu only, not the selection
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const i = items.indexOf(document.activeElement);
@@ -2338,6 +2435,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideMenu();
   const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
   const dialogOpen = !!document.querySelector('dialog[open]');
+  if (!typing && !dialogOpen && pickedTabs.size) {
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); closePickedTabs([...pickedTabs]); return; }
+    if (e.key === 'Escape') { clearTabs(); return; }
+  }
   if (!typing && !dialogOpen && pickedItems.size) {
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteItems(); return; }
     if (e.key === 'Escape') { clearItems(); return; }
@@ -2381,7 +2482,7 @@ async function refresh() {
 }
 
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
-const MIN_EXTENSION = '0.2.1';
+const MIN_EXTENSION = '0.2.2';
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
   for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
