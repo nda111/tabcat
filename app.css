@@ -90,8 +90,10 @@ body.resizing { cursor: col-resize; user-select: none; }
 .ws-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws-item .count { color: var(--muted); font-size: 11px; }
 .side-bottom { border-top: 1px solid var(--border); padding-top: 8px; }
-.side-btn.help-btn { width: auto; color: var(--muted); }
-.side-btn.help-btn:hover, .side-btn.help-btn.hover { color: var(--text); }
+/* "new workspace" at the end of the list: only in the collapsed rail */
+.ws-add { display: none; justify-content: center; padding: 7px 0; border-radius: 7px; color: var(--muted); cursor: pointer; }
+.ws-add:hover, .ws-add.hover { background: var(--hover); color: var(--text); }
+body.ws-collapsed .ws-add { display: flex; }
 
 /* guide */
 #help { width: 620px; }
@@ -108,8 +110,8 @@ body.resizing { cursor: col-resize; user-select: none; }
 .keys { border-collapse: collapse; }
 .keys td { padding: 3px 14px 3px 0; vertical-align: top; }
 .keys td:first-child { white-space: nowrap; }
-.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
-.side-btn:hover, .side-btn.hover { background: var(--hover); }
+.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px; border-radius: 7px; cursor: pointer; color: var(--muted); }
+.side-btn:hover, .side-btn.hover { background: var(--hover); color: var(--text); }
 
 /* ---------- main ---------- */
 #main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -321,11 +323,10 @@ body.ws-collapsed .ws-item .name, body.ws-collapsed .ws-item .count, body.ws-col
 body.ws-collapsed #ws-toggle { position: absolute; left: 50%; top: 0; transform: translateX(-50%); opacity: 0; }
 body.ws-collapsed .brand:hover #ws-toggle { opacity: 1; background: var(--hover); }
 body.ws-collapsed .brand:hover .brand-logo { visibility: hidden; }
-body.ws-collapsed .side-title { justify-content: center; padding: 0 0 4px; }
+body.ws-collapsed .side-title { display: none; }
 body.ws-collapsed .ws-item { justify-content: center; padding: 7px 0; }
 body.ws-collapsed .ws-item .sym { width: auto; font-size: 17px; }
 body.ws-collapsed .side-btn { justify-content: center; padding: 6px 0; }
-body.ws-collapsed .side-btn.help-btn { width: 100%; }
 body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }

@@ -181,7 +181,10 @@ function renderSidebar() {
     },
     symbolEl(ws.symbol, '🗃️'),
     h('span', { class: 'name' }, ws.name),
-    h('span', { class: 'count' }, T.countLinks(ws)))));
+    h('span', { class: 'count' }, T.countLinks(ws)))),
+    // collapsed rail: "new workspace" sits at the end of the list (expanded, it is beside the heading)
+    h('li', { class: 'ws-add', dataset: { railTitle: 'New workspace' }, onclick: addWorkspace }, icon('plus', 17)));
+  applyRailTitles();
 }
 
 function renderHead() {
@@ -1591,6 +1594,16 @@ function applyPanels() {
     document.body.classList.toggle(`${key}-collapsed`, collapsed);
     document.body.style.setProperty(`--${key}-w`, ui[p.width] ? ui[p.width] + 'px' : null);
     $(p.toggle).title = `${collapsed ? 'Expand' : 'Collapse'} ${p.name}`;
+  }
+  applyRailTitles();
+}
+
+// Controls labelled in the expanded sidebar get their tooltip (data-rail-title) only when collapsed.
+function applyRailTitles() {
+  const collapsed = document.body.classList.contains('ws-collapsed');
+  for (const el of document.querySelectorAll('#sidebar [data-rail-title]')) {
+    if (collapsed) el.title = el.dataset.railTitle;
+    else el.removeAttribute('title');
   }
 }
 
