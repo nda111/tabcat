@@ -253,25 +253,29 @@ function renderGroup(g) {
       startNoteEdit(g.id);
     });
   }
+  // header: a big symbol on the left; beside it the name line (name, count, actions, collapse)
+  // above a row of add buttons
   return h('div', { class: 'group' + (g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
     h('div', {
       class: 'group-head', draggable: 'true',
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
     },
-    btn(g.collapsed ? '▸' : '▾', g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)),
-    g.symbol && symbolEl(g.symbol),
-    h('span', { class: 'name' }, g.name),
-    h('span', { class: 'count' }, T.countLinks(g)),
-    h('span', { class: 'head-actions' },
-      btn(icon('note'), 'Edit note', () => startNoteEdit(g.id)),
-      btn(icon('open'), 'Open all links', () => openAll(g)),
-      btn(icon('more'), 'More', (e) => nodeMenu(e, g)))),
+    h('div', { class: 'group-sym' + (g.symbol ? '' : ' none') }, g.symbol ? symbolEl(g.symbol) : icon('group', 20)),
+    h('div', { class: 'group-info' },
+      h('div', { class: 'group-line' },
+        h('span', { class: 'name' }, g.name),
+        h('span', { class: 'count' }, T.countLinks(g)),
+        h('span', { class: 'head-actions' },
+          btn(icon('note'), 'Edit note', () => startNoteEdit(g.id)),
+          btn(icon('open'), 'Open all links', () => openAll(g)),
+          btn(icon('more'), 'More', (e) => nodeMenu(e, g))),
+        Object.assign(btn(icon('chevron'), g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
+      h('div', { class: 'group-tools' },
+        btn(icon('linkPlus'), 'Add link', () => addLink(g.id)),
+        btn(icon('folderPlus'), 'Add folder', () => addFolder(g.id))))),
     h('div', { class: 'group-body' },
       note,
-      renderItems(g.items, g.id),
-      h('div', { class: 'add-row' },
-        btn([plus(), 'Link'], 'Add link', () => addLink(g.id)),
-        btn([plus(), 'Folder'], 'Add folder', () => addFolder(g.id)))));
+      renderItems(g.items, g.id)));
 }
 
 function renderItems(items, parentId) {

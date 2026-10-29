@@ -128,14 +128,27 @@ body.resizing { cursor: col-resize; user-select: none; }
   display: flex; flex-direction: column; min-width: 0; align-self: start;
 }
 .group-head {
-  display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-bottom: 1px solid var(--border);
   cursor: grab; user-select: none;
 }
 .group.collapsed .group-head { border-bottom: 0; }
-.group-head .sym { font-size: 15px; }
-.group-head .name { font-weight: 600; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.group-head .head-actions { margin-left: auto; }
-.group-head .count { color: var(--muted); font-size: 11px; }
+.group-sym {
+  flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
+  font-size: 28px; line-height: 1;
+}
+.group-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
+.group-sym.none { background: var(--panel-2); color: var(--muted); }
+.group-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.group-line { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.group-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group-line .count { color: var(--muted); font-size: 11px; }
+.group-line .head-actions { margin-left: auto; }
+.collapse-btn { color: var(--muted); }
+.collapse-btn .ico { transition: transform .12s; }
+.group.collapsed .collapse-btn .ico { transform: rotate(-90deg); }
+.group-tools { display: flex; gap: 2px; margin-left: -5px; }
+.group-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
+.group-tools .icon-btn:hover, .group-tools .icon-btn.hover { color: var(--accent); }
 .head-actions { display: flex; opacity: 0; transition: opacity .1s; }
 .group-head:hover .head-actions, .group-head.hover .head-actions, .folder-head:hover .head-actions, .folder-head.hover .head-actions { opacity: 1; }
 .group.collapsed .group-body { display: none; }
@@ -182,8 +195,6 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; padding: 6px 8px; }
 .items .items:empty::after { content: 'Empty folder'; padding: 2px 8px; }
 
-.add-row { display: flex; gap: 4px; padding: 0 8px 8px; }
-.add-row .icon-btn { font-size: 12px; }
 
 .add-group {
   --add-color: color-mix(in srgb, var(--border) 65%, var(--muted)); /* the + matches the dashed border */
