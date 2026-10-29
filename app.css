@@ -147,6 +147,10 @@ body.resizing { cursor: col-resize; user-select: none; }
   cursor: grab; user-select: none;
 }
 .group.collapsed .group-head, .group.empty-group .group-head { border-bottom: 0; }
+/* the header's empty space toggles the group: hover tint there, not over the name, symbol or buttons */
+.group-head { border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; transition: background .1s; }
+.group.collapsed .group-head { border-radius: calc(var(--radius) - 1px); }
+.group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover, button:hover)) { background: var(--hover); cursor: pointer; }
 .node-sym {
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
   font-size: 28px; line-height: 1;

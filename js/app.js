@@ -292,6 +292,9 @@ function layoutColumns(cat, n) {
 }
 
 
+// Parts of a group header that keep their own click behaviour (the rest toggles collapse).
+const HEAD_KEEP = '.name, .node-sym, button, textarea, input';
+
 function renderGroup(g) {
   const editing = editingNoteId === g.id;
   let note = null;
@@ -321,7 +324,10 @@ function renderGroup(g) {
   return h('div', { class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
     h('div', {
       class: 'group-head', draggable: 'true',
-      ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
+      // empty header space toggles the group; the name and symbol edit it on double-click
+      onclick: (e) => { if (!empty && !e.target.closest(HEAD_KEEP)) toggleCollapse(g); },
+      ondblclick: (e) => { if (e.target.closest('.name, .node-sym')) editNode(g); },
+      oncontextmenu: (e) => nodeMenu(e, g),
     },
     g.symbol && h('div', { class: 'node-sym' }, symbolEl(g.symbol)), // no symbol: the name and tools take the room
     h('div', { class: 'node-info' },
