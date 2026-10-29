@@ -278,12 +278,13 @@ function renderGroup(g) {
         btn(icon('more'), 'More', (e) => nodeMenu(e, g))))),
     h('div', { class: 'group-body' },
       note,
-      renderItems(g.items, g.id)));
+      renderItems(g.items, g.id, 0)));
 }
 
-function renderItems(items, parentId) {
+// `depth`: folders enclosing this list (0 directly in a group).
+function renderItems(items, parentId, depth) {
   return h('ul', { class: 'items', dataset: { parent: parentId } },
-    items.map((n) => (n.type === 'folder' ? renderFolder(n) : renderLink(n))));
+    items.map((n) => (n.type === 'folder' ? renderFolder(n, depth + 1) : renderLink(n))));
 }
 
 function renderLink(l) {
@@ -304,7 +305,7 @@ function renderLink(l) {
 
 // One compact row (folders sit among links): chevron, symbol, name, count; the action buttons
 // appear on hover and take no space otherwise.
-function renderFolder(f) {
+function renderFolder(f, depth) {
   return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
       class: 'folder-head', draggable: 'true',
@@ -320,12 +321,12 @@ function renderFolder(f) {
       h('span', { class: 'count' }, T.countLinks(f))),
     h('span', { class: 'head-actions' },
       btn(icon('linkPlus'), 'Add link', () => addLink(f.id)),
-      btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
+      depth < T.MAX_FOLDER_DEPTH && btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
       h('span', { class: 'tools-split' }),
       btn(icon('edit'), 'Edit folder', () => editNode(f)),
       btn(icon('open'), 'Open all links', () => openAll(f)),
       btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
-    renderItems(f.items, f.id));
+    renderItems(f.items, f.id, depth));
 }
 
 /* ---------- search ---------- */
@@ -760,7 +761,7 @@ function nodeMenu(e, node) {
       { icon: 'tabs', label: 'Add all tabs of this window', fn: () => addWindowTabs(node.id) },
       ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) },
       { icon: 'dedupe', label: 'Remove duplicate links', fn: () => dedupeLinks(node) }, '-', del],
-    folder: [edit, { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add subfolder', fn: () => addFolder(node.id) },
+    folder: [edit, { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: 'Add subfolder', fn: () => addFolder(node.id) },
       ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) }, '-', del],
     link: [{ icon: 'open', label: 'Open', fn: () => openLink(node) }, { icon: 'window', label: 'Open in new window', fn: () => openLink(node, { shiftKey: true }) },
       edit, { icon: 'copy', label: 'Copy URL', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
@@ -824,7 +825,12 @@ function resolveDrop(e, d) {
   const el = e.target instanceof Element ? e.target : e.target.parentElement;
   if (!el || el.closest('dialog, #menu')) return null;
   const type = d.kind === 'node' ? d.type : 'link'; // tabs / windows / external urls behave like links
-  if (type === 'link' || type === 'folder') return resolveItemDrop(e, el, d);
+  if (type === 'link') return resolveItemDrop(e, el, d);
+  if (type === 'folder') { // a folder (with its subfolders) must stay within MAX_FOLDER_DEPTH
+    const t = resolveItemDrop(e, el, d);
+    const node = T.locate(state, d.id)?.node;
+    return t && t.parentId && !T.fitsDepth(state, t.parentId, node) ? null : t;
+  }
   if (type === 'group') return resolveGroupDrop(e, el, d);
   if (type === 'category') return resolveCatDrop(e, el, d);
   if (type === 'workspace') return resolveWsDrop(e, el, d);

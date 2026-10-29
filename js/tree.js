@@ -32,6 +32,21 @@ export function locate(state, id) {
   return rec(state.workspaces, null);
 }
 
+// Folders nest at most MAX_FOLDER_DEPTH deep (a folder directly in a group is at depth 1).
+export const MAX_FOLDER_DEPTH = 4;
+
+// Levels of folders in `node` itself (0 for a link, 1 for a folder without subfolders, ...).
+export const folderHeight = (n) =>
+  (n?.type === 'folder' ? 1 + Math.max(0, ...(n.items || []).map(folderHeight)) : 0);
+
+// How many folders enclose the list of `parentId` (0 inside a group).
+export function folderDepth(state, parentId) {
+  const r = parentId && locate(state, parentId);
+  return r ? [...r.ancestors, r.node].filter((n) => n.type === 'folder').length : 0;
+}
+
+export const fitsDepth = (state, parentId, node) => folderDepth(state, parentId) + folderHeight(node) <= MAX_FOLDER_DEPTH;
+
 export function walk(list, cb, ancestors = []) {
   for (const n of list) {
     cb(n, ancestors);
