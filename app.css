@@ -117,7 +117,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   flex: 1; overflow: auto; padding: 16px 18px 80px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-content: start;
 }
-#board.drop-new { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
 .empty {
   grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 20px;
 }
@@ -202,6 +202,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
   min-height: 90px; color: var(--add-color); cursor: pointer; align-self: start;
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
+.add-group.drop-new { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 
 /* ---------- drag & drop ---------- */
 .dragging { opacity: .4; }

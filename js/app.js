@@ -756,7 +756,7 @@ function clearIndicator() {
   line.hidden = true;
   intoEl?.classList.remove('drop-into');
   intoEl = null;
-  $('#board').classList.remove('drop-new');
+  document.querySelector('.add-group.drop-new')?.classList.remove('drop-new');
 }
 
 function showIndicator(t) {
@@ -766,7 +766,7 @@ function showIndicator(t) {
     Object.assign(line.style, { left: t.line.x + 'px', top: t.line.y + 'px', width: t.line.w + 'px', height: t.line.h + 'px' });
     line.hidden = false;
   } else if (t.mode === 'newGroup') {
-    $('#board').classList.add('drop-new');
+    $('#board .add-group')?.classList.add('drop-new'); // the New group card stands for "new group"
   } else if (t.el) {
     intoEl = t.el;
     intoEl.classList.add('drop-into');
