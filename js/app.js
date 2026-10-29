@@ -8,7 +8,10 @@ import { icon, hydrateIcons } from './icons.js';
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, autoSuspendMinutes: 0, theme: 'auto' };
+let settings = { closeOnSave: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange' };
+
+// Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
+const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
 let ui = loadUi();          // per-device view state: selected workspace / category, panel visibility
 let editingNoteId = null;
 let drag = null;            // { kind:'node', id, type } | { kind:'tab', tabIds } | { kind:'window', windowId } | { kind:'external' }
@@ -181,8 +184,12 @@ async function run(promise) {
 const apply = (...ops) => run(B.apply(...ops));
 
 function applyTheme() {
-  if (settings.theme === 'auto') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = settings.theme;
+  const root = document.documentElement;
+  if (settings.theme === 'auto') delete root.dataset.theme;
+  else root.dataset.theme = settings.theme;
+  const hue = ACCENTS[settings.accent];
+  if (hue == null || settings.accent === 'orange') { delete root.dataset.accent; root.style.removeProperty('--hue'); }
+  else { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
 }
 
 const currentWs = () => state.workspaces.find((w) => w.id === ui.ws) || state.workspaces[0] || null;
@@ -2198,11 +2205,16 @@ for (const dlg of document.querySelectorAll('dialog')) {
   });
 }
 
+$('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
+  h('label', { class: 'swatch', title: name[0].toUpperCase() + name.slice(1), dataset: { accent: name }, style: `--hue: ${hue}` },
+    h('input', { type: 'radio', name: 'accent', value: name, 'aria-label': name }))));
+
 function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.theme.value = settings.theme;
+  f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'orange';
   f.columns.value = boardColumns();
 }
 
@@ -2218,6 +2230,7 @@ $('#settings-form').addEventListener('change', async (e) => {
     closeOnSave: f.closeOnSave.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
     theme: f.theme.value,
+    accent: f.accent.value,
     columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
   if (s) { settings = s; applyTheme(); relayoutBoard(); }
@@ -2357,6 +2370,7 @@ const SETTINGS_IO = {
   closeOnSave: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
+  accent: (v) => Object.hasOwn(ACCENTS, v),
   columns: (v) => Number.isInteger(v) && v >= 1 && v <= MAX_COLUMNS,
 };
 
