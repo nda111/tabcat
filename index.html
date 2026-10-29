@@ -88,9 +88,16 @@
       </label>
       <fieldset>
         <legend>Data</legend>
-        <button type="button" class="btn" id="btn-export">⬇️ Export JSON</button>
-        <label class="btn file-btn">⬆️ Import JSON<input type="file" id="import-file" accept=".json,application/json" hidden></label>
-        <p class="muted small">Import adds workspaces from the file; nothing is overwritten.</p>
+        <div class="data-row">
+          <button type="button" class="btn" id="btn-export">⬇️ Export data…</button>
+          <label class="btn file-btn">⬆️ Import data…<input type="file" id="import-file" accept=".json,application/json" hidden></label>
+        </div>
+        <div class="data-row">
+          <button type="button" class="btn" id="btn-export-settings">⬇️ Export settings</button>
+          <label class="btn file-btn">⬆️ Import settings<input type="file" id="import-settings-file" accept=".json,application/json" hidden></label>
+        </div>
+        <p class="muted small">Import adds the selected items as new workspaces; nothing is overwritten.
+          Settings files hold the options above (not the dashboard address).</p>
       </fieldset>
       <fieldset>
         <legend>Shortcuts</legend>
@@ -101,6 +108,22 @@
       </fieldset>
       <menu>
         <button type="submit" class="btn primary">Done</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="picker">
+    <form method="dialog" id="picker-form">
+      <h3 id="picker-title"></h3>
+      <div class="picker-tools">
+        <button type="button" class="btn small" id="picker-all">Select all</button>
+        <button type="button" class="btn small" id="picker-none">None</button>
+        <span class="muted small" id="picker-count"></span>
+      </div>
+      <ul id="picker-tree"></ul>
+      <menu>
+        <button type="button" class="btn" id="picker-cancel">Cancel</button>
+        <button type="submit" class="btn primary" id="picker-ok"></button>
       </menu>
     </form>
   </dialog>

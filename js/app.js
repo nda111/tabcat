@@ -590,7 +590,8 @@ function nodeMenu(e, node) {
   const del = { label: '🗑️ Delete', danger: true, fn: () => deleteNode(node) };
   const edit = { label: '✏️ Edit…', fn: () => editNode(node) };
   const menus = {
-    workspace: [edit, { label: '🏷️ New category', fn: () => addCategory(node) }, ...open, '-', del],
+    workspace: [edit, { label: '🏷️ New category', fn: () => addCategory(node) }, ...open,
+      { label: '⬇️ Export…', fn: () => exportData(node.id) }, '-', del],
     category: [edit, { label: '🗂️ New group', fn: () => addGroup(node) }, ...open, '-', del],
     group: [edit, { label: '📝 Edit note', fn: () => startNoteEdit(node.id) },
       { label: '🔗 Add link', fn: () => addLink(node.id) }, { label: '📁 Add folder', fn: () => addFolder(node.id) },
@@ -873,11 +874,15 @@ for (const dlg of document.querySelectorAll('dialog')) {
   });
 }
 
-function openSettings() {
+function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.theme.value = settings.theme;
+}
+
+function openSettings() {
+  fillSettings();
   $('#settings').showModal();
 }
 
@@ -892,26 +897,162 @@ $('#settings-form').addEventListener('change', async (e) => {
   if (s) { settings = s; applyTheme(); }
 });
 
-$('#btn-export').addEventListener('click', async () => {
-  const data = await run(B.call('getState'));
-  if (!data) return;
-  const payload = { app: 'tabcat', exportedAt: new Date().toISOString(), ...data };
+/* ---------- export / import ---------- */
+
+const CHILD_KEY = { workspace: 'categories', category: 'groups' };
+
+// Checkbox tree of workspaces → categories → groups. Resolves with pruned copies of the checked
+// workspaces (ancestors of a checked node are kept with only their checked children), or null.
+function pickNodes({ title, ok, workspaces, initial = () => true }) {
+  const dlg = $('#picker');
+  const okBtn = $('#picker-ok');
+  $('#picker-title').textContent = title;
+  okBtn.textContent = ok;
+  const roots = [];
+  const leaves = [];
+
+  const setDown = (e, v) => { e.box.checked = v; e.box.indeterminate = false; e.kids.forEach((k) => setDown(k, v)); };
+  const refreshUp = (e) => {
+    for (let p = e.parent; p; p = p.parent) {
+      const all = p.kids.every((k) => k.box.checked);
+      p.box.checked = all;
+      p.box.indeterminate = !all && p.kids.some((k) => k.box.checked || k.box.indeterminate);
+    }
+  };
+  const refreshCount = () => {
+    const n = leaves.filter((e) => e.box.checked).length;
+    $('#picker-count').textContent = `${n} of ${leaves.length} selected`;
+    okBtn.disabled = !n;
+  };
+
+  const build = (node, parent) => {
+    const kids = CHILD_KEY[node.type] ? node[CHILD_KEY[node.type]] || [] : [];
+    const box = h('input', { type: 'checkbox' });
+    const entry = { box, node, parent, kids: [] };
+    if (parent) parent.kids.push(entry); else roots.push(entry);
+    const li = h('li', { class: node.type === 'workspace' ? '' : 'closed' });
+    box.addEventListener('change', () => { setDown(entry, box.checked); refreshUp(entry); refreshCount(); });
+    li.append(h('div', { class: 'pick-row' },
+      kids.length ? Object.assign(btn('▾', 'Expand / collapse', () => li.classList.toggle('closed')), { className: 'icon-btn twisty' })
+        : h('span', { class: 'twisty-gap' }),
+      h('label', {}, box,
+        h('span', { class: 'sym' }, node.symbol || (node.type === 'category' ? '🏷️' : node.type === 'workspace' ? '🗃️' : '🗂️')),
+        h('span', { class: 'name' }, node.name || '(untitled)'),
+        h('span', { class: 'count' }, T.countLinks(node)))));
+    if (kids.length) li.append(h('ul', {}, kids.map((k) => build(k, entry))));
+    else leaves.push(entry);
+    return li;
+  };
+  $('#picker-tree').replaceChildren(...workspaces.map((ws) => build(ws, null)));
+  for (const e of roots) setDown(e, !!initial(e.node));
+  refreshCount();
+
+  const pick = (e) => {
+    if (!e.kids.length) return e.box.checked ? e.node : null;
+    const kids = e.kids.map(pick).filter(Boolean);
+    return kids.length ? { ...e.node, [CHILD_KEY[e.node.type]]: kids } : null;
+  };
+
+  return new Promise((resolve) => {
+    const all = (v) => () => { roots.forEach((e) => setDown(e, v)); refreshCount(); };
+    const onAll = all(true);
+    const onNone = all(false);
+    let done = false;
+    const finish = (v) => {
+      if (done) return;
+      done = true;
+      $('#picker-form').removeEventListener('submit', onSubmit);
+      $('#picker-cancel').removeEventListener('click', onCancel);
+      $('#picker-all').removeEventListener('click', onAll);
+      $('#picker-none').removeEventListener('click', onNone);
+      dlg.removeEventListener('close', onCancel);
+      if (dlg.open) dlg.close();
+      resolve(v);
+    };
+    const onCancel = () => finish(null);
+    const onSubmit = (e) => { e.preventDefault(); finish(roots.map(pick).filter(Boolean)); };
+    $('#picker-form').addEventListener('submit', onSubmit);
+    $('#picker-cancel').addEventListener('click', onCancel);
+    $('#picker-all').addEventListener('click', onAll);
+    $('#picker-none').addEventListener('click', onNone);
+    dlg.addEventListener('close', onCancel);
+    dlg.showModal();
+  });
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const slug = (s) => String(s).trim().replace(/[\\/:*?"<>|\s]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+
+function download(name, payload) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = h('a', { href: URL.createObjectURL(blob), download: `tabcat-${new Date().toISOString().slice(0, 10)}.json` });
+  const a = h('a', { href: URL.createObjectURL(blob), download: name });
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-});
+}
+
+async function exportData(onlyId) {
+  const data = await run(B.call('getState'));
+  if (!data) return;
+  const workspaces = await pickNodes({
+    title: 'Export data', ok: 'Export', workspaces: data.workspaces,
+    initial: (ws) => !onlyId || ws.id === onlyId,
+  });
+  if (!workspaces) return;
+  const name = workspaces.length === 1 && slug(workspaces[0].name) ? `tabcat-${slug(workspaces[0].name)}-${today()}.json` : `tabcat-${today()}.json`;
+  download(name, { app: 'tabcat', kind: 'data', exportedAt: new Date().toISOString(), version: data.version, workspaces });
+}
+
+async function readJson(file) {
+  try { return JSON.parse(await file.text()); } catch { throw new Error('not a JSON file'); }
+}
+
+$('#btn-export').addEventListener('click', () => exportData());
 
 $('#import-file').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
   try {
-    const raw = JSON.parse(await file.text());
+    const raw = await readJson(file);
+    if (raw.kind === 'settings') throw new Error('this is a settings file; use Import settings');
     const list = (raw.workspaces || []).filter((w) => w && w.type === 'workspace');
     if (!list.length) throw new Error('no workspaces found');
-    await B.apply(...list.map((node) => ({ op: 'create', parentId: null, node })));
-    toast(`Imported ${list.length} workspace${list.length === 1 ? '' : 's'}`);
+    const picked = await pickNodes({ title: `Import from ${file.name}`, ok: 'Import', workspaces: list });
+    if (!picked) return;
+    await B.apply(...picked.map((node) => ({ op: 'create', parentId: null, node })));
+    toast(`Imported ${picked.length} workspace${picked.length === 1 ? '' : 's'}`);
+  } catch (err) {
+    toast('Import failed: ' + err.message);
+  }
+});
+
+// Portable settings: per-machine values (dashboard address, last used group) stay out of the file.
+const SETTINGS_IO = {
+  closeOnSave: (v) => typeof v === 'boolean',
+  autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
+  theme: (v) => ['auto', 'light', 'dark'].includes(v),
+};
+
+$('#btn-export-settings').addEventListener('click', () => {
+  const out = Object.fromEntries(Object.keys(SETTINGS_IO).map((k) => [k, settings[k]]));
+  download(`tabcat-settings-${today()}.json`, { app: 'tabcat', kind: 'settings', exportedAt: new Date().toISOString(), settings: out });
+});
+
+$('#import-settings-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const raw = await readJson(file);
+    if (raw.kind !== 'settings' || !raw.settings) throw new Error('not a tabcat settings file');
+    const patch = Object.fromEntries(Object.entries(SETTINGS_IO)
+      .filter(([k, ok]) => ok(raw.settings[k])).map(([k]) => [k, raw.settings[k]]));
+    if (!Object.keys(patch).length) throw new Error('no valid settings found');
+    const s = await B.call('saveSettings', patch);
+    settings = s;
+    applyTheme();
+    fillSettings();
+    toast('Settings imported');
   } catch (err) {
     toast('Import failed: ' + err.message);
   }
