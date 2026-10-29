@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>tabcat</title>
+  <!-- same type as the dashboard: Archivo (Latin) + Pretendard scaled to match (Korean), both OFL -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&display=swap">
+  <link rel="stylesheet" href="fonts/pretendard.css">
   <link rel="stylesheet" href="popup.css">
   <script type="module" src="popup.js"></script>
 </head>
@@ -28,14 +31,14 @@
       </div>
     </div>
     <label class="check small"><input type="checkbox" id="close"> Close tab after saving</label>
-    <button class="btn primary wide" id="save-tab">💾 Save this tab</button>
+    <button class="btn primary wide" id="save-tab"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save this tab</button>
   </section>
 
   <div class="grid">
-    <button class="btn" id="save-window" title="Save all tabs of this window as a new group">🗂️ Save window</button>
-    <button class="btn" id="suspend" title="Unload inactive tabs from memory">💤 Suspend tabs</button>
-    <button class="btn" id="dedupe">🧹 Close duplicates</button>
-    <button class="btn" id="open">🐱 Open dashboard</button>
+    <button class="btn" id="save-window" title="Save all tabs of this window as a new group"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save window</button>
+    <button class="btn" id="suspend" title="Unload inactive tabs from memory"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Suspend tabs</button>
+    <button class="btn" id="dedupe"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2M12 14.5h5"/></svg>Close duplicates</button>
+    <button class="btn" id="open"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Open dashboard</button>
   </div>
   <p class="muted small" id="msg" hidden></p>
 </body>

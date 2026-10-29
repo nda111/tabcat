@@ -87,6 +87,7 @@ manifest.json
 background.js     service worker: RPC handlers, bridge ports, context menu, shortcuts, auto-suspend
 content.js        bridge between the dashboard page and the background worker
 popup.html/css/js toolbar popup
+fonts/            Pretendard stylesheet (size-adjusted copy; font files load from jsDelivr)
 lib/store.js      data model, tree ops, op application, persistence
 lib/actions.js    save / close / suspend tabs
 icons/
