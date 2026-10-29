@@ -54,6 +54,7 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 }
 .ico { display: inline-flex; align-items: center; justify-content: center; }
 .ico svg { display: block; }
+[data-icon] { display: inline-flex; align-items: center; } /* static icon slots: centre the svg, not sit on the text baseline */
 .icon-btn:has(.ico), .btn:has(.ico) { display: inline-flex; align-items: center; gap: 4px; }
 .icon-btn:hover, .icon-btn.hover { background: var(--hover); color: var(--text); }
 
@@ -378,6 +379,9 @@ dialog .field-label { display: block; font-weight: 500; }
 .ctx-menu button.danger .ico { color: inherit; }
 .ctx-menu button:hover, .ctx-menu button.hover { background: var(--hover); }
 .ctx-menu button.danger { color: var(--danger); }
+#confirm { width: 380px; }
+#confirm-text { margin: 0; color: var(--muted); white-space: pre-line; }
+.btn.primary.danger { background: var(--danger); border-color: var(--danger); }
 .ctx-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
 
 #toast {

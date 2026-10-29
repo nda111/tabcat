@@ -436,9 +436,9 @@ function openLink(l, e = {}) {
   else run(B.call('openUrls', { urls: [l.url], active: !(e.ctrlKey || e.metaKey) }));
 }
 
-function openAll(node, newWindow = false) {
+async function openAll(node, newWindow = false) {
   const urls = T.collectLinks(node).map((l) => l.url);
-  if (urls.length > 20 && !confirm(`Open ${urls.length} tabs?`)) return;
+  if (urls.length > 20 && !(await confirmDialog({ title: `Open ${urls.length} tabs?`, ok: 'Open all' }))) return;
   run(B.call('openUrls', { urls, newWindow }));
 }
 
@@ -460,7 +460,11 @@ function saveNote(id, before, after) {
 async function deleteNode(node) {
   const n = T.countLinks(node);
   if ((node.type === 'workspace' || node.type === 'category') && n > 0 &&
-      !confirm(`Delete ${TYPE_LABEL[node.type].toLowerCase()} “${node.name}” and its ${n} links?`)) return;
+      !(await confirmDialog({
+        title: `Delete ${TYPE_LABEL[node.type].toLowerCase()} “${node.name}”?`,
+        text: `Its ${n} link${n === 1 ? '' : 's'} will be deleted too. You can undo this right after.`,
+        ok: 'Delete', danger: true,
+      }))) return;
   const snapshot = structuredClone(state);
   if (await apply({ op: 'remove', id: node.id })) {
     toast(`Deleted “${node.name || node.url}”`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
@@ -486,6 +490,38 @@ async function saveTabsTo(tabIds, parentId, index) {
 async function saveWindow(windowId) {
   const id = await run(B.call('saveWindow', { windowId, newGroup: { categoryId: currentCat()?.id }, close: settings.closeOnSave }));
   toast(id ? 'Window saved as a new group' : 'Nothing to save');
+}
+
+/* ---------- confirm dialog ---------- */
+
+// Styled replacement for window.confirm(). Resolves true only when the action button is used.
+function confirmDialog({ title, text = '', ok = 'OK', danger = false }) {
+  const dlg = $('#confirm');
+  $('#confirm-title').textContent = title;
+  $('#confirm-text').textContent = text;
+  $('#confirm-text').hidden = !text;
+  const okBtn = $('#confirm-ok');
+  okBtn.textContent = ok;
+  okBtn.classList.toggle('danger', danger);
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => {
+      if (done) return;
+      done = true;
+      $('#confirm-form').removeEventListener('submit', onOk);
+      $('#confirm-cancel').removeEventListener('click', onCancel);
+      dlg.removeEventListener('close', onCancel);
+      if (dlg.open) dlg.close();
+      resolve(v);
+    };
+    const onOk = (e) => { e.preventDefault(); finish(true); };
+    const onCancel = () => finish(false);
+    $('#confirm-form').addEventListener('submit', onOk);
+    $('#confirm-cancel').addEventListener('click', onCancel);
+    dlg.addEventListener('close', onCancel);
+    dlg.showModal();
+    okBtn.focus();
+  });
 }
 
 /* ---------- editor dialog ---------- */
@@ -930,7 +966,12 @@ async function mergeGroups(fromId, intoId) {
   const into = T.locate(state, intoId)?.node;
   if (!from || !into) return;
   const label = (g) => `${g.symbol ? g.symbol + ' ' : ''}${g.name}`;
-  if (!confirm(`Merge “${label(from)}” (${T.countLinks(from)} links) into “${label(into)}”?\n“${label(from)}” will be removed.`)) return;
+  const n = T.countLinks(from);
+  if (!(await confirmDialog({
+    title: `Merge “${label(from)}” into “${label(into)}”?`,
+    text: `Its ${n} link${n === 1 ? '' : 's'}, folders and note move to “${label(into)}”, then “${label(from)}” is removed. You can undo this.`,
+    ok: 'Merge',
+  }))) return;
   const note = [into.note, from.note].filter((n) => n && n.trim()).join('\n\n---\n\n');
   const snapshot = structuredClone(state);
   const ok = await apply(
