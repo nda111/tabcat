@@ -62,9 +62,8 @@
   <main id="main">
     <header id="topbar">
       <div id="ws-head"></div>
-      <div class="search-wrap">
-        <input id="search" type="search" placeholder="Search links, groups, notes…  ( / )" autocomplete="off">
-      </div>
+      <button type="button" class="icon-btn search-btn" id="btn-search" title="Search
+Press / or Ctrl+K"><span data-icon="search" data-size="18"></span></button>
     </header>
     <nav id="cat-bar"></nav>
     <section id="board"></section>
@@ -221,6 +220,16 @@
       </div>
       <menu><button type="submit" class="btn primary">Close</button></menu>
     </form>
+  </dialog>
+
+  <dialog id="palette">
+    <div class="palette-box">
+      <div class="palette-input"><span data-icon="search" data-size="16"></span>
+        <input id="search" type="search" placeholder="Search links, groups, folders and notes" autocomplete="off">
+      </div>
+      <div id="palette-results"></div>
+      <div class="palette-foot muted small"><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> background tab · <kbd>Esc</kbd> close</div>
+    </div>
   </dialog>
 
   <div id="menu" class="ctx-menu" hidden></div>

@@ -10,7 +10,6 @@ const $ = (sel, root = document) => root.querySelector(sel);
 let state = null;
 let settings = { closeOnSave: true, autoSuspendMinutes: 0, theme: 'auto' };
 let ui = loadUi();          // per-device view state: selected workspace / category, panel visibility
-let query = '';
 let editingNoteId = null;
 let drag = null;            // { kind:'node', id, type } | { kind:'tab', tabIds } | { kind:'window', windowId } | { kind:'external' }
 let pendingRender = false;
@@ -183,7 +182,7 @@ function renderSidebar() {
     h('li', {
       class: 'ws-item' + (ws === cur ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
       title: ws.description ? `${ws.name}\n${ws.description}` : ws.name,
-      onclick: () => { clearSearch(); select(ws.id); },
+      onclick: () => select(ws.id),
       ondblclick: () => editNode(ws),
       oncontextmenu: (e) => nodeMenu(e, ws),
     },
@@ -215,7 +214,7 @@ function renderCats() {
   bar.replaceChildren(
     ...ws.categories.map((c) => h('div', {
       class: 'cat-tab' + (c === cur ? ' active' : ''), draggable: 'true', dataset: { id: c.id, type: 'category' },
-      onclick: () => { clearSearch(); select(ws.id, c.id); },
+      onclick: () => select(ws.id, c.id),
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
@@ -243,7 +242,6 @@ function columnControl() {
 function renderBoard() {
   const board = $('#board');
   delete board.dataset.parent;
-  if (query) return renderSearch(board);
   const ws = currentWs();
   if (!ws) {
     board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, 'No workspace yet.'),
@@ -422,42 +420,80 @@ function renderFolder(f, depth) {
 
 /* ---------- search ---------- */
 
-function clearSearch() {
-  query = '';
-  $('#search').value = '';
-}
+/* ---------- search palette ---------- */
 
-function renderSearch(board) {
-  const q = query.toLowerCase();
+// Search opens in a centered palette over the board: results list links first, then workspaces,
+// categories, groups and folders; arrows move, Enter opens / reveals.
+const search = $('#search');
+let hits = [];
+let hit = -1;
+
+function openPalette() {
+  const dlg = $('#palette');
+  if (!dlg.open) dlg.showModal();
+  search.select();
+  renderPalette();
+}
+const closePalette = () => $('#palette').open && $('#palette').close();
+
+function renderPalette() {
+  const q = search.value.trim().toLowerCase();
+  const out = $('#palette-results');
+  hits = [];
+  hit = -1;
+  if (!q || !state) { out.replaceChildren(h('p', { class: 'palette-empty muted' }, 'Type to search everything you saved.')); return; }
   const links = [], containers = [];
   T.walk(state.workspaces, (n, anc) => {
-    const path = anc.map((a) => (a.symbol ? a.symbol + ' ' : '') + a.name).join(' › ');
+    const path = anc.map((a) => a.name).join(' › ');
     if (n.type === 'link') {
       if ([n.name, n.url, n.description].some((x) => (x || '').toLowerCase().includes(q))) links.push({ n, anc, path });
-    } else if ((n.name || '').toLowerCase().includes(q) || (n.note || '').toLowerCase().includes(q) ||
-               (n.description || '').toLowerCase().includes(q)) {
+    } else if ([n.name, n.note, n.description].some((x) => (x || '').toLowerCase().includes(q))) {
       containers.push({ n, anc, path });
     }
   });
-  const section = (title, rows) => rows.length ? [h('h4', {}, `${title} (${rows.length})`), ...rows.slice(0, 200)] : [];
-  const linkRows = links.map(({ n, path }) => h('div', {
-    class: 'result', title: n.url,
-    onclick: (e) => openLink(n, e), oncontextmenu: (e) => nodeMenu(e, n),
-  }, iconImg(n.url, n.icon), h('span', { class: 'name' }, highlight(n.name, q),
-    h('span', { class: 'muted small' }, '  ', highlight(n.url, q))), h('span', { class: 'path' }, path)));
-  const contRows = containers.map(({ n, anc, path }) => h('div', {
-    class: 'result', onclick: () => reveal(n, anc),
-  }, symbolEl(n.symbol, { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[n.type]),
-  h('span', { class: 'name' }, highlight(n.name, q), h('span', { class: 'muted small' }, '  ' + TYPE_LABEL[n.type])),
-  h('span', { class: 'path' }, path)));
-  const body = [...section('Links', linkRows), ...section('Workspaces, groups & folders', contRows)];
-  board.replaceChildren(h('div', { class: 'results' }, body.length ? body : h('p', { class: 'muted', style: 'padding:8px' }, 'No results.')));
+  const row = (item, lead, sub, run) => {
+    const el = h('div', {
+      class: 'result',
+      onclick: (e) => { closePalette(); run(e); },
+      onmousemove: () => setHit(hits.indexOf(el), false),
+    }, lead, h('span', { class: 'result-text' },
+      h('span', { class: 'name' }, highlight(item.n.name || item.n.url, q)),
+      h('span', { class: 'path' }, sub)));
+    hits.push(el);
+    return el;
+  };
+  const linkRows = links.slice(0, 100).map((it) =>
+    row(it, iconImg(it.n.url, it.n.icon), [it.path, it.path && ' · ', highlight(it.n.url, q)], (e) => openLink(it.n, e)));
+  const contRows = containers.slice(0, 100).map((it) =>
+    row(it, symbolEl(it.n.symbol, { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[it.n.type]),
+      [TYPE_LABEL[it.n.type], it.path && ' · ' + it.path], () => reveal(it.n, it.anc)));
+  const section = (title, rows) => (rows.length ? [h('h4', {}, title), ...rows] : []);
+  const body = [...section(`Links · ${links.length}`, linkRows), ...section(`Workspaces, groups & folders · ${containers.length}`, contRows)];
+  out.replaceChildren(...(body.length ? body : [h('p', { class: 'palette-empty muted' }, 'No results.')]));
+  setHit(0);
 }
+
+function setHit(i, scroll = true) {
+  hits[hit]?.classList.remove('active');
+  hit = hits.length ? (i + hits.length) % hits.length : -1;
+  hits[hit]?.classList.add('active');
+  if (scroll) hits[hit]?.scrollIntoView({ block: 'nearest' });
+}
+
+search.addEventListener('input', renderPalette);
+search.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); setHit(hit + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); setHit(hit - 1); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    hits[hit]?.dispatchEvent(new MouseEvent('click', { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey }));
+  }
+});
+$('#btn-search').addEventListener('click', openPalette);
 
 function reveal(node, anc) {
   const ws = node.type === 'workspace' ? node : anc[0];
   const cat = node.type === 'category' ? node : anc[1];
-  clearSearch();
   select(ws.id, cat?.id);
   const target = anc[2] || node;
   requestAnimationFrame(() => {
@@ -933,7 +969,7 @@ function clearSelection() {
 
 // Rubber-band selection: starts on empty board space (not on a card, gap or button).
 $('#board').addEventListener('pointerdown', (e) => {
-  if (e.button !== 0 || query || !$('#board').dataset.parent) return;
+  if (e.button !== 0 || !$('#board').dataset.parent) return;
   if (e.target.closest('.group, .add-group, .gap-slot, button, input, textarea, a')) return;
   // plain: select what the box covers; Ctrl/⌘: add it; Shift: invert it
   const mode = e.shiftKey ? 'invert' : e.ctrlKey || e.metaKey ? 'add' : 'replace';
@@ -1688,12 +1724,6 @@ $('#btn-dedupe').addEventListener('click', async () => {
   if (n != null) toast(`Closed ${n} duplicate tab${n === 1 ? '' : 's'}`);
 });
 
-const search = $('#search');
-search.addEventListener('input', () => { query = search.value.trim(); renderBoard(); });
-search.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { clearSearch(); renderBoard(); search.blur(); }
-  if (e.key === 'Enter') $('#board .result')?.click();
-});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideMenu();
@@ -1704,10 +1734,9 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { clearSelection(); return; }
   }
   if (!typing && !dialogOpen && e.key === '?') { e.preventDefault(); openGuide(); return; }
-  if (!typing && (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'))) {
+  if ((!typing && !dialogOpen && e.key === '/') || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
     e.preventDefault();
-    search.focus();
-    search.select();
+    openPalette();
   }
 });
 document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) hideMenu(); });
