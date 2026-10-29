@@ -50,6 +50,12 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   });
 })();
 
+// Emoji symbols show as text, letter/digit symbols as a badge.
+function setSym(el, s) {
+  el.textContent = s;
+  el.classList.toggle('sym-letter', S.isLetterSymbol(s));
+}
+
 // "Save to" picker: a button showing the chosen group or folder, opening a searchable list grouped
 // by workspace › category, with folders indented under their group. Returns { value } (an id, or ''
 // for a new Inbox when there are none).
@@ -67,7 +73,7 @@ function groupPicker(entries, initialId) {
 
   function show(entry) {
     picker.value = entry ? entry.node.id : '';
-    $('#target-sym').textContent = entry ? symOf(entry) : '📥';
+    setSym($('#target-sym'), entry ? symOf(entry) : '📥');
     $('#target-name').textContent = entry ? entry.node.name : 'Inbox (new)';
     $('#target-path').textContent = entry ? pathOf(entry) : 'A new group will be created';
   }
@@ -95,7 +101,7 @@ function groupPicker(entries, initialId) {
       item.setAttribute('role', 'option');
       item.setAttribute('aria-selected', String(e.node.id === picker.value));
       item.innerHTML = '<span class="sym"></span><span class="name"></span><span class="where muted"></span>';
-      item.querySelector('.sym').textContent = symOf(e);
+      setSym(item.querySelector('.sym'), symOf(e));
       item.querySelector('.name').textContent = e.node.name;
       if (q && e.trail.length) item.querySelector('.where').textContent = e.trail.join(' › ');
       item.addEventListener('click', () => { show(e); close(); });

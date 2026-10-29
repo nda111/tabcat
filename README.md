@@ -64,7 +64,7 @@ Workspace  (Name*, Symbol, Description)
 ```
 
 - Workspace → Category → Group is mandatory; links and folders always live under a group.
-- Symbol is a single emoji (optional); Note is markdown; everything else is plain text.
+- Symbol (optional) is a single emoji, or one capital letter or digit shown as a badge; Note is markdown; everything else is plain text.
 
 ## Features
 
