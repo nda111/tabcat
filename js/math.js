@@ -25,6 +25,9 @@ function load() {
 
 let queue = Promise.resolve();
 
+// Resolves once every math element queued so far is typeset (or given up on).
+export const mathReady = () => queue;
+
 // Typesets every not-yet-rendered math element under `root`; leaves the raw TeX if MathJax is unavailable.
 export function typesetMath(root = document) {
   const els = [...root.querySelectorAll('.math:not([data-typeset])')];

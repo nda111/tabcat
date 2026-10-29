@@ -1,7 +1,7 @@
 import * as B from './bridge.js';
 import * as T from './tree.js';
 import { renderMarkdown, toggleTask } from './markdown.js';
-import { typesetMath } from './math.js';
+import { typesetMath, mathReady } from './math.js';
 import { searchEmoji, favoriteEmoji, recordEmoji } from './emoji.js';
 import { icon, hydrateIcons } from './icons.js';
 
@@ -1035,11 +1035,23 @@ function morphNote() {
   noteMorph = null;
   const note = group.querySelector('.note');
   if (!note) return;
-  const to = note.getBoundingClientRect().height;
-  note.style.overflow = 'hidden';
-  note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
-    .finished.catch(() => {}).then(() => { note.style.overflow = ''; });
-  for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+  const grow = () => {
+    note.style.height = '';
+    const to = note.getBoundingClientRect().height;
+    note.style.overflow = 'hidden';
+    note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
+      .finished.catch(() => {}).then(() => { note.style.overflow = ''; });
+    for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+  };
+  // math changes the note's size once typeset: hold the editor's height until then, so the note
+  // goes straight to its final size instead of shrinking to the raw TeX and growing back
+  if (![...note.querySelectorAll('.math')].some((m) => !m.querySelector('mjx-container'))) return grow();
+  Object.assign(note.style, { height: `${height}px`, overflow: 'hidden' });
+  for (const child of note.children) child.style.opacity = '0';
+  mathReady().then(() => {
+    for (const child of note.children) child.style.opacity = '';
+    if (note.isConnected) grow();
+  });
 }
 
 function saveNote(id, before, after) {
