@@ -262,7 +262,7 @@ function renderGroup(g) {
       class: 'group-head', draggable: 'true',
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
     },
-    h('div', { class: 'node-sym' + (g.symbol ? '' : ' none') }, g.symbol ? symbolEl(g.symbol) : icon('group', 20)),
+    g.symbol && h('div', { class: 'node-sym' }, symbolEl(g.symbol)), // no symbol: the name and tools take the room
     h('div', { class: 'node-info' },
       h('div', { class: 'node-line' },
         h('span', { class: 'name' }, g.name),
