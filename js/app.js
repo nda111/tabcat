@@ -154,11 +154,69 @@ function render() {
   if (!state) return;
   if (drag || document.activeElement?.classList.contains('note-edit')) { pendingRender = true; return; }
   pendingRender = false;
+  const before = snapshotLayout();
   renderSidebar();
   renderHead();
   renderCats();
   renderBoard();
+  animateLayout(before);
   restoreHover();
+}
+
+/* ---------- motion ---------- */
+
+// iOS-like springs: a little overshoot, then settle. Off when the system asks for reduced motion.
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
+const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
+
+// Where every movable element was before a re-render (FLIP: First).
+function snapshotLayout() {
+  if (reduceMotion.matches) return null;
+  const rects = new Map();
+  for (const el of document.querySelectorAll(MOVABLE)) {
+    const r = el.getBoundingClientRect();
+    if (r.width) rects.set(el.dataset.id, r);
+  }
+  return { rects, board: $('#board').dataset.parent };
+}
+
+// After a re-render, slide each element from its old place to its new one, and pop in new ones
+// (FLIP: Last, Invert, Play). Nested elements move relative to their moving parent.
+function animateLayout(before) {
+  if (!before) return;
+  const sameBoard = before.board === $('#board').dataset.parent;
+  const deltas = new Map();
+  const els = [...document.querySelectorAll(MOVABLE)];
+  for (const el of els) {
+    const prev = before.rects.get(el.dataset.id);
+    if (!prev) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width) deltas.set(el, [prev.left - r.left, prev.top - r.top]);
+  }
+  for (const el of els) {
+    const d = deltas.get(el);
+    if (!d) {
+      if (sameBoard && before.rects.size && el.closest('#board') && !el.parentElement.closest('[data-id]')) {
+        el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
+      }
+      continue;
+    }
+    const parent = el.parentElement.closest('[data-id]');
+    const pd = (parent && deltas.get(parent)) || [0, 0];
+    const dx = d[0] - pd[0], dy = d[1] - pd[1];
+    if (Math.abs(dx) + Math.abs(dy) < 1) continue;
+    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 420, easing: SPRING });
+  }
+}
+
+// Shrink-and-fade elements about to be deleted, so the removal is visible before the re-render.
+function animateOut(ids) {
+  if (reduceMotion.matches) return Promise.resolve();
+  const els = ids.map((id) => document.querySelector(`#board [data-id="${CSS.escape(id)}"], #ws-list [data-id="${CSS.escape(id)}"], #cat-bar [data-id="${CSS.escape(id)}"]`)).filter(Boolean);
+  return Promise.all(els.map((el) => el.animate(
+    [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.9)' }],
+    { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished)).catch(() => {});
 }
 
 // Re-rendering replaces the nodes under the mouse, and the browser only re-applies :hover after the
@@ -638,6 +696,7 @@ async function deleteNode(node) {
         ok: 'Delete', danger: true,
       }))) return;
   const snapshot = structuredClone(state);
+  await animateOut([node.id]);
   if (await apply({ op: 'remove', id: node.id })) {
     toast(`Deleted “${node.name || node.url}”`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
   }
@@ -1035,6 +1094,7 @@ async function deleteSelected() {
   }))) return;
   const snapshot = structuredClone(state);
   selected.clear();
+  await animateOut(groups.map((g) => g.id));
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
     toast(`Deleted ${label}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
   }
@@ -1307,6 +1367,7 @@ async function mergeGroups(fromId, intoId) {
   }))) return;
   const note = [into.note, from.note].filter((n) => n && n.trim()).join('\n\n---\n\n');
   const snapshot = structuredClone(state);
+  await animateOut([fromId]);
   const ok = await apply(
     { op: 'patch', id: intoId, fields: { items: [...into.items, ...from.items], note, collapsed: false } },
     { op: 'remove', id: fromId });
