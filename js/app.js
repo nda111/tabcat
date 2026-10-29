@@ -842,9 +842,7 @@ function resolveGroupDrop(e, el, d) {
   if (ct) return { parentId: ct.dataset.id, index: null, el: ct };
   const ws = el.closest('.ws-item');
   if (ws) return { action: 'toWorkspace', workspaceId: ws.dataset.id, el: ws };
-  if (el.closest('#board') && board.dataset.parent) {
-    return { parentId: board.dataset.parent, index: null, el: board.querySelector('.add-group') };
-  }
+  // empty board space and the New group card are not targets: reorder by dropping beside a card
   return null;
 }
 
