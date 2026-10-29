@@ -78,7 +78,7 @@ Workspace  (Name*, Symbol, Description)
 | Search | `/` or `Ctrl+K`, searches links, groups, folders and notes; Enter opens the first hit |
 | Popup | Rename the current tab and save it to any group · save window · suspend · close duplicates · open dashboard |
 | Shortcuts | `Alt+Shift+C` popup · `Alt+Shift+D` dashboard · `Alt+Shift+S` save tab · `Alt+Shift+A` save window |
-| Data | JSON export / import (merge) · light / dark / system theme |
+| Data | JSON export / import of selected workspaces, categories and groups (import adds, never overwrites) · separate settings file · light / dark / system theme |
 
 ## Files
 
