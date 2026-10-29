@@ -75,9 +75,15 @@ function chunks(parts) {
     .filter(Boolean);
 }
 
+// A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge.
+function symbolEl(symbol, fallback = '') {
+  const s = symbol || fallback;
+  return h('span', { class: T.isLetterSymbol(s) ? 'sym sym-letter' : 'sym' }, s);
+}
+
 function iconImg(url, icon) {
   const fallback = T.faviconFor(url);
-  const img = h('img', { src: icon || fallback, alt: '', loading: 'lazy', draggable: 'false' });
+  const img = h('img', { class: 'fav', src: icon || fallback, alt: '', loading: 'lazy', draggable: 'false' });
   img.addEventListener('error', () => {
     if (img.src !== fallback) img.src = fallback;
     else if (img.src !== T.BLANK_ICON) img.src = T.BLANK_ICON;
@@ -170,7 +176,7 @@ function renderSidebar() {
       ondblclick: () => editNode(ws),
       oncontextmenu: (e) => nodeMenu(e, ws),
     },
-    h('span', { class: 'sym' }, ws.symbol || '🗃️'),
+    symbolEl(ws.symbol, '🗃️'),
     h('span', { class: 'name' }, ws.name),
     h('span', { class: 'count' }, T.countLinks(ws)))));
 }
@@ -180,7 +186,7 @@ function renderHead() {
   const head = $('#ws-head');
   if (!ws) { head.replaceChildren(h('h1', {}, 'No workspace')); head.onclick = null; return; }
   head.replaceChildren(
-    h('h1', {}, `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name}`),
+    h('h1', {}, ws.symbol && symbolEl(ws.symbol), ws.name),
     h('span', { class: 'desc' }, ws.description || ''));
   head.title = 'Click to edit workspace';
   head.onclick = () => editNode(ws);
@@ -253,7 +259,7 @@ function renderGroup(g) {
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
     },
     btn(g.collapsed ? '▸' : '▾', g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)),
-    g.symbol && h('span', { class: 'sym' }, g.symbol),
+    g.symbol && symbolEl(g.symbol),
     h('span', { class: 'name' }, g.name),
     h('span', { class: 'count' }, T.countLinks(g)),
     h('span', { class: 'head-actions' },
@@ -299,7 +305,7 @@ function renderFolder(f) {
       oncontextmenu: (e) => nodeMenu(e, f),
     },
     h('span', { class: 'twisty' }, '▾'),
-    h('span', { class: 'sym' }, f.symbol || '📁'),
+    symbolEl(f.symbol, '📁'),
     h('span', { class: 'name' }, f.name),
     h('span', { class: 'count' }, T.countLinks(f)),
     h('span', { class: 'head-actions' },
@@ -337,7 +343,7 @@ function renderSearch(board) {
     h('span', { class: 'muted small' }, '  ', highlight(n.url, q))), h('span', { class: 'path' }, path)));
   const contRows = containers.map(({ n, anc, path }) => h('div', {
     class: 'result', onclick: () => reveal(n, anc),
-  }, h('span', {}, n.symbol || { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[n.type]),
+  }, symbolEl(n.symbol, { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[n.type]),
   h('span', { class: 'name' }, highlight(n.name, q), h('span', { class: 'muted small' }, '  ' + TYPE_LABEL[n.type])),
   h('span', { class: 'path' }, path)));
   const body = [...section('Links', linkRows), ...section('Workspaces, groups & folders', contRows)];
@@ -477,9 +483,13 @@ async function saveWindow(windowId) {
 function symbolField(label, input, err) {
   input.classList.add('sym-box');
   input.maxLength = 16;
+  input.addEventListener('input', () => {
+    const v = T.normalizeSymbol(input.value);
+    if (v !== input.value) input.value = v;
+  });
   const grid = h('div', { class: 'emoji-grid' });
   const status = h('div', { class: 'emoji-status muted small' });
-  const search = h('input', { type: 'search', class: 'emoji-search', placeholder: 'Search emoji (e.g. rocket, cat, book)', autocomplete: 'off' });
+  const search = h('input', { type: 'search', class: 'emoji-search', placeholder: 'Search emoji, or type a letter / digit', autocomplete: 'off' });
   const clear = h('button', { type: 'button', class: 'sym-clear', title: 'Remove symbol', onclick: () => set('') }, icon('close', 11));
   const wrap = h('div', { class: 'sym-wrap' }, input, clear);
 
@@ -491,12 +501,13 @@ function symbolField(label, input, err) {
   }
   function sync() {
     wrap.classList.toggle('blank', !input.value);
+    input.classList.toggle('letter', T.isLetterSymbol(input.value));
     for (const b of grid.children) b.classList.toggle('selected', b.dataset.emoji === input.value);
   }
   function show(list, note = '') {
     grid.replaceChildren(...list.map((e) => h('button', {
       type: 'button', title: e.name || e.unicode, dataset: { emoji: e.unicode }, onclick: () => set(e.unicode),
-    }, e.unicode)));
+    }, T.isLetterSymbol(e.unicode) ? symbolEl(e.unicode) : e.unicode)));
     status.textContent = note;
     sync();
   }
@@ -518,13 +529,15 @@ function symbolField(label, input, err) {
     clearTimeout(timer);
     const q = search.value.trim();
     if (!q) return void showDefaults();
+    // a single letter or digit is offered as a letter symbol, ahead of any emoji matches
+    const letter = /^[a-z0-9]$/i.test(q) ? [{ unicode: q.toUpperCase(), name: `Letter ${q.toUpperCase()}` }] : [];
     timer = setTimeout(async () => {
       const mine = ++seq;
       try {
-        const found = await searchEmoji(q);
+        const found = [...letter, ...await searchEmoji(q)];
         if (mine === seq) show(found, found.length ? '' : 'No emoji found.');
       } catch {
-        if (mine === seq) show([], 'Could not load the emoji list (offline?). You can still paste an emoji into the box.');
+        if (mine === seq) show(letter, 'Could not load the emoji list (offline?). You can still paste an emoji into the box.');
       }
     }, 120);
   });
@@ -536,7 +549,7 @@ function symbolField(label, input, err) {
   showDefaults();
 
   // a div, not a label: clicks in the grid must not move focus to the symbol box
-  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (single emoji, optional)'),
+  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (emoji, letter or digit, optional)'),
     h('div', { class: 'sym-row' }, wrap, search), grid, status);
 }
 
@@ -630,7 +643,8 @@ function openEditor(type, data = {}, title) {
         if (!v.name) v.name = v.url;
       }
       if (!v.name) return void (err.textContent = 'Name is required.');
-      if ('symbol' in v && !T.isSingleEmoji(v.symbol)) return void (err.textContent = 'Symbol must be a single emoji.');
+      if ('symbol' in v) v.symbol = T.normalizeSymbol(v.symbol);
+      if ('symbol' in v && !T.isValidSymbol(v.symbol)) return void (err.textContent = 'Symbol must be one emoji, letter or digit.');
       finish(v);
     };
     form.addEventListener('submit', onSubmit);
@@ -1055,7 +1069,7 @@ function pickNodes({ title, ok, workspaces, initial = () => true }) {
       kids.length ? Object.assign(btn('▾', 'Expand / collapse', () => li.classList.toggle('closed')), { className: 'icon-btn twisty' })
         : h('span', { class: 'twisty-gap' }),
       h('label', {}, box,
-        h('span', { class: 'sym' }, node.symbol || (node.type === 'category' ? '🏷️' : node.type === 'workspace' ? '🗃️' : '🗂️')),
+        symbolEl(node.symbol, node.type === 'category' ? '🏷️' : node.type === 'workspace' ? '🗃️' : '🗂️'),
         h('span', { class: 'name' }, node.name || '(untitled)'),
         h('span', { class: 'count' }, T.countLinks(node)))));
     if (kids.length) li.append(h('ul', {}, kids.map((k) => build(k, entry))));

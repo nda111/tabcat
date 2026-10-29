@@ -62,6 +62,14 @@ export function isSingleEmoji(s) {
   return graphemes === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u.test(s);
 }
 
+// A symbol is optional: a single emoji, or one capital letter / digit (shown as a badge).
+export const isLetterSymbol = (s) => /^[A-Z0-9]$/.test(s);
+export const normalizeSymbol = (s) => {
+  s = String(s ?? '').trim();
+  return /^[a-z]$/.test(s) ? s.toUpperCase() : s;
+};
+export const isValidSymbol = (s) => !s || isLetterSymbol(s) || isSingleEmoji(s);
+
 export function normalizeUrl(u) {
   u = (u || '').trim();
   if (!u) return '';

@@ -11,17 +11,19 @@
   --danger: #d0453a;
   --shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
   --radius: 10px;
+  --fav-bg: transparent; /* favicon backdrop: dark mode puts favicons on a light chip so dark icons stay visible */
+  --fav-pad: 0px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; color-scheme: dark;
+    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; color-scheme: dark;
+  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -166,6 +168,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 .link-row:hover, .link-row.hover, .folder-head:hover, .folder-head.hover { background: var(--hover); }
 .link-row img, .tab-row img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav-pad); border-radius: 4px; }
 .link-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-row .desc { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
 .link-row .head-actions { opacity: 0; }
@@ -183,8 +186,9 @@ body.resizing { cursor: col-resize; user-select: none; }
 .add-row .icon-btn { font-size: 12px; }
 
 .add-group {
-  border: 2px dashed var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; gap: 4px;
-  min-height: 90px; color: var(--border); cursor: pointer; align-self: start; /* the + matches the dashed border */
+  --add-color: color-mix(in srgb, var(--border) 65%, var(--muted)); /* the + matches the dashed border */
+  border: 2px dashed var(--add-color); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; gap: 4px;
+  min-height: 90px; color: var(--add-color); cursor: pointer; align-self: start;
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
 
@@ -240,7 +244,7 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
   font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.14);
 }
 .tip-head { display: flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
-.tip-icon { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 5px; background: #fff; }
+.tip-icon { display: grid; place-items: center; flex: none; }
 .tip-icon img { width: 16px; height: 16px; display: block; }
 .tip-sub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
@@ -312,6 +316,13 @@ dialog legend { font-size: 11px; color: var(--muted); text-transform: uppercase;
 .sym-row { display: flex; gap: 8px; align-items: stretch; margin-top: 4px; }
 .sym-wrap { position: relative; flex: none; }
 dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
+dialog input.sym-box.letter { font-weight: 700; color: var(--accent); }
+/* letter / digit symbols: a square badge about the size of an emoji */
+.sym-letter {
+  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: .35em; flex: none;
+  background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); font-size: .78em; font-weight: 700; line-height: 1; vertical-align: .1em;
+}
+#ws-head h1 { display: flex; align-items: center; gap: 8px; }
 .sym-clear {
   position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
   border: 1px solid var(--border); border-radius: 50%; background: var(--panel); color: var(--muted); cursor: pointer;
@@ -329,6 +340,7 @@ dialog input.emoji-search { flex: 1; min-width: 0; }
   height: 34px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; font-size: 20px; padding: 0;
 }
 .emoji-grid button:hover, .emoji-grid button.hover { background: var(--hover); }
+.emoji-grid .sym-letter { font-size: 15px; }
 .emoji-grid button.selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .emoji-status:empty { display: none; }
 dialog .field { margin-bottom: 10px; }
