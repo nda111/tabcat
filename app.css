@@ -597,3 +597,21 @@ body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .gr
 .swatch:hover { transform: scale(1.12); }
 .swatch:has(input:checked) { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
 .swatch:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* Settings > Appearance: a name, then its choices */
+.setting-row { display: flex; align-items: center; gap: 12px; min-height: 40px; }
+.setting-row + .setting-row { margin-top: 4px; }
+.setting-name { width: 52px; flex: none; font-weight: 600; }
+.theme-opts { display: flex; gap: 6px; }
+dialog label.theme-opt {
+  position: relative; display: grid; place-items: center; width: 34px; height: 34px; margin: 0;
+  border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.theme-opt:hover { background: var(--hover); color: var(--text); }
+.theme-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.theme-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+dialog .theme-opt input, dialog .swatch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+
+/* theme / accent switch: the old look cross-fades into the new one */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; animation-timing-function: ease; }

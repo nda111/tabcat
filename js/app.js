@@ -2233,8 +2233,19 @@ $('#settings-form').addEventListener('change', async (e) => {
     accent: f.accent.value,
     columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
-  if (s) { settings = s; applyTheme(); relayoutBoard(); }
+  if (s) { switchTheme(s); relayoutBoard(); }
 });
+
+// Apply new settings; a changed theme or accent cross-fades the whole page from the old look.
+let lookShown = ''; // `${theme}|${accent}` last applied or on its way (a transition applies it a frame later)
+function switchTheme(s) {
+  const look = `${s.theme}|${s.accent}`;
+  const changed = look !== (lookShown || `${settings.theme}|${settings.accent}`);
+  lookShown = look;
+  const swap = () => { settings = s; applyTheme(); };
+  if (changed && document.startViewTransition) document.startViewTransition(swap);
+  else swap();
+}
 
 /* ---------- export / import ---------- */
 
@@ -2390,8 +2401,7 @@ $('#import-settings-file').addEventListener('change', async (e) => {
       .filter(([k, ok]) => ok(raw.settings[k])).map(([k]) => [k, raw.settings[k]]));
     if (!Object.keys(patch).length) throw new Error('no valid settings found');
     const s = await B.call('saveSettings', patch);
-    settings = s;
-    applyTheme();
+    switchTheme(s);
     fillSettings();
     toast('Settings imported');
   } catch (err) {
@@ -2640,8 +2650,7 @@ window.addEventListener('blur', hideMenu);
 B.on('state', (s) => { state = s; render(); });
 B.on('settings', (s) => {
   const relayout = s.columns !== settings?.columns;
-  settings = s;
-  applyTheme();
+  switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
   if (relayout && state) render(); // e.g. columns changed in another dashboard tab
 });
 B.on('tabs', scheduleTabs);

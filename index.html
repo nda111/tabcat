@@ -90,23 +90,30 @@
   <dialog id="settings">
     <form method="dialog" id="settings-form">
       <h3>Settings</h3>
-      <label class="check"><input type="checkbox" name="closeOnSave"> Close tabs after saving them</label>
-      <label>Auto-suspend inactive tabs after (minutes, 0 = off)
-        <input type="number" name="autoSuspendMinutes" min="0" step="1">
-      </label>
-      <label>Board columns (1–7)
-        <input type="number" name="columns" min="1" max="7" step="1">
-      </label>
-      <label>Theme
-        <select name="theme">
-          <option value="auto">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </label>
       <fieldset>
-        <legend>Color</legend>
-        <div class="swatches" id="swatches"></div>
+        <legend>General</legend>
+        <label class="check"><input type="checkbox" name="closeOnSave"> Close tabs after saving them</label>
+        <label>Auto-suspend inactive tabs after (minutes, 0 = off)
+          <input type="number" name="autoSuspendMinutes" min="0" step="1">
+        </label>
+        <label>Board columns (1–7)
+          <input type="number" name="columns" min="1" max="7" step="1">
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Appearance</legend>
+        <div class="setting-row">
+          <span class="setting-name">Theme</span>
+          <div class="theme-opts" role="radiogroup" aria-label="Theme">
+            <label class="theme-opt" title="System"><input type="radio" name="theme" value="auto" aria-label="System"><span data-icon="monitor" data-size="18"></span></label>
+            <label class="theme-opt" title="Light"><input type="radio" name="theme" value="light" aria-label="Light"><span data-icon="sun" data-size="18"></span></label>
+            <label class="theme-opt" title="Dark"><input type="radio" name="theme" value="dark" aria-label="Dark"><span data-icon="moon" data-size="18"></span></label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-name">Color</span>
+          <div class="swatches" id="swatches" role="radiogroup" aria-label="Color"></div>
+        </div>
       </fieldset>
       <fieldset>
         <legend>Data</legend>
