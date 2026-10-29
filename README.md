@@ -36,14 +36,9 @@ Avoid broad wildcards such as `https://*.github.io/*`: any page on a matching or
 
 ## Deployment
 
-This repository is private, so the dashboard is published from a separate public repository,
-`nda111/tabcat-pages`, whose GitHub Pages site uses the custom domain `tabcat.ghyeok.com`
-(DNS: `CNAME tabcat → nda111.github.io`). Publish by pushing the `pages` branch to it:
-
-```sh
-git remote add deploy git@github.com:nda111/tabcat-pages.git   # once
-git push deploy pages:main
-```
+GitHub Pages serves the `pages` branch (root) of this repository at the custom domain `tabcat.ghyeok.com`
+(`CNAME` file on `pages`; DNS: `CNAME tabcat → nda111.github.io`, HTTPS enforced).
+Pushing to `pages` publishes the dashboard.
 
 ## Development
 
