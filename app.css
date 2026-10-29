@@ -198,7 +198,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
 .folder-head > .sym { font-size: 15px; }
 .folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
-.folder-head .node-line .name { font-size: 13px; font-weight: 600; }
+.folder-head .node-line .name { font-size: 13px; font-weight: 400; }
 .folder-head .head-actions { align-items: center; gap: 0; }
 .folder-head .head-actions .icon-btn { padding: 1px 4px; color: var(--muted); }
 .folder-head .head-actions .icon-btn:hover, .folder-head .head-actions .icon-btn.hover { color: var(--accent); }
