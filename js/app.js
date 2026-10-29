@@ -219,7 +219,8 @@ let boardSwitch = null;
 function switchBoard() {
   if (boardSwitch) return; // already leaving; the timer draws the latest state
   const old = [...document.querySelectorAll('#board .group, #board .add-group')];
-  old.forEach((el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.92)' }],
+  // start from each card's current opacity: hidden New group cards stay at 0
+  old.forEach((el) => el.animate([{ opacity: getComputedStyle(el).opacity, transform: 'none' }, { opacity: 0, transform: 'scale(.92)' }],
     { duration: 150, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }));
   boardSwitch = setTimeout(() => {
     boardSwitch = null;
