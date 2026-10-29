@@ -143,6 +143,21 @@ const handlers = {
     return true;
   },
   closeTabs: ({ tabIds }) => chrome.tabs.remove(tabIds).then(() => true),
+  // unload the given tabs from memory (the active tab of a window can't be discarded and is skipped)
+  async discardTabs({ tabIds }) {
+    let n = 0;
+    for (const id of tabIds) {
+      try { if (await chrome.tabs.discard(id)) n++; } catch { /* active or not discardable */ }
+    }
+    return n;
+  },
+  // move the given tabs, in order, into one new window
+  async moveToNewWindow({ tabIds }) {
+    if (!tabIds?.length) return null;
+    const win = await chrome.windows.create({ tabId: tabIds[0], focused: false });
+    if (tabIds.length > 1) await chrome.tabs.move(tabIds.slice(1), { windowId: win.id, index: -1 });
+    return win.id;
+  },
   closeWindow: ({ windowId }) => chrome.windows.remove(windowId).then(() => true),
   openDashboard: () => openDashboard(),
 };
