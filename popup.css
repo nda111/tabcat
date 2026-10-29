@@ -12,6 +12,13 @@
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
   --muted: #9a958f; --accent: #f29a52; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; color-scheme: dark;
 }
+/* accent colour picked in Settings (orange, the default, keeps the values above): one hue, with
+   lightness / chroma tuned per theme; the soft tint is mixed into the panel colour */
+:root[data-accent] { --accent: oklch(.66 .16 var(--hue)); --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+@media (prefers-color-scheme: dark) {
+  :root[data-accent]:not([data-theme="light"]) { --accent: oklch(.75 .13 var(--hue)); --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
+}
+:root[data-accent][data-theme="dark"] { --accent: oklch(.75 .13 var(--hue)); --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body {

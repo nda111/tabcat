@@ -1,6 +1,9 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 
+// accent colours (hue in oklch), as in the dashboard's Settings > Color
+const ACCENT_HUES = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
+
 const $ = (sel) => document.querySelector(sel);
 // Shrink back into the toolbar button, then close. (When Chrome closes the popup itself, e.g. on a
 // click elsewhere, it disappears at once: a closing popup gets no time to animate.)
@@ -19,6 +22,11 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     S.load(), S.loadSettings(), chrome.tabs.query({}),
   ]);
   if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
+  const hue = ACCENT_HUES[settings.accent];
+  if (hue != null && settings.accent !== 'orange') {
+    document.documentElement.dataset.accent = settings.accent;
+    document.documentElement.style.setProperty('--hue', hue);
+  }
   A.setDashboardUrl(settings.dashboardUrl);
   const sleeping = all.filter((t) => t.discarded).length;
   $('#stats').textContent = [`${all.length} tab${all.length === 1 ? '' : 's'}`, sleeping && `${sleeping} suspended`].filter(Boolean).join(' · ');
