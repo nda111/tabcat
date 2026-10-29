@@ -341,9 +341,9 @@ body.ws-collapsed #ws-toggle { position: absolute; left: 50%; top: 0; transform:
 body.ws-collapsed .brand:hover #ws-toggle { opacity: 1; background: var(--hover); }
 body.ws-collapsed .brand:hover .brand-logo { opacity: 0; } /* cross-fades with the toggle (no visibility flip) */
 body.ws-collapsed .side-title { display: none; }
-body.ws-collapsed :is(.ws-item, .ws-add) { width: 36px; height: 36px; padding: 0 0 0 9px; margin: 0 0 2px 2px; } /* square, like the buttons below */
-body.ws-collapsed .ws-add { justify-content: center; padding: 0; }
-body.ws-collapsed .ws-item .sym { font-size: 17px; }
+/* square, like the buttons below; the symbol sits in the middle (x = 28px, where it is when expanded) */
+body.ws-collapsed :is(.ws-item, .ws-add) { width: 36px; height: 36px; padding: 0; margin: 0 0 2px 2px; justify-content: center; }
+body.ws-collapsed .ws-item .sym { font-size: 17px; width: auto; }
 body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 10px; margin-left: 2px; } /* square, icon size unchanged */
 body.ws-collapsed #sidebar .resizer { display: none; }
 

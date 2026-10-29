@@ -200,6 +200,7 @@ function animateLayout(before) {
 }
 
 function animateMoves(before) {
+  const played = new Set(); // ids animated in this pass
   const sameBoard = before.board === $('#board').dataset.parent;
   const deltas = new Map();
   const els = [...document.querySelectorAll(MOVABLE)];
@@ -209,17 +210,23 @@ function animateMoves(before) {
     const r = el.getBoundingClientRect();
     if (r.width) deltas.set(el, [prev.left - r.left, prev.top - r.top, prev.width, r.width]);
   }
+  // still popping in from a moment ago: its rect is scaled, not moved, so let resumeRunning continue it
+  const popping = (el) => { const r = running.get(el.dataset.id); return r && 'opacity' in r.keyframes[0] && performance.now() - r.start < r.opts.duration; };
   for (const el of els) {
-    if (el.matches('.add-group')) continue; // only measured (new groups grow out of it), never animated
+    if (el.matches('.add-group') || popping(el)) continue; // (the New group card is only measured)
     const d = deltas.get(el);
+    if (!d && before.rects.size && el.matches('.ws-item, .cat-tab')) {
+      // a new workspace / category: springs into the list (the board may have switched to it)
+      play(played, el, [{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING }, true);
+      continue;
+    }
     if (!d) {
       // a new link / folder inside a group or folder that was already there: pop in, drawn on top
       // (not when it only became visible because its group / folder is being expanded)
       const holder = el.parentElement.closest('[data-id]');
       if (expanding && el.parentElement.closest(`[data-id="${CSS.escape(expanding)}"]`)) continue;
       if (sameBoard && holder && el.closest('#board') && before.rects.has(holder.dataset.id)) {
-        const anim = el.animate([{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING });
-        raiseWhile(el, anim);
+        play(played, el, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING }, true);
         continue;
       }
       if (sameBoard && before.rects.size && el.closest('#board') && !holder) {
@@ -237,7 +244,7 @@ function animateMoves(before) {
           raiseWhile(el, anim);
           anim.finished.catch(() => {}).then(() => { el.style.overflow = ''; el.style.transformOrigin = ''; });
         } else {
-          el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
+          play(played, el, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
         }
       }
       continue;
@@ -250,9 +257,9 @@ function animateMoves(before) {
     if (Math.abs(dx) + Math.abs(dy) < 1 && !resize) continue;
     const from = { transform: `translate(${dx}px, ${dy}px)` }, to = { transform: 'none' };
     if (resize) { from.width = `${d[2]}px`; to.width = `${d[3]}px`; }
-    const anim = el.animate([from, to], { duration: 420, easing: SPRING });
-    if (movingIds.has(el.dataset.id)) raiseWhile(el, anim); // what the user moved passes over the rest
+    play(played, el, [from, to], { duration: 420, easing: SPRING }, movingIds.has(el.dataset.id)); // what the user moved passes over the rest
   }
+  resumeRunning(played);
 }
 
 // Ids the user just moved (drag & drop): their slide is drawn above everything else on the board.
@@ -261,6 +268,30 @@ function markMoving(ids) {
   const marked = (movingIds = new Set(ids));
   setTimeout(() => { if (movingIds === marked) movingIds = new Set(); }, 1500);
 }
+
+// Element animations keyed by data-id, so a re-render right after (e.g. a new workspace, then
+// switching to it) continues them on the new elements instead of cutting them off.
+const running = new Map(); // id -> { keyframes, opts, start, raise }
+function play(played, el, keyframes, opts, raise = false) {
+  played.add(el.dataset.id);
+  running.set(el.dataset.id, { keyframes, opts, start: performance.now(), raise });
+  const anim = el.animate(keyframes, opts);
+  if (raise) raiseWhile(el, anim);
+}
+function resumeRunning(played) {
+  const now = performance.now();
+  for (const [id, r] of running) {
+    const t = now - r.start;
+    if (t >= r.opts.duration) { running.delete(id); continue; }
+    if (played.has(id)) continue;
+    const el = document.querySelector(`${MOVABLE.split(', ').map((sel) => sel.replace('[data-id]', `[data-id="${CSS.escape(id)}"]`)).join(', ')}`);
+    if (!el) continue;
+    const anim = el.animate(r.keyframes, r.opts);
+    anim.currentTime = t;
+    if (r.raise) raiseWhile(el, anim);
+  }
+}
+
 function raiseWhile(el, anim) {
   el.style.position ||= 'relative';
   el.style.zIndex = '50';
