@@ -9,7 +9,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   if (!r[S.KEY]) await S.save(S.defaultState());
 
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: 'open-dashboard', title: 'Open tabcat dashboard', contexts: ['action'] });
+    chrome.contextMenus.create({ id: 'go-tabcat', title: 'Go tabcat', contexts: ['action'] });
     chrome.contextMenus.create({ id: 'save-tab', title: 'Save this tab to tabcat', contexts: ['page', 'action'] });
     chrome.contextMenus.create({ id: 'save-link', title: 'Save link to tabcat', contexts: ['link'] });
     chrome.contextMenus.create({ id: 'save-window', title: 'Save all tabs in this window', contexts: ['page', 'action'] });
@@ -35,10 +35,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (s.autoSuspendMinutes > 0) await A.suspendTabs({ olderThanMs: s.autoSuspendMinutes * 60_000 });
 });
 
-async function openDashboard() {
+// Focuses an open dashboard tab, or opens one; newTab always opens a fresh tab.
+async function openDashboard({ newTab = false } = {}) {
   const s = await S.loadSettings();
   A.setDashboardUrl(s.dashboardUrl);
-  const tabs = await chrome.tabs.query({});
+  const tabs = newTab ? [] : await chrome.tabs.query({});
   const existing = tabs.find((t) => A.isDashboard(t.url) && !/newtab/.test(t.url));
   if (existing) {
     await chrome.tabs.update(existing.id, { active: true });
@@ -48,32 +49,12 @@ async function openDashboard() {
   }
 }
 
-/* ================= toolbar button ================= */
-
-// There is no default_popup, so every click reaches onClicked: one click opens the popup, a second
-// click within DOUBLE_CLICK_MS opens the dashboard instead. (The popup waits that long to appear.)
-const DOUBLE_CLICK_MS = 280;
-let clickTimer = null;
-
-chrome.action.onClicked.addListener((tab) => {
-  if (clickTimer) {
-    clearTimeout(clickTimer);
-    clickTimer = null;
-    openDashboard();
-    return;
-  }
-  clickTimer = setTimeout(() => {
-    clickTimer = null;
-    chrome.action.openPopup({ windowId: tab.windowId }).catch(() => openDashboard());
-  }, DOUBLE_CLICK_MS);
-});
-
 /* ================= context menu & shortcuts ================= */
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
-    case 'open-dashboard':
-      await openDashboard();
+    case 'go-tabcat':
+      await openDashboard({ newTab: true });
       break;
     case 'save-tab':
       if (tab) await A.saveTabs([tab]);
