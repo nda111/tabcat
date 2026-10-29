@@ -1497,6 +1497,14 @@ $('#import-settings-file').addEventListener('change', async (e) => {
 
 $('#add-ws').addEventListener('click', addWorkspace);
 $('#btn-settings').addEventListener('click', openSettings);
+// The guide opens at its top (showModal would focus, and scroll to, the Close button).
+function openGuide() {
+  const dlg = $('#help');
+  dlg.showModal();
+  dlg.scrollTop = 0;
+  dlg.querySelector('button').blur();
+}
+$('#btn-help').addEventListener('click', openGuide);
 
 /* ---------- side panels: collapse and resize ---------- */
 
@@ -1648,6 +1656,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
     if (e.key === 'Escape') { clearSelection(); return; }
   }
+  if (!typing && !dialogOpen && e.key === '?') { e.preventDefault(); openGuide(); return; }
   if (!typing && (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'))) {
     e.preventDefault();
     search.focus();
