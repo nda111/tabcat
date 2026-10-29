@@ -302,7 +302,8 @@ function renderLink(l) {
       btn(icon('close'), 'Delete', () => deleteNode(l)))));
 }
 
-// Same layout as a group header, smaller: symbol | name line over an always-visible tools row.
+// One compact row (folders sit among links): chevron, symbol, name, count; the action buttons
+// appear on hover and take no space otherwise.
 function renderFolder(f) {
   return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
@@ -312,19 +313,18 @@ function renderFolder(f) {
       ondblclick: (e) => e.stopPropagation(),
       oncontextmenu: (e) => nodeMenu(e, f),
     },
-    h('div', { class: 'node-sym' }, symbolEl(f.symbol, '📁')),
-    h('div', { class: 'node-info' },
-      h('div', { class: 'node-line' },
-        h('span', { class: 'name' }, f.name),
-        h('span', { class: 'count' }, T.countLinks(f)),
-        Object.assign(btn(icon('chevron'), f.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(f)), { className: 'icon-btn collapse-btn' })),
-      h('div', { class: 'node-tools' },
-        btn(icon('linkPlus'), 'Add link', () => addLink(f.id)),
-        btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
-        h('span', { class: 'tools-split' }),
-        btn(icon('edit'), 'Edit folder', () => editNode(f)),
-        btn(icon('open'), 'Open all links', () => openAll(f)),
-        btn(icon('more'), 'More', (e) => nodeMenu(e, f))))),
+    h('span', { class: 'twisty' }, icon('chevron', 13)),
+    symbolEl(f.symbol, '📁'),
+    h('span', { class: 'node-line' },
+      h('span', { class: 'name' }, f.name),
+      h('span', { class: 'count' }, T.countLinks(f))),
+    h('span', { class: 'head-actions' },
+      btn(icon('linkPlus'), 'Add link', () => addLink(f.id)),
+      btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
+      h('span', { class: 'tools-split' }),
+      btn(icon('edit'), 'Edit folder', () => editNode(f)),
+      btn(icon('open'), 'Open all links', () => openAll(f)),
+      btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
     renderItems(f.items, f.id));
 }
 
@@ -462,7 +462,7 @@ async function deleteNode(node) {
   if ((node.type === 'workspace' || node.type === 'category') && n > 0 &&
       !(await confirmDialog({
         title: `Delete ${TYPE_LABEL[node.type].toLowerCase()} “${node.name}”?`,
-        text: `Its ${n} link${n === 1 ? '' : 's'} will be deleted too. You can undo this right after.`,
+        text: `Its ${n} link${n === 1 ? '' : 's'} will be deleted too.`,
         ok: 'Delete', danger: true,
       }))) return;
   const snapshot = structuredClone(state);
@@ -969,7 +969,7 @@ async function mergeGroups(fromId, intoId) {
   const n = T.countLinks(from);
   if (!(await confirmDialog({
     title: `Merge “${label(from)}” into “${label(into)}”?`,
-    text: `Its ${n} link${n === 1 ? '' : 's'}, folders and note move to “${label(into)}”, then “${label(from)}” is removed. You can undo this.`,
+    text: `Its ${n} link${n === 1 ? '' : 's'}, folders and note move to “${label(into)}”, then “${label(from)}” is removed.`,
     ok: 'Merge',
   }))) return;
   const note = [into.note, from.note].filter((n) => n && n.trim()).join('\n\n---\n\n');

@@ -147,7 +147,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 .node-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
 .collapse-btn { color: var(--muted); align-self: center; }
 .collapse-btn .ico { transition: transform .12s; }
-.group.collapsed > .group-head .collapse-btn .ico, .folder.collapsed > .folder-head .collapse-btn .ico { transform: rotate(-90deg); }
+.group.collapsed > .group-head .collapse-btn .ico { transform: rotate(-90deg); }
 .node-tools { display: flex; align-items: center; gap: 2px; margin-left: -5px; }
 .tools-split { width: 1px; height: 14px; margin: 0 4px; background: var(--border); }
 .node-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
@@ -191,13 +191,15 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .link-row:hover .head-actions, .link-row.hover .head-actions { display: flex; }
 .folder-head { user-select: none; }
 .folder.collapsed > .items { display: none; }
-.folder-head { gap: 8px; padding: 5px 6px; }
-.folder-head .node-sym { width: 32px; height: 32px; border-radius: 8px; font-size: 20px; }
-.folder-head .node-sym .sym-letter { font-size: 17px; width: 28px; height: 28px; border-radius: 7px; }
-.folder-head .node-info { gap: 0; }
-.folder-head .node-line { min-height: 18px; }
+.folder-head { gap: 6px; }
+.folder-head .twisty { display: inline-flex; color: var(--muted); transition: transform .12s; }
+.folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
+.folder-head > .sym { font-size: 15px; }
+.folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
 .folder-head .node-line .name { font-size: 13px; font-weight: 600; }
-.folder-head .node-tools .icon-btn { padding: 1px 4px; }
+.folder-head .head-actions { align-items: center; gap: 0; }
+.folder-head .head-actions .icon-btn { padding: 1px 4px; color: var(--muted); }
+.folder-head .head-actions .icon-btn:hover, .folder-head .head-actions .icon-btn.hover { color: var(--accent); }
 .items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; padding: 6px 8px; }
 .items .items:empty::after { content: 'Empty folder'; padding: 2px 8px; }
 
