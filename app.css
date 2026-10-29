@@ -64,16 +64,16 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-
 
 /* ---------- side panels (workspaces, open tabs) ---------- */
 .side-panel { position: relative; flex: none; background: var(--panel-2); border-right: 1px solid var(--border); min-height: 0; }
-#sidebar { width: var(--ws-w, 220px); display: flex; flex-direction: column; padding: 12px 8px; }
+#sidebar { width: var(--ws-w, 220px); display: flex; flex-direction: column; padding: 8px 8px 12px; }
 .resizer { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
 .resizer:hover, .resizer.active { background: var(--accent); opacity: .5; }
 body.resizing { cursor: col-resize; user-select: none; }
 .panel-toggle {
-  flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+  flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; /* 18px icon, 9px around it */
   border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer;
 }
 .panel-toggle:hover, .panel-toggle.hover { background: var(--hover); color: var(--text); }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 10px 8px; min-height: 30px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 8px 8px; min-height: 36px; }
 .brand-logo { display: grid; place-items: center; width: 22px; height: 22px; flex: none; }
 .brand-logo img { width: 22px; height: 22px; }
 .brand-name { flex: 1; }
@@ -269,12 +269,12 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 
 /* ---------- open tabs panel ---------- */
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
-.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 12px 8px 10px; }
+.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 8px 12px 6px 8px; }
 .panel-title { flex: 1; min-width: 0; }
 /* a chunk moves to the next line as a unit, and wraps inside only if it is wider than the whole line */
 .chunk { display: inline-block; max-width: 100%; }
 /* sized to the one-line title + stats; stays put when the stats wrap */
-.panel-toggle.square { width: 36px; height: 36px; align-self: flex-start; }
+.panel-toggle.square { align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
 .panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
@@ -308,9 +308,9 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 .tip-icon { display: grid; place-items: center; flex: none; }
 .tip-icon img { width: 16px; height: 16px; display: block; }
 .tip-sub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
-body.ws-collapsed .brand { justify-content: center; padding: 0 0 10px; position: relative; }
-body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label,
+body.ws-collapsed #sidebar { width: 56px; padding: 8px 6px 12px; align-items: stretch; }
+body.ws-collapsed .brand { justify-content: center; padding: 0 0 8px; position: relative; }
+body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label, body.ws-collapsed .side-search .label,
 body.ws-collapsed .ws-item .name, body.ws-collapsed .ws-item .count, body.ws-collapsed .side-btn .label { display: none; }
 /* collapsed: the logo turns into the expand button on hover (the toggle sits on top of it) */
 body.ws-collapsed #ws-toggle { position: absolute; left: 50%; top: 0; transform: translateX(-50%); opacity: 0; }
@@ -323,9 +323,9 @@ body.ws-collapsed .side-btn { justify-content: center; width: 36px; height: 36px
 body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }
-body.tabs-collapsed .panel-head { justify-content: center; padding: 12px 0 4px; }
+body.tabs-collapsed .panel-head { justify-content: center; padding: 8px 0 4px; }
 body.tabs-collapsed .panel-title { display: none; }
-body.tabs-collapsed .panel-toggle.square { width: 36px; height: 36px; align-self: center; }
+body.tabs-collapsed .panel-toggle.square { align-self: center; }
 body.tabs-collapsed .panel-actions { flex-direction: column; align-items: center; padding: 0 0 6px; gap: 2px; }
 body.tabs-collapsed .panel-actions .btn { border: 0; background: transparent; padding: 4px 6px; }
 body.tabs-collapsed .panel-actions .btn:hover { background: var(--hover); }
@@ -446,22 +446,21 @@ dialog .field-label { display: block; font-weight: 600; }
 .no-ext-card li { margin-bottom: 6px; }
 .no-ext-card code { background: var(--hover); padding: 0 4px; border-radius: 4px; }
 
-/* ---------- search: a square button that widens into a field ---------- */
-.search-box {
-  position: relative; flex: none; display: flex; align-items: center; height: 32px; width: 32px;
-  border: 1px solid transparent; border-radius: 8px; transition: width .18s ease, background .1s;
-}
-.search-box:not(.open):hover { background: var(--hover); }
-.search-box.open { width: min(420px, 50vw); border-color: var(--accent); background: var(--panel); }
-.search-btn { flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
-.search-box.open .search-btn, .search-btn:hover { color: var(--text); }
-#search { flex: 1; min-width: 0; width: 0; padding: 0 8px 0 0; border: 0; background: transparent; outline: none; font-size: 13px; opacity: 0; }
-.search-box.open #search { opacity: 1; }
+/* ---------- search: a sidebar row that turns into a field ---------- */
+.side-search { position: relative; margin-bottom: 8px; }
+.side-search kbd { margin-left: auto; padding: 0 5px; border: 1px solid var(--border); border-radius: 4px; font: 10.5px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+.search-field { display: none; align-items: center; gap: 6px; height: 31px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 7px; background: var(--panel); color: var(--muted); }
+.side-search.open #btn-search { display: none; }
+.side-search.open .search-field { display: flex; }
+#search { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; outline: none; font-size: 13px; }
 #search::-webkit-search-cancel-button { display: none; } /* Esc closes the search instead */
+/* collapsed rail: the field floats beside it */
+body.ws-collapsed .side-search.open .search-field { position: absolute; left: 0; top: 0; width: 360px; z-index: 31; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
 #search-results {
-  position: absolute; top: calc(100% + 6px); left: -1px; width: max(100%, 460px); max-height: 60vh; overflow-y: auto; z-index: 30;
+  position: absolute; top: calc(100% + 6px); left: 0; width: 460px; max-width: calc(100vw - 24px); max-height: 60vh; overflow-y: auto; z-index: 30;
   padding: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.15);
 }
+body.ws-collapsed #search-results { top: 37px; }
 #search-results h4 { margin: 8px 10px 4px; font-size: 11px; font-weight: 600; color: var(--muted); }
 .search-empty { margin: 0; padding: 14px 10px; text-align: center; }
 .search-foot { padding: 6px 10px 2px; border-top: 1px solid var(--border); margin-top: 6px; }

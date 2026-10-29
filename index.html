@@ -33,6 +33,11 @@
       <span class="brand-name">tabcat</span>
       <button type="button" class="panel-toggle" id="ws-toggle" title="Collapse workspaces"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 3.5v13" stroke="currentColor" stroke-width="1.5"/></svg></button>
     </div>
+    <div class="side-search" id="search-box">
+      <button type="button" class="side-btn" id="btn-search" data-rail-title="Search"><span class="sym" data-icon="search"></span><span class="label">Search</span><kbd class="label">/</kbd></button>
+      <div class="search-field"><span data-icon="search"></span><input id="search" type="search" placeholder="Search links, groups, notes…" autocomplete="off" tabindex="-1"></div>
+      <div id="search-results" hidden></div>
+    </div>
     <div class="side-title"><span class="label">Workspaces</span> <button class="icon-btn" id="add-ws" title="New workspace"><span data-icon="plus"></span></button></div>
     <ul id="ws-list"></ul>
     <div class="side-bottom">
@@ -44,7 +49,7 @@
 
   <aside id="tabs-panel" class="side-panel">
     <div class="panel-head">
-      <button type="button" class="panel-toggle square" id="tabs-toggle" title="Collapse open tabs"><span data-icon="windows" data-size="20"></span></button>
+      <button type="button" class="panel-toggle square" id="tabs-toggle" title="Collapse open tabs"><span data-icon="windows" data-size="18"></span></button>
       <div class="panel-title">
         <strong>Open tabs</strong>
         <div id="tab-stats" class="muted small"></div>
@@ -62,12 +67,6 @@
   <main id="main">
     <header id="topbar">
       <div id="ws-head"></div>
-      <div class="search-box" id="search-box">
-        <button type="button" class="search-btn" id="btn-search" title="Search
-Press / or Ctrl+K"><span data-icon="search" data-size="17"></span></button>
-        <input id="search" type="search" placeholder="Search links, groups, folders and notes" autocomplete="off" tabindex="-1">
-        <div id="search-results" hidden></div>
-      </div>
     </header>
     <nav id="cat-bar"></nav>
     <section id="board"></section>

@@ -217,9 +217,9 @@ function renderCats() {
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
-    btn(plus(), 'New category', () => addCategory(ws)),
-    cur && h('span', { class: 'bar-split' }),
-    cur && columnControl());
+    btn(plus(), 'New category', () => addCategory(ws)));
+  // the column stepper sits at the bar's start, so it never moves as tabs come and go
+  if (cur) bar.prepend(columnControl(), h('span', { class: 'bar-split' }));
 }
 
 // Board column count (a setting; stepper at the right end of the category bar).
@@ -422,7 +422,7 @@ function renderFolder(f, depth) {
 
 /* ---------- search ---------- */
 
-// The magnifier button widens into a search field; results drop down beneath it. Arrows move,
+// "Search" in the sidebar turns into a field; results drop down over the board. Arrows move,
 // Enter opens a link / reveals a group, Esc or a click elsewhere closes.
 const searchBox = $('#search-box');
 const search = $('#search');
@@ -501,7 +501,7 @@ search.addEventListener('keydown', (e) => {
     hits[hit]?.dispatchEvent(new MouseEvent('click', { ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey }));
   }
 });
-$('#btn-search').addEventListener('click', () => (searchBox.classList.contains('open') ? search.focus() : openSearch()));
+$('#btn-search').addEventListener('click', openSearch);
 document.addEventListener('pointerdown', (e) => { if (!searchBox.contains(e.target)) closeSearch(); });
 
 function reveal(node, anc) {
