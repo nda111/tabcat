@@ -647,8 +647,15 @@ async function renderTabs() {
   });
   $('#tab-stats').replaceChildren(...chunks([plural(wins.length, 'window'), plural(all.length, 'tab'),
     sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean)));
+  const actions = [...document.querySelectorAll('.panel-actions .btn:not([hidden])')];
+  const actionRects = new Map(actions.map((el) => [el, el.getBoundingClientRect()]));
+  const wasHidden = { suspend: $('#btn-suspend').hidden, dedupe: $('#btn-dedupe').hidden };
   $('#btn-suspend').hidden = !suspendable;
   $('#btn-dedupe').hidden = !dupes;
+  flipFrom(actionRects); // buttons that stay slide to their new spots; new ones pop in
+  for (const [key, el] of [['suspend', $('#btn-suspend')], ['dedupe', $('#btn-dedupe')]]) {
+    if (wasHidden[key] && !el.hidden) el.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING });
+  }
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -1814,28 +1821,44 @@ let panelAnimTimer;
 
 for (const p of Object.values(PANELS)) {
   $(p.toggle).addEventListener('click', () => {
-    // FLIP the panel's icons and rows from where they were to where the new layout puts them, so
-    // switching between the rail and the full panel reads as one continuous movement
     const panel = $(p.el);
-    const els = [...panel.querySelectorAll(PANEL_FLIP)];
-    const before = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
-    document.body.classList.add('panel-anim');
-    clearTimeout(panelAnimTimer);
-    panelAnimTimer = setTimeout(() => document.body.classList.remove('panel-anim'), 450);
-    ui[p.collapsed] = !ui[p.collapsed];
+    const collapsing = !ui[p.collapsed];
     hideTip();
-    applyPanels();
-    for (const el of els) {
-      const a = before.get(el), b = el.getBoundingClientRect();
-      if (!a.width || !b.width) continue;
-      const dx = a.left - b.left, dy = a.top - b.top;
-      if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 400, easing: SPRING });
-    }
-    // if the pointer is still on the button, show its new label right away
-    const under = pointer && document.elementFromPoint(...pointer);
-    if (under && $(p.toggle).contains(under)) showTip($(p.toggle));
-    saveUi();
+    if (collapsing) {
+      // fade the labels out while the panel starts to narrow, then switch to the rail layout
+      panel.classList.add('fading');
+      panel.style.width = '56px';
+      setTimeout(() => { panel.classList.remove('fading'); panel.style.width = ''; switchPanel(p); }, 150);
+    } else switchPanel(p);
   });
+}
+
+// Switch a side panel between full and rail layout, FLIPping its icons and rows from where they
+// were to where the new layout puts them, so the change reads as one continuous movement.
+function switchPanel(p) {
+  const els = [...$(p.el).querySelectorAll(PANEL_FLIP)];
+  const before = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
+  document.body.classList.add('panel-anim');
+  clearTimeout(panelAnimTimer);
+  panelAnimTimer = setTimeout(() => document.body.classList.remove('panel-anim'), 450);
+  ui[p.collapsed] = !ui[p.collapsed];
+  applyPanels();
+  flipFrom(before);
+  // if the pointer is still on the button, show its new label right away
+  const under = pointer && document.elementFromPoint(...pointer);
+  if (under && $(p.toggle).contains(under)) showTip($(p.toggle));
+  saveUi();
+}
+
+// Animate elements from the rects recorded in `before` (Map el → DOMRect) to where they are now.
+function flipFrom(before) {
+  for (const [el, a] of before) {
+    if (!el.isConnected) continue;
+    const b = el.getBoundingClientRect();
+    if (!a.width || !b.width) continue;
+    const dx = a.left - b.left, dy = a.top - b.top;
+    if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 400, easing: SPRING });
+  }
 }
 
 for (const handle of document.querySelectorAll('.resizer')) {
