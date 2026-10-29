@@ -64,6 +64,8 @@ function setSym(el, s) {
 // "Save to" picker: a button showing the chosen group or folder, opening a searchable list grouped
 // by workspace › category, with folders indented under their group. Returns { value } (an id, or ''
 // for a new Inbox when there are none).
+const MAX_INDENT = 4;
+
 function groupPicker(entries, initialId) {
   const btn = $('#target-btn');
   const panel = $('#target-panel');
@@ -102,7 +104,9 @@ function groupPicker(entries, initialId) {
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'picker-item' + (e.node.type === 'folder' ? ' folder' : '');
-      item.style.paddingLeft = `${6 + (q ? 0 : e.depth * 16)}px`;
+      // indent up to four levels; deeper folders stay put so their names keep the room
+      item.style.paddingLeft = `${6 + (q ? 0 : Math.min(e.depth, MAX_INDENT) * 14)}px`;
+      item.title = [...e.trail, e.node.name].join(' › ');
       item.setAttribute('role', 'option');
       item.setAttribute('aria-selected', String(e.node.id === picker.value));
       item.innerHTML = '<span class="sym"></span><span class="name"></span><span class="where muted"></span>';
@@ -110,7 +114,7 @@ function groupPicker(entries, initialId) {
       item.querySelector('.name').textContent = e.node.name;
       if (q && e.trail.length) item.querySelector('.where').textContent = e.trail.join(' › ');
       item.addEventListener('click', () => { show(e); close(); });
-      item.addEventListener('mousemove', () => setActive(items.indexOf(item)));
+      item.addEventListener('mousemove', () => setActive(items.indexOf(item), false));
       items.push(item);
       nodes.push(item);
     }
@@ -124,11 +128,12 @@ function groupPicker(entries, initialId) {
     setActive(Math.max(0, items.findIndex((it) => it.getAttribute('aria-selected') === 'true')));
   }
 
-  function setActive(i) {
+  // scroll only for keyboard moves: scrolling under the mouse would make the list jump
+  function setActive(i, scroll = true) {
     items[active]?.classList.remove('active');
     active = items.length ? Math.max(0, Math.min(items.length - 1, i)) : -1;
     items[active]?.classList.add('active');
-    items[active]?.scrollIntoView({ block: 'nearest' });
+    if (scroll) items[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   function open() {
