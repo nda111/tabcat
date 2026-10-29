@@ -117,10 +117,13 @@ body.resizing { cursor: col-resize; user-select: none; }
 .cat-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
 .cat-tab .count { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
 
-#board {
-  flex: 1; overflow: auto; padding: 16px 18px 80px;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-content: start;
-}
+#board { flex: 1; overflow: auto; padding: 16px 18px 80px; }
+/* user-chosen columns: each column stacks its groups, so a card sits right under the one above */
+.columns { display: flex; align-items: stretch; gap: 14px; min-height: 100%; }
+.col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.col-ctl { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--muted); padding-left: 12px; }
+.col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); }
+.col-ctl .icon-btn:disabled { opacity: .35; cursor: default; }
 
 .empty {
   grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 20px;
@@ -129,7 +132,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 /* ---------- group card ---------- */
 .group {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
-  display: flex; flex-direction: column; min-width: 0; align-self: start;
+  display: flex; flex-direction: column; min-width: 0;
 }
 .group-head {
   display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-bottom: 1px solid var(--border);
@@ -211,7 +214,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .add-group {
   --add-color: color-mix(in srgb, var(--border) 65%, var(--muted)); /* the + matches the dashed border */
   border: 2px dashed var(--add-color); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; gap: 4px;
-  min-height: 90px; color: var(--add-color); cursor: pointer; align-self: start;
+  min-height: 90px; color: var(--add-color); cursor: pointer;
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
 .add-group.drop-new { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }

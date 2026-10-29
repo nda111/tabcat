@@ -207,7 +207,26 @@ function renderCats() {
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
-    btn(plus(), 'New category', () => addCategory(ws)));
+    btn(plus(), 'New category', () => addCategory(ws)),
+    cur && columnControl());
+}
+
+// Board column count (a setting; stepper at the right end of the category bar).
+const boardColumns = () => Math.min(MAX_COLUMNS, Math.max(1, settings.columns || 3));
+async function setColumns(v) {
+  const s = await run(B.call('saveSettings', { columns: Math.min(MAX_COLUMNS, Math.max(1, v)) }));
+  if (s) { settings = s; fillSettings(); renderCats(); renderBoard(); }
+}
+
+function columnControl() {
+  const n = boardColumns();
+  const set = setColumns;
+  return h('div', { class: 'col-ctl', title: 'Columns' },
+    icon('columns', 15),
+    Object.assign(btn(icon('minus', 13), 'Fewer columns', () => set(n - 1)), { disabled: n <= 1 }),
+    h('span', { class: 'col-n' }, n),
+    // more columns only while they still fit the board's width
+    Object.assign(btn(icon('plus', 13), 'More columns', () => set(n + 1)), { disabled: n >= Math.min(MAX_COLUMNS, fittingColumns()) }));
 }
 
 function renderBoard() {
@@ -227,11 +246,61 @@ function renderBoard() {
     return;
   }
   board.dataset.parent = cat.id;
-  board.replaceChildren(
-    ...cat.groups.map(renderGroup),
-    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'New group\nOr drop tabs here' }, icon('plus', 28)));
+  const n = visibleColumns();
+  board.dataset.cols = n;
+  const cols = layoutColumns(cat, n);
+  // the New group card sits at the bottom of the column with the fewest groups
+  const addAt = cols.reduce((best, list, i) => (list.length < cols[best].length ? i : best), 0);
+  board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => h('div', { class: 'col', dataset: { col: i } },
+    list.map(renderGroup),
+    i === addAt && h('div', {
+      class: 'add-group', dataset: { col: i }, title: 'New group\nOr drop tabs here',
+      onclick: () => addGroup(cat, storedColumn(cat, n, i)),
+    }, icon('plus', 28))))));
   typesetMath(board);
 }
+
+/* ---------- board columns ---------- */
+
+const MAX_COLUMNS = 7;
+const COL_MIN = 280; // narrowest useful group card
+const COL_GAP = 14;
+
+// How many columns of at least COL_MIN fit the board's width.
+function fittingColumns() {
+  const board = $('#board');
+  const style = getComputedStyle(board);
+  const width = board.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  return Math.max(1, Math.floor((width + COL_GAP) / (COL_MIN + COL_GAP)));
+}
+
+// The category's column count, reduced when the board is too narrow to fit them.
+const visibleColumns = () => Math.min(boardColumns(), fittingColumns());
+
+// Stored column of a group (unplaced groups go round-robin by position).
+const columnOf = (cat, g, i) => Math.min(g.column ?? i % boardColumns(), boardColumns() - 1);
+
+// Visible column i holds stored column i; dropping into it stores i.
+const storedColumn = (cat, n, i) => i;
+
+// Groups per visible column, keeping the category's order within each column. When the board is
+// too narrow, the columns that don't fit are stacked, one after another, under the last visible one.
+function layoutColumns(cat, n) {
+  const all = Array.from({ length: boardColumns() }, () => []);
+  cat.groups.forEach((g, i) => all[columnOf(cat, g, i)].push(g));
+  return [...all.slice(0, n - 1), all.slice(n - 1).flat()];
+}
+
+// When the board's width changes how many columns fit: re-lay the board and refresh the stepper.
+let lastFit = 0;
+new ResizeObserver(() => {
+  const fit = fittingColumns();
+  if (fit === lastFit) return;
+  lastFit = fit;
+  if (!state || drag) return;
+  renderCats();
+  if (!query) renderBoard();
+}).observe($('#board'));
 
 function renderGroup(g) {
   const editing = editingNoteId === g.id;
@@ -723,11 +792,11 @@ async function addCategory(ws) {
   if (id) select(ws.id, id);
 }
 
-async function addNode(type, parentId, title) {
+async function addNode(type, parentId, title, extra = {}) {
   const v = await openEditor(type, {}, title);
-  if (v) apply({ op: 'create', parentId, node: { type, ...v } });
+  if (v) apply({ op: 'create', parentId, node: { type, ...extra, ...v } });
 }
-const addGroup = (cat) => addNode('group', cat.id, 'New group');
+const addGroup = (cat, column = null) => addNode('group', cat.id, 'New group', { column });
 const addLink = (parentId) => addNode('link', parentId, 'New link');
 const addFolder = (parentId) => addNode('folder', parentId, 'New folder');
 
@@ -874,30 +943,63 @@ function resolveItemDrop(e, el, d) {
   const ct = el.closest('.cat-tab');
   if (ct) return { action: 'toCategory', categoryId: ct.dataset.id, el: ct };
   const board = el.closest('#board');
-  if (board && board.dataset.parent) return { mode: 'newGroup', categoryId: board.dataset.parent };
+  if (board && board.dataset.parent) {
+    const cat = T.locate(state, board.dataset.parent).node;
+    const addCard = board.querySelector('.add-group');
+    return { mode: 'newGroup', categoryId: cat.id, column: storedColumn(cat, +board.dataset.cols, +(addCard?.dataset.col || 0)) };
+  }
   return null;
 }
 
 function resolveGroupDrop(e, el, d) {
   const board = $('#board');
-  const card = el.closest('.group');
-  if (card && board.dataset.parent) {
-    if (card.dataset.id === d.id) return null;
-    const cards = [...board.querySelectorAll(':scope > .group')];
-    const r = card.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width;
-    // outer quarters reorder; dropping onto the middle of a card offers to merge the groups
-    if (x > 0.25 && x < 0.75) return { action: 'merge', targetId: card.dataset.id, el: card };
-    const before = x <= 0.25;
-    const idx = cards.indexOf(card);
-    return { parentId: board.dataset.parent, index: before ? idx : idx + 1, line: vLine(r, before) };
+  const col = board.dataset.parent && el.closest('#board .col');
+  if (col) {
+    const cat = T.locate(state, board.dataset.parent).node;
+    const n = +board.dataset.cols;
+    const column = storedColumn(cat, n, +col.dataset.col);
+    const cards = [...col.querySelectorAll(':scope > .group')].filter((c) => c.dataset.id !== d.id);
+    const card = el.closest('.group');
+    if (card && card.dataset.id === d.id) return null;
+    if (card) {
+      // top / bottom edge: place before / after; the middle offers to merge the groups
+      const r = card.getBoundingClientRect();
+      const edge = Math.min(36, r.height * 0.25);
+      if (e.clientY > r.top + edge && e.clientY < r.bottom - edge) return { action: 'merge', targetId: card.dataset.id, el: card };
+      const before = e.clientY <= r.top + edge;
+      // join the card's own column (differs from the visible one when narrow columns are stacked)
+      const gi = cat.groups.findIndex((g) => g.id === card.dataset.id);
+      return {
+        action: 'column', categoryId: cat.id, column: columnOf(cat, cat.groups[gi], gi),
+        beforeId: before ? card.dataset.id : null, afterId: before ? null : card.dataset.id, line: hLine(r, before),
+      };
+    }
+    // empty space in a column: the end of that column
+    const last = cards.at(-1);
+    return {
+      action: 'column', categoryId: cat.id, column, beforeId: null,
+      line: last ? hLine(last.getBoundingClientRect(), false) : hLine(col.getBoundingClientRect(), true),
+    };
   }
   const ct = el.closest('.cat-tab');
   if (ct) return { parentId: ct.dataset.id, index: null, el: ct };
   const ws = el.closest('.ws-item');
   if (ws) return { action: 'toWorkspace', workspaceId: ws.dataset.id, el: ws };
-  // empty board space and the New group card are not targets: reorder by dropping beside a card
   return null;
+}
+
+// Moves group `id` into `column` of its category: before `beforeId`, after `afterId`, or to the end.
+function moveToColumn(id, t) {
+  const cat = T.locate(state, t.categoryId).node;
+  const list = cat.groups;
+  let index;
+  if (t.beforeId) index = list.findIndex((g) => g.id === t.beforeId);
+  else if (t.afterId) index = list.findIndex((g) => g.id === t.afterId) + 1;
+  else {
+    const inColumn = list.filter((g, i) => g.id !== id && columnOf(cat, g, i) === t.column);
+    index = inColumn.length ? list.indexOf(inColumn.at(-1)) + 1 : list.length;
+  }
+  return apply({ op: 'move', id, parentId: cat.id, index }, { op: 'patch', id, fields: { column: t.column } });
 }
 
 function resolveCatDrop(e, el, d) {
@@ -929,7 +1031,9 @@ function resolveWsDrop(e, el, d) {
 function targetOps(t, groupName) {
   if (t.action === 'toCategory') return [{ op: 'firstGroup', categoryId: t.categoryId }];
   if (t.action === 'toWorkspace') return [{ op: 'firstCategory', workspaceId: t.workspaceId }];
-  if (t.mode === 'newGroup') return [{ op: 'create', parentId: t.categoryId, node: { type: 'group', name: groupName || 'New group' } }];
+  if (t.mode === 'newGroup') {
+    return [{ op: 'create', parentId: t.categoryId, node: { type: 'group', name: groupName || 'New group', column: t.column ?? null } }];
+  }
   return [];
 }
 
@@ -940,6 +1044,7 @@ async function performDrop(d, t, e) {
     return;
   }
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
+  if (t.action === 'column') return moveToColumn(d.id, t);
   const pre = targetOps(t, d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : null);
   const parentId = pre.length ? '$0' : t.parentId;
 
@@ -1069,6 +1174,7 @@ function fillSettings() {
   f.closeOnSave.checked = settings.closeOnSave;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.theme.value = settings.theme;
+  f.columns.value = boardColumns();
 }
 
 function openSettings() {
@@ -1083,8 +1189,9 @@ $('#settings-form').addEventListener('change', async (e) => {
     closeOnSave: f.closeOnSave.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
     theme: f.theme.value,
+    columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
-  if (s) { settings = s; applyTheme(); }
+  if (s) { settings = s; applyTheme(); renderCats(); renderBoard(); }
 });
 
 /* ---------- export / import ---------- */
@@ -1221,6 +1328,7 @@ const SETTINGS_IO = {
   closeOnSave: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
+  columns: (v) => Number.isInteger(v) && v >= 1 && v <= MAX_COLUMNS,
 };
 
 $('#btn-export-settings').addEventListener('click', () => {
@@ -1410,7 +1518,12 @@ window.addEventListener('blur', hideMenu);
 
 // push events from the extension
 B.on('state', (s) => { state = s; render(); });
-B.on('settings', (s) => { settings = s; applyTheme(); });
+B.on('settings', (s) => {
+  const relayout = s.columns !== settings?.columns;
+  settings = s;
+  applyTheme();
+  if (relayout && state) render(); // e.g. columns changed in another dashboard tab
+});
 B.on('tabs', scheduleTabs);
 B.on('ready', () => { if (state) refresh(); }); // reconnected after the service worker restarted
 B.on('disconnected', () => showNoExtension());
