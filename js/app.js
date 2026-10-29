@@ -427,7 +427,11 @@ function openEditor(type, data = {}, title) {
   err.textContent = '';
   const inputs = {};
   fields.replaceChildren(...FIELDS[type].map(([key, label, kind, required]) => {
-    const input = kind === 'textarea' ? h('textarea', { name: key })
+    const input = kind === 'textarea'
+      ? h('textarea', {
+        name: key, placeholder: 'Ctrl+Enter to save',
+        onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); } },
+      })
       : h('input', { name: key, type: 'text', required: required ? true : null, autocomplete: 'off' });
     input.value = data[key] || '';
     inputs[key] = input;
