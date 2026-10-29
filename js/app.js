@@ -2205,6 +2205,12 @@ for (const dlg of document.querySelectorAll('dialog')) {
   });
 }
 
+// pages can't open chrome:// addresses themselves; the extension can
+$('#shortcuts-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  run(B.call('openUrls', { urls: [e.currentTarget.href], active: true }));
+});
+
 $('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
   h('label', { class: 'swatch', title: name[0].toUpperCase() + name.slice(1), dataset: { accent: name }, style: `--hue: ${hue}` },
     h('input', { type: 'radio', name: 'accent', value: name, 'aria-label': name }))));
