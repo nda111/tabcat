@@ -69,6 +69,12 @@ function btn(label, title, fn) {
   }, label);
 }
 
+// "a · b · c" as unbreakable chunks: a narrow container wraps between chunks, never inside one.
+function chunks(parts) {
+  return parts.flatMap((t, i) => [i ? ' ' : null, h('span', { class: 'chunk' }, t + (i < parts.length - 1 ? ' ·' : ''))])
+    .filter(Boolean);
+}
+
 function iconImg(url, icon) {
   const fallback = T.faviconFor(url);
   const img = h('img', { src: icon || fallback, alt: '', loading: 'lazy', draggable: 'false' });
@@ -215,7 +221,7 @@ function renderBoard() {
   board.dataset.parent = cat.id;
   board.replaceChildren(
     ...cat.groups.map(renderGroup),
-    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'New group\nOr drop tabs here' }, plus(), 'New group'));
+    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'New group\nOr drop tabs here' }, icon('plus', 28)));
   typesetMath(board);
 }
 
@@ -378,7 +384,7 @@ async function renderTabs() {
     const label = `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${plural(w.tabs.length, 'tab')}`;
     return h('div', { class: 'win', dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true', title: `${label}\nDrag onto a group to save it` },
-        h('span', { class: 'grow' }, label),
+        h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
         btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
         w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
@@ -394,9 +400,8 @@ async function renderTabs() {
       btn(icon('save'), 'Save tab', () => saveTabsTo([t.id])),
       btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
   });
-  $('#tab-stats').textContent = [plural(wins.length, 'window'), plural(all.length, 'tab'),
-    sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean).join(' · ');
-  $('#tab-stats').title = $('#tab-stats').textContent;
+  $('#tab-stats').replaceChildren(...chunks([plural(wins.length, 'window'), plural(all.length, 'tab'),
+    sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean)));
   $('#btn-suspend').hidden = !suspendable;
   $('#btn-dedupe').hidden = !dupes;
   $('#windows').replaceChildren(...blocks);

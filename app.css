@@ -184,7 +184,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 .add-group {
   border: 2px dashed var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; gap: 4px;
-  min-height: 90px; color: var(--muted); cursor: pointer; align-self: start;
+  min-height: 90px; color: var(--border); cursor: pointer; align-self: start; /* the + matches the dashed border */
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
 
@@ -207,8 +207,9 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
 .panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 12px 8px 10px; }
 .panel-title { flex: 1; min-width: 0; }
-#tab-stats { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* one line keeps the toggle square small */
-.panel-toggle.square { width: auto; height: auto; aspect-ratio: 1; align-self: stretch; }
+.chunk { white-space: nowrap; }
+/* sized to the one-line title + stats; stays put when the stats wrap */
+.panel-toggle.square { width: 36px; height: 36px; align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
 .panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
@@ -220,7 +221,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
   display: flex; align-items: center; gap: 6px; padding: 6px; font-size: 11px; text-transform: uppercase;
   letter-spacing: .04em; color: var(--muted); cursor: grab; user-select: none;
 }
-.win-head .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.win-head .grow { flex: 1; min-width: 0; }
 .win-count { display: none; }
 body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing: 0; }
 .tab-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: grab; }
@@ -235,12 +236,13 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip {
   position: fixed; z-index: 60; max-width: 300px; padding: 6px 9px; border-radius: 7px; pointer-events: none;
-  background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.22);
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); /* follows the light / dark theme */
+  font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.14);
 }
 .tip-head { display: flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
 .tip-icon { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border-radius: 5px; background: #fff; }
 .tip-icon img { width: 16px; height: 16px; display: block; }
-.tip-sub { opacity: .72; margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tip-sub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
 body.ws-collapsed .brand { justify-content: center; padding: 0 0 10px; position: relative; }
 body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label,
