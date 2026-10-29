@@ -56,6 +56,9 @@ function h(tag, props = {}, ...kids) {
   return el;
 }
 
+const PLUS_SVG = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const plus = () => h('span', { class: 'ico', html: PLUS_SVG });
+
 function btn(label, title, fn) {
   // Rapid clicks must not reach a parent's double-click-to-edit handler.
   return h('button', {
@@ -154,7 +157,7 @@ function renderSidebar() {
   $('#ws-list').replaceChildren(...state.workspaces.map((ws) =>
     h('li', {
       class: 'ws-item' + (ws === cur ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
-      title: ws.description || ws.name,
+      title: ws.description ? `${ws.name}\n${ws.description}` : ws.name,
       onclick: () => { clearSearch(); select(ws.id); },
       ondblclick: () => editNode(ws),
       oncontextmenu: (e) => nodeMenu(e, ws),
@@ -188,7 +191,7 @@ function renderCats() {
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
-    btn('＋', 'New category', () => addCategory(ws)));
+    btn(plus(), 'New category', () => addCategory(ws)));
 }
 
 function renderBoard() {
@@ -198,19 +201,19 @@ function renderBoard() {
   const ws = currentWs();
   if (!ws) {
     board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, 'No workspace yet.'),
-      h('button', { class: 'btn primary', onclick: addWorkspace }, '＋ Create workspace')));
+      h('button', { class: 'btn primary', onclick: addWorkspace }, plus(), 'Create workspace')));
     return;
   }
   const cat = currentCat(ws);
   if (!cat) {
     board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, 'This workspace has no categories.'),
-      h('button', { class: 'btn primary', onclick: () => addCategory(ws) }, '＋ Create category')));
+      h('button', { class: 'btn primary', onclick: () => addCategory(ws) }, plus(), 'Create category')));
     return;
   }
   board.dataset.parent = cat.id;
   board.replaceChildren(
     ...cat.groups.map(renderGroup),
-    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'Drop tabs here to create a group' }, '＋ New group'));
+    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'Drop tabs here to create a group' }, plus(), 'New group'));
   typesetMath(board);
 }
 
@@ -253,8 +256,8 @@ function renderGroup(g) {
       note,
       renderItems(g.items, g.id),
       h('div', { class: 'add-row' },
-        btn('＋ Link', 'Add link', () => addLink(g.id)),
-        btn('＋ Folder', 'Add folder', () => addFolder(g.id)))));
+        btn([plus(), 'Link'], 'Add link', () => addLink(g.id)),
+        btn([plus(), 'Folder'], 'Add folder', () => addFolder(g.id)))));
 }
 
 function renderItems(items, parentId) {
@@ -292,7 +295,7 @@ function renderFolder(f) {
     h('span', { class: 'count' }, T.countLinks(f)),
     h('span', { class: 'head-actions' },
       btn('↗', 'Open all links', () => openAll(f)),
-      btn('＋', 'Add link', () => addLink(f.id)),
+      btn(plus(), 'Add link', () => addLink(f.id)),
       btn('⋯', 'More', (e) => nodeMenu(e, f)))),
     renderItems(f.items, f.id));
 }
@@ -359,6 +362,7 @@ async function renderTabs() {
     return h('div', { class: 'win', dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true', title: 'Drag onto a group to save every tab in this window' },
         h('span', { class: 'grow' }, `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length}`),
+        h('span', { class: 'win-count', title: `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length} tabs` }, w.tabs.length),
         btn('💾', 'Save window as new group', () => saveWindow(w.id)),
         btn('💤', 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
       w.tabs.map((t) => h('div', {
@@ -373,9 +377,6 @@ async function renderTabs() {
       btn('✕', 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
   });
   $('#tab-stats').textContent = `${total} tabs · ${sleeping} suspended · ${wins.length} window${wins.length === 1 ? '' : 's'}`;
-  const mini = $('#tab-stats-mini');
-  mini.replaceChildren(...[h('div', {}, `${total} 🗂️`), sleeping && h('div', {}, `${sleeping} 💤`)].filter(Boolean));
-  mini.title = $('#tab-stats').textContent;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -1092,6 +1093,36 @@ $('#btn-settings').addEventListener('click', openSettings);
 
 /* ---------- side panels: collapse and resize ---------- */
 
+// In a collapsed rail, an element's title shows instantly as a tooltip beside the rail
+// (the native title is parked in data-tip meanwhile so it doesn't show twice).
+const tip = $('#tip');
+const RAILS = 'body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel';
+let tipEl = null;
+
+function hideTip() {
+  if (tipEl?.dataset.tip != null) { tipEl.title = tipEl.dataset.tip; delete tipEl.dataset.tip; }
+  tipEl = null;
+  tip.hidden = true;
+}
+
+document.addEventListener('mouseover', (e) => {
+  const el = e.target instanceof Element ? e.target.closest('[title], [data-tip]') : null;
+  if (el === tipEl) return;
+  hideTip();
+  const rail = el?.closest(RAILS);
+  if (!rail || el.classList.contains('resizer') || drag) return;
+  tipEl = el;
+  el.dataset.tip = el.title;
+  el.removeAttribute('title');
+  tip.textContent = el.dataset.tip;
+  tip.hidden = false;
+  const r = el.getBoundingClientRect();
+  const top = Math.max(4, Math.min(innerHeight - tip.offsetHeight - 4, r.top + r.height / 2 - tip.offsetHeight / 2));
+  Object.assign(tip.style, { left: rail.getBoundingClientRect().right + 6 + 'px', top: top + 'px' });
+});
+document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) hideTip(); });
+document.addEventListener('dragstart', hideTip);
+
 const PANELS = {
   ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'sidebar' },
   tabs: { el: '#tabs-panel', toggle: '#tabs-toggle', width: 'tabsWidth', collapsed: 'tabsCollapsed', min: 200, max: 520, name: 'open tabs' },
@@ -1109,6 +1140,7 @@ function applyPanels() {
 for (const p of Object.values(PANELS)) {
   $(p.toggle).addEventListener('click', () => {
     ui[p.collapsed] = !ui[p.collapsed];
+    hideTip();
     applyPanels();
     saveUi();
   });
