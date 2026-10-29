@@ -4,11 +4,14 @@ import { renderMarkdown, toggleTask } from './markdown.js';
 import { typesetMath, mathReady } from './math.js';
 import { searchEmoji, favoriteEmoji, recordEmoji } from './emoji.js';
 import { icon, hydrateIcons } from './icons.js';
+import { LANGS, setLang, getLang, t, translateDom, randomName } from './i18n.js';
+
+const tr = t; // for code where `t` is a tab or a drop target
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange' };
+let settings = { closeOnSave: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange', language: 'auto' };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
@@ -22,14 +25,14 @@ let currentWindowId = null; // browser window that hosts this dashboard
 const EMOJIS = ['🐱', '📁', '📂', '📌', '⭐', '🔥', '💡', '📚', '🧪', '💼', '🏠', '🎮', '🎵', '🎬', '🛒', '✈️',
   '💻', '🧠', '📝', '📊', '🔧', '🎨', '📰', '💬', '🔒', '🌱', '❤️', '✅', '🚀', '📥', '🗂️', '🏷️'];
 
+// [key, input type, required]; labels are the 'field.<key>' strings
 const FIELDS = {
-  workspace: [['name', 'Name', 'text', true], ['symbol', 'Symbol', 'emoji'], ['description', 'Description', 'textarea']],
-  category: [['name', 'Name', 'text', true]],
-  group: [['name', 'Name', 'text', true], ['symbol', 'Symbol', 'emoji'], ['note', 'Note (markdown)', 'textarea']],
-  folder: [['name', 'Name', 'text', true], ['symbol', 'Symbol', 'emoji']],
-  link: [['url', 'URL', 'url', true], ['name', 'Name', 'text', true], ['icon', 'Icon', 'icon'], ['description', 'Description', 'textarea']],
+  workspace: [['name', 'text', true], ['symbol', 'emoji'], ['description', 'textarea']],
+  category: [['name', 'text', true]],
+  group: [['name', 'text', true], ['symbol', 'emoji'], ['note', 'textarea']],
+  folder: [['name', 'text', true], ['symbol', 'emoji']],
+  link: [['url', 'url', true], ['name', 'text', true], ['icon', 'icon'], ['description', 'textarea']],
 };
-const TYPE_LABEL = { workspace: 'Workspace', category: 'Category', group: 'Group', folder: 'Folder', link: 'Link' };
 
 /* ================= utilities ================= */
 
@@ -454,17 +457,17 @@ function renderSidebar() {
     h('span', { class: 'name' }, ws.name),
     h('span', { class: 'count' }, T.countLinks(ws)))),
     // collapsed rail: "new workspace" sits at the end of the list (expanded, it is beside the heading)
-    h('li', { class: 'ws-add', dataset: { railTitle: 'New workspace' }, onclick: addWorkspace }, icon('plus', 17)));
+    h('li', { class: 'ws-add', dataset: { railTitle: t('new.workspace') }, onclick: addWorkspace }, icon('plus', 17)));
   applyRailTitles();
 }
 
 function renderHead() {
   const ws = currentWs();
   const head = $('#ws-head');
-  if (!ws) { head.replaceChildren(h('h1', {}, 'No workspace')); return; }
+  if (!ws) { head.replaceChildren(h('h1', {}, t('head.none'))); return; }
   // only the name / symbol edit the workspace; the space beside it is where search opens
   head.replaceChildren(
-    h('h1', { title: 'Edit workspace', onclick: () => editNode(ws) }, ws.symbol && symbolEl(ws.symbol), ws.name),
+    h('h1', { title: t('edit.workspace'), onclick: () => editNode(ws) }, ws.symbol && symbolEl(ws.symbol), ws.name),
     h('span', { class: 'desc' }, ws.description || ''));
   head.oncontextmenu = (e) => nodeMenu(e, ws);
 }
@@ -481,7 +484,7 @@ function renderCats() {
       ondblclick: () => editNode(c),
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
-    Object.assign(btn(plus(), 'New category', () => addCategory(ws)), { className: 'icon-btn cat-add' }));
+    Object.assign(btn(plus(), t('new.category'), () => addCategory(ws)), { className: 'icon-btn cat-add' }));
   // the column stepper sits at the bar's start, so it never moves as tabs come and go
   if (cur) bar.prepend(columnControl(), h('span', { class: 'bar-split' }));
 }
@@ -496,11 +499,11 @@ async function setColumns(v) {
 function columnControl() {
   const n = boardColumns();
   const set = setColumns;
-  return h('div', { class: 'col-ctl', title: 'Columns' },
+  return h('div', { class: 'col-ctl', title: t('cols.title') },
     icon('columns', 15),
-    Object.assign(btn(icon('minus', 13), 'Fewer columns', () => set(n - 1)), { disabled: n <= 1 }),
+    Object.assign(btn(icon('minus', 13), t('cols.fewer'), () => set(n - 1)), { disabled: n <= 1 }),
     h('span', { class: 'col-n' }, n),
-    Object.assign(btn(icon('plus', 13), 'More columns', () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
+    Object.assign(btn(icon('plus', 13), t('cols.more'), () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
 }
 
 function renderBoard() {
@@ -508,14 +511,14 @@ function renderBoard() {
   delete board.dataset.parent;
   const ws = currentWs();
   if (!ws) {
-    board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, 'No workspace yet.'),
-      h('button', { class: 'btn primary', onclick: addWorkspace }, plus(), 'Create workspace')));
+    board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, t('board.noWs')),
+      h('button', { class: 'btn primary', onclick: addWorkspace }, plus(), t('board.createWs'))));
     return;
   }
   const cat = currentCat(ws);
   if (!cat) {
-    board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, 'This workspace has no categories.'),
-      h('button', { class: 'btn primary', onclick: () => addCategory(ws) }, plus(), 'Create category')));
+    board.replaceChildren(h('div', { class: 'empty' }, h('p', {}, t('board.noCats')),
+      h('button', { class: 'btn primary', onclick: () => addCategory(ws) }, plus(), t('board.createCat'))));
     return;
   }
   board.dataset.parent = cat.id;
@@ -596,14 +599,14 @@ function renderGroup(g) {
   const editing = editingNoteId === g.id;
   let note = null;
   if (editing) {
-    note = h('textarea', { class: 'note-edit', placeholder: 'Markdown note…  (Ctrl+Enter to save)' });
+    note = h('textarea', { class: 'note-edit', placeholder: t('note.placeholder') });
     note.value = g.note || '';
     note.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); note.blur(); }
     });
     note.addEventListener('blur', () => saveNote(g.id, g.note, note.value));
   } else if (g.note) {
-    note = h('div', { class: 'note', html: renderMarkdown(g.note), title: 'Click to edit note' });
+    note = h('div', { class: 'note', html: renderMarkdown(g.note), title: t('note.clickTip') });
     note.addEventListener('click', (e) => {
       if (e.target.closest('a')) return;
       if (e.target.matches('input[type=checkbox]')) {
@@ -640,15 +643,15 @@ function renderGroup(g) {
       h('div', { class: 'node-line' },
         h('span', { class: 'name' }, g.name),
         h('span', { class: 'count' }, T.countLinks(g)),
-        !empty && Object.assign(btn(icon('chevron'), g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
+        !empty && Object.assign(btn(icon('chevron'), t(g.collapsed ? 'act.expand' : 'act.collapse'), () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
       // always-visible tools: add buttons | divider | everything else
       h('div', { class: 'node-tools' },
-        btn(icon('linkPlus'), 'Add link', () => addLink(g.id)),
-        btn(icon('folderPlus'), 'Add folder', () => addFolder(g.id)),
+        btn(icon('linkPlus'), t('act.addLink'), () => addLink(g.id)),
+        btn(icon('folderPlus'), t('act.addFolder'), () => addFolder(g.id)),
         h('span', { class: 'tools-split' }),
-        btn(icon('note'), 'Edit note', () => startNoteEdit(g.id)),
-        btn(icon('open'), 'Open all links', () => openAll(g)),
-        btn(icon('more'), 'More', (e) => nodeMenu(e, g))))),
+        btn(icon('note'), t('act.editNote'), () => startNoteEdit(g.id)),
+        btn(icon('open'), t('act.openAll'), () => openAll(g)),
+        btn(icon('more'), t('act.more'), (e) => nodeMenu(e, g))))),
     h('div', { class: 'group-body' },
       note,
       renderItems(g.items, g.id, 0)));
@@ -672,7 +675,7 @@ function renderLink(l) {
     h('span', { class: 'name' }, l.name || l.url),
     l.description && h('span', { class: 'desc' }, l.description),
     h('span', { class: 'head-actions' },
-      btn(icon('edit'), 'Edit', () => editNode(l)),
+      btn(icon('edit'), t('act.edit'), () => editNode(l)),
       btn(icon('close'), 'Delete', () => deleteNode(l)))));
 }
 
@@ -693,12 +696,12 @@ function renderFolder(f, depth) {
       h('span', { class: 'name' }, f.name),
       h('span', { class: 'count' }, T.countLinks(f))),
     h('span', { class: 'head-actions' },
-      btn(icon('linkPlus'), 'Add link', () => addLink(f.id)),
-      depth < T.MAX_FOLDER_DEPTH && btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
+      btn(icon('linkPlus'), t('act.addLink'), () => addLink(f.id)),
+      depth < T.MAX_FOLDER_DEPTH && btn(icon('folderPlus'), t('act.addSubfolder'), () => addFolder(f.id)),
       h('span', { class: 'tools-split' }),
-      btn(icon('edit'), 'Edit folder', () => editNode(f)),
-      btn(icon('open'), 'Open all links', () => openAll(f)),
-      btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
+      btn(icon('edit'), t('act.editFolder'), () => editNode(f)),
+      btn(icon('open'), t('act.openAll'), () => openAll(f)),
+      btn(icon('more'), t('act.more'), (e) => nodeMenu(e, f)))),
     renderItems(f.items, f.id, depth));
 }
 
@@ -758,11 +761,11 @@ function renderSearchResults() {
     row(it, iconImg(it.n.url, it.n.icon), [it.path, it.path && ' · ', highlight(it.n.url, q)], (e) => openLink(it.n, e)));
   const contRows = containers.slice(0, 100).map((it) =>
     row(it, symbolEl(it.n.symbol, { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[it.n.type]),
-      [TYPE_LABEL[it.n.type], it.path && ' · ' + it.path], () => reveal(it.n, it.anc)));
+      [t(`type.${it.n.type}`), it.path && ' · ' + it.path], () => reveal(it.n, it.anc)));
   const section = (title, rows) => (rows.length ? [h('h4', {}, title), ...rows] : []);
-  const body = [...section(`Links · ${links.length}`, linkRows), ...section(`Workspaces, groups & folders · ${containers.length}`, contRows)];
-  out.replaceChildren(...(body.length ? body : [h('p', { class: 'search-empty muted' }, 'No results.')]),
-    h('div', { class: 'search-foot muted small' }, '↑↓ move · Enter open · Ctrl+Enter background tab · Esc close'));
+  const body = [...section(t('search.links', { n: links.length }), linkRows), ...section(t('search.containers', { n: containers.length }), contRows)];
+  out.replaceChildren(...(body.length ? body : [h('p', { class: 'search-empty muted' }, t('search.none'))]),
+    h('div', { class: 'search-foot muted small' }, t('search.foot')));
   setHit(0);
 }
 
@@ -832,18 +835,18 @@ async function renderTabs() {
   const others = wins.filter((w) => w.id !== currentWindowId);
   const blocks = wins.map((w) => {
     const name = windowName(w, others);
-    const label = `${name} · ${plural(w.tabs.length, 'tab')}`;
+    const label = `${name} · ${t('count.tabs', { n: w.tabs.length })}`;
     return h('div', { class: 'win', dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true' },
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
-        w.tabs.length > 0 && btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
-        w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id })),
-        noTip(btn(icon('close'), 'Close window', () => closeWindow(w, name)))),
+        w.tabs.length > 0 && btn(icon('save'), t(w.id === currentWindowId ? 'win.saveThis' : 'win.save'), () => saveWindow(w.id)),
+        w.tabs.some(canSuspend) && btn(icon('suspend'), t('win.suspend'), () => suspend({ windowId: w.id })),
+        noTip(btn(icon('close'), t('win.close'), () => closeWindow(w, others)))),
       w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
-        title: [t.title || t.url, t.url, t.discarded ? 'Suspended' : t.active ? 'Active tab' : ''].filter(Boolean).join('\n'),
+        title: [t.title || t.url, t.url, t.discarded ? tr('tab.suspended') : t.active ? tr('tab.active') : ''].filter(Boolean).join('\n'),
         onclick: (e) => {
           if (e.shiftKey) return void toggleTab(t.id); // Shift-click selects instead of switching
           clearTabs();
@@ -854,11 +857,11 @@ async function renderTabs() {
       iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
       h('span', { class: 'name' }, t.title || t.url),
       t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
-      btn(icon('save'), 'Save tab', () => saveTabsTo([t.id])),
-      noTip(btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] })))))));
+      btn(icon('save'), tr('tab.save'), () => saveTabsTo([t.id])),
+      noTip(btn(icon('close'), tr('tab.close'), () => run(B.call('closeTabs', { tabIds: [t.id] })))))));
   });
-  $('#tab-stats').replaceChildren(...chunks([plural(wins.length, 'window'), plural(all.length, 'tab'),
-    sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean)));
+  $('#tab-stats').replaceChildren(...chunks([t('count.windows', { n: wins.length }), t('count.tabs', { n: all.length }),
+    sleeping && t('count.suspended', { n: sleeping }), dupes && t('count.duplicates', { n: dupes })].filter(Boolean)));
   // always shown (so the row never reshuffles); greyed out when there is nothing to do
   $('#btn-suspend').disabled = !suspendable;
   $('#btn-dedupe').disabled = !dupes;
@@ -895,24 +898,22 @@ async function renderTabs() {
   restoreHover();
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 // "This window" for the dashboard's own window; the rest read naturally for how many there are.
-function windowName(w, others) {
-  if (w.id === currentWindowId) return 'This window';
-  if (others.length === 1) return 'The other window';
-  return `Other window ${others.indexOf(w) + 1}`;
+// `keys` names the strings to use: the plain names, or the "Close …?" questions.
+function windowName(w, others, keys = ['win.this', 'win.other', 'win.nth']) {
+  if (w.id === currentWindowId) return t(keys[0]);
+  if (others.length === 1) return t(keys[1]);
+  return t(keys[2], { n: others.indexOf(w) + 1 });
 }
 
-async function closeWindow(w, name) {
+async function closeWindow(w, others) {
   const own = w.id === currentWindowId; // closing it closes this dashboard too
   if (w.tabs.length || own) {
     const n = w.tabs.length;
-    const what = [n && `its ${plural(n, 'tab')}`, own && 'this dashboard'].filter(Boolean).join(' and ');
     if (!(await confirmDialog({
-      title: `Close ${name.charAt(0).toLowerCase() + name.slice(1)}?`,
-      text: `This also closes ${what}.`,
-      ok: 'Close window', danger: true,
+      title: windowName(w, others, ['win.closeThis', 'win.closeOther', 'win.closeNth']),
+      text: t(n && own ? 'win.alsoBoth' : n ? 'win.alsoTabs' : 'win.alsoDash', { n }),
+      ok: t('win.close'), danger: true,
     }))) return;
   }
   run(B.call('closeWindow', { windowId: w.id }));
@@ -998,22 +999,21 @@ async function closePickedTabs(ids) {
 
 function tabsMenu(ids) {
   const n = ids.length;
-  const what = n === 1 ? 'tab' : plural(n, 'tab');
   const cat = currentCat();
   return [
-    cat && { icon: 'group', label: `Save ${what} to a new group`, key: 'G', fn: async () => {
+    cat && { icon: 'group', label: t('tabs.saveGroup', { n }), key: 'G', fn: async () => {
       clearTabs();
       await run(B.call('saveTabs', { tabIds: ids, close: settings.closeOnSave, newGroup: { categoryId: cat.id, name: suggestName('group'), column: 0 } }));
     } },
-    { icon: 'suspend', label: `Suspend ${what}`, key: 'S', fn: async () => {
+    { icon: 'suspend', label: t('tabs.suspend', { n }), key: 'S', fn: async () => {
       clearTabs();
       const done = await run(B.call('discardTabs', { tabIds: ids }));
-      if (done != null) toast(`Suspended ${plural(done, 'tab')}`);
+      if (done != null) toast(t('toast.suspended', { n: done }));
     } },
-    { icon: 'windows', label: 'Move to a new window', key: 'W', fn: () => { clearTabs(); run(B.call('moveToNewWindow', { tabIds: ids })); } },
-    pickedTabs.size > 0 && { icon: 'close', label: 'Clear selection', key: 'X', fn: clearTabs },
+    { icon: 'windows', label: t('tabs.moveWindow'), key: 'W', fn: () => { clearTabs(); run(B.call('moveToNewWindow', { tabIds: ids })); } },
+    pickedTabs.size > 0 && { icon: 'close', label: t('menu.clearSel'), key: 'X', fn: clearTabs },
     '-',
-    { icon: 'trash', label: `Close ${what}`, key: 'D', danger: true, fn: () => closePickedTabs(ids) },
+    { icon: 'trash', label: t('tabs.close', { n }), key: 'D', danger: true, fn: () => closePickedTabs(ids) },
   ];
 }
 
@@ -1030,7 +1030,7 @@ function openLink(l, e = {}) {
 
 async function openAll(node, newWindow = false) {
   const urls = T.collectLinks(node).map((l) => l.url);
-  if (urls.length > 20 && !(await confirmDialog({ title: `Open ${urls.length} tabs?`, ok: 'Open all' }))) return;
+  if (urls.length > 20 && !(await confirmDialog({ title: t('open.many', { n: urls.length }), ok: t('open.all') }))) return;
   run(B.call('openUrls', { urls, newWindow }));
 }
 
@@ -1156,27 +1156,27 @@ async function deleteNode(node) {
   const n = T.countLinks(node);
   if ((node.type === 'workspace' || node.type === 'category') && n > 0 &&
       !(await confirmDialog({
-        title: `Delete ${TYPE_LABEL[node.type].toLowerCase()} “${node.name}”?`,
-        text: `Its ${n} link${n === 1 ? '' : 's'} will be deleted too.`,
-        ok: 'Delete', danger: true,
+        title: t(`del.${node.type}`, { name: node.name }),
+        text: t('del.links', { n }),
+        ok: t('menu.delete'), danger: true,
       }))) return;
   const snapshot = structuredClone(state);
   await animateOut([node.id]);
   if (await apply({ op: 'remove', id: node.id })) {
-    toast(`Deleted “${node.name || node.url}”`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+    toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
   }
 }
 
 const suspend = async (args) => {
   const n = await run(B.call('suspendTabs', args));
-  if (n != null) toast(`Suspended ${n} tab${n === 1 ? '' : 's'}`);
+  if (n != null) toast(t('toast.suspended', { n }));
 };
 
 // Save tabs into `parentId`, or into the first group of the current category.
 async function saveTabsTo(tabIds, parentId, index) {
   if (!parentId) {
     const cat = currentCat();
-    if (!cat) return toast('Create a category first');
+    if (!cat) return toast(t('toast.needCategory'));
     [parentId] = (await apply({ op: 'firstGroup', categoryId: cat.id })) || [];
     if (!parentId) return;
   }
@@ -1185,13 +1185,13 @@ async function saveTabsTo(tabIds, parentId, index) {
 
 async function saveWindow(windowId) {
   const id = await run(B.call('saveWindow', { windowId, newGroup: { categoryId: currentCat()?.id }, close: settings.closeOnSave }));
-  toast(id ? 'Window saved as a new group' : 'Nothing to save');
+  toast(t(id ? 'toast.windowSaved' : 'toast.nothingToSave'));
 }
 
 /* ---------- confirm dialog ---------- */
 
 // Styled replacement for window.confirm(). Resolves true only when the action button is used.
-function confirmDialog({ title, text = '', ok = 'OK', danger = false }) {
+function confirmDialog({ title, text = '', ok = t('common.ok'), danger = false }) {
   const dlg = $('#confirm');
   $('#confirm-title').textContent = title;
   $('#confirm-text').textContent = text;
@@ -1233,8 +1233,8 @@ function symbolField(label, input, err) {
   });
   const grid = h('div', { class: 'emoji-grid' });
   const status = h('div', { class: 'emoji-status muted small' });
-  const search = h('input', { type: 'search', class: 'emoji-search', placeholder: 'Search emoji, or type a letter / digit', autocomplete: 'off' });
-  const clear = h('button', { type: 'button', class: 'sym-clear', title: 'Remove symbol', onclick: () => set('') }, icon('close', 11));
+  const search = h('input', { type: 'search', class: 'emoji-search', placeholder: t('emoji.search'), autocomplete: 'off' });
+  const clear = h('button', { type: 'button', class: 'sym-clear', title: t('emoji.remove'), onclick: () => set('') }, icon('close', 11));
   const wrap = h('div', { class: 'sym-wrap' }, input, clear);
 
   function set(em) {
@@ -1274,14 +1274,14 @@ function symbolField(label, input, err) {
     const q = search.value.trim();
     if (!q) return void showDefaults();
     // a single letter or digit is offered as a letter symbol, ahead of any emoji matches
-    const letter = /^[a-z0-9]$/i.test(q) ? [{ unicode: q.toUpperCase(), name: `Letter ${q.toUpperCase()}` }] : [];
+    const letter = /^[a-z0-9]$/i.test(q) ? [{ unicode: q.toUpperCase(), name: t('emoji.letter', { c: q.toUpperCase() }) }] : [];
     timer = setTimeout(async () => {
       const mine = ++seq;
       try {
         const found = [...letter, ...await searchEmoji(q)];
-        if (mine === seq) show(found, found.length ? '' : 'No emoji found.');
+        if (mine === seq) show(found, found.length ? '' : t('emoji.none'));
       } catch {
-        if (mine === seq) show(letter, 'Could not load the emoji list (offline?). You can still paste an emoji into the box.');
+        if (mine === seq) show(letter, t('emoji.offline'));
       }
     }, 120);
   });
@@ -1293,7 +1293,7 @@ function symbolField(label, input, err) {
   showDefaults();
 
   // a div, not a label: clicks in the grid must not move focus to the symbol box
-  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (emoji, letter or digit, optional)'),
+  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, t('field.symbolHint', { label })),
     h('div', { class: 'sym-row' }, wrap, search), grid, status);
 }
 
@@ -1319,23 +1319,19 @@ function imageToDataUrl(file) {
   });
 }
 
-// Friendly two-word names for things created without a name ("Quiet Otter", "Amber Comet", ...).
+// Friendly two-word names for things created without a name ("Quiet Otter", "Amber Comet", ...),
+// from the current language's word lists.
 const NAMED_BY_DEFAULT = new Set(['workspace', 'category', 'group', 'folder']);
-const NAME_ADJECTIVES = ['Amber', 'Brisk', 'Calm', 'Cosy', 'Curious', 'Gentle', 'Golden', 'Hazy', 'Lucky', 'Mellow',
-  'Misty', 'Nimble', 'Quiet', 'Rapid', 'Sunny', 'Swift', 'Tidy', 'Velvet', 'Witty', 'Bright', 'Silver', 'Cobalt', 'Coral', 'Jade'];
-const NAME_NOUNS = ['Otter', 'Maple', 'Comet', 'Pebble', 'Harbor', 'Meadow', 'Lantern', 'Falcon', 'Willow', 'Ember',
-  'Canyon', 'Fern', 'Orbit', 'Tabby', 'Whisker', 'Biscuit', 'Breeze', 'Cedar', 'Glacier', 'Puffin', 'Acorn', 'Harvest', 'Nebula', 'Lagoon'];
 
 // A random name not already used by another item of the same type.
 function suggestName(type) {
   const taken = new Set();
   if (state) T.walk(state.workspaces, (n) => { if (n.type === type) taken.add(n.name); });
-  const pick = (list) => list[Math.floor(Math.random() * list.length)];
   for (let i = 0; i < 50; i++) {
-    const name = `${pick(NAME_ADJECTIVES)} ${pick(NAME_NOUNS)}`;
+    const name = randomName();
     if (!taken.has(name)) return name;
   }
-  return `${pick(NAME_ADJECTIVES)} ${pick(NAME_NOUNS)} ${Math.floor(Math.random() * 90) + 10}`;
+  return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
 }
 
 function openEditor(type, data = {}, title) {
@@ -1343,17 +1339,18 @@ function openEditor(type, data = {}, title) {
   const form = $('#editor-form');
   const fields = $('#editor-fields');
   const err = $('#editor-error');
-  $('#editor-title').textContent = title || `Edit ${TYPE_LABEL[type].toLowerCase()}`;
+  $('#editor-title').textContent = title || t(`edit.${type}`);
   err.textContent = '';
   const inputs = {};
   // a new workspace / category / group / folder may be left unnamed: it gets the suggested name,
   // shown faintly in the empty field so you see what you'll get
   const suggestion = !data.id && NAMED_BY_DEFAULT.has(type) ? suggestName(type) : '';
-  fields.replaceChildren(...FIELDS[type].map(([key, label, kind, required]) => {
+  fields.replaceChildren(...FIELDS[type].map(([key, kind, required]) => {
+    const label = t(`field.${key}`);
     if (key === 'name' && suggestion) required = false;
     const input = kind === 'textarea'
       ? h('textarea', {
-        name: key, placeholder: 'Ctrl+Enter to save',
+        name: key, placeholder: t('field.ctrlEnter'),
         onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); } },
       })
       : h('input', { name: key, type: 'text', required: required ? true : null, autocomplete: 'off' });
@@ -1363,7 +1360,7 @@ function openEditor(type, data = {}, title) {
     if (kind === 'emoji') return symbolField(label, input, err);
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
-      input.placeholder = 'Image URL, or upload a file. Empty: site favicon';
+      input.placeholder = t('icon.placeholder');
       input.addEventListener('input', () => { preview.src = input.value || T.faviconFor(inputs.url.value); });
       const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
       file.addEventListener('change', async () => {
@@ -1374,11 +1371,11 @@ function openEditor(type, data = {}, title) {
           input.value = await imageToDataUrl(f);
           input.dispatchEvent(new Event('input'));
           err.textContent = '';
-        } catch { err.textContent = 'Could not read that image.'; }
+        } catch { err.textContent = t('icon.bad'); }
       });
       return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
-        h('button', { class: 'btn small', type: 'button', onclick: () => file.click() }, 'Upload'),
-        btn(icon('close'), 'Clear', () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
+        h('button', { class: 'btn small', type: 'button', onclick: () => file.click() }, t('icon.upload')),
+        btn(icon('close'), t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
@@ -1406,14 +1403,14 @@ function openEditor(type, data = {}, title) {
       for (const [k, el] of Object.entries(inputs)) v[k] = k === 'note' || k === 'description' ? el.value : el.value.trim();
       if ('url' in v) {
         v.url = T.normalizeUrl(v.url);
-        if (!v.url) return void (err.textContent = 'URL is required.');
-        try { new URL(v.url); } catch { return void (err.textContent = 'URL is not valid.'); }
+        if (!v.url) return void (err.textContent = t('err.urlRequired'));
+        try { new URL(v.url); } catch { return void (err.textContent = t('err.urlInvalid')); }
         if (!v.name) v.name = v.url;
       }
       if (!v.name && suggestion) v.name = suggestion;
-      if (!v.name) return void (err.textContent = 'Name is required.');
+      if (!v.name) return void (err.textContent = t('err.nameRequired'));
       if ('symbol' in v) v.symbol = T.normalizeSymbol(v.symbol);
-      if ('symbol' in v && !T.isValidSymbol(v.symbol)) return void (err.textContent = 'Symbol must be one emoji, letter or digit.');
+      if ('symbol' in v && !T.isValidSymbol(v.symbol)) return void (err.textContent = t('err.symbol'));
       finish(v);
     };
     form.addEventListener('submit', onSubmit);
@@ -1430,14 +1427,14 @@ async function editNode(node) {
 }
 
 async function addWorkspace() {
-  const v = await openEditor('workspace', {}, 'New workspace');
+  const v = await openEditor('workspace', {}, t('new.workspace'));
   if (!v) return;
-  const [id] = (await apply({ op: 'create', parentId: null, node: { type: 'workspace', ...v, categories: [{ type: 'category', name: 'General' }] } })) || [];
+  const [id] = (await apply({ op: 'create', parentId: null, node: { type: 'workspace', ...v, categories: [{ type: 'category', name: t('def.category') }] } })) || [];
   if (id) select(id);
 }
 
 async function addCategory(ws) {
-  const v = await openEditor('category', {}, 'New category');
+  const v = await openEditor('category', {}, t('new.category'));
   if (!v) return;
   const [id] = (await apply({ op: 'create', parentId: ws.id, node: { type: 'category', ...v } })) || [];
   if (id) select(ws.id, id);
@@ -1449,11 +1446,11 @@ async function addNode(type, parentId, title, extra = {}) {
 }
 // A new group in `column`: before group `beforeId`, or at the end of that column.
 async function addGroup(cat, column = null, { beforeId = null, afterId = null } = {}) {
-  const v = await openEditor('group', {}, 'New group');
+  const v = await openEditor('group', {}, t('new.group'));
   if (v) apply({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId, afterId }), node: { type: 'group', column, ...v } });
 }
-const addLink = (parentId) => addNode('link', parentId, 'New link');
-const addFolder = (parentId) => addNode('folder', parentId, 'New folder');
+const addLink = (parentId) => addNode('link', parentId, t('new.link'));
+const addFolder = (parentId) => addNode('folder', parentId, t('new.folder'));
 
 /* ---------- context menu ---------- */
 
@@ -1490,23 +1487,23 @@ function nodeMenu(e, node) {
   if (pickedItems.size > 1 && pickedItems.has(node.id)) return showMenu(e, itemsMenu());
   if (selected.size > 1 && selected.has(node.id)) return showMenu(e, groupsMenu());
   const n = T.countLinks(node);
-  const open = n ? [{ icon: 'open', label: `Open all (${n})`, key: 'O', fn: () => openAll(node) },
-    { icon: 'window', label: 'Open all in new window', key: 'W', fn: () => openAll(node, true) }] : [];
-  const del = { icon: 'trash', label: 'Delete', key: 'D', danger: true, fn: () => deleteNode(node) };
-  const edit = { icon: 'edit', label: 'Edit…', key: 'E', fn: () => editNode(node) };
+  const open = n ? [{ icon: 'open', label: t('menu.openAll', { n }), key: 'O', fn: () => openAll(node) },
+    { icon: 'window', label: t('menu.openAllWindow'), key: 'W', fn: () => openAll(node, true) }] : [];
+  const del = { icon: 'trash', label: t('menu.delete'), key: 'D', danger: true, fn: () => deleteNode(node) };
+  const edit = { icon: 'edit', label: t('menu.edit'), key: 'E', fn: () => editNode(node) };
   const menus = {
-    workspace: [edit, { icon: 'category', label: 'New category', key: 'C', fn: () => addCategory(node) }, ...open,
-      { icon: 'download', label: 'Export…', key: 'X', fn: () => exportData(node.id) }, '-', del],
-    category: [edit, { icon: 'group', label: 'New group', key: 'G', fn: () => addGroup(node) }, ...open, '-', del],
-    group: [edit, { icon: 'note', label: 'Edit note', key: 'N', fn: () => startNoteEdit(node.id) },
-      { icon: 'link', label: 'Add link', key: 'L', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add folder', key: 'F', fn: () => addFolder(node.id) },
-      { icon: 'tabs', label: 'Add all tabs of this window', key: 'T', fn: () => addWindowTabs(node.id) },
-      ...open, { icon: 'sort', label: 'Sort links by name', key: 'S', fn: () => sortItems(node) },
-      { icon: 'dedupe', label: 'Remove duplicate links', key: 'U', fn: () => dedupeLinks(node) }, '-', del],
-    folder: [edit, { icon: 'link', label: 'Add link', key: 'L', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: 'Add subfolder', key: 'F', fn: () => addFolder(node.id) },
-      ...open, { icon: 'sort', label: 'Sort links by name', key: 'S', fn: () => sortItems(node) }, '-', del],
-    link: [{ icon: 'open', label: 'Open', key: 'O', fn: () => openLink(node) }, { icon: 'window', label: 'Open in new window', key: 'W', fn: () => openLink(node, { shiftKey: true }) },
-      edit, { icon: 'copy', label: 'Copy URL', key: 'C', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
+    workspace: [edit, { icon: 'category', label: t('new.category'), key: 'C', fn: () => addCategory(node) }, ...open,
+      { icon: 'download', label: t('menu.export'), key: 'X', fn: () => exportData(node.id) }, '-', del],
+    category: [edit, { icon: 'group', label: t('new.group'), key: 'G', fn: () => addGroup(node) }, ...open, '-', del],
+    group: [edit, { icon: 'note', label: t('act.editNote'), key: 'N', fn: () => startNoteEdit(node.id) },
+      { icon: 'link', label: t('act.addLink'), key: 'L', fn: () => addLink(node.id) }, { icon: 'folder', label: t('act.addFolder'), key: 'F', fn: () => addFolder(node.id) },
+      { icon: 'tabs', label: t('menu.addWindowTabs'), key: 'T', fn: () => addWindowTabs(node.id) },
+      ...open, { icon: 'sort', label: t('menu.sortName'), key: 'S', fn: () => sortItems(node) },
+      { icon: 'dedupe', label: t('menu.dedupe'), key: 'U', fn: () => dedupeLinks(node) }, '-', del],
+    folder: [edit, { icon: 'link', label: t('act.addLink'), key: 'L', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: t('act.addSubfolder'), key: 'F', fn: () => addFolder(node.id) },
+      ...open, { icon: 'sort', label: t('menu.sortName'), key: 'S', fn: () => sortItems(node) }, '-', del],
+    link: [{ icon: 'open', label: t('menu.open'), key: 'O', fn: () => openLink(node) }, { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => openLink(node, { shiftKey: true }) },
+      edit, { icon: 'copy', label: t('menu.copyUrl'), key: 'C', fn: () => navigator.clipboard.writeText(node.url).then(() => toast(t('toast.urlCopied'))) }, '-', del],
   };
   showMenu(e, menus[node.type]);
 }
@@ -1531,7 +1528,7 @@ async function dedupeLinks(node) {
     : seen.has(n.url) ? (removed++, false) : (seen.add(n.url), true));
   const items = prune(structuredClone(node.items));
   if (removed) await apply({ op: 'patch', id: node.id, fields: { items } });
-  toast(`Removed ${removed} duplicate link${removed === 1 ? '' : 's'}`);
+  toast(t('toast.removedDupes', { n: removed }));
 }
 
 /* ================= group selection ================= */
@@ -1600,17 +1597,17 @@ async function deleteSelected() {
   const groups = [...selected].map((id) => T.locate(state, id)?.node).filter(Boolean);
   if (!groups.length) return clearSelection();
   const links = groups.reduce((n, g) => n + T.countLinks(g), 0);
-  const label = groups.length === 1 ? `group “${groups[0].name}”` : `${groups.length} groups`;
+  const one = groups.length === 1;
   if (links && !(await confirmDialog({
-    title: `Delete ${label}?`,
-    text: `Their ${links} link${links === 1 ? '' : 's'} will be deleted too.`,
-    ok: 'Delete', danger: true,
+    title: one ? t('del.group', { name: groups[0].name }) : t('del.groups', { n: groups.length }),
+    text: t(one ? 'del.links' : 'del.groupsLinks', { n: links }),
+    ok: t('menu.delete'), danger: true,
   }))) return;
   const snapshot = structuredClone(state);
   selected.clear();
   await animateOut(groups.map((g) => g.id));
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
-    toast(`Deleted ${label}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+    toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
   }
 }
 
@@ -1757,7 +1754,7 @@ async function deleteItems() {
   const snapshot = structuredClone(state);
   await animateOut(nodes.map((n) => n.id));
   if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
-    toast(`Deleted ${plural(nodes.length, 'item')}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+    toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
   }
 }
 
@@ -1765,12 +1762,12 @@ function itemsMenu() {
   const nodes = pickedNodes();
   const urls = [...new Set(nodes.flatMap((n) => T.collectLinks(n).map((l) => l.url)))];
   return [
-    urls.length && { icon: 'open', label: `Open ${plural(urls.length, 'link')}`, key: 'O', fn: () => run(B.call('openUrls', { urls })) },
-    urls.length && { icon: 'window', label: 'Open in new window', key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
-    urls.length && { icon: 'copy', label: 'Copy URLs', key: 'C', fn: () => navigator.clipboard.writeText(urls.join('\n')).then(() => toast(`Copied ${plural(urls.length, 'URL')}`)) },
-    { icon: 'close', label: 'Clear selection', key: 'X', fn: clearItems },
+    urls.length && { icon: 'open', label: t('menu.openLinks', { n: urls.length }), key: 'O', fn: () => run(B.call('openUrls', { urls })) },
+    urls.length && { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
+    urls.length && { icon: 'copy', label: t('menu.copyUrls'), key: 'C', fn: () => navigator.clipboard.writeText(urls.join('\n')).then(() => toast(t('toast.copiedUrls', { n: urls.length }))) },
+    { icon: 'close', label: t('menu.clearSel'), key: 'X', fn: clearItems },
     '-',
-    { icon: 'trash', label: `Delete ${plural(nodes.length, 'item')}`, key: 'D', danger: true, fn: deleteItems },
+    { icon: 'trash', label: t('menu.deleteItems', { n: nodes.length }), key: 'D', danger: true, fn: deleteItems },
   ];
 }
 
@@ -1778,13 +1775,13 @@ function groupsMenu() {
   const groups = [...selected].map((id) => T.locate(state, id)?.node).filter(Boolean);
   const urls = [...new Set(groups.flatMap((g) => T.collectLinks(g).map((l) => l.url)))];
   return [
-    urls.length && { icon: 'open', label: `Open ${plural(urls.length, 'link')}`, key: 'O', fn: () => run(B.call('openUrls', { urls })) },
-    urls.length && { icon: 'window', label: 'Open in new window', key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
-    { icon: 'chevron', label: 'Collapse', key: 'C', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: true } }))) },
-    { icon: 'chevron', label: 'Expand', key: 'E', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: false } }))) },
-    { icon: 'close', label: 'Clear selection', key: 'X', fn: clearSelection },
+    urls.length && { icon: 'open', label: t('menu.openLinks', { n: urls.length }), key: 'O', fn: () => run(B.call('openUrls', { urls })) },
+    urls.length && { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => run(B.call('openUrls', { urls, newWindow: true })) },
+    { icon: 'chevron', label: t('act.collapse'), key: 'C', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: true } }))) },
+    { icon: 'chevron', label: t('act.expand'), key: 'E', fn: () => apply(...groups.map((g) => ({ op: 'patch', id: g.id, fields: { collapsed: false } }))) },
+    { icon: 'close', label: t('menu.clearSel'), key: 'X', fn: clearSelection },
     '-',
-    { icon: 'trash', label: `Delete ${plural(groups.length, 'group')}`, key: 'D', danger: true, fn: deleteSelected },
+    { icon: 'trash', label: t('menu.deleteGroups', { n: groups.length }), key: 'D', danger: true, fn: deleteSelected },
   ];
 }
 
@@ -2023,7 +2020,7 @@ async function performDrop(d, t, e) {
   if (d.kind === 'node') markMoving(d.ids || [d.id]);
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
   if (t.action === 'column') return moveToColumn(d.ids || [d.id], t);
-  const pre = targetOps(t, d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : null);
+  const pre = targetOps(t, d.kind === 'window' ? tr('name.window', { date: new Date().toLocaleString(getLang()) }) : null);
   const parentId = pre.length ? '$0' : t.parentId;
 
   if (d.kind === 'node') {
@@ -2050,7 +2047,7 @@ async function performDrop(d, t, e) {
     const cat = T.locate(state, t.categoryId).node;
     const id = await run(B.call('saveTabs', { tabIds, close: settings.closeOnSave, newGroup: {
       categoryId: cat.id, column: t.column ?? null, index: columnIndex(cat, t.column, { beforeId: t.beforeId, afterId: t.afterId }),
-      name: d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : suggestName('group'),
+      name: d.kind === 'window' ? tr('name.window', { date: new Date().toLocaleString(getLang()) }) : suggestName('group'),
     } }));
     // pin the column explicitly (a no-op normally; fixes the placement with an older extension)
     if (id && t.column != null) await apply({ op: 'patch', id, fields: { column: t.column } });
@@ -2069,9 +2066,9 @@ async function mergeGroups(fromId, intoId) {
   const label = (g) => `${g.symbol ? g.symbol + ' ' : ''}${g.name}`;
   const n = T.countLinks(from);
   if (!(await confirmDialog({
-    title: `Merge “${label(from)}” into “${label(into)}”?`,
-    text: `Its ${n} link${n === 1 ? '' : 's'}, folders and note move to “${label(into)}”, then “${label(from)}” is removed.`,
-    ok: 'Merge',
+    title: t('merge.title', { from: label(from), into: label(into) }),
+    text: t('merge.text', { n, from: label(from), into: label(into) }),
+    ok: t('merge.ok'),
   }))) return;
   const note = [into.note, from.note].filter((n) => n && n.trim()).join('\n\n---\n\n');
   const snapshot = structuredClone(state);
@@ -2152,7 +2149,7 @@ document.addEventListener('drop', (e) => {
   // slide) but keeps its size until the board re-renders, letting the group grow out of it
   if (t?.mode === 'newGroup' && t.el) t.el.classList.replace('drop-new', 'dropped');
   endDrag();
-  if (t) performDrop(d, t, e).catch((err) => toast('Drop failed: ' + err.message));
+  if (t) performDrop(d, t, e).catch((err) => toast(tr('toast.dropFailed', { error: err.message })));
 });
 
 document.addEventListener('dragend', endDrag);
@@ -2206,19 +2203,27 @@ for (const dlg of document.querySelectorAll('dialog')) {
 }
 
 // pages can't open chrome:// addresses themselves; the extension can
-$('#shortcuts-link').addEventListener('click', (e) => {
+// (delegated: the link is rebuilt whenever the language changes)
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('#shortcuts-link');
+  if (!a) return;
   e.preventDefault();
-  run(B.call('openUrls', { urls: [e.currentTarget.href], active: true }));
+  run(B.call('openUrls', { urls: [a.href], active: true }));
 });
 
 $('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
-  h('label', { class: 'swatch', title: name[0].toUpperCase() + name.slice(1), dataset: { accent: name }, style: `--hue: ${hue}` },
-    h('input', { type: 'radio', name: 'accent', value: name, 'aria-label': name }))));
+  h('label', { class: 'swatch', dataset: { accent: name, i18nAttr: `title:accent.${name}` }, style: `--hue: ${hue}` },
+    h('input', { type: 'radio', name: 'accent', value: name, dataset: { i18nAttr: `aria-label:accent.${name}` } }))));
+
+// each language is listed in its own name; the first entry follows the browser
+$('#language').append(h('option', { value: 'auto', dataset: { i18n: 'settings.langAuto' } }),
+  ...Object.entries(LANGS).map(([code, name]) => h('option', { value: code, lang: code }, name)));
 
 function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
+  f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
   f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'orange';
   f.columns.value = boardColumns();
@@ -2235,11 +2240,12 @@ $('#settings-form').addEventListener('change', async (e) => {
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
+    language: f.language.value,
     theme: f.theme.value,
     accent: f.accent.value,
     columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
-  if (s) { switchTheme(s); relayoutBoard(); }
+  if (s) { switchTheme(s); relayoutBoard(); switchLang(s.language); }
 });
 
 // Apply new settings; a changed theme or accent cross-fades the whole page from the old look.
@@ -2251,6 +2257,36 @@ function switchTheme(s) {
   const swap = () => { settings = s; applyTheme(); };
   if (changed && document.startViewTransition) document.startViewTransition(swap);
   else swap();
+}
+
+// Show the page in the language `setting` asks for ('auto' or a code), cross-fading from the old text
+// when it changes. The setting is also kept on this device, so the next visit starts in it.
+let langShown = 'en';
+let langWanted = null; // the setting last asked for (our own save and its push both ask)
+async function switchLang(setting = 'auto', fade = true) {
+  if (setting === langWanted) return;
+  langWanted = setting;
+  try { localStorage.setItem('tabcat:lang', setting); } catch { /* storage unavailable */ }
+  const code = await setLang(setting);
+  if (code === langShown) return;
+  langShown = code;
+  const swap = async () => {
+    applyText();
+    if (!state) return;
+    renderSidebar(); renderHead(); renderCats(); renderBoard();
+    await renderTabs();
+  };
+  if (fade && document.startViewTransition) document.startViewTransition(swap);
+  else await swap();
+}
+
+// Everything built once from strings: the page's own text, panel tooltips, the action row's fit.
+function applyText() {
+  document.documentElement.lang = getLang();
+  translateDom();
+  applyPanels();
+  fitActions();
+  if ($('#settings').open) fillSettings();
 }
 
 /* ---------- export / import ---------- */
@@ -2277,7 +2313,7 @@ function pickNodes({ title, ok, workspaces, initial = () => true }) {
   };
   const refreshCount = () => {
     const n = leaves.filter((e) => e.box.checked).length;
-    $('#picker-count').textContent = `${n} of ${leaves.length} selected`;
+    $('#picker-count').textContent = t('picker.count', { n, total: leaves.length });
     okBtn.disabled = !n;
   };
 
@@ -2289,11 +2325,11 @@ function pickNodes({ title, ok, workspaces, initial = () => true }) {
     const li = h('li', { class: node.type === 'workspace' ? '' : 'closed' });
     box.addEventListener('change', () => { setDown(entry, box.checked); refreshUp(entry); refreshCount(); });
     li.append(h('div', { class: 'pick-row' },
-      kids.length ? Object.assign(btn('▾', 'Expand / collapse', () => li.classList.toggle('closed')), { className: 'icon-btn twisty' })
+      kids.length ? Object.assign(btn('▾', t('picker.toggle'), () => li.classList.toggle('closed')), { className: 'icon-btn twisty' })
         : h('span', { class: 'twisty-gap' }),
       h('label', {}, box,
         symbolEl(node.symbol, node.type === 'category' ? '🏷️' : node.type === 'workspace' ? '🗃️' : '🗂️'),
-        h('span', { class: 'name' }, node.name || '(untitled)'),
+        h('span', { class: 'name' }, node.name || t('name.untitled')),
         h('span', { class: 'count' }, T.countLinks(node)))));
     if (kids.length) li.append(h('ul', {}, kids.map((k) => build(k, entry))));
     else leaves.push(entry);
@@ -2350,7 +2386,7 @@ async function exportData(onlyId) {
   const data = await run(B.call('getState'));
   if (!data) return;
   const workspaces = await pickNodes({
-    title: 'Export data', ok: 'Export', workspaces: data.workspaces,
+    title: t('export.title'), ok: t('export.ok'), workspaces: data.workspaces,
     initial: (ws) => !onlyId || ws.id === onlyId,
   });
   if (!workspaces) return;
@@ -2359,7 +2395,7 @@ async function exportData(onlyId) {
 }
 
 async function readJson(file) {
-  try { return JSON.parse(await file.text()); } catch { throw new Error('not a JSON file'); }
+  try { return JSON.parse(await file.text()); } catch { throw new Error(t('err.notJson')); }
 }
 
 $('#btn-export').addEventListener('click', () => exportData());
@@ -2372,18 +2408,19 @@ $('#import-file').addEventListener('change', async (e) => {
     const raw = await readJson(file);
     if (raw.kind === 'settings') throw new Error('this is a settings file; use Import settings');
     const list = (raw.workspaces || []).filter((w) => w && w.type === 'workspace');
-    if (!list.length) throw new Error('no workspaces found');
-    const picked = await pickNodes({ title: `Import from ${file.name}`, ok: 'Import', workspaces: list });
+    if (!list.length) throw new Error(t('err.noWorkspaces'));
+    const picked = await pickNodes({ title: t('import.title', { file: file.name }), ok: t('import.ok'), workspaces: list });
     if (!picked) return;
     await B.apply(...picked.map((node) => ({ op: 'create', parentId: null, node })));
-    toast(`Imported ${picked.length} workspace${picked.length === 1 ? '' : 's'}`);
+    toast(t('toast.imported', { n: picked.length }));
   } catch (err) {
-    toast('Import failed: ' + err.message);
+    toast(t('toast.importFailed', { error: err.message }));
   }
 });
 
 // Portable settings: per-machine values (dashboard address, last used group) stay out of the file.
 const SETTINGS_IO = {
+  language: (v) => v === 'auto' || Object.hasOwn(LANGS, v),
   closeOnSave: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
@@ -2402,16 +2439,16 @@ $('#import-settings-file').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const raw = await readJson(file);
-    if (raw.kind !== 'settings' || !raw.settings) throw new Error('not a tabcat settings file');
+    if (raw.kind !== 'settings' || !raw.settings) throw new Error(t('err.notSettings'));
     const patch = Object.fromEntries(Object.entries(SETTINGS_IO)
       .filter(([k, ok]) => ok(raw.settings[k])).map(([k]) => [k, raw.settings[k]]));
-    if (!Object.keys(patch).length) throw new Error('no valid settings found');
+    if (!Object.keys(patch).length) throw new Error(t('err.noSettings'));
     const s = await B.call('saveSettings', patch);
     switchTheme(s);
     fillSettings();
-    toast('Settings imported');
+    toast(t('toast.settingsImported'));
   } catch (err) {
-    toast('Import failed: ' + err.message);
+    toast(t('toast.importFailed', { error: err.message }));
   }
 });
 
@@ -2504,8 +2541,8 @@ document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) hideTip(); 
 for (const type of ['dragstart', 'mousedown', 'wheel']) document.addEventListener(type, hideTip, { passive: true });
 
 const PANELS = {
-  ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'workspaces' },
-  tabs: { el: '#tabs-panel', toggle: '#tabs-toggle', width: 'tabsWidth', collapsed: 'tabsCollapsed', min: 200, max: 520, name: 'open tabs' },
+  ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, tips: ['panel.expandWs', 'panel.collapseWs'] },
+  tabs: { el: '#tabs-panel', toggle: '#tabs-toggle', width: 'tabsWidth', collapsed: 'tabsCollapsed', min: 200, max: 520, tips: ['panel.expandTabs', 'panel.collapseTabs'] },
 };
 
 function applyPanels() {
@@ -2513,7 +2550,7 @@ function applyPanels() {
     const collapsed = !!ui[p.collapsed];
     document.body.classList.toggle(`${key}-collapsed`, collapsed);
     document.body.style.setProperty(`--${key}-w`, ui[p.width] ? ui[p.width] + 'px' : null);
-    $(p.toggle).title = `${collapsed ? 'Expand' : 'Collapse'} ${p.name}`;
+    $(p.toggle).title = t(p.tips[collapsed ? 0 : 1]);
   }
   applyRailTitles();
 }
@@ -2607,7 +2644,7 @@ $('#btn-save-all').addEventListener('click', () => saveWindow(currentWindowId));
 $('#btn-suspend').addEventListener('click', () => suspend({}));
 $('#btn-dedupe').addEventListener('click', async () => {
   const n = await run(B.call('closeDuplicates'));
-  if (n != null) toast(`Closed ${n} duplicate tab${n === 1 ? '' : 's'}`);
+  if (n != null) toast(t('toast.closedDupes', { n }));
 });
 
 
@@ -2658,6 +2695,7 @@ B.on('settings', (s) => {
   const relayout = s.columns !== settings?.columns;
   switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
   if (relayout && state) render(); // e.g. columns changed in another dashboard tab
+  switchLang(s.language);
 });
 B.on('tabs', scheduleTabs);
 B.on('ready', () => { if (state) refresh(); }); // reconnected after the service worker restarted
@@ -2670,6 +2708,7 @@ function showNoExtension() {
 
 async function refresh() {
   [state, settings] = await Promise.all([B.call('getState'), B.call('getSettings')]);
+  await switchLang(settings.language, false);
   applyTheme();
   render();
   renderTabs();
@@ -2685,12 +2724,16 @@ const olderThan = (a, b) => {
 
 async function init() {
   hydrateIcons();
-  applyPanels();
+  // start in the language of the last visit; the extension's setting follows once connected
+  let lang = 'auto';
+  try { lang = localStorage.getItem('tabcat:lang') || 'auto'; } catch { /* storage unavailable */ }
+  langShown = await setLang(lang);
+  applyText();
   const ext = await B.connect();
   if (!ext) return showNoExtension();
   $('#no-ext').hidden = true;
   if (olderThan(ext.version, MIN_EXTENSION)) {
-    toast(`The tabcat extension (${ext.version}) is older than this dashboard needs (${MIN_EXTENSION}): reload or update it.`);
+    toast(t('noext.old', { version: ext.version, min: MIN_EXTENSION }));
   }
   await refresh();
 }

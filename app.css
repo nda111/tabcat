@@ -49,6 +49,12 @@ body {
   font: 13px/1.45 Archivo, "Pretendard Adjusted", system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   overflow: hidden;
 }
+/* Japanese and Chinese: Pretendard carries Hanja but no kana or simplified forms, so mixing it with the
+   fallback would set one sentence in two fonts; those languages use the system CJK font instead (Noto Sans,
+   from Google Fonts, only where there is none: its files load only when a page uses it) */
+:root:lang(ja) body { font-family: Archivo, "Hiragino Sans", "Yu Gothic UI", Meiryo, "Noto Sans JP", sans-serif; }
+:root:lang(zh) body { font-family: Archivo, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+:root:lang(ko) body { word-break: keep-all; } /* break Korean between words, not inside them */
 button, input, select, textarea { font: inherit; color: inherit; }
 /* type scale: Archivo (Latin) + Pretendard (Korean); 400 for text, 600 for names and headings, 400 italic for hints */
 h1, h2, h3, strong, b { font-weight: 600; }
@@ -313,7 +319,8 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 /* sized to the one-line title + stats; stays put when the stats wrap */
 .panel-toggle.square { align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
-.panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.panel-actions .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.data-row .btn { display: inline-flex; gap: 5px; align-items: center; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
 /* labels slide away (rather than vanish) when the panel gets narrow, and slide back when it widens */
 .panel-actions .label {
@@ -406,8 +413,8 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; ma
 dialog fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; padding: 8px 10px; }
 dialog legend { font-size: 11px; color: var(--muted); }
 .file-btn { display: inline-block; margin: 0; font-weight: 400; }
-.data-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; } /* four buttons, one width */
-.data-row .btn { justify-content: center; }
+.data-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; } /* four buttons, one width */
+.data-row .btn { justify-content: center; text-align: center; } /* long labels wrap inside */
 
 /* export / import picker */
 .picker-tools { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
