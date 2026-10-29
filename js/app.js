@@ -134,6 +134,7 @@ function currentCat(ws = currentWs()) {
   return ws.categories.find((c) => c.id === ui.cat[ws.id]) || ws.categories[0] || null;
 }
 function select(wsId, catId) {
+  selected.clear();
   if (wsId) ui.ws = wsId;
   if (wsId && catId) ui.cat[wsId] = catId;
   saveUi();
@@ -321,11 +322,17 @@ function renderGroup(g) {
   // above a row of add buttons
   // an empty group is just its header: nothing to expand, so no collapse toggle either
   const empty = !g.items.length && !g.note && !editing;
-  return h('div', { class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
+  return h('div', {
+    class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : '') + (selected.has(g.id) ? ' selected' : ''),
+    dataset: { id: g.id, type: 'group' },
+  },
     h('div', {
       class: 'group-head', draggable: 'true',
       // empty header space toggles the group; the name and symbol edit it on double-click
-      onclick: (e) => { if (!empty && !e.target.closest(HEAD_KEEP)) toggleCollapse(g); },
+      onclick: (e) => {
+        if (e.ctrlKey || e.metaKey) return void toggleSelected(g.id); // Ctrl/⌘-click: (de)select
+        if (!empty && !e.target.closest(HEAD_KEEP)) toggleCollapse(g);
+      },
       ondblclick: (e) => { if (e.target.closest('.name, .node-sym')) editNode(g); },
       oncontextmenu: (e) => nodeMenu(e, g),
     },
@@ -861,6 +868,74 @@ async function dedupeLinks(node) {
   const items = prune(structuredClone(node.items));
   if (removed) await apply({ op: 'patch', id: node.id, fields: { items } });
   toast(`Removed ${removed} duplicate link${removed === 1 ? '' : 's'}`);
+}
+
+/* ================= group selection ================= */
+
+// Groups selected on the board (drag a rectangle over empty board space, or Ctrl/⌘-click a header).
+// Delete removes them, Esc clears; selection is per view and never stored.
+const selected = new Set();
+
+function paintSelection() {
+  for (const card of document.querySelectorAll('#board .group')) card.classList.toggle('selected', selected.has(card.dataset.id));
+}
+function toggleSelected(id) {
+  if (!selected.delete(id)) selected.add(id);
+  paintSelection();
+}
+function clearSelection() {
+  if (!selected.size) return;
+  selected.clear();
+  paintSelection();
+}
+
+// Rubber-band selection: starts on empty board space (not on a card, gap or button).
+$('#board').addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || query || !$('#board').dataset.parent) return;
+  if (e.target.closest('.group, .add-group, .gap-slot, button, input, textarea, a')) return;
+  const base = e.ctrlKey || e.metaKey || e.shiftKey ? new Set(selected) : new Set();
+  const x0 = e.clientX, y0 = e.clientY;
+  const box = h('div', { id: 'marquee' });
+  let moved = false;
+  const onMove = (ev) => {
+    if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+    if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
+    const r = { left: Math.min(x0, ev.clientX), top: Math.min(y0, ev.clientY), right: Math.max(x0, ev.clientX), bottom: Math.max(y0, ev.clientY) };
+    Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
+    selected.clear();
+    base.forEach((id) => selected.add(id));
+    for (const card of document.querySelectorAll('#board .group')) {
+      const c = card.getBoundingClientRect();
+      if (c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top) selected.add(card.dataset.id);
+    }
+    paintSelection();
+  };
+  const onUp = () => {
+    removeEventListener('pointermove', onMove);
+    removeEventListener('pointerup', onUp);
+    box.remove();
+    document.body.classList.remove('selecting');
+    if (!moved && !base.size) clearSelection(); // a plain click on empty space deselects
+  };
+  addEventListener('pointermove', onMove);
+  addEventListener('pointerup', onUp);
+});
+
+async function deleteSelected() {
+  const groups = [...selected].map((id) => T.locate(state, id)?.node).filter(Boolean);
+  if (!groups.length) return clearSelection();
+  const links = groups.reduce((n, g) => n + T.countLinks(g), 0);
+  const label = groups.length === 1 ? `group “${groups[0].name}”` : `${groups.length} groups`;
+  if (links && !(await confirmDialog({
+    title: `Delete ${label}?`,
+    text: `Their ${links} link${links === 1 ? '' : 's'} will be deleted too.`,
+    ok: 'Delete', danger: true,
+  }))) return;
+  const snapshot = structuredClone(state);
+  selected.clear();
+  if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
+    toast(`Deleted ${label}`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+  }
 }
 
 /* ================= drag & drop ================= */
@@ -1532,6 +1607,11 @@ search.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideMenu();
   const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
+  const dialogOpen = !!document.querySelector('dialog[open]');
+  if (!typing && !dialogOpen && selected.size) {
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
+    if (e.key === 'Escape') { clearSelection(); return; }
+  }
   if (!typing && (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'))) {
     e.preventDefault();
     search.focus();
