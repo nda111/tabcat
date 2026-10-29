@@ -73,7 +73,7 @@ Workspace  (Name*, Symbol, Description)
 | Dashboard | Workspace sidebar · category tabs · board of group cards · open-tabs panel |
 | Drag & drop | Open tab → exact position in a group/folder · window header → save whole window · drop on empty board → new group · move/reorder links and folders, nest folders · reorder groups, drop on a category tab or workspace to move · reorder categories and workspaces · saved link → open-tabs panel opens it · drag a URL from the address bar or another page |
 | Memory | Close tabs after saving (setting) · save & close a window · suspend (discard) inactive tabs · auto-suspend after N minutes · close duplicate tabs |
-| Organizing | Markdown notes with clickable task checkboxes · collapse · sort by name · remove duplicate links · context menus · undo delete |
+| Organizing | Markdown notes with clickable task checkboxes and MathJax math (`$…$`, `$$…$$`) · collapse · sort by name · remove duplicate links · context menus · undo delete |
 | Opening | Click: new tab · Ctrl/middle click: background · Shift: new window · open a whole group/folder |
 | Search | `/` or `Ctrl+K`, searches links, groups, folders and notes; Enter opens the first hit |
 | Popup | Rename the current tab and save it to any group · save window · suspend · close duplicates · open dashboard |
