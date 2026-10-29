@@ -260,14 +260,14 @@ function renderGroup(g) {
       class: 'group-head', draggable: 'true',
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
     },
-    h('div', { class: 'group-sym' + (g.symbol ? '' : ' none') }, g.symbol ? symbolEl(g.symbol) : icon('group', 20)),
-    h('div', { class: 'group-info' },
-      h('div', { class: 'group-line' },
+    h('div', { class: 'node-sym' + (g.symbol ? '' : ' none') }, g.symbol ? symbolEl(g.symbol) : icon('group', 20)),
+    h('div', { class: 'node-info' },
+      h('div', { class: 'node-line' },
         h('span', { class: 'name' }, g.name),
         h('span', { class: 'count' }, T.countLinks(g)),
         Object.assign(btn(icon('chevron'), g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
       // always-visible tools: add buttons | divider | everything else
-      h('div', { class: 'group-tools' },
+      h('div', { class: 'node-tools' },
         btn(icon('linkPlus'), 'Add link', () => addLink(g.id)),
         btn(icon('folderPlus'), 'Add folder', () => addFolder(g.id)),
         h('span', { class: 'tools-split' }),
@@ -300,6 +300,7 @@ function renderLink(l) {
       btn(icon('close'), 'Delete', () => deleteNode(l)))));
 }
 
+// Same layout as a group header, smaller: symbol | name line over an always-visible tools row.
 function renderFolder(f) {
   return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
@@ -309,15 +310,19 @@ function renderFolder(f) {
       ondblclick: (e) => e.stopPropagation(),
       oncontextmenu: (e) => nodeMenu(e, f),
     },
-    h('span', { class: 'twisty' }, '▾'),
-    symbolEl(f.symbol, '📁'),
-    h('span', { class: 'name' }, f.name),
-    h('span', { class: 'count' }, T.countLinks(f)),
-    h('span', { class: 'head-actions' },
-      btn(icon('edit'), 'Edit folder', () => editNode(f)),
-      btn(icon('open'), 'Open all links', () => openAll(f)),
-      btn(plus(), 'Add link', () => addLink(f.id)),
-      btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
+    h('div', { class: 'node-sym' }, symbolEl(f.symbol, '📁')),
+    h('div', { class: 'node-info' },
+      h('div', { class: 'node-line' },
+        h('span', { class: 'name' }, f.name),
+        h('span', { class: 'count' }, T.countLinks(f)),
+        Object.assign(btn(icon('chevron'), f.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(f)), { className: 'icon-btn collapse-btn' })),
+      h('div', { class: 'node-tools' },
+        btn(icon('linkPlus'), 'Add link', () => addLink(f.id)),
+        btn(icon('folderPlus'), 'Add subfolder', () => addFolder(f.id)),
+        h('span', { class: 'tools-split' }),
+        btn(icon('edit'), 'Edit folder', () => editNode(f)),
+        btn(icon('open'), 'Open all links', () => openAll(f)),
+        btn(icon('more'), 'More', (e) => nodeMenu(e, f))))),
     renderItems(f.items, f.id));
 }
 
@@ -1251,7 +1256,7 @@ function showTip(el) {
 }
 
 // Names without a tooltip of their own get one with the full name, but only while truncated.
-const TRUNC_NAMES = '.group-line .name, .folder-head .name';
+const TRUNC_NAMES = '.node-line .name';
 
 document.addEventListener('mouseover', (e) => {
   const nm = e.target instanceof Element && e.target.closest(TRUNC_NAMES);

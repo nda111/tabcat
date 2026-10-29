@@ -132,24 +132,24 @@ body.resizing { cursor: col-resize; user-select: none; }
   cursor: grab; user-select: none;
 }
 .group.collapsed .group-head { border-bottom: 0; }
-.group-sym {
+.node-sym {
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
   font-size: 28px; line-height: 1;
 }
-.group-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
-.group-sym.none { background: var(--panel-2); color: var(--muted); }
-.group-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.group-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
-.group-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.group-line .count { color: var(--muted); font-size: 11px; }
-.group-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
+.node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
+.node-sym.none { background: var(--panel-2); color: var(--muted); }
+.node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
+.node-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-line .count { color: var(--muted); font-size: 11px; }
+.node-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
 .collapse-btn { color: var(--muted); align-self: center; }
 .collapse-btn .ico { transition: transform .12s; }
-.group.collapsed .collapse-btn .ico { transform: rotate(-90deg); }
-.group-tools { display: flex; align-items: center; gap: 2px; margin-left: -5px; }
+.group.collapsed > .group-head .collapse-btn .ico, .folder.collapsed > .folder-head .collapse-btn .ico { transform: rotate(-90deg); }
+.node-tools { display: flex; align-items: center; gap: 2px; margin-left: -5px; }
 .tools-split { width: 1px; height: 14px; margin: 0 4px; background: var(--border); }
-.group-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
-.group-tools .icon-btn:hover, .group-tools .icon-btn.hover { color: var(--accent); }
+.node-tools .icon-btn { color: var(--muted); padding: 2px 5px; }
+.node-tools .icon-btn:hover, .node-tools .icon-btn.hover { color: var(--accent); }
 /* hover-only actions take no space until shown, so names truncate as late as possible */
 .head-actions { display: none; }
 .group-head:hover .head-actions, .group-head.hover .head-actions, .folder-head:hover .head-actions, .folder-head.hover .head-actions { display: flex; }
@@ -188,11 +188,14 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .link-row .desc { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
 .link-row:hover .head-actions, .link-row.hover .head-actions { display: flex; }
 .folder-head { user-select: none; }
-.folder-head .twisty { width: 12px; color: var(--muted); font-size: 10px; transition: transform .1s; }
-.folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
 .folder.collapsed > .items { display: none; }
-.folder-head .name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.folder-head .count { color: var(--muted); font-size: 11px; }
+.folder-head { gap: 8px; padding: 5px 6px; }
+.folder-head .node-sym { width: 32px; height: 32px; border-radius: 8px; font-size: 20px; }
+.folder-head .node-sym .sym-letter { font-size: 17px; width: 28px; height: 28px; border-radius: 7px; }
+.folder-head .node-info { gap: 0; }
+.folder-head .node-line { min-height: 18px; }
+.folder-head .node-line .name { font-size: 13px; font-weight: 600; }
+.folder-head .node-tools .icon-btn { padding: 1px 4px; }
 .items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; padding: 6px 8px; }
 .items .items:empty::after { content: 'Empty folder'; padding: 2px 8px; }
 
