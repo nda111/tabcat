@@ -33,11 +33,11 @@
 html, body { height: 100%; margin: 0; }
 body {
   display: flex; background: var(--bg); color: var(--text);
-  font: 13px/1.45 Archivo, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font: 13px/1.45 Archivo, "Pretendard Variable", Pretendard, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   overflow: hidden;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
-/* type scale: Archivo 400 for text, 600 for names and headings, 400 italic for hints */
+/* type scale: Archivo (Latin) + Pretendard (Korean); 400 for text, 600 for names and headings, 400 italic for hints */
 h1, h2, h3, strong, b { font-weight: 600; }
 .muted { color: var(--muted); }
 .small { font-size: 11.5px; }
