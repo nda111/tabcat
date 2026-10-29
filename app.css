@@ -204,13 +204,15 @@ body.resizing { cursor: col-resize; user-select: none; }
 mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 
 /* ---------- open tabs panel ---------- */
-#tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; }
+#tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
 .panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 12px 8px 10px; }
 .panel-title { flex: 1; min-width: 0; }
 #tab-stats { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* one line keeps the toggle square small */
 .panel-toggle.square { width: auto; height: auto; aspect-ratio: 1; align-self: stretch; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
-.panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; }
+.panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+/* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
+@container (max-width: 250px) { .panel-actions .label { display: none; } }
 .side-btn .sym { display: inline-flex; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
@@ -218,7 +220,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
   display: flex; align-items: center; gap: 6px; padding: 6px; font-size: 11px; text-transform: uppercase;
   letter-spacing: .04em; color: var(--muted); cursor: grab; user-select: none;
 }
-.win-head .grow { flex: 1; }
+.win-head .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .win-count { display: none; }
 body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing: 0; }
 .tab-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: grab; }
@@ -226,14 +228,18 @@ body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing
 .tab-row.active { background: var(--accent-soft); }
 .tab-row.discarded { opacity: .55; }
 .tab-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab-row .icon-btn { opacity: 0; }
-.tab-row:hover .icon-btn, .tab-row.hover .icon-btn { opacity: 1; }
+/* row buttons take no space until hover, so narrow panels keep more of the title */
+.tab-row .icon-btn { display: none; }
+.tab-row:hover .icon-btn, .tab-row.hover .icon-btn { display: inline-flex; }
 
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip {
-  position: fixed; z-index: 60; max-width: 280px; padding: 4px 8px; border-radius: 6px; pointer-events: none;
-  background: var(--text); color: var(--bg); font-size: 12px; white-space: pre-line; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  position: fixed; z-index: 60; max-width: 300px; padding: 6px 9px; border-radius: 7px; pointer-events: none;
+  background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.22);
 }
+.tip-head { display: flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
+.tip-head img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+.tip-sub { opacity: .72; margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 body.ws-collapsed #sidebar { width: 56px; padding: 12px 6px; align-items: stretch; }
 body.ws-collapsed .brand { justify-content: center; padding: 0 0 10px; position: relative; }
 body.ws-collapsed .brand-name, body.ws-collapsed .side-title .label,

@@ -149,6 +149,7 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer = null; });
 
 function restoreHover() {
+  if (tipEl && !tipEl.offsetParent) hideTip(); // its element was re-rendered away or hidden
   if (!pointer) return;
   for (let el = document.elementFromPoint(...pointer); el; el = el.parentElement) el.classList.add('hover');
 }
@@ -214,7 +215,7 @@ function renderBoard() {
   board.dataset.parent = cat.id;
   board.replaceChildren(
     ...cat.groups.map(renderGroup),
-    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'Drop tabs here to create a group' }, plus(), 'New group'));
+    h('div', { class: 'add-group', onclick: () => addGroup(cat), title: 'New group\nOr drop tabs here' }, plus(), 'New group'));
   typesetMath(board);
 }
 
@@ -242,7 +243,7 @@ function renderGroup(g) {
   }
   return h('div', { class: 'group' + (g.collapsed ? ' collapsed' : ''), dataset: { id: g.id, type: 'group' } },
     h('div', {
-      class: 'group-head', draggable: 'true', title: 'Drag to move · double-click to edit',
+      class: 'group-head', draggable: 'true',
       ondblclick: () => editNode(g), oncontextmenu: (e) => nodeMenu(e, g),
     },
     btn(g.collapsed ? '▸' : '▾', g.collapsed ? 'Expand' : 'Collapse', () => toggleCollapse(g)),
@@ -358,39 +359,46 @@ async function renderTabs() {
   if (!data) return;
   currentWindowId = data.currentWindowId;
   const wins = data.windows.sort((a, b) => (b.id === currentWindowId) - (a.id === currentWindowId));
-  let total = 0, sleeping = 0;
-  const blocks = wins.map((w, i) => {
-    total += w.tabs.length;
-    sleeping += w.tabs.filter((t) => t.discarded).length;
-    return h('div', { class: 'win', dataset: { window: w.id } },
-      h('div', { class: 'win-head', draggable: 'true', title: 'Drag onto a group to save every tab in this window' },
-        h('span', { class: 'grow' }, `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length}`),
-        h('span', { class: 'win-count', title: `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length} tabs` }, w.tabs.length),
-        btn(icon('save'), 'Save window as new group', () => saveWindow(w.id)),
-        btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
-      w.tabs.map((t) => h('div', {
-        class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
-        draggable: 'true', dataset: { tab: t.id, url: t.url }, title: `${t.title}\n${t.url}`,
-        onclick: () => run(B.call('activateTab', { tabId: t.id })),
-      },
-      iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
-      h('span', { class: 'name' }, t.title || t.url),
-      t.discarded && h('span', { class: 'muted', title: 'Suspended' }, icon('suspend', 13)),
-      btn(icon('save'), 'Save to the first group of the current category', () => saveTabsTo([t.id])),
-      btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
-  });
-  // same rule as closeDuplicates in the extension: identical URL ignoring the #fragment
+  // same rules as the extension: suspendTabs skips active/pinned/audible/non-web tabs,
+  // closeDuplicates matches URLs ignoring the #fragment
+  const canSuspend = (t) => !t.active && !t.discarded && !t.pinned && !t.audible && /^https?:/.test(t.url);
+  const all = wins.flatMap((w) => w.tabs);
+  const sleeping = all.filter((t) => t.discarded).length;
+  const suspendable = all.filter(canSuspend).length;
   const seen = new Set();
   let dupes = 0;
-  for (const t of wins.flatMap((w) => w.tabs)) {
+  for (const t of all) {
     const key = (t.url || '').replace(/#.*$/, '');
     if (key && seen.has(key)) dupes++;
     else seen.add(key);
   }
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-  $('#tab-stats').textContent = [plural(wins.length, 'window'), plural(total, 'tab'), `${sleeping} suspended`,
-    dupes && plural(dupes, 'duplicate')].filter(Boolean).join(' · ');
+
+  const blocks = wins.map((w, i) => {
+    const label = `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${plural(w.tabs.length, 'tab')}`;
+    return h('div', { class: 'win', dataset: { window: w.id } },
+      h('div', { class: 'win-head', draggable: 'true', title: `${label}\nDrag onto a group to save it` },
+        h('span', { class: 'grow' }, label),
+        h('span', { class: 'win-count' }, w.tabs.length),
+        btn(icon('save'), 'Save window', () => saveWindow(w.id)),
+        w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
+      w.tabs.map((t) => h('div', {
+        class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
+        draggable: 'true', dataset: { tab: t.id, url: t.url },
+        title: [t.title || t.url, t.url, t.discarded ? 'Suspended' : t.active ? 'Active tab' : ''].filter(Boolean).join('\n'),
+        onclick: () => run(B.call('activateTab', { tabId: t.id })),
+      },
+      iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
+      h('span', { class: 'name' }, t.title || t.url),
+      t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
+      btn(icon('save'), 'Save tab', () => saveTabsTo([t.id])),
+      btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
+  });
+  $('#tab-stats').textContent = [plural(wins.length, 'window'), plural(all.length, 'tab'),
+    sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean).join(' · ');
   $('#tab-stats').title = $('#tab-stats').textContent;
+  $('#btn-suspend').hidden = !suspendable;
+  $('#btn-dedupe').hidden = !dupes;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -1171,43 +1179,65 @@ $('#btn-settings').addEventListener('click', openSettings);
 
 /* ---------- side panels: collapse and resize ---------- */
 
-// In a collapsed rail, an element's title shows instantly as a tooltip beside the rail
-// (the native title is parked in data-tip meanwhile so it doesn't show twice).
+// Tooltips: every [title] outside dialogs shows in one styled tooltip (the native title is parked in
+// data-tip while it is up). First line is the label, further lines are details. Rows of the side panels
+// (and anything in a collapsed rail) show beside the panel; everything else shows below the element.
 const tip = $('#tip');
 const RAILS = 'body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel';
+const BESIDE = '.ws-item, .tab-row, .win-head';
+const TIP_DELAY = 350;
 let tipEl = null;
+let tipTimer = null;
+let tipHiddenAt = 0;
 
 function hideTip() {
+  clearTimeout(tipTimer);
   if (tipEl?.dataset.tip != null) { tipEl.title = tipEl.dataset.tip; delete tipEl.dataset.tip; }
+  if (!tip.hidden) tipHiddenAt = Date.now();
   tipEl = null;
   tip.hidden = true;
 }
 
 function showTip(el) {
-  const rail = el.closest(RAILS);
+  clearTimeout(tipTimer);
   tipEl = el;
   if (el.title) { el.dataset.tip = el.title; el.removeAttribute('title'); }
-  tip.textContent = el.dataset.tip;
+  const [head, ...rest] = el.dataset.tip.split('\n').filter((l) => l.trim());
+  const img = el.matches('.tab-row') && el.querySelector(':scope > img')?.src;
+  tip.replaceChildren(
+    h('div', { class: 'tip-head' }, img && h('img', { src: img, alt: '' }), h('span', {}, head)),
+    ...rest.map((line) => h('div', { class: 'tip-sub' }, line)));
   tip.hidden = false;
   const r = el.getBoundingClientRect();
-  if (rail) { // beside the rail, so it never covers the rail's icons
-    const top = Math.max(4, Math.min(innerHeight - tip.offsetHeight - 4, r.top + r.height / 2 - tip.offsetHeight / 2));
-    Object.assign(tip.style, { left: rail.getBoundingClientRect().right + 6 + 'px', top: top + 'px' });
-  } else { // below the element, so it doesn't cover the heading next to it
-    const left = Math.max(4, Math.min(innerWidth - tip.offsetWidth - 4, r.left + r.width / 2 - tip.offsetWidth / 2));
-    Object.assign(tip.style, { left: left + 'px', top: r.bottom + 6 + 'px' });
+  const side = el.closest(RAILS) || (el.matches(BESIDE) && el.closest('.side-panel'));
+  let left, top;
+  if (side) {
+    left = side.getBoundingClientRect().right + 6;
+    top = r.top + r.height / 2 - tip.offsetHeight / 2;
+  } else {
+    left = r.left + r.width / 2 - tip.offsetWidth / 2;
+    top = r.bottom + tip.offsetHeight + 10 > innerHeight ? r.top - tip.offsetHeight - 6 : r.bottom + 6;
   }
+  Object.assign(tip.style, {
+    left: Math.max(4, Math.min(innerWidth - tip.offsetWidth - 4, left)) + 'px',
+    top: Math.max(4, Math.min(innerHeight - tip.offsetHeight - 4, top)) + 'px',
+  });
 }
 
 document.addEventListener('mouseover', (e) => {
   const el = e.target instanceof Element ? e.target.closest('[title], [data-tip]') : null;
   if (el === tipEl) return;
   hideTip();
-  if (!el || drag || el.classList.contains('resizer')) return;
-  if (el.closest(RAILS) || el.classList.contains('panel-toggle')) showTip(el);
+  if (!el || drag || el.closest('dialog, #menu')) return;
+  tipEl = el;
+  el.dataset.tip = el.title; // park now so the native tooltip never appears
+  el.removeAttribute('title');
+  // after one tooltip, moving to the next shows it right away
+  if (Date.now() - tipHiddenAt < 400) showTip(el);
+  else tipTimer = setTimeout(() => { if (tipEl === el && el.isConnected) showTip(el); }, TIP_DELAY);
 });
 document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) hideTip(); });
-document.addEventListener('dragstart', hideTip);
+for (const type of ['dragstart', 'mousedown', 'wheel']) document.addEventListener(type, hideTip, { passive: true });
 
 const PANELS = {
   ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'workspaces' },
