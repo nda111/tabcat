@@ -60,7 +60,7 @@ Workspace  (Name*, Symbol, Description)
 └─ Category  (Name*)
    └─ Group  (Name*, Symbol, Note [markdown])
       ├─ Link    (URL*, Name*, Icon, Description)
-      └─ Folder  (Name*, Symbol)            ← folders nest; they hold links and folders
+      └─ Folder  (Name*, Symbol)            ← folders nest up to 4 levels; they hold links and folders
 ```
 
 - Workspace → Category → Group is mandatory; links and folders always live under a group.
