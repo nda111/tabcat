@@ -67,6 +67,7 @@ function setSym(el, s) {
 // by workspace › category, with folders indented under their group. Returns { value } (an id, or ''
 // for a new Inbox when there are none).
 const MAX_INDENT = 4;
+const POPUP_MAX_HEIGHT = 600;
 
 function groupPicker(entries, initialId) {
   const btn = $('#target-btn');
@@ -138,12 +139,20 @@ function groupPicker(entries, initialId) {
     if (scroll) items[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
+  // Chrome caps a popup at 600px tall; size the list to the room left so the popup never scrolls.
+  function fitList() {
+    list.style.maxHeight = '';
+    const room = POPUP_MAX_HEIGHT - (document.body.getBoundingClientRect().height - list.offsetHeight);
+    list.style.maxHeight = `${Math.max(96, Math.min(list.scrollHeight, Math.floor(room) - 1))}px`;
+  }
+
   function open() {
     if (!entries.length) return;
     panel.hidden = false;
     btn.setAttribute('aria-expanded', 'true');
     search.value = '';
     render();
+    fitList();
     search.focus();
   }
   function close() {
