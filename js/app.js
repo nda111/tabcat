@@ -247,7 +247,7 @@ function snapshotLayout() {
 function animateLayout(before) {
   if (!before) return;
   const wsChanged = before.ws !== currentWs()?.id; // (switchCats() handles the category bar itself)
-  try { animateMoves(before, wsChanged); } finally { openExpanded(); }
+  try { animateMoves(before, wsChanged); } finally { openExpanded(); morphNote(); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -1025,8 +1025,27 @@ function startNoteEdit(id) {
   if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
 }
 
+// A note just saved: the rendered note grows / shrinks from the editor's height while its text fades in.
+let noteMorph = null; // { id, height }
+function morphNote() {
+  if (!noteMorph) return;
+  const { id, height } = noteMorph;
+  const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
+  if (!group || group.querySelector('.note-edit')) return; // not drawn yet (or editing again)
+  noteMorph = null;
+  const note = group.querySelector('.note');
+  if (!note) return;
+  const to = note.getBoundingClientRect().height;
+  note.style.overflow = 'hidden';
+  note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
+    .finished.catch(() => {}).then(() => { note.style.overflow = ''; });
+  for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+}
+
 function saveNote(id, before, after) {
   editingNoteId = null;
+  const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
+  noteMorph = ta && after.trim() ? { id, height: ta.getBoundingClientRect().height } : null;
   if (after !== (before || '')) apply({ op: 'patch', id, fields: { note: after } });
   else render();
 }
