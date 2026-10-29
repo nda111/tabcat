@@ -230,7 +230,7 @@ body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing
 .tab-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* row buttons take no space until hover, so narrow panels keep more of the title */
 .tab-row .icon-btn { display: none; }
-.tab-row:hover .icon-btn, .tab-row.hover .icon-btn { display: inline-flex; }
+body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .tab-row.hover .icon-btn { display: inline-flex; }
 
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip {
