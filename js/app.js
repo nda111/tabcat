@@ -218,10 +218,16 @@ function animateLayout(before) {
         const card = el.matches('.group') && before.rects.get(`add:${el.closest('.col')?.dataset.col}`);
         const r = el.getBoundingClientRect();
         if (card && Math.abs(card.top - r.top) < 30) {
-          // created on the New group card: grow from the card's size instead of popping in
+          // created on the New group card: appears out of the card - fades in with a little spring
+          // and grows from the card's height (the same height when tabs were dropped on it)
           el.style.overflow = 'hidden';
-          el.animate([{ height: `${card.height}px`, transform: `translate(0, ${card.top - r.top}px)` }, { height: `${r.height}px`, transform: 'none' }],
-            { duration: 380, easing: SPRING }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
+          el.style.transformOrigin = 'top center';
+          const anim = el.animate([
+            { opacity: 0, height: `${card.height}px`, transform: `translate(0, ${card.top - r.top}px) scale(.92)` },
+            { opacity: 1, height: `${r.height}px`, transform: 'none' },
+          ], { duration: 380, easing: SPRING });
+          raiseWhile(el, anim);
+          anim.finished.catch(() => {}).then(() => { el.style.overflow = ''; el.style.transformOrigin = ''; });
         } else {
           el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
         }
