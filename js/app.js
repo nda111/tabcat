@@ -83,6 +83,13 @@ function symbolEl(symbol, fallback = '') {
     : h('span', { class: 'sym' }, s);
 }
 
+// A button without a tooltip; its label stays available to screen readers.
+function noTip(el) {
+  el.setAttribute('aria-label', el.title);
+  el.removeAttribute('title');
+  return el;
+}
+
 function iconImg(url, icon) {
   const fallback = T.faviconFor(url);
   const img = h('img', { class: 'fav', src: icon || fallback, alt: '', loading: 'lazy', draggable: 'false' });
@@ -491,7 +498,7 @@ async function renderTabs() {
         h('span', { class: 'win-count' }, w.tabs.length),
         w.tabs.length > 0 && btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
         w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id })),
-        btn(icon('close'), 'Close window', () => closeWindow(w, name))),
+        noTip(btn(icon('close'), 'Close window', () => closeWindow(w, name)))),
       w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
