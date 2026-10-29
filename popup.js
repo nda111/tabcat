@@ -14,7 +14,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   const sleeping = all.filter((t) => t.discarded).length;
   $('#stats').textContent = [`${all.length} tab${all.length === 1 ? '' : 's'}`, sleeping && `${sleeping} suspended`].filter(Boolean).join(' · ');
 
-  const target = groupPicker(S.allGroups(state), settings.lastGroupId);
+  const target = groupPicker(S.allTargets(state), settings.lastGroupId);
   $('#close').checked = settings.closeOnSave;
   $('#close').addEventListener('change', () => S.saveSettings({ closeOnSave: $('#close').checked }));
 
@@ -50,48 +50,54 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   });
 })();
 
-// "Save to" picker: a button showing the chosen group, opening a searchable list grouped by
-// workspace › category. Returns { value } (a group id, or '' for a new Inbox when there are none).
+// "Save to" picker: a button showing the chosen group or folder, opening a searchable list grouped
+// by workspace › category, with folders indented under their group. Returns { value } (an id, or ''
+// for a new Inbox when there are none).
 function groupPicker(entries, initialId) {
   const btn = $('#target-btn');
   const panel = $('#target-panel');
   const search = $('#target-search');
   const list = $('#target-list');
-  const pathOf = ({ ws, cat }) => `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name} › ${cat.name}`;
+  const headOf = ({ ws, cat }) => `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name} › ${cat.name}`;
+  const pathOf = (e) => [headOf(e), ...e.trail].join(' › ');
+  const symOf = (e) => e.node.symbol || (e.node.type === 'folder' ? '📁' : '🗂️');
   const picker = { value: '' };
   let items = [];
   let active = -1;
 
   function show(entry) {
-    picker.value = entry ? entry.group.id : '';
-    $('#target-sym').textContent = entry ? entry.group.symbol || '🗂️' : '📥';
-    $('#target-name').textContent = entry ? entry.group.name : 'Inbox (new)';
+    picker.value = entry ? entry.node.id : '';
+    $('#target-sym').textContent = entry ? symOf(entry) : '📥';
+    $('#target-name').textContent = entry ? entry.node.name : 'Inbox (new)';
     $('#target-path').textContent = entry ? pathOf(entry) : 'A new group will be created';
   }
 
   function render() {
     const q = search.value.trim().toLowerCase();
-    const hits = entries.filter((e) => !q || `${e.group.name} ${pathOf(e)}`.toLowerCase().includes(q));
+    // a search shows matches with their full path; no search shows the indented tree
+    const hits = entries.filter((e) => !q || `${e.node.name} ${pathOf(e)}`.toLowerCase().includes(q));
     const nodes = [];
     let last = null;
     items = [];
     for (const e of hits) {
-      const path = pathOf(e);
-      if (path !== last) {
-        const head = document.createElement('div');
-        head.className = 'picker-head';
-        head.textContent = path;
-        nodes.push(head);
-        last = path;
+      const head = headOf(e);
+      if (head !== last) {
+        const el = document.createElement('div');
+        el.className = 'picker-head';
+        el.textContent = head;
+        nodes.push(el);
+        last = head;
       }
       const item = document.createElement('button');
       item.type = 'button';
-      item.className = 'picker-item';
+      item.className = 'picker-item' + (e.node.type === 'folder' ? ' folder' : '');
+      item.style.paddingLeft = `${6 + (q ? 0 : e.depth * 16)}px`;
       item.setAttribute('role', 'option');
-      item.setAttribute('aria-selected', String(e.group.id === picker.value));
-      item.innerHTML = '<span class="sym"></span><span class="name"></span>';
-      item.querySelector('.sym').textContent = e.group.symbol || '🗂️';
-      item.querySelector('.name').textContent = e.group.name;
+      item.setAttribute('aria-selected', String(e.node.id === picker.value));
+      item.innerHTML = '<span class="sym"></span><span class="name"></span><span class="where muted"></span>';
+      item.querySelector('.sym').textContent = symOf(e);
+      item.querySelector('.name').textContent = e.node.name;
+      if (q && e.trail.length) item.querySelector('.where').textContent = e.trail.join(' › ');
       item.addEventListener('click', () => { show(e); close(); });
       item.addEventListener('mousemove', () => setActive(items.indexOf(item)));
       items.push(item);
@@ -100,7 +106,7 @@ function groupPicker(entries, initialId) {
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'picker-empty';
-      empty.textContent = 'No matching groups';
+      empty.textContent = 'No matching groups or folders';
       nodes.push(empty);
     }
     list.replaceChildren(...nodes);
@@ -136,7 +142,7 @@ function groupPicker(entries, initialId) {
     else if (e.key === 'Escape') { e.preventDefault(); close(); btn.focus(); }
   });
 
-  show(entries.find((e) => e.group.id === initialId) || entries[0] || null);
+  show(entries.find((e) => e.node.id === initialId) || entries[0] || null);
   btn.disabled = !entries.length;
   return picker;
 }

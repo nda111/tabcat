@@ -63,7 +63,9 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 .picker-list { max-height: 210px; overflow-y: auto; padding: 4px; }
 .picker-head { padding: 6px 6px 2px; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
 .picker-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 6px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
-.picker-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-item .name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-item .where { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 400; }
+.picker-item.folder { font-size: 12.5px; }
 .picker-item.active { background: var(--hover); }
 .picker-item[aria-selected="true"] { color: var(--accent); font-weight: 600; }
 .picker-item[aria-selected="true"]::after { content: "✓"; }
