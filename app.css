@@ -155,7 +155,7 @@ body.ws-collapsed .ws-add { display: flex; }
 .gap-slot:hover::after, .gap-slot.hover::after { opacity: 1; }
 /* below the last group: the New group card appears only while the pointer is on its spot */
 .col-tail { flex: 1; min-height: 120px; padding-top: 14px; }
-.col-tail .add-group { opacity: 0; transition: opacity .12s; }
+.col-tail .add-group { opacity: 0; transition: opacity .12s, height .3s var(--spring-soft), background-color .16s, border-color .16s, color .16s; }
 .col-tail .add-group:hover, .col-tail .add-group.hover, .col-tail .add-group.drop-new { opacity: 1; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
 .bar-split { width: 1px; height: 16px; margin: 0 8px; background: var(--border); flex: none; }
@@ -264,10 +264,11 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .add-group {
   --add-color: color-mix(in srgb, var(--border) 65%, var(--muted)); /* the + matches the dashed border */
   border: 2px dashed var(--add-color); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; gap: 4px;
-  min-height: 90px; color: var(--add-color); cursor: pointer;
+  height: var(--empty-group-h, 66px); color: var(--add-color); cursor: pointer; /* a new empty group's size */
+  transition: height .3s var(--spring-soft), background-color .16s, border-color .16s, color .16s, opacity .12s;
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
-.add-group.drop-new { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.add-group.drop-new { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); height: var(--one-group-h, 104px); } /* what it will become */
 
 /* ---------- drag & drop ---------- */
 .dragging { opacity: .4; }

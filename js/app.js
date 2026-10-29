@@ -207,7 +207,16 @@ function animateLayout(before) {
     const d = deltas.get(el);
     if (!d) {
       if (sameBoard && before.rects.size && el.closest('#board') && !el.parentElement.closest('[data-id]')) {
-        el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
+        const card = el.matches('.group') && before.rects.get(`add:${el.closest('.col')?.dataset.col}`);
+        const r = el.getBoundingClientRect();
+        if (card && Math.abs(card.top - r.top) < 30) {
+          // created on the New group card: grow from the card's size instead of popping in
+          el.style.overflow = 'hidden';
+          el.animate([{ height: `${card.height}px`, transform: `translate(0, ${card.top - r.top}px)` }, { height: `${r.height}px`, transform: 'none' }],
+            { duration: 380, easing: SPRING }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
+        } else {
+          el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
+        }
       }
       continue;
     }
@@ -363,14 +372,31 @@ function renderBoard() {
       ]),
       h('div', { class: 'col-tail' },
         h('div', {
-          class: 'add-group', dataset: { col: i },
+          class: 'add-group', dataset: { col: i, id: `add:${i}` },
           onclick: () => addGroup(cat, column),
         }, icon('plus', 28))));
   })));
+  sizeAddCards(board);
   // keep the selection to groups still on this board
   for (const id of selected) if (!cat.groups.some((g) => g.id === id)) selected.delete(id);
   document.body.classList.toggle('select-mode', selected.size > 0);
   typesetMath(board);
+}
+
+// The New group card is as tall as a new empty group, and as tall as a group with one link while
+// tabs are dragged onto it (that is what it will become). Both are measured on hidden samples.
+function sizeAddCards(board) {
+  const col = board.querySelector('.col');
+  if (!col) return;
+  const sample = (items) => renderGroup({ id: '', type: 'group', name: 'Sample', symbol: '', note: '', collapsed: false, items });
+  const link = { id: '', type: 'link', url: 'https://example.com', name: 'Sample', icon: '', description: '' };
+  const probes = [sample([]), sample([link])];
+  const box = h('div', { style: 'position:absolute; visibility:hidden; pointer-events:none; left:0; top:0' }, probes);
+  box.style.width = col.getBoundingClientRect().width + 'px';
+  board.append(box);
+  board.style.setProperty('--empty-group-h', probes[0].getBoundingClientRect().height + 'px');
+  board.style.setProperty('--one-group-h', probes[1].getBoundingClientRect().height + 'px');
+  box.remove();
 }
 
 /* ---------- board columns ---------- */
@@ -1418,6 +1444,16 @@ async function performDrop(d, t, e) {
     tabIds = data?.windows.find((w) => w.id === d.windowId)?.tabs.filter((t) => !t.pinned).map((t) => t.id) || [];
   }
   if (!tabIds?.length) return;
+  if (t.mode === 'newGroup') {
+    // one update that creates the group with its tabs already inside, so it appears filled
+    // (two updates would show an empty group first and then make it jump)
+    const cat = T.locate(state, t.categoryId).node;
+    await run(B.call('saveTabs', { tabIds, close: settings.closeOnSave, newGroup: {
+      categoryId: cat.id, column: t.column ?? null, index: columnIndex(cat, t.column, { beforeId: t.beforeId }),
+      name: d.kind === 'window' ? `Window ${new Date().toLocaleString()}` : 'New group',
+    } }));
+    return;
+  }
   let pid = t.parentId;
   if (pre.length) [pid] = (await apply(...pre)) || [];
   if (pid) await saveTabsTo(tabIds, pid, t.index);
