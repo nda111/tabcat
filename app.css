@@ -235,6 +235,11 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
   font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
 }
 .note-edit:focus { outline: none; }
+/* the old note / editor text fading out over its replacement */
+.note-ghost {
+  position: fixed; z-index: 5; margin: 0; overflow: hidden; pointer-events: none;
+  background: transparent !important; border-color: transparent !important; cursor: default;
+}
 
 /* ---------- items ---------- */
 .items { list-style: none; margin: 0; padding: 4px; min-height: 30px; }

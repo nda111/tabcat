@@ -1022,7 +1022,7 @@ function openExpanded() {
 function startNoteEdit(id) {
   editingNoteId = id;
   const note = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"] .note`);
-  noteMorph = { id, height: note ? note.getBoundingClientRect().height : 0, edit: true };
+  noteMorph = { id, height: note ? note.getBoundingClientRect().height : 0, edit: true, ghost: noteGhost(note) };
   render();
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
   if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
@@ -1032,9 +1032,21 @@ function startNoteEdit(id) {
 // It is held at the editor's height while the layout is measured, so nothing below it gets a FLIP
 // slide on top of the height change (which would overshoot); they just follow the note.
 // Opening the editor works the same way the other way round: the editor grows from the note.
-let noteMorph = null; // { id, height, edit }
+// The old content (a copy laid over the new element) fades out while the new content fades in.
+let noteMorph = null; // { id, height, edit, ghost }
+
+// A copy of the note / editor to fade out over its replacement (text only: no background or border).
+function noteGhost(el) {
+  if (!el) return null;
+  const g = el.cloneNode(true);
+  if (el.matches('textarea')) { g.value = el.value; g.readOnly = true; g.tabIndex = -1; g.scrollTop = el.scrollTop; }
+  g.removeAttribute('title');
+  g.classList.add('note-ghost');
+  return g;
+}
 function holdNote() {
   if (!noteMorph) return null;
+  const held0 = noteMorph;
   const { id, height, edit } = noteMorph;
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
   if (!group || !group.querySelector('.note-edit') !== !edit) return null; // not drawn yet
@@ -1042,11 +1054,17 @@ function holdNote() {
   const note = group.querySelector(edit ? '.note-edit' : '.note');
   if (!note) return null;
   Object.assign(note.style, { height: `${height}px`, minHeight: '0', overflow: 'hidden' });
-  return { note, height };
+  const { ghost } = held0;
+  if (ghost) {
+    const r = note.getBoundingClientRect();
+    Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${height}px` });
+    document.body.append(ghost);
+  }
+  return { note, height, ghost };
 }
 function growNote(held) {
   if (!held) return;
-  const { note, height } = held;
+  const { note, height, ghost } = held;
   const grow = () => {
     note.style.height = '';
     note.style.minHeight = '';
@@ -1054,7 +1072,11 @@ function growNote(held) {
     note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
     note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
       .finished.catch(() => {}).then(() => { note.style.overflow = ''; note.style.minHeight = ''; });
-    for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+    const fade = { duration: 240, easing: 'ease-out' };
+    if (note.matches('textarea')) note.animate([{ color: 'transparent' }, { color: getComputedStyle(note).color }], fade);
+    else for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], fade);
+    ghost?.animate([{ opacity: 1, height: `${height}px` }, { opacity: 0, height: `${to}px` }], { ...fade, duration: 200, fill: 'forwards' })
+      .finished.catch(() => {}).then(() => ghost.remove());
   };
   // math changes the note's size once typeset: keep holding until then, so the note goes straight
   // to its final size instead of shrinking to the raw TeX and growing back
@@ -1069,7 +1091,7 @@ function growNote(held) {
 function saveNote(id, before, after) {
   editingNoteId = null;
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
-  noteMorph = ta && after.trim() ? { id, height: ta.getBoundingClientRect().height } : null;
+  noteMorph = ta && after.trim() ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta) } : null;
   if (after !== (before || '')) apply({ op: 'patch', id, fields: { note: after } });
   else render();
 }
