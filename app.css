@@ -268,6 +268,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
   transition: height .3s var(--spring-soft), background-color .16s, border-color .16s, color .16s, opacity .12s;
 }
 .add-group:hover, .add-group.hover { border-color: var(--accent); color: var(--accent); }
+.col-tail .add-group.dropped { transition: none; opacity: 0; height: var(--one-group-h, 104px); }
 .add-group.drop-new { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--accent); height: var(--one-group-h, 104px); } /* what it will become */
 
 /* ---------- drag & drop ---------- */

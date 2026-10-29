@@ -204,6 +204,7 @@ function animateLayout(before) {
     if (r.width) deltas.set(el, [prev.left - r.left, prev.top - r.top, prev.width, r.width]);
   }
   for (const el of els) {
+    if (el.matches('.add-group')) continue; // only measured (new groups grow out of it), never animated
     const d = deltas.get(el);
     if (!d) {
       // a new link / folder inside a group or folder that was already there: pop in, drawn on top
@@ -1582,6 +1583,9 @@ document.addEventListener('drop', (e) => {
   if (!d) return;
   const t = resolveDrop(e, d);
   e.preventDefault();
+  // dropped on the New group card: it becomes the new group, so it vanishes at once (no fade, no
+  // slide) but keeps its size until the board re-renders, letting the group grow out of it
+  if (t?.mode === 'newGroup' && t.el) t.el.classList.replace('drop-new', 'dropped');
   endDrag();
   if (t) performDrop(d, t, e).catch((err) => toast('Drop failed: ' + err.message));
 });
