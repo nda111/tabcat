@@ -15,9 +15,18 @@
       <input id="cur-name" placeholder="Name">
     </div>
     <div class="muted small url" id="cur-url"></div>
-    <label class="small">Save to
-      <select id="target"></select>
-    </label>
+    <div class="field small">
+      <span class="field-label">Save to</span>
+      <button type="button" class="picker-btn" id="target-btn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="sym" id="target-sym"></span>
+        <span class="picker-main"><span id="target-name"></span><span class="muted" id="target-path"></span></span>
+        <span class="chev" aria-hidden="true">▾</span>
+      </button>
+      <div class="picker-panel" id="target-panel" hidden>
+        <input type="search" id="target-search" placeholder="Search groups" autocomplete="off">
+        <div class="picker-list" id="target-list" role="listbox"></div>
+      </div>
+    </div>
     <label class="check small"><input type="checkbox" id="close"> Close tab after saving</label>
     <button class="btn primary wide" id="save-tab">💾 Save this tab</button>
   </section>
@@ -28,6 +37,6 @@
     <button class="btn" id="dedupe">🧹 Close duplicates</button>
     <button class="btn" id="open">🐱 Open dashboard</button>
   </div>
-  <p class="muted small" id="msg"></p>
+  <p class="muted small" id="msg" hidden></p>
 </body>
 </html>

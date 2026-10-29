@@ -76,7 +76,7 @@ Workspace  (Name*, Symbol, Description)
 | Organizing | Markdown notes with clickable task checkboxes and MathJax math (`$…$`, `$$…$$`) · collapse · sort by name · remove duplicate links · context menus · undo delete |
 | Opening | Click: new tab · Ctrl/middle click: background · Shift: new window · open a whole group/folder |
 | Search | `/` or `Ctrl+K`, searches links, groups, folders and notes; Enter opens the first hit |
-| Popup | Rename the current tab and save it to any group · save window · suspend · close duplicates · open dashboard |
+| Popup | Click the toolbar button for the popup, double-click for the dashboard · rename the current tab and save it to any group (searchable picker) · save window · suspend · close duplicates · open dashboard |
 | Shortcuts | `Alt+Shift+C` popup · `Alt+Shift+D` dashboard · `Alt+Shift+S` save tab · `Alt+Shift+A` save window |
 | Data | JSON export / import of selected workspaces, categories and groups (import adds, never overwrites) · separate settings file · light / dark / system theme |
 

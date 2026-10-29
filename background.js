@@ -48,6 +48,26 @@ async function openDashboard() {
   }
 }
 
+/* ================= toolbar button ================= */
+
+// There is no default_popup, so every click reaches onClicked: one click opens the popup, a second
+// click within DOUBLE_CLICK_MS opens the dashboard instead. (The popup waits that long to appear.)
+const DOUBLE_CLICK_MS = 280;
+let clickTimer = null;
+
+chrome.action.onClicked.addListener((tab) => {
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+    openDashboard();
+    return;
+  }
+  clickTimer = setTimeout(() => {
+    clickTimer = null;
+    chrome.action.openPopup({ windowId: tab.windowId }).catch(() => openDashboard());
+  }, DOUBLE_CLICK_MS);
+});
+
 /* ================= context menu & shortcuts ================= */
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

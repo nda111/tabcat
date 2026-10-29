@@ -2,7 +2,7 @@ import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 
 const $ = (sel) => document.querySelector(sel);
-const msg = (t) => { $('#msg').textContent = t; };
+const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
 
 (async function init() {
   const [[tab], state, settings, all] = await Promise.all([
@@ -11,19 +11,12 @@ const msg = (t) => { $('#msg').textContent = t; };
   ]);
   if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
   A.setDashboardUrl(settings.dashboardUrl);
-  $('#stats').textContent = `${all.length} tabs · ${all.filter((t) => t.discarded).length} 💤`;
+  const sleeping = all.filter((t) => t.discarded).length;
+  $('#stats').textContent = [`${all.length} tab${all.length === 1 ? '' : 's'}`, sleeping && `${sleeping} suspended`].filter(Boolean).join(' · ');
 
-  // target select: Workspace / Category → groups
-  const sel = $('#target');
-  for (const { ws, cat, group } of S.allGroups(state)) {
-    const label = `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name} / ${cat.name}`;
-    let og = [...sel.children].find((o) => o.label === label);
-    if (!og) { og = document.createElement('optgroup'); og.label = label; sel.append(og); }
-    og.append(new Option(`${group.symbol ? group.symbol + ' ' : ''}${group.name}`, group.id));
-  }
-  if (!sel.options.length) sel.append(new Option('📥 Inbox (new)', ''));
-  if (settings.lastGroupId && [...sel.options].some((o) => o.value === settings.lastGroupId)) sel.value = settings.lastGroupId;
+  const target = groupPicker(S.allGroups(state), settings.lastGroupId);
   $('#close').checked = settings.closeOnSave;
+  $('#close').addEventListener('change', () => S.saveSettings({ closeOnSave: $('#close').checked }));
 
   if (tab && A.isSaveable(tab)) {
     $('#cur-name').value = tab.title || tab.url;
@@ -36,7 +29,7 @@ const msg = (t) => { $('#msg').textContent = t; };
   }
 
   $('#save-tab').addEventListener('click', async () => {
-    const groupId = sel.value || null;
+    const groupId = target.value || null;
     await S.saveSettings({ lastGroupId: groupId });
     const named = { ...tab, title: $('#cur-name').value.trim() || tab.title };
     msg('Saved ✔');
@@ -56,3 +49,94 @@ const msg = (t) => { $('#msg').textContent = t; };
     window.close();
   });
 })();
+
+// "Save to" picker: a button showing the chosen group, opening a searchable list grouped by
+// workspace › category. Returns { value } (a group id, or '' for a new Inbox when there are none).
+function groupPicker(entries, initialId) {
+  const btn = $('#target-btn');
+  const panel = $('#target-panel');
+  const search = $('#target-search');
+  const list = $('#target-list');
+  const pathOf = ({ ws, cat }) => `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name} › ${cat.name}`;
+  const picker = { value: '' };
+  let items = [];
+  let active = -1;
+
+  function show(entry) {
+    picker.value = entry ? entry.group.id : '';
+    $('#target-sym').textContent = entry ? entry.group.symbol || '🗂️' : '📥';
+    $('#target-name').textContent = entry ? entry.group.name : 'Inbox (new)';
+    $('#target-path').textContent = entry ? pathOf(entry) : 'A new group will be created';
+  }
+
+  function render() {
+    const q = search.value.trim().toLowerCase();
+    const hits = entries.filter((e) => !q || `${e.group.name} ${pathOf(e)}`.toLowerCase().includes(q));
+    const nodes = [];
+    let last = null;
+    items = [];
+    for (const e of hits) {
+      const path = pathOf(e);
+      if (path !== last) {
+        const head = document.createElement('div');
+        head.className = 'picker-head';
+        head.textContent = path;
+        nodes.push(head);
+        last = path;
+      }
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'picker-item';
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', String(e.group.id === picker.value));
+      item.innerHTML = '<span class="sym"></span><span class="name"></span>';
+      item.querySelector('.sym').textContent = e.group.symbol || '🗂️';
+      item.querySelector('.name').textContent = e.group.name;
+      item.addEventListener('click', () => { show(e); close(); });
+      item.addEventListener('mousemove', () => setActive(items.indexOf(item)));
+      items.push(item);
+      nodes.push(item);
+    }
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'picker-empty';
+      empty.textContent = 'No matching groups';
+      nodes.push(empty);
+    }
+    list.replaceChildren(...nodes);
+    setActive(Math.max(0, items.findIndex((it) => it.getAttribute('aria-selected') === 'true')));
+  }
+
+  function setActive(i) {
+    items[active]?.classList.remove('active');
+    active = items.length ? Math.max(0, Math.min(items.length - 1, i)) : -1;
+    items[active]?.classList.add('active');
+    items[active]?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function open() {
+    if (!entries.length) return;
+    panel.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    search.value = '';
+    render();
+    search.focus();
+  }
+  function close() {
+    panel.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', () => (panel.hidden ? open() : close()));
+  search.addEventListener('input', render);
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); items[active]?.click(); }
+    else if (e.key === 'Escape') { e.preventDefault(); close(); btn.focus(); }
+  });
+
+  show(entries.find((e) => e.group.id === initialId) || entries[0] || null);
+  btn.disabled = !entries.length;
+  return picker;
+}
