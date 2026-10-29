@@ -52,10 +52,14 @@ export const countLinks = (node) => (node.type === 'link' ? 1 : collectLinks(nod
 
 const segmenter = Intl.Segmenter ? new Intl.Segmenter() : null;
 
+let RGI_EMOJI = null;
+try { RGI_EMOJI = new RegExp('^\\p{RGI_Emoji}$', 'v'); } catch { /* no /v flag support */ }
+
 export function isSingleEmoji(s) {
   if (!s) return true; // symbol is optional
+  if (RGI_EMOJI?.test(s)) return true;
   const graphemes = segmenter ? [...segmenter.segment(s)].length : [...s].length;
-  return graphemes === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(s);
+  return graphemes === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u.test(s);
 }
 
 export function normalizeUrl(u) {

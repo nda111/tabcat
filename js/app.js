@@ -2,6 +2,8 @@ import * as B from './bridge.js';
 import * as T from './tree.js';
 import { renderMarkdown, toggleTask } from './markdown.js';
 import { typesetMath } from './math.js';
+import { createEmojiPicker } from './emoji.js';
+import { icon, hydrateIcons } from './icons.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -56,8 +58,7 @@ function h(tag, props = {}, ...kids) {
   return el;
 }
 
-const PLUS_SVG = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-const plus = () => h('span', { class: 'ico', html: PLUS_SVG });
+const plus = () => icon('plus');
 
 function btn(label, title, fn) {
   // Rapid clicks must not reach a parent's double-click-to-edit handler.
@@ -249,9 +250,9 @@ function renderGroup(g) {
     h('span', { class: 'name' }, g.name),
     h('span', { class: 'count' }, T.countLinks(g)),
     h('span', { class: 'head-actions' },
-      btn('📝', 'Edit note', () => startNoteEdit(g.id)),
-      btn('↗', 'Open all links', () => openAll(g)),
-      btn('⋯', 'More', (e) => nodeMenu(e, g)))),
+      btn(icon('note'), 'Edit note', () => startNoteEdit(g.id)),
+      btn(icon('open'), 'Open all links', () => openAll(g)),
+      btn(icon('more'), 'More', (e) => nodeMenu(e, g)))),
     h('div', { class: 'group-body' },
       note,
       renderItems(g.items, g.id),
@@ -277,8 +278,8 @@ function renderLink(l) {
     h('span', { class: 'name' }, l.name || l.url),
     l.description && h('span', { class: 'desc' }, l.description),
     h('span', { class: 'head-actions' },
-      btn('✏️', 'Edit', () => editNode(l)),
-      btn('✕', 'Delete', () => deleteNode(l)))));
+      btn(icon('edit'), 'Edit', () => editNode(l)),
+      btn(icon('close'), 'Delete', () => deleteNode(l)))));
 }
 
 function renderFolder(f) {
@@ -294,9 +295,9 @@ function renderFolder(f) {
     h('span', { class: 'name' }, f.name),
     h('span', { class: 'count' }, T.countLinks(f)),
     h('span', { class: 'head-actions' },
-      btn('↗', 'Open all links', () => openAll(f)),
+      btn(icon('open'), 'Open all links', () => openAll(f)),
       btn(plus(), 'Add link', () => addLink(f.id)),
-      btn('⋯', 'More', (e) => nodeMenu(e, f)))),
+      btn(icon('more'), 'More', (e) => nodeMenu(e, f)))),
     renderItems(f.items, f.id));
 }
 
@@ -363,8 +364,8 @@ async function renderTabs() {
       h('div', { class: 'win-head', draggable: 'true', title: 'Drag onto a group to save every tab in this window' },
         h('span', { class: 'grow' }, `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length}`),
         h('span', { class: 'win-count', title: `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${w.tabs.length} tabs` }, w.tabs.length),
-        btn('💾', 'Save window as new group', () => saveWindow(w.id)),
-        btn('💤', 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
+        btn(icon('save'), 'Save window as new group', () => saveWindow(w.id)),
+        btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
       w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url }, title: `${t.title}\n${t.url}`,
@@ -372,11 +373,11 @@ async function renderTabs() {
       },
       iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
       h('span', { class: 'name' }, t.title || t.url),
-      t.discarded && h('span', { title: 'Suspended' }, '💤'),
-      btn('💾', 'Save to the first group of the current category', () => saveTabsTo([t.id])),
-      btn('✕', 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
+      t.discarded && h('span', { class: 'muted', title: 'Suspended' }, icon('suspend', 13)),
+      btn(icon('save'), 'Save to the first group of the current category', () => saveTabsTo([t.id])),
+      btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
   });
-  $('#tab-stats').textContent = `${total} tabs · ${sleeping} suspended · ${wins.length} window${wins.length === 1 ? '' : 's'}`;
+  $('#tab-stats').textContent = `${wins.length} window${wins.length === 1 ? '' : 's'} · ${total} tabs · ${sleeping} suspended`;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -485,9 +486,28 @@ function openEditor(type, data = {}, title) {
     input.value = data[key] || '';
     inputs[key] = input;
     if (kind === 'emoji') {
-      return h('label', {}, label + ' (single emoji, optional)',
-        h('div', { class: 'sym-input' }, input, btn('✕', 'Clear', () => { input.value = ''; })),
-        h('div', { class: 'emoji-row' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => { input.value = em; } }, em))));
+      const box = h('div', { class: 'emoji-picker-box', hidden: true });
+      let picker = null;
+      const togglePicker = async () => {
+        if (!box.hidden) { box.hidden = true; return; }
+        box.hidden = false;
+        if (picker) return void picker.shadowRoot?.querySelector('input')?.focus();
+        box.textContent = 'Loading emoji…';
+        try {
+          picker = await createEmojiPicker((em) => { input.value = em; box.hidden = true; err.textContent = ''; });
+          box.replaceChildren(picker);
+          requestAnimationFrame(() => picker.shadowRoot?.querySelector('input')?.focus());
+        } catch {
+          box.textContent = 'Could not load the emoji list (offline?). You can still type or paste an emoji.';
+        }
+      };
+      // a div, not a label: clicks inside the picker must not refocus the text input
+      return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label + ' (single emoji, optional)'),
+        h('div', { class: 'sym-input' }, input,
+          h('button', { type: 'button', class: 'btn small', onclick: togglePicker }, icon('search', 13), 'All emoji…'),
+          btn(icon('close'), 'Clear', () => { input.value = ''; })),
+        h('div', { class: 'emoji-row' }, EMOJIS.map((em) => h('button', { type: 'button', onclick: () => { input.value = em; } }, em))),
+        box);
     }
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
@@ -506,7 +526,7 @@ function openEditor(type, data = {}, title) {
       });
       return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
         h('button', { class: 'btn small', type: 'button', onclick: () => file.click() }, 'Upload'),
-        btn('✕', 'Clear', () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
+        btn(icon('close'), 'Clear', () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
@@ -584,7 +604,7 @@ function showMenu(e, entries) {
   e.stopPropagation();
   const menu = $('#menu');
   menu.replaceChildren(...entries.filter(Boolean).map((it) => (it === '-' ? h('hr') :
-    h('button', { class: it.danger ? 'danger' : '', onclick: () => { hideMenu(); it.fn(); } }, it.label))));
+    h('button', { class: it.danger ? 'danger' : '', onclick: () => { hideMenu(); it.fn(); } }, it.icon && icon(it.icon), it.label))));
   menu.hidden = false;
   const r = menu.getBoundingClientRect();
   menu.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + 'px';
@@ -594,23 +614,23 @@ function hideMenu() { $('#menu').hidden = true; }
 
 function nodeMenu(e, node) {
   const n = T.countLinks(node);
-  const open = n ? [{ label: `↗ Open all (${n})`, fn: () => openAll(node) },
-    { label: '🪟 Open all in new window', fn: () => openAll(node, true) }] : [];
-  const del = { label: '🗑️ Delete', danger: true, fn: () => deleteNode(node) };
-  const edit = { label: '✏️ Edit…', fn: () => editNode(node) };
+  const open = n ? [{ icon: 'open', label: `Open all (${n})`, fn: () => openAll(node) },
+    { icon: 'window', label: 'Open all in new window', fn: () => openAll(node, true) }] : [];
+  const del = { icon: 'trash', label: 'Delete', danger: true, fn: () => deleteNode(node) };
+  const edit = { icon: 'edit', label: 'Edit…', fn: () => editNode(node) };
   const menus = {
-    workspace: [edit, { label: '🏷️ New category', fn: () => addCategory(node) }, ...open,
-      { label: '⬇️ Export…', fn: () => exportData(node.id) }, '-', del],
-    category: [edit, { label: '🗂️ New group', fn: () => addGroup(node) }, ...open, '-', del],
-    group: [edit, { label: '📝 Edit note', fn: () => startNoteEdit(node.id) },
-      { label: '🔗 Add link', fn: () => addLink(node.id) }, { label: '📁 Add folder', fn: () => addFolder(node.id) },
-      { label: '➕ Add all tabs of this window', fn: () => addWindowTabs(node.id) },
-      ...open, { label: '🔤 Sort links by name', fn: () => sortItems(node) },
-      { label: '🧹 Remove duplicate links', fn: () => dedupeLinks(node) }, '-', del],
-    folder: [edit, { label: '🔗 Add link', fn: () => addLink(node.id) }, { label: '📁 Add subfolder', fn: () => addFolder(node.id) },
-      ...open, { label: '🔤 Sort links by name', fn: () => sortItems(node) }, '-', del],
-    link: [{ label: '↗ Open', fn: () => openLink(node) }, { label: '🪟 Open in new window', fn: () => openLink(node, { shiftKey: true }) },
-      edit, { label: '📋 Copy URL', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
+    workspace: [edit, { icon: 'category', label: 'New category', fn: () => addCategory(node) }, ...open,
+      { icon: 'download', label: 'Export…', fn: () => exportData(node.id) }, '-', del],
+    category: [edit, { icon: 'group', label: 'New group', fn: () => addGroup(node) }, ...open, '-', del],
+    group: [edit, { icon: 'note', label: 'Edit note', fn: () => startNoteEdit(node.id) },
+      { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add folder', fn: () => addFolder(node.id) },
+      { icon: 'tabs', label: 'Add all tabs of this window', fn: () => addWindowTabs(node.id) },
+      ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) },
+      { icon: 'dedupe', label: 'Remove duplicate links', fn: () => dedupeLinks(node) }, '-', del],
+    folder: [edit, { icon: 'link', label: 'Add link', fn: () => addLink(node.id) }, { icon: 'folder', label: 'Add subfolder', fn: () => addFolder(node.id) },
+      ...open, { icon: 'sort', label: 'Sort links by name', fn: () => sortItems(node) }, '-', del],
+    link: [{ icon: 'open', label: 'Open', fn: () => openLink(node) }, { icon: 'window', label: 'Open in new window', fn: () => openLink(node, { shiftKey: true }) },
+      edit, { icon: 'copy', label: 'Copy URL', fn: () => navigator.clipboard.writeText(node.url).then(() => toast('URL copied')) }, '-', del],
   };
   showMenu(e, menus[node.type]);
 }
@@ -1221,6 +1241,7 @@ async function refresh() {
 }
 
 async function init() {
+  hydrateIcons();
   applyPanels();
   if (!(await B.connect())) return showNoExtension();
   $('#no-ext').hidden = true;
