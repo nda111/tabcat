@@ -8,7 +8,7 @@ tabcat has two parts, kept on two branches of this repository:
 | Branch | Contents | Role |
 |---|---|---|
 | `main` | browser extension (this branch) | Owns the data (`chrome.storage.local`) and every tab operation. Popup, context menu, shortcuts, auto-suspend. |
-| [`pages`](../../tree/pages) | web dashboard | A static web page (no backend) that can be served by any static host. Renders and edits the data through the extension bridge. |
+| [`pages`](../../tree/pages) | web dashboard | A static web page (no backend), published at <https://tabcat.ghyeok.com/>. Renders and edits the data through the extension bridge. |
 
 ```
 web page (allowed origins only)           extension
@@ -22,16 +22,28 @@ web page (allowed origins only)           extension
 
 1. **Load the extension**: open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*,
    and select the root of a `main` checkout.
-2. **Serve the dashboard**: check out the `pages` branch and serve it with any static server
-   (see *Development*), then open it directly, via the popup's *Open dashboard* button, or `Alt+Shift+D`.
+2. **Open the dashboard**: <https://tabcat.ghyeok.com/>, the popup's *Open dashboard* button, or `Alt+Shift+D`.
+   A local copy of the `pages` branch works too (see *Development*).
 
 Allowed dashboard origins (see `content_scripts[0].matches` and `web_accessible_resources[0].matches` in
 `manifest.json`):
 
-- `http://localhost/*`, `http://127.0.0.1/*` (any port)
+- `https://tabcat.ghyeok.com/*` (published dashboard)
+- `http://localhost/*`, `http://127.0.0.1/*` (any port, for development)
 
 To host the dashboard elsewhere, add its exact origin to both lists and reload the extension.
 Avoid broad wildcards such as `https://*.github.io/*`: any page on a matching origin could talk to the bridge.
+
+## Deployment
+
+This repository is private, so the dashboard is published from a separate public repository,
+`nda111/tabcat-pages`, whose GitHub Pages site uses the custom domain `tabcat.ghyeok.com`
+(DNS: `CNAME tabcat → nda111.github.io`). Publish by pushing the `pages` branch to it:
+
+```sh
+git remote add deploy git@github.com:nda111/tabcat-pages.git   # once
+git push deploy pages:main
+```
 
 ## Development
 

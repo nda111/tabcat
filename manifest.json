@@ -60,7 +60,8 @@
     {
       "matches": [
         "http://localhost/*",
-        "http://127.0.0.1/*"
+        "http://127.0.0.1/*",
+        "https://tabcat.ghyeok.com/*"
       ],
       "js": [
         "content.js"
@@ -75,7 +76,8 @@
       ],
       "matches": [
         "http://localhost/*",
-        "http://127.0.0.1/*"
+        "http://127.0.0.1/*",
+        "https://tabcat.ghyeok.com/*"
       ]
     }
   ]
