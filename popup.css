@@ -1,6 +1,6 @@
 :root {
   --bg: #f4f2ef; --panel: #ffffff; --panel-2: #faf9f7; --border: #e4e0da; --text: #24211e;
-  --muted: #7d766e; --accent: #e8822f; --hover: #f1ede8; color-scheme: light;
+  --muted: #7d766e; --accent: #e8822f; --hover: #e8e2da; color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
