@@ -205,8 +205,9 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 
 /* ---------- open tabs panel ---------- */
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; }
-.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 10px 8px 12px; }
+.panel-head { display: flex; align-items: stretch; gap: 8px; padding: 12px 12px 8px 10px; }
 .panel-title { flex: 1; min-width: 0; }
+#tab-stats { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* one line keeps the toggle square small */
 .panel-toggle.square { width: auto; height: auto; aspect-ratio: 1; align-self: stretch; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
 .panel-actions .btn, .data-row .btn { display: inline-flex; gap: 5px; align-items: center; }
@@ -308,7 +309,7 @@ dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center
   opacity: 0; transition: opacity .1s;
 }
 .sym-wrap:hover .sym-clear, .sym-wrap:focus-within .sym-clear { opacity: 1; }
-.sym-wrap.empty .sym-clear { display: none; }
+.sym-wrap.blank .sym-clear { display: none; }
 .sym-clear:hover { color: var(--text); }
 dialog input.emoji-search { flex: 1; min-width: 0; }
 .emoji-grid {

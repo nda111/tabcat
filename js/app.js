@@ -379,7 +379,18 @@ async function renderTabs() {
       btn(icon('save'), 'Save to the first group of the current category', () => saveTabsTo([t.id])),
       btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
   });
-  $('#tab-stats').textContent = `${wins.length} window${wins.length === 1 ? '' : 's'} · ${total} tabs · ${sleeping} suspended`;
+  // same rule as closeDuplicates in the extension: identical URL ignoring the #fragment
+  const seen = new Set();
+  let dupes = 0;
+  for (const t of wins.flatMap((w) => w.tabs)) {
+    const key = (t.url || '').replace(/#.*$/, '');
+    if (key && seen.has(key)) dupes++;
+    else seen.add(key);
+  }
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  $('#tab-stats').textContent = [plural(wins.length, 'window'), plural(total, 'tab'), `${sleeping} suspended`,
+    dupes && plural(dupes, 'duplicate')].filter(Boolean).join(' · ');
+  $('#tab-stats').title = $('#tab-stats').textContent;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
 }
@@ -466,7 +477,7 @@ function symbolField(label, input, err) {
     if (em) recordEmoji(em);
   }
   function sync() {
-    wrap.classList.toggle('empty', !input.value);
+    wrap.classList.toggle('blank', !input.value);
     for (const b of grid.children) b.classList.toggle('selected', b.dataset.emoji === input.value);
   }
   function show(list, note = '') {
@@ -1172,26 +1183,34 @@ function hideTip() {
   tip.hidden = true;
 }
 
+function showTip(el) {
+  const rail = el.closest(RAILS);
+  tipEl = el;
+  if (el.title) { el.dataset.tip = el.title; el.removeAttribute('title'); }
+  tip.textContent = el.dataset.tip;
+  tip.hidden = false;
+  const r = el.getBoundingClientRect();
+  if (rail) { // beside the rail, so it never covers the rail's icons
+    const top = Math.max(4, Math.min(innerHeight - tip.offsetHeight - 4, r.top + r.height / 2 - tip.offsetHeight / 2));
+    Object.assign(tip.style, { left: rail.getBoundingClientRect().right + 6 + 'px', top: top + 'px' });
+  } else { // below the element, so it doesn't cover the heading next to it
+    const left = Math.max(4, Math.min(innerWidth - tip.offsetWidth - 4, r.left + r.width / 2 - tip.offsetWidth / 2));
+    Object.assign(tip.style, { left: left + 'px', top: r.bottom + 6 + 'px' });
+  }
+}
+
 document.addEventListener('mouseover', (e) => {
   const el = e.target instanceof Element ? e.target.closest('[title], [data-tip]') : null;
   if (el === tipEl) return;
   hideTip();
-  const rail = el?.closest(RAILS);
-  if (!rail || el.classList.contains('resizer') || drag) return;
-  tipEl = el;
-  el.dataset.tip = el.title;
-  el.removeAttribute('title');
-  tip.textContent = el.dataset.tip;
-  tip.hidden = false;
-  const r = el.getBoundingClientRect();
-  const top = Math.max(4, Math.min(innerHeight - tip.offsetHeight - 4, r.top + r.height / 2 - tip.offsetHeight / 2));
-  Object.assign(tip.style, { left: rail.getBoundingClientRect().right + 6 + 'px', top: top + 'px' });
+  if (!el || drag || el.classList.contains('resizer')) return;
+  if (el.closest(RAILS) || el.classList.contains('panel-toggle')) showTip(el);
 });
 document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) hideTip(); });
 document.addEventListener('dragstart', hideTip);
 
 const PANELS = {
-  ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'sidebar' },
+  ws: { el: '#sidebar', toggle: '#ws-toggle', width: 'wsWidth', collapsed: 'wsCollapsed', min: 160, max: 420, name: 'workspaces' },
   tabs: { el: '#tabs-panel', toggle: '#tabs-toggle', width: 'tabsWidth', collapsed: 'tabsCollapsed', min: 200, max: 520, name: 'open tabs' },
 };
 
@@ -1209,6 +1228,9 @@ for (const p of Object.values(PANELS)) {
     ui[p.collapsed] = !ui[p.collapsed];
     hideTip();
     applyPanels();
+    // if the pointer is still on the button, show its new label right away
+    const under = pointer && document.elementFromPoint(...pointer);
+    if (under && $(p.toggle).contains(under)) showTip($(p.toggle));
     saveUi();
   });
 }
