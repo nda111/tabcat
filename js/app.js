@@ -500,6 +500,9 @@ search.addEventListener('keydown', (e) => {
   }
 });
 search.addEventListener('focus', () => { if (!searchBox.classList.contains('open')) openSearch(); });
+search.addEventListener('blur', () => closeSearch()); // losing focus springs it back to the magnifier
+// keep focus in the field while a result is clicked
+$('#search-results').addEventListener('pointerdown', (e) => e.preventDefault());
 document.addEventListener('pointerdown', (e) => { if (!searchBox.contains(e.target)) closeSearch(); });
 
 function reveal(node, anc) {
@@ -1745,7 +1748,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { clearSelection(); return; }
   }
   if (!typing && !dialogOpen && e.key === '?') { e.preventDefault(); openGuide(); return; }
-  if ((!typing && !dialogOpen && e.key === '/') || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+  if (!dialogOpen && (e.ctrlKey || e.metaKey) && ['f', 'k'].includes(e.key.toLowerCase())) { // Ctrl/⌘+F (or K): our search, not the page's
     e.preventDefault();
     openSearch();
   }
