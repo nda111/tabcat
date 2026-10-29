@@ -1021,6 +1021,8 @@ function openExpanded() {
 
 function startNoteEdit(id) {
   editingNoteId = id;
+  const note = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"] .note`);
+  noteMorph = { id, height: note ? note.getBoundingClientRect().height : 0, edit: true };
   render();
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
   if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
@@ -1029,16 +1031,17 @@ function startNoteEdit(id) {
 // A note just saved: the rendered note grows / shrinks from the editor's height while its text fades in.
 // It is held at the editor's height while the layout is measured, so nothing below it gets a FLIP
 // slide on top of the height change (which would overshoot); they just follow the note.
-let noteMorph = null; // { id, height }
+// Opening the editor works the same way the other way round: the editor grows from the note.
+let noteMorph = null; // { id, height, edit }
 function holdNote() {
   if (!noteMorph) return null;
-  const { id, height } = noteMorph;
+  const { id, height, edit } = noteMorph;
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
-  if (!group || group.querySelector('.note-edit')) return null; // not drawn yet (or editing again)
+  if (!group || !group.querySelector('.note-edit') !== !edit) return null; // not drawn yet
   noteMorph = null;
-  const note = group.querySelector('.note');
+  const note = group.querySelector(edit ? '.note-edit' : '.note');
   if (!note) return null;
-  Object.assign(note.style, { height: `${height}px`, overflow: 'hidden' });
+  Object.assign(note.style, { height: `${height}px`, minHeight: '0', overflow: 'hidden' });
   return { note, height };
 }
 function growNote(held) {
@@ -1046,9 +1049,11 @@ function growNote(held) {
   const { note, height } = held;
   const grow = () => {
     note.style.height = '';
+    note.style.minHeight = '';
     const to = note.getBoundingClientRect().height;
+    note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
     note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
-      .finished.catch(() => {}).then(() => { note.style.overflow = ''; });
+      .finished.catch(() => {}).then(() => { note.style.overflow = ''; note.style.minHeight = ''; });
     for (const child of note.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
   };
   // math changes the note's size once typeset: keep holding until then, so the note goes straight
