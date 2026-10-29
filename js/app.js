@@ -480,16 +480,18 @@ async function renderTabs() {
     if (key && seen.has(key)) dupes++;
     else seen.add(key);
   }
-  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-  const blocks = wins.map((w, i) => {
-    const label = `${w.id === currentWindowId ? 'This window' : 'Window ' + (i + 1)} · ${plural(w.tabs.length, 'tab')}`;
+  const others = wins.filter((w) => w.id !== currentWindowId);
+  const blocks = wins.map((w) => {
+    const name = windowName(w, others);
+    const label = `${name} · ${plural(w.tabs.length, 'tab')}`;
     return h('div', { class: 'win', dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true', title: `${label}\nDrag onto a group to save it` },
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
-        btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
-        w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id }))),
+        w.tabs.length > 0 && btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
+        w.tabs.some(canSuspend) && btn(icon('suspend'), 'Suspend inactive tabs', () => suspend({ windowId: w.id })),
+        btn(icon('close'), 'Close window', () => closeWindow(w, name))),
       w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
@@ -508,6 +510,29 @@ async function renderTabs() {
   $('#btn-dedupe').hidden = !dupes;
   $('#windows').replaceChildren(...blocks);
   restoreHover();
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+// "This window" for the dashboard's own window; the rest read naturally for how many there are.
+function windowName(w, others) {
+  if (w.id === currentWindowId) return 'This window';
+  if (others.length === 1) return 'The other window';
+  return `Other window ${others.indexOf(w) + 1}`;
+}
+
+async function closeWindow(w, name) {
+  const own = w.id === currentWindowId; // closing it closes this dashboard too
+  if (w.tabs.length || own) {
+    const n = w.tabs.length;
+    const what = [n && `its ${plural(n, 'tab')}`, own && 'this dashboard'].filter(Boolean).join(' and ');
+    if (!(await confirmDialog({
+      title: `Close ${name.charAt(0).toLowerCase() + name.slice(1)}?`,
+      text: `This also closes ${what}.`,
+      ok: 'Close window', danger: true,
+    }))) return;
+  }
+  run(B.call('closeWindow', { windowId: w.id }));
 }
 
 let tabsTimer;

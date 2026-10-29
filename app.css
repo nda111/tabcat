@@ -290,8 +290,8 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 #windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
 .win-head {
-  display: flex; align-items: center; gap: 6px; padding: 6px; font-size: 11px; text-transform: uppercase;
-  letter-spacing: .04em; color: var(--muted); cursor: grab; user-select: none;
+  display: flex; align-items: center; gap: 6px; padding: 6px; font-size: 12px;
+  color: var(--muted); cursor: grab; user-select: none;
 }
 .win-head .grow { flex: 1; min-width: 0; }
 .win-count { display: none; }
