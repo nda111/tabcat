@@ -797,6 +797,20 @@ document.addEventListener('dragend', endDrag);
 
 /* ================= settings, import/export ================= */
 
+// Light dismiss: a click that starts and ends outside a modal dialog's box closes it.
+for (const dlg of document.querySelectorAll('dialog')) {
+  const outside = (e) => {
+    const r = dlg.getBoundingClientRect();
+    return e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+  };
+  let downOutside = false;
+  dlg.addEventListener('pointerdown', (e) => { downOutside = outside(e); });
+  dlg.addEventListener('click', (e) => {
+    if (downOutside && outside(e)) dlg.close();
+    downOutside = false;
+  });
+}
+
 function openSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
