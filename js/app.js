@@ -494,7 +494,7 @@ async function renderTabs() {
     const name = windowName(w, others);
     const label = `${name} · ${plural(w.tabs.length, 'tab')}`;
     return h('div', { class: 'win', dataset: { window: w.id } },
-      h('div', { class: 'win-head', draggable: 'true', title: `${label}\nDrag onto a group to save it` },
+      h('div', { class: 'win-head', draggable: 'true' },
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
         w.tabs.length > 0 && btn(icon('save'), w.id === currentWindowId ? 'Save this window' : 'Save window', () => saveWindow(w.id)),
@@ -510,7 +510,7 @@ async function renderTabs() {
       h('span', { class: 'name' }, t.title || t.url),
       t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
       btn(icon('save'), 'Save tab', () => saveTabsTo([t.id])),
-      btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] }))))));
+      noTip(btn(icon('close'), 'Close tab', () => run(B.call('closeTabs', { tabIds: [t.id] })))))));
   });
   $('#tab-stats').replaceChildren(...chunks([plural(wins.length, 'window'), plural(all.length, 'tab'),
     sleeping && `${sleeping} suspended`, dupes && plural(dupes, 'duplicate')].filter(Boolean)));
