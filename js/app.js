@@ -1118,15 +1118,17 @@ async function openAll(node, newWindow = false) {
 // "Open all" in tab groups: a group's links make one tab group named after it, in its colour; a
 // folder's, one named after the folder in its group's colour; a category or workspace opens one tab
 // group per group in it.
+// (An emoji symbol leads the title. The extension remembers which group / folder a tab group came from,
+// and renames / recolours it when that changes.)
 function tabGroupsFor(node) {
-  const set = (title, color, n) => ({ title, color: color || '', urls: T.collectLinks(n).map((l) => l.url) });
-  if (node.type === 'group') return [set(node.name, node.color, node)];
-  if (node.type === 'folder') {
-    const group = T.locate(state, node.id)?.ancestors.find((a) => a.type === 'group');
-    return [set(node.name, group?.color, node)];
-  }
+  const set = (n, color) => ({
+    id: n.id, title: n.symbol && !T.isLetterSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name,
+    color: color || '', urls: T.collectLinks(n).map((l) => l.url),
+  });
+  if (node.type === 'group') return [set(node, node.color)];
+  if (node.type === 'folder') return [set(node, T.locate(state, node.id)?.ancestors.find((a) => a.type === 'group')?.color)];
   const groups = node.type === 'workspace' ? node.categories.flatMap((c) => c.groups) : node.groups || [];
-  return groups.map((g) => set(g.name, g.color, g)).filter((g) => g.urls.length);
+  return groups.map((g) => set(g, g.color)).filter((g) => g.urls.length);
 }
 
 // Collapse / expand a group or folder with its contents closing / opening smoothly.
@@ -1652,6 +1654,8 @@ function showPreview(id, fields) {
   preview = fields ? { id, fields } : null;
   cancelAnimationFrame(previewFrame); // (typing: one redraw per frame)
   previewFrame = requestAnimationFrame(() => {
+    // tab groups opened from it follow too (an older extension doesn't know the call: ignored)
+    B.call('previewTabGroups', { id, fields }).catch(() => {});
     const was = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
     cardMorph = was && { id, was, look: cardLook(was) };
     const item = document.querySelector(`#board .item[data-id="${CSS.escape(id)}"]`);
