@@ -1097,6 +1097,9 @@ function noteGhost(el) {
   return g;
 }
 const NO_BOX = { paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' };
+// The same, for keyframes: a border between 0 and 1px is drawn 1px wide, so instead of thinning it a
+// -1px margin takes its place back while it fades (else it stays until the end, then snaps shut).
+const NO_RULE = { borderBottomColor: 'transparent', marginBottom: '-1px' };
 function holdNote() {
   if (!noteMorph) return null;
   const held0 = noteMorph;
@@ -1148,7 +1151,7 @@ function growNote(held) {
     note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
     // from / to nothing (an empty note): padding and border go too, or the box would pop in at
     // their size; and no spring when closing up, as its dip below zero would just stall at zero
-    const none = { height: '0px', ...NO_BOX };
+    const none = { height: '0px', paddingTop: '0px', paddingBottom: '0px', ...NO_RULE };
     const gone = note.matches('.note-spacer');
     note.animate([height ? { height: `${height}px` } : none, gone ? none : { height: `${to}px` }],
       { duration: gone ? 280 : 340, easing: gone ? 'cubic-bezier(.22, 1, .36, 1)' : SPRING })
@@ -1177,7 +1180,7 @@ function growBody({ body, group, shut, from, ghost, note }) {
   group.querySelector('.group-head').style.borderBottomWidth = '';
   const to = shut ? 0 : body.getBoundingClientRect().height;
   const opts = shut ? { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' } : { duration: 340, easing: SPRING };
-  const line = [{ borderBottomWidth: '1px' }, { borderBottomWidth: '0px' }]; // the header's rule over the body
+  const line = [{ marginBottom: '0px' }, NO_RULE]; // the header's rule over the body
   group.querySelector('.group-head').animate(shut ? line : line.reverse(), opts);
   body.animate([{ height: `${from}px` }, { height: `${to}px` }], opts).finished.catch(() => {}).then(() => {
     body.style.overflow = '';
