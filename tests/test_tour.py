@@ -17,24 +17,30 @@ with sync_playwright() as p:
     check(sample == [['Inbox', 'Start here'], ['Google', 'YouTube', 'GitHub'], 'Sample folder', 'Folder in a folder'], f'sample group to start from: sites and a folder in a folder {sample}')
     check(d.locator('#confirm[open]').count() == 1 and d.inner_text('#confirm-cancel') == 'Later', 'the first time, it offers a tour (Later / Take the tour)')
     d.click('#confirm-ok'); time.sleep(.6)
-    check(d.is_visible('#tour') and d.inner_text('#tour-count') == '1 of 8', 'the tour starts at step 1 of 8')
-    lit = {}
-    for i in range(7):
+    check(d.is_visible('#tour') and d.inner_text('#tour-count') == '1 of 10', 'the tour starts at step 1 of 10')
+    STEP = """(() => { const s = document.querySelector('.tour-spot').getBoundingClientRect(), c = document.querySelector('.tour-card').getBoundingClientRect();
+      return { title: document.querySelector('#tour-title').textContent, text: document.querySelector('#tour-text').textContent,
+        icons: document.querySelectorAll('#tour-text .tour-icon svg').length, key: document.querySelector('#tour-text .tour-key')?.textContent,
+        spot: [Math.round(s.width), Math.round(s.height), Math.round(s.top)], card: c.left >= 0 && c.top >= 0 && c.right <= innerWidth && c.bottom <= innerHeight }; })()"""
+    steps = [d.evaluate(STEP)]
+    for i in range(9):
         d.click('#tour-next'); time.sleep(.8)
-        title, w, h = d.evaluate("""(() => { const s = document.querySelector('.tour-spot').getBoundingClientRect(); return [document.querySelector('#tour-title').textContent, Math.round(s.width), Math.round(s.height)]; })()""")
-        lit[title] = (w, h)
-    shown = {k: v for k, v in lit.items() if k != 'Always at hand'}
-    check(len(lit) == 7 and all(w > 0 and h > 0 for w, h in shown.values()) and lit.get('Always at hand') == (0, 0), f'each step lights its part (the shortcut step: none) {lit}')
-    card = d.evaluate("(() => { const r = document.querySelector('.tour-card').getBoundingClientRect(); return [r.left >= 0, r.top >= 0, r.right <= innerWidth, r.bottom <= innerHeight]; })()")
-    check(all(card), 'the card stays on screen')
-    spot = d.evaluate("Math.round(document.querySelector('.tour-spot').getBoundingClientRect().top)")
+        steps.append(d.evaluate(STEP))
+    order = [x['title'] for x in steps]
+    check(order == ['Welcome to tabcat.', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search', 'Settings and help', 'Tour', 'Always at hand', "Let's get along."], f'the steps, in order {order}')
+    lit = {x['title']: x['spot'][:2] for x in steps}
+    unlit = {'Welcome to tabcat.', 'Always at hand', "Let's get along."}
+    check(all((v == [0, 0]) == (k in unlit) for k, v in lit.items()), f'each step lights its part (the welcome, shortcut and last: none) {lit}')
+    check(all(x['card'] for x in steps), 'the card stays on screen')
+    by = {x['title']: x for x in steps}
+    check(by['Open tabs']['icons'] == 3 and by['Settings and help']['icons'] == 2 and not any('{icon' in x['text'] for x in steps), 'controls are named with their own icons')
+    check(all(x['key'] == 'Space' for x in steps), 'each text ends with the key that steps on')
+    check('start this tour again from' in by['Tour']['text'] and by['Tour']['icons'] == 1, 'it says it starts again from Help (with its icon)')
     line = d.evaluate("Math.round(document.querySelector('#sidebar .side-bottom').getBoundingClientRect().top)")
-    check(spot > line, f'the last step lights the buttons, not the line above them ({spot} > {line})')
-    icons = d.evaluate("document.querySelectorAll('#tour-text .tour-icon svg').length")
-    check(icons == 3 and '{icon' not in d.inner_text('#tour-text'), f'controls are named with their own icons ({icons})')
-    check(d.inner_text('#tour-text .tour-key') == 'Space', 'the text ends with the key that steps on')
+    check(by['Settings and help']['spot'][2] > line, "Settings and help: the buttons lit, not the line above them")
+    card = d.evaluate("Math.round(document.querySelector('#board .group').getBoundingClientRect().width) + 12")
+    check(by['Groups']['spot'][0] == card, f"Groups: the first card lit, not the whole board ({by['Groups']['spot'][0]} = {card})")
     check(d.inner_text('#tour-next') == 'Done', 'the last step ends with Done')
-    check('start this tour again from' in d.inner_text('#tour-text') and d.evaluate("document.querySelectorAll('#tour-text .tour-icon').length") == 3, 'and says it starts again from Help (with its icon)')
     d.click('#tour-next'); time.sleep(.3)
     check(not d.is_visible('#tour'), 'Done closes it')
     d.reload(); d.wait_for_selector('.ws-item'); time.sleep(1.2)
@@ -42,9 +48,16 @@ with sync_playwright() as p:
     d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
     check(d.is_visible('#tour') and d.locator('#help[open]').count() == 0, "Help's Take the tour starts it (Help makes way)")
     d.keyboard.press('ArrowRight'); time.sleep(.3)
-    check(d.inner_text('#tour-count') == '2 of 8', '→ steps on')
+    check(d.inner_text('#tour-count') == '2 of 10', '→ steps on')
     d.click('#tour-prev'); time.sleep(.3); d.keyboard.press(' '); time.sleep(.3)  # (focus on Back: Space still goes on)
-    check(d.inner_text('#tour-count') == '2 of 8', 'Space steps on, whatever button has focus')
+    check(d.inner_text('#tour-count') == '2 of 10', 'Space steps on, whatever button has focus')
+    # with the pointer resting on the card, a redraw of the page (here: a tab opening) leaves it gliding
+    box = d.locator('.tour-card').bounding_box(); d.mouse.move(box['x'] + 20, box['y'] + 20)
+    sw.evaluate("chrome.tabs.create({url: 'about:blank#redraw', active: false})"); time.sleep(1)
+    d.keyboard.press(' ')
+    mid = d.evaluate("new Promise(r => setTimeout(() => r(Math.round(document.querySelector('.tour-spot').getBoundingClientRect().width)), 90))")
+    time.sleep(.6); end = d.evaluate("Math.round(document.querySelector('.tour-spot').getBoundingClientRect().width)")
+    check(mid != end, f'after a redraw under the pointer, the spot still glides ({mid} on the way to {end})')
     d.keyboard.press('Escape'); time.sleep(.3)
     check(not d.is_visible('#tour'), 'Esc ends it')
     check(not errors, f'no page errors {errors}')
