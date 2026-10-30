@@ -4,6 +4,26 @@ import * as I from './lib/i18n.js';
 
 /* ================= setup ================= */
 
+// The toolbar icon in the accent colour, as the pages draw the logo. The packaged icons are the logo in
+// the default accent, which keeps the drawing's lightness: painting another hue over them ('color')
+// gives the same as painting it over the drawing itself.
+async function tintActionIcon() {
+  const { accent } = await S.loadSettings();
+  const imageData = {};
+  for (const n of [16, 32]) {
+    const bmp = await createImageBitmap(await (await fetch(`icons/icon${n}.png`)).blob());
+    const g = new OffscreenCanvas(n, n).getContext('2d');
+    g.drawImage(bmp, 0, 0);
+    g.globalCompositeOperation = 'color';
+    g.fillStyle = S.accentColor(accent);
+    g.fillRect(0, 0, n, n);
+    g.globalCompositeOperation = 'destination-in'; // back to the logo's shape
+    g.drawImage(bmp, 0, 0);
+    imageData[n] = g.getImageData(0, 0, n, n);
+  }
+  await chrome.action.setIcon({ imageData }).catch(() => {});
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   await init(); // sets the language first, so the seeded names are in it
   // seed initial data
@@ -37,6 +57,7 @@ init();
 // stays closed until then
 chrome.runtime.onStartup.addListener(() => setTimeout(pinDashboards, 1500));
 chrome.runtime.onInstalled.addListener(() => pinDashboards());
+tintActionIcon();
 relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 
 async function init() {
@@ -408,6 +429,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const o = changes[S.SETTINGS_KEY].oldValue || {};
     const n = { ...S.DEFAULT_SETTINGS, ...(changes[S.SETTINGS_KEY].newValue || {}) };
     if (o.autoSuspendMinutes !== n.autoSuspendMinutes || o.dashboardUrl !== n.dashboardUrl || o.language !== n.language) init();
+    if (o.accent !== n.accent) tintActionIcon();
     if (!!o.pinDashboard !== n.pinDashboard) n.pinDashboard ? pinDashboards() : unpinDashboards();
     broadcast('settings', n);
   }

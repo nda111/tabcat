@@ -2,8 +2,6 @@ import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 import { setLang, getLang, t } from './lib/i18n.js';
 
-// accent colours (hue in oklch), as in the dashboard's Settings > Color
-const ACCENT_HUES = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
 
 const $ = (sel) => document.querySelector(sel);
 // Shrink back into the toolbar button, then close. (When Chrome closes the popup itself, e.g. on a
@@ -28,7 +26,7 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
   for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
   if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
-  const hue = ACCENT_HUES[settings.accent];
+  const hue = S.ACCENT_HUES[settings.accent];
   if (settings.accent === 'mono') document.documentElement.dataset.accent = 'mono'; // (no hue: see popup.css)
   else if (hue != null && settings.accent !== 'orange') {
     document.documentElement.dataset.accent = settings.accent;

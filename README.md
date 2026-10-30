@@ -90,7 +90,7 @@ popup.html/css/js toolbar popup
 fonts/            Pretendard stylesheet (size-adjusted copy; font files load from jsDelivr)
 lib/store.js      data model, tree ops, op application, persistence
 lib/actions.js    save / close / suspend tabs
-icons/
+icons/            logo.svg (the drawing; pages tint it in the accent colour) and the toolbar PNGs in the default accent
 ```
 
 ## Bridge protocol
