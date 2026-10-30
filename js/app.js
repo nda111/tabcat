@@ -535,13 +535,16 @@ function wheelColumns(e) {
   setColumns(to);
 }
 
-// The badge rides along with the pointer, just off its corner (clear of the count, which hides the
-// pointer so the number stays readable). A wheel step nudges its wheel that way.
+// The badge sits just above the control, centred on it: it shows while the pointer is over the
+// buttons, the count or the gaps, and doesn't slide sideways with the pointer. A wheel step nudges
+// its wheel that way.
 const wheelBadge = $('#wheel-hint');
 function wheelHint(e) {
-  const off = e.target.closest?.('.col-ctl > .ico');
-  wheelBadge.classList.toggle('on', !off);
-  wheelBadge.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  const ctl = e.target.closest?.('.col-ctl');
+  wheelBadge.classList.toggle('on', !!ctl && !e.target.closest('.col-ctl > .ico'));
+  if (!ctl) return;
+  const r = ctl.getBoundingClientRect();
+  wheelBadge.style.transform = `translate(${r.left + r.width / 2}px, ${r.top}px)`;
 }
 function hideWheelHint() { wheelBadge.classList.remove('on'); }
 // (dir -1: scrolled up, adding a column: the wheel rolls and the up arrow nudges up)
