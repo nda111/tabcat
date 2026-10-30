@@ -117,6 +117,34 @@ async function unpinDashboards() {
   if (rest.length) await chrome.tabs.remove(rest).catch(() => {});
 }
 
+// The pinned dashboard stays pinned and first: Chrome can't lock a tab, so unpinning it, or moving it
+// (or another pinned tab ahead of it), is undone at once. Closing it still works (see pinDashboards).
+// (While a tab is being dragged Chrome refuses changes: `retry` tries again shortly.)
+async function retry(fn) {
+  for (let i = 0; i < 20; i++) {
+    try { return await fn(); } catch (e) {
+      if (/No tab/.test(e.message)) return; // closed meanwhile
+      await new Promise((r) => setTimeout(r, 150));
+    }
+  }
+}
+chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
+  if (change.pinned !== false || !isDashTab(tab) || !(await S.loadSettings()).pinDashboard) return;
+  // (not when the window still has another pinned dashboard: this was an extra one)
+  if ((await chrome.tabs.query({ windowId: tab.windowId, pinned: true })).some(isDashTab)) return;
+  retry(async () => {
+    await chrome.tabs.update(tabId, { pinned: true });
+    await chrome.tabs.move(tabId, { index: 0 });
+  });
+});
+chrome.tabs.onMoved.addListener(async (tabId, { windowId }) => {
+  if (!(await S.loadSettings()).pinDashboard) return;
+  retry(async () => {
+    const dash = (await chrome.tabs.query({ windowId, pinned: true })).find(isDashTab);
+    if (dash && dash.index !== 0) await chrome.tabs.move(dash.id, { index: 0 });
+  });
+});
+
 chrome.windows.onCreated.addListener((w) => {
   if (w.type !== 'normal' || w.incognito) return;
   // (after a moment: a window restored by the session brings its own tabs, maybe its pinned dashboard)
@@ -264,7 +292,81 @@ chrome.tabGroups?.onRemoved.addListener(async (g) => {
   await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
 });
 
+/* ================= undo / redo ================= */
+
+// One history for every open dashboard, so Ctrl+Z in any of them undoes the last delete / move made in
+// any. An entry is the whole state from before a change (the last 50 kept); undoing puts it back and
+// keeps the state it replaces for redo. Undoing an older one (from its toast) undoes what came after it.
+// Each state is stored under its own key (they can be large); their order in HISTORY_KEY. Cleared when
+// the browser starts.
+const HISTORY_KEY = 'tabcat:history';
+const SNAP = 'tabcat:snap:';
+const HISTORY_MAX = 50;
+let historyChain = Promise.resolve();
+function withHistory(fn) { // serialized: two tabs undoing at once take turns
+  const run = historyChain.then(async () => {
+    const h = (await chrome.storage.local.get(HISTORY_KEY))[HISTORY_KEY] || { undo: [], redo: [] };
+    const out = await fn(h);
+    await chrome.storage.local.set({ [HISTORY_KEY]: h });
+    return out;
+  });
+  historyChain = run.catch(() => {});
+  return run;
+}
+const dropSnaps = (entries) => entries.length && chrome.storage.local.remove(entries.map((e) => SNAP + e.id));
+async function snap(state) {
+  const id = S.uid();
+  await chrome.storage.local.set({ [SNAP + id]: state });
+  return id;
+}
+// Puts back the state `entry` kept, returning a new entry that keeps the one it replaced
+async function restore(entry) {
+  const before = (await chrome.storage.local.get(SNAP + entry.id))[SNAP + entry.id];
+  if (!before) return null;
+  let id;
+  await S.update(async (state) => {
+    id = await snap(structuredClone(state));
+    S.applyOp(state, { op: 'replace', state: before });
+  });
+  return { id, what: entry.what };
+}
+const historyHandlers = {
+  // `before`: the state from before a change just made; `what` names it for the toasts. Returns its id.
+  remember: ({ before, what }) => withHistory(async (h) => {
+    const id = await snap(S.normalize(before));
+    h.undo.push({ id, what: what ?? null });
+    await dropSnaps([...h.redo, ...h.undo.splice(0, Math.max(0, h.undo.length - HISTORY_MAX))]);
+    h.redo = [];
+    return id;
+  }),
+  // the last change, or the one with `id` (and everything after it); returns { what } or null
+  undo: ({ id } = {}) => withHistory(async (h) => {
+    const i = id == null ? h.undo.length - 1 : h.undo.findIndex((e) => e.id === id);
+    if (i < 0) return null;
+    const gone = h.undo.splice(i);
+    const back = await restore(gone[0]);
+    await dropSnaps(gone);
+    if (!back) return null;
+    h.redo.push(back);
+    return { what: back.what };
+  }),
+  redo: () => withHistory(async (h) => {
+    const entry = h.redo.pop();
+    if (!entry) return null;
+    const back = await restore(entry);
+    await dropSnaps([entry]);
+    if (!back) return null;
+    h.undo.push(back);
+    return { what: back.what };
+  }),
+};
+chrome.runtime.onStartup.addListener(() => withHistory(async (h) => {
+  await dropSnaps([...h.undo, ...h.redo]);
+  h.undo = []; h.redo = [];
+}));
+
 const handlers = {
+  ...historyHandlers,
   getState: () => S.load(),
   getSettings: () => S.loadSettings(),
   saveSettings: (patch) => S.saveSettings(patch),

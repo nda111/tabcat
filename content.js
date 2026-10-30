@@ -12,8 +12,8 @@
 
   // What this extension can do, for the dashboard to turn its features on by (rather than by version):
   // wakeTabs (load suspended tabs again), logoSymbol (the logo as a symbol), looseData (keeps any symbol,
-  // colour, column or plain field a newer dashboard sends)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData'];
+  // colour, column or plain field a newer dashboard sends), sharedHistory (undo / redo across dashboards)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache

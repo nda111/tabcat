@@ -16,4 +16,5 @@ python tests/test_tab_groups.py  # one
 | `test_tab_groups.py` | "Open all" as a tab group: title, colour, symbol, rename sync, setting |
 | `test_pin.py` | the pinned dashboard in every window |
 | `test_look.py` | the logo in the accent colour, the logo symbol, symbol picking with Enter, folder indent |
+| `test_history.py` | one undo / redo history across open dashboards |
 | `test_compat.py` | the features the extension reports; it keeps what a newer dashboard sends |
