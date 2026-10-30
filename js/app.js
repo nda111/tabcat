@@ -934,7 +934,7 @@ async function renderTabs() {
     const label = `${name} · ${t('count.tabs', { n: w.tabs.length })}`;
     const collapsed = shut.has(w.id);
     return h('div', { class: 'win' + (collapsed ? ' collapsed' : ''), dataset: { window: w.id } },
-      h('div', { class: 'win-head', draggable: 'true' },
+      h('div', { class: 'win-head', draggable: 'true', onclick: (e) => { if (!e.target.closest('button')) toggleWin(w.id); } },
         Object.assign(btn(icon('chevron', 14), t(collapsed ? 'act.expand' : 'act.collapse'), () => toggleWin(w.id)), { className: 'icon-btn win-twisty' }),
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
