@@ -10,11 +10,16 @@
   const toPage = (msg) => window.postMessage({ source: EXT, ...msg }, location.origin);
   const alive = () => { try { return !!chrome.runtime?.id; } catch { return false; } };
 
+  // What this extension can do, for the dashboard to turn its features on by (rather than by version):
+  // wakeTabs (load suspended tabs again), logoSymbol (the logo as a symbol), looseData (keeps any symbol,
+  // colour, column or plain field a newer dashboard sends)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData'];
+
   let greeted = false;
   let parked = false; // page is in the back/forward cache
   function hello() {
     greeted = true;
-    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: chrome.runtime.getManifest().version } });
+    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: chrome.runtime.getManifest().version, features: FEATURES } });
   }
 
   function connect() {
