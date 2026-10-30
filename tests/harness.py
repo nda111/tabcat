@@ -37,10 +37,15 @@ def profile():
     atexit.register(shutil.rmtree, d, True)
     return d
 
-def launch(p, **kw):
-    """Chromium with the extension; returns (context, service worker)."""
+def launch(p, developer_mode=False, **kw):
+    """Chromium with the extension; returns (context, service worker). developer_mode: as for anyone
+    loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off)."""
     ext = extension_copy()
-    ctx = p.chromium.launch_persistent_context(profile(), channel='chromium', headless=True,
+    prof = profile()
+    if developer_mode:
+        os.makedirs(prof + '/Default', exist_ok=True)
+        with open(prof + '/Default/Preferences', 'w') as f: f.write('{"extensions":{"ui":{"developer_mode":true}}}')
+    ctx = p.chromium.launch_persistent_context(prof, channel='chromium', headless=True,
         args=[f'--disable-extensions-except={ext}', f'--load-extension={ext}'], **kw)
     sw = ctx.service_workers[0] if ctx.service_workers else ctx.wait_for_event('serviceworker')
     return ctx, sw

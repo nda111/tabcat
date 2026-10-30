@@ -64,6 +64,14 @@
     if (greeted && !port && connect()) hello();
   });
 
+  // The extension reloaded or updated leaves this script behind, cut off, and Chrome doesn't always say
+  // so through the port: check now and then, and tell the page (it loads again, linking up anew).
+  const watch = setInterval(() => {
+    if (alive()) return;
+    clearInterval(watch);
+    if (greeted) toPage({ event: 'disconnected' });
+  }, 2000);
+
   // Connect only once the page identifies itself as the dashboard (its 'hello'), so other pages
   // on the same origin never talk to the extension.
 })();

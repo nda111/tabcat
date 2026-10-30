@@ -34,6 +34,26 @@ with sync_playwright() as p:
     d.click('#board .group[data-id="Box"] .node-tools button:nth-of-type(4)'); time.sleep(1.2)
     titles = sw.evaluate("chrome.tabGroups.query({}).then(gs=>gs.map(g=>g.title))")
     check(titles == ['Box'], f'an unknown :code: symbol is left out of the tab group title {titles}')
+    ctx.close()
+
+    # the extension reloaded (an update) under an open dashboard: the page loads again and links up with
+    # it; in the middle of an edit, it waits for the edit to end
+    ctx, sw = launch(p, developer_mode=True)
+    d = dashboard(ctx, errors)
+    d.evaluate('window.__old = true')
+    try: sw.evaluate('chrome.runtime.reload()')
+    except Exception: pass  # (the worker goes with it)
+    time.sleep(3)
+    check(d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0 and d.evaluate("document.querySelector('#no-ext').hidden"), 'reloaded under the page: it loads again, connected')
+    d.evaluate('window.__old = true')
+    d.click('#btn-settings'); time.sleep(.4)
+    for w in reversed(ctx.service_workers):  # (the reloaded extension's worker: the old one is gone)
+        try: w.evaluate('chrome.runtime.reload()'); break
+        except Exception: pass
+    time.sleep(2)
+    check(d.evaluate('window.__old === true') and d.locator('#toast').inner_text() != '', 'while Settings is open: no reload yet, a toast says why')
+    d.keyboard.press('Escape'); time.sleep(2.5)
+    check(d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0, 'Settings closed: it reloads and connects')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
