@@ -30,12 +30,17 @@
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
+  <!-- while the page is still deciding what to show (see init): the logo and a spinner, after a moment -->
+  <div id="boot" role="status" aria-label="Loading…" data-i18n-attr="aria-label:boot.loading">
+    <img src="icons/icon128.png" alt="" width="56" height="56">
+    <span class="boot-spin"></span>
+  </div>
   <div id="no-browser" hidden>
     <img class="no-ext-logo" src="icons/icon128.png" alt="" width="56" height="56">
     <div class="no-ext-card">
       <h2 data-i18n="browser.title">This browser isn’t supported</h2>
       <p data-i18n="browser.need">tabcat is a Chrome extension, so it works in desktop Chromium browsers that install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi. Phone and tablet browsers, Samsung Internet, Firefox and Safari can’t run it.</p>
-      <p><span data-i18n="browser.open">Please use tabcat in a supported browser.</span> <a id="browser-url"><code></code></a></p>
+      <p><span data-i18n="browser.open">Please use tabcat in a supported browser.</span> <a id="browser-url"></a></p>
     </div>
   </div>
   <div id="no-ext" hidden>
@@ -44,8 +49,8 @@
       <h2 data-i18n="noext.title">tabcat extension not detected</h2>
       <p data-i18n="noext.need">This dashboard needs the tabcat browser extension.</p>
       <ol>
-        <li data-i18n-html="noext.step1.html">Open <code>chrome://extensions</code>, enable <b>Developer mode</b>, click <b>Load unpacked</b> and pick a checkout of the <a href="https://github.com/nda111/tabcat">tabcat repository</a> (<code>main</code> branch).</li>
-        <li data-i18n-html="noext.step2.html">Make sure this page's origin (<code id="no-ext-origin"></code>) is listed in <code>content_scripts.matches</code> and <code>web_accessible_resources.matches</code> of the extension's <code>manifest.json</code>.</li>
+        <li data-i18n-html="noext.step1.html">Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, enable <b>Developer mode</b>, click <b>Load unpacked</b> and pick a checkout of the <a href="https://github.com/nda111/tabcat">tabcat repository</a> (<code>main</code> branch).</li>
+        <li data-i18n-html="noext.step2.html">Make sure this page's origin (<a id="no-ext-origin"></a>) is listed in <code>content_scripts.matches</code> and <code>web_accessible_resources.matches</code> of the extension's <code>manifest.json</code>.</li>
         <li data-i18n="noext.step3">Reload this page.</li>
       </ol>
       <button class="btn primary" id="no-ext-retry" data-i18n="noext.retry">Retry</button>

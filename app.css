@@ -58,7 +58,16 @@ html, body { height: 100%; margin: 0; }
 html { background: var(--bg); }
 html.booting body { visibility: hidden; } /* until the saved language, panels and look are applied (see index.html) */
 /* ...and nothing animates into place meanwhile (e.g. a saved panel width from the default one) */
-html.booting *, html.booting *::before, html.booting *::after { transition: none !important; animation: none !important; }
+html.booting :not(#boot, #boot *), html.booting :not(#boot, #boot *)::before, html.booting :not(#boot, #boot *)::after { transition: none !important; animation: none !important; }
+/* while booting: the logo and a spinner in the middle, faded in after a moment (a quick start never shows them) */
+#boot { display: none; }
+html.booting #boot {
+  visibility: visible; position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; background: var(--bg); opacity: 0; animation: boot-in .3s ease .2s forwards;
+}
+.boot-spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); animation: boot-spin .8s linear infinite; }
+@keyframes boot-in { to { opacity: 1; } }
+@keyframes boot-spin { to { transform: rotate(1turn); } }
 body {
   display: flex; background: var(--bg); color: var(--text);
   font: 13px/1.45 Archivo, "Pretendard Adjusted", system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -654,7 +663,7 @@ dialog .field-label { display: block; font-weight: 600; }
 .ctx-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
 
 #toast {
-  position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 200; /* above the search button */
+  position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 310; /* above the search button and the notices */
   display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
 }
 /* toasts follow the light / dark theme, like the tooltips */

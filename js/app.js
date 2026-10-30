@@ -3485,7 +3485,7 @@ function supportedBrowser() {
 }
 
 function showNoExtension() {
-  $('#no-ext-origin').textContent = location.origin;
+  Object.assign($('#no-ext-origin'), { href: location.origin, textContent: location.origin });
   $('#no-ext').hidden = false;
 }
 
@@ -3519,7 +3519,7 @@ async function init() {
   // its place, so the board is never glimpsed before a notice.
   const show = () => { void document.body.offsetWidth; document.documentElement.classList.remove('booting'); };
   if (!supportedBrowser()) {
-    Object.assign($('#browser-url'), { href: location.href }).firstChild.textContent = location.href;
+    Object.assign($('#browser-url'), { href: location.href, textContent: location.href });
     $('#no-browser').hidden = false;
     return show();
   }
@@ -3549,4 +3549,12 @@ async function start(ext) {
 }
 
 $('#no-ext-retry').addEventListener('click', () => location.reload());
+// a page can't open chrome:// addresses (and without the extension nothing can open them for it): such a
+// link copies its address instead, to paste into a new tab
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('a[data-copy]');
+  if (!a) return;
+  e.preventDefault();
+  navigator.clipboard?.writeText(a.getAttribute('href')).then(() => toast(t('noext.copied')), () => {});
+});
 init();
