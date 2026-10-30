@@ -40,7 +40,7 @@
   <div id="no-browser" hidden>
     <img class="no-ext-logo" src="icons/icon128.png" alt="" width="56" height="56">
     <div class="no-ext-card">
-      <h2 data-i18n="browser.title">This browser isn’t supported</h2>
+      <h2 data-i18n="browser.title">This browser isn’t supported.</h2>
       <p class="lines" data-i18n="browser.need">tabcat is a Chrome extension.
 It works in desktop Chromium browsers that can install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi.
 It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safari and the like.</p>
@@ -50,11 +50,10 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
   <div id="no-ext" hidden>
     <img class="no-ext-logo" src="icons/icon128.png" alt="" width="56" height="56">
     <div class="no-ext-card">
-      <h2 data-i18n="noext.title">tabcat extension not detected</h2>
-      <p data-i18n="noext.need">This dashboard needs the tabcat browser extension.</p>
+      <h2 data-i18n="noext.title">tabcat extension not found.</h2>
+      <p data-i18n="noext.need">tabcat works together with a browser extension.</p>
       <ol>
-        <li data-i18n-html="noext.step1.html">Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, enable <b>Developer mode</b>, click <b>Load unpacked</b> and pick a checkout of the <a href="https://github.com/nda111/tabcat">tabcat repository</a> (<code>main</code> branch).</li>
-        <li data-i18n-html="noext.step2.html">Make sure this page's origin (<a id="no-ext-origin"></a>) is listed in <code>content_scripts.matches</code> and <code>web_accessible_resources.matches</code> of the extension's <code>manifest.json</code>.</li>
+        <li data-i18n-html="noext.step1.html">Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat extension</a> folder.</li>
         <li data-i18n="noext.step3">Reload this page.</li>
       </ol>
       <button class="btn primary" id="no-ext-retry" data-i18n="noext.retry">Retry</button>

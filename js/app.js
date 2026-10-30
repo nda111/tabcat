@@ -3485,7 +3485,6 @@ function supportedBrowser() {
 }
 
 function showNoExtension() {
-  Object.assign($('#no-ext-origin'), { href: location.origin, textContent: location.origin });
   $('#no-ext').hidden = false;
 }
 
