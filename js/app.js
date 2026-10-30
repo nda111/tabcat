@@ -1908,21 +1908,38 @@ function groupsMenu() {
 /* ================= drag & drop ================= */
 
 const line = $('#drop-line');
-let lineOn = false;
+let lineAt = null; // the line's box while it is shown
 let intoEl = null;
 
-// The insertion line pops in where it first appears, then glides from slot to slot, and fades out.
+// The insertion line pops in where it first appears, glides from slot to slot along the same track
+// (same column and depth for a row line, same row for an upright one), and fades out. Moving to
+// another track (the next column, into a folder) it doesn't slide across: a copy fades out where it
+// was while the line fades in at the new place.
 function setLine(l) {
-  if (!l) { line.classList.remove('on'); lineOn = false; return; }
+  if (!l) { line.classList.remove('on'); lineAt = null; return; }
   const box = { left: l.x + 'px', top: l.y + 'px', width: l.w + 'px', height: l.h + 'px' };
-  if (!lineOn) {
-    line.style.transition = 'none'; // jump to the first slot, then animate from there
+  const sameTrack = lineAt && (l.w >= l.h
+    ? Math.abs(lineAt.x - l.x) < 1 && Math.abs(lineAt.w - l.w) < 1
+    : Math.abs(lineAt.y - l.y) < 1 && Math.abs(lineAt.h - l.h) < 1);
+  const across = lineAt && !sameTrack;
+  if (across) {
+    const ghost = line.cloneNode();
+    ghost.removeAttribute('id');
+    ghost.className = 'drop-line-ghost';
+    line.after(ghost);
+    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 110, easing: 'ease-in', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => ghost.remove());
+  }
+  if (!sameTrack) {
+    line.style.transition = 'none'; // jump to the new slot, then appear there
+    line.classList.remove('on');
+    line.classList.toggle('fade', !!across); // (across: a plain fade, no pop)
     Object.assign(line.style, box);
     void line.offsetWidth;
     line.style.transition = '';
     line.classList.add('on');
-    lineOn = true;
   } else Object.assign(line.style, box);
+  lineAt = l;
 }
 
 // A drop target's highlight fades in and out: from what the element looked like a moment ago to

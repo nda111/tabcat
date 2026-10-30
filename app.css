@@ -174,6 +174,7 @@ body.ws-collapsed .ws-add { display: flex; }
 .gap-slot:hover::after, .gap-slot.hover::after { opacity: 1; }
 /* below the last group: the New group card appears only while the pointer is on its spot */
 .col-tail { flex: 1; min-height: 120px; padding-top: 14px; }
+.col-tail:first-child { padding-top: 0; } /* an empty column: the card sits where its first group will */
 .col-tail .add-group { opacity: 0; transition: opacity .12s, height .3s var(--spring-soft), background-color .16s, border-color .16s, color .16s; }
 .col-tail .add-group:hover, .col-tail .add-group.hover, .col-tail .add-group.drop-new { opacity: 1; }
 /* an empty category shows its New group card (grey) in the first column */
@@ -325,6 +326,8 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
   transition: opacity .11s ease-in, transform .11s ease-in,
     left .16s cubic-bezier(.22, 1, .36, 1), top .16s cubic-bezier(.22, 1, .36, 1), width .16s cubic-bezier(.22, 1, .36, 1), height .16s cubic-bezier(.22, 1, .36, 1);
 }
+#drop-line.fade { transform: none; }
+.drop-line-ghost { position: fixed; background: var(--accent); pointer-events: none; z-index: 50; border-radius: 2px; }
 #drop-line.on { opacity: 1; transform: none; transition-timing-function: ease-out, cubic-bezier(.34, 1.32, .64, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1); transition-duration: .12s, .2s, .16s, .16s, .16s, .16s; }
 
 /* ---------- search ---------- */
