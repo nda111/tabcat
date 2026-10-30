@@ -32,6 +32,7 @@ function buildMenus() {
 
 chrome.runtime.onStartup.addListener(init);
 init();
+relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 
 async function init() {
   const s = await S.loadSettings();
@@ -117,10 +118,39 @@ const TAB_GROUP_COLOR = {
 // node id, in session storage (tab group ids don't outlive the browser session).
 const TAB_GROUPS_KEY = 'tabcat:tabGroups';
 const tabGroupMap = async () => (await chrome.storage.session.get(TAB_GROUPS_KEY))[TAB_GROUPS_KEY] || {};
-async function rememberTabGroup(groupId, nodeId) {
+// A restored tab group (a reopened window, a browser restart, a saved tab group opened again) comes
+// back with a new id, so each group / folder's tab group title and colour are also kept (node id ->
+// { title, color }, lasting): a new tab group that matches exactly one of them is linked again.
+const TAB_LINKS_KEY = 'tabcat:tabGroupLinks';
+const tabGroupLinks = async () => (await chrome.storage.local.get(TAB_LINKS_KEY))[TAB_LINKS_KEY] || {};
+async function rememberTabGroup(groupId, nodeId, look) {
   const m = await tabGroupMap();
   m[groupId] = nodeId;
   await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
+  if (look) {
+    const links = await tabGroupLinks();
+    links[nodeId] = look;
+    await chrome.storage.local.set({ [TAB_LINKS_KEY]: links });
+  }
+}
+async function relinkTabGroup(g) {
+  if (!g.title || (await tabGroupMap())[g.id] != null) return;
+  const links = await tabGroupLinks();
+  const state = await S.load();
+  const hits = new Set();
+  for (const [nodeId, was] of Object.entries(links)) {
+    const now = tabGroupLook(state, nodeId);
+    if (!now) continue; // (deleted)
+    if ([was, now].some((l) => l.title === g.title && l.color === g.color)) hits.add(nodeId);
+  }
+  if (hits.size !== 1) return; // none, or can't tell which
+  const [nodeId] = hits;
+  await rememberTabGroup(g.id, nodeId, null);
+  await syncTabGroups(state); // (catches up with a rename made while it was closed... if it was found)
+}
+async function relinkAll() {
+  if (!chrome.tabGroups) return;
+  for (const g of await chrome.tabGroups.query({})) await relinkTabGroup(g);
 }
 // a folder takes the colour of the group it is in; an emoji symbol leads the title (not a letter)
 function tabGroupLook(state, nodeId) {
@@ -130,9 +160,10 @@ function tabGroupLook(state, nodeId) {
   const group = n.type === 'group' ? n : r.ancestors.find((a) => a.type === 'group');
   return { title: n.symbol && !S.isLetterSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name || '', color: TAB_GROUP_COLOR[group?.color] || 'grey' };
 }
-async function syncTabGroups(state) {
+async function syncTabGroups(state, saved = true) {
   if (!chrome.tabGroups) return;
   const m = await tabGroupMap();
+  const links = await tabGroupLinks();
   let gone = false;
   for (const [id, nodeId] of Object.entries(m)) {
     const look = tabGroupLook(state, nodeId);
@@ -140,10 +171,15 @@ async function syncTabGroups(state) {
     try {
       const g = await chrome.tabGroups.get(+id);
       if (g.title !== look.title || g.color !== look.color) await chrome.tabGroups.update(+id, look);
+      if (saved) links[nodeId] = look; // (not an unsaved preview)
     } catch { delete m[id]; gone = true; } // the tab group was closed
   }
+  for (const nodeId of Object.keys(links)) if (saved && !S.locate(state, nodeId)) delete links[nodeId];
   if (gone) await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
+  if (saved) await chrome.storage.local.set({ [TAB_LINKS_KEY]: links });
 }
+chrome.tabGroups?.onCreated.addListener((g) => relinkTabGroup(g));
+chrome.tabGroups?.onUpdated.addListener((g) => relinkTabGroup(g));
 chrome.tabGroups?.onRemoved.addListener(async (g) => {
   const m = await tabGroupMap();
   if (!(g.id in m)) return;
@@ -209,7 +245,7 @@ const handlers = {
       try {
         const groupId = await chrome.tabs.group({ tabIds: ids });
         await chrome.tabGroups.update(groupId, { title: g.title || '', color: TAB_GROUP_COLOR[g.color] || 'grey', collapsed: false });
-        if (g.id) await rememberTabGroup(groupId, g.id);
+        if (g.id) await rememberTabGroup(groupId, g.id, { title: g.title || '', color: TAB_GROUP_COLOR[g.color] || 'grey' });
       } catch { /* left ungrouped (e.g. the window closed meanwhile) */ }
     }
     return all.length;
@@ -224,7 +260,7 @@ const handlers = {
       const r = S.locate(state, id);
       if (r) Object.assign(r.node, fields);
     }
-    await syncTabGroups(state);
+    await syncTabGroups(state, !fields);
     return true;
   },
   async activateTab({ tabId }) {
