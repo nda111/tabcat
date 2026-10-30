@@ -468,8 +468,9 @@ dialog .field-label { display: block; font-weight: 600; }
 .icon-preview { display: flex; gap: 8px; align-items: center; }
 .icon-preview img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 .icon-preview input { flex: 1; min-width: 0; }
-/* as tall as the field beside it (whose margin-top it shares) */
-.icon-preview .upload-btn { flex: none; align-self: stretch; margin-top: 4px; padding: 0; display: grid; place-items: center; color: var(--muted); }
+/* a square as tall as the field beside it (both sized here, so neither depends on font metrics) */
+.icon-preview input { height: 34px; }
+.icon-preview .upload-btn { flex: none; width: 34px; height: 34px; margin-top: 4px; padding: 0; display: grid; place-items: center; color: var(--muted); }
 .icon-preview .upload-btn:hover { color: var(--text); }
 
 .ctx-menu {

@@ -1423,8 +1423,6 @@ function openEditor(type, data = {}, title) {
         } catch { err.textContent = t('icon.bad'); }
       });
       const upload = h('button', { class: 'btn upload-btn', type: 'button', title: t('icon.upload'), 'aria-label': t('icon.upload'), onclick: () => file.click() }, icon('upload', 16));
-      // square: as wide as the field is tall (CSS stretches its height to the field's)
-      new ResizeObserver(() => { upload.style.width = `${input.offsetHeight}px`; }).observe(input);
       return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file, upload,
         btn(icon('close'), t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
