@@ -16,22 +16,29 @@ with sync_playwright() as p:
       const f = g[1].items.find(i => i.type === 'folder'); return [g.map(x => x.name), g[1].items.filter(i => i.type === 'link').map(l => l.name), f.name, f.items.find(i => i.type === 'folder')?.name]; })""")
     check(sample == [['Inbox', 'Start here'], ['Google', 'YouTube', 'GitHub'], 'Sample folder', 'Folder in a folder'], f'sample group to start from: sites and a folder in a folder {sample}')
     check(d.locator('#confirm[open]').count() == 1 and d.inner_text('#confirm-cancel') == 'Later', 'the first time, it offers a tour (Later / Take the tour)')
+    installable = d.is_visible('#btn-install')  # (Chrome offers the install here: the tour shows it)
+    N = 11 if installable else 10
     d.click('#confirm-ok'); time.sleep(.6)
-    check(d.is_visible('#tour') and d.inner_text('#tour-count') == '1 of 10', 'the tour starts at step 1 of 10')
+    check(d.is_visible('#tour') and d.inner_text('#tour-count') == f'1 of {N}', f'the tour starts at step 1 of {N}')
     STEP = """(() => { const s = document.querySelector('.tour-spot').getBoundingClientRect(), c = document.querySelector('.tour-card').getBoundingClientRect();
       return { title: document.querySelector('#tour-title').textContent, text: document.querySelector('#tour-text').textContent,
         icons: document.querySelectorAll('#tour-text .tour-icon svg').length, key: document.querySelector('#tour-text .tour-key')?.textContent,
-        spot: [Math.round(s.width), Math.round(s.height), Math.round(s.top)], card: c.left >= 0 && c.top >= 0 && c.right <= innerWidth && c.bottom <= innerHeight }; })()"""
+        spot: [Math.round(s.width), Math.round(s.height), Math.round(s.top)], card: c.left >= 0 && c.top >= 0 && c.right <= innerWidth && c.bottom <= innerHeight,
+        side: !s.width ? '' : c.left >= s.right - 1 ? 'right' : c.right <= s.left + 1 ? 'left' : c.top >= s.bottom - 1 ? 'below' : 'above' }; })()"""
     steps = [d.evaluate(STEP)]
-    for i in range(9):
+    for i in range(N - 1):
         d.click('#tour-next'); time.sleep(.8)
         steps.append(d.evaluate(STEP))
     order = [x['title'] for x in steps]
-    check(order == ['Welcome to tabcat.', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search', 'Settings and help', 'Tour', 'Always at hand', "Let's get along."], f'the steps, in order {order}')
+    expected = ['Welcome to tabcat.', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search'] + (['Install app'] if installable else []) + ['Settings and help', 'Tour', 'Always at hand', "Let's get along. 😸"]
+    check(installable and order == expected, f'the steps, in order (Install app while it can be installed) {order}')
     lit = {x['title']: x['spot'][:2] for x in steps}
-    unlit = {'Welcome to tabcat.', 'Always at hand', "Let's get along."}
+    unlit = {'Welcome to tabcat.', 'Always at hand', "Let's get along. 😸"}
     check(all((v == [0, 0]) == (k in unlit) for k, v in lit.items()), f'each step lights its part (the welcome, shortcut and last: none) {lit}')
     check(all(x['card'] for x in steps), 'the card stays on screen')
+    sides = [x['side'] for x in steps if x['side']]
+    turns = sum(a != b for a, b in zip(sides, sides[1:]))
+    check(turns <= 2, f'the card keeps to one side while it fits there ({turns} turns: {sides})')
     by = {x['title']: x for x in steps}
     check(by['Open tabs']['icons'] == 3 and by['Settings and help']['icons'] == 2 and not any('{icon' in x['text'] for x in steps), 'controls are named with their own icons')
     check(all(x['key'] == 'Space' for x in steps), 'each text ends with the key that steps on')
@@ -48,9 +55,9 @@ with sync_playwright() as p:
     d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
     check(d.is_visible('#tour') and d.locator('#help[open]').count() == 0, "Help's Take the tour starts it (Help makes way)")
     d.keyboard.press('ArrowRight'); time.sleep(.3)
-    check(d.inner_text('#tour-count') == '2 of 10', '→ steps on')
+    check(d.inner_text('#tour-count') == f'2 of {N}', '→ steps on')
     d.click('#tour-prev'); time.sleep(.3); d.keyboard.press(' '); time.sleep(.3)  # (focus on Back: Space still goes on)
-    check(d.inner_text('#tour-count') == '2 of 10', 'Space steps on, whatever button has focus')
+    check(d.inner_text('#tour-count') == f'2 of {N}', 'Space steps on, whatever button has focus')
     # with the pointer resting on the card, a redraw of the page (here: a tab opening) leaves it gliding
     box = d.locator('.tour-card').bounding_box(); d.mouse.move(box['x'] + 20, box['y'] + 20)
     sw.evaluate("chrome.tabs.create({url: 'about:blank#redraw', active: false})"); time.sleep(1)
@@ -60,6 +67,10 @@ with sync_playwright() as p:
     check(mid != end, f'after a redraw under the pointer, the spot still glides ({mid} on the way to {end})')
     d.keyboard.press('Escape'); time.sleep(.3)
     check(not d.is_visible('#tour'), 'Esc ends it')
+    d.hover('#btn-install'); d.click('#install-dismiss'); time.sleep(.3)
+    d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
+    check(d.inner_text('#tour-count') == '1 of 10', 'with the install hidden, the tour skips that step (1 of 10)')
+    d.keyboard.press('Escape'); time.sleep(.3)
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
