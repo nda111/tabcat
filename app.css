@@ -510,6 +510,7 @@ dialog legend { font-size: 11px; color: var(--muted); }
 .error { color: var(--danger); min-height: 1em; margin: 4px 0 0; font-size: 12px; }
 .sym-row { display: flex; gap: 8px; align-items: stretch; margin-top: 4px; }
 .sym-wrap { position: relative; flex: none; }
+.sym-leaving-box { position: absolute; display: grid; place-items: center; pointer-events: none; line-height: 1; }
 dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
 dialog input.sym-box.letter { font-weight: 600; color: var(--accent); }
 /* letter / digit symbols: a square badge about the size of an emoji */

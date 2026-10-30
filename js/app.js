@@ -1361,10 +1361,31 @@ function symbolField(label, input, err) {
   const wrap = h('div', { class: 'sym-wrap' }, input, clear);
 
   function set(em) {
+    const old = input.value;
+    const { fontSize, fontWeight, color } = getComputedStyle(input); // (before sync() restyles a letter)
     input.value = em;
     err.textContent = '';
     input.dispatchEvent(new Event('input', { bubbles: true })); // (syncs the grid; a live preview hears it too)
+    if (em !== old) popSymbol(old, { fontSize, fontWeight, color });
     if (em) recordEmoji(em);
+  }
+  // Picked or cleared (not typed): the old symbol shrinks away over the box while the new one springs
+  // in, the box itself staying put. The new one grows by font size, the only way to scale an input's
+  // text; the old one is a copy laid over it (inside the dialog, which sits above the page).
+  function popSymbol(old, was) {
+    if (input.value) {
+      const size = parseFloat(getComputedStyle(input).fontSize);
+      input.animate([{ fontSize: `${size * 0.55}px` }, { fontSize: `${size}px` }], { duration: 260, easing: SPRING });
+    }
+    if (!old) return;
+    const copy = h('span', { class: 'sym-leaving-box', 'aria-hidden': 'true' }, old);
+    Object.assign(copy.style, {
+      left: `${input.offsetLeft}px`, top: `${input.offsetTop}px`, width: `${input.offsetWidth}px`, height: `${input.offsetHeight}px`,
+      fontSize: was.fontSize, fontWeight: was.fontWeight, color: was.color,
+    });
+    wrap.append(copy);
+    copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => copy.remove());
   }
   function sync() {
     wrap.classList.toggle('blank', !input.value);
@@ -1649,15 +1670,15 @@ function growCard(held) {
     copy.classList.add('sym-leaving');
     Object.assign(copy.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
     document.body.append(copy);
-    copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' })
+    copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' })
       .finished.catch(() => {}).then(() => copy.remove());
   }
   if (sym && sym.innerHTML !== old?.html) {
-    sym.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING });
+    sym.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
   }
   const info = headPart(el, 'node-info');
   const dx = info && look.infoLeft != null ? look.infoLeft - info.getBoundingClientRect().left : 0;
-  if (Math.abs(dx) >= 0.5) info.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 360, easing: GLIDE });
+  if (Math.abs(dx) >= 0.5) info.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 280, easing: GLIDE });
   if (Math.abs(to - look.height) < 0.5) return;
   el.style.height = '';
   el.animate([{ height: `${look.height}px` }, { height: `${to}px` }], { duration: 420, easing: GLIDE })
