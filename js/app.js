@@ -1422,9 +1422,10 @@ function openEditor(type, data = {}, title) {
           err.textContent = '';
         } catch { err.textContent = t('icon.bad'); }
       });
-      const upload = h('button', { class: 'btn upload-btn', type: 'button', title: t('icon.upload'), 'aria-label': t('icon.upload'), onclick: () => file.click() }, icon('upload', 16));
-      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file, upload,
-        btn(icon('close'), t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
+      const fieldBtn = (name, label, fn) => h('button', { class: 'btn field-btn', type: 'button', title: label, 'aria-label': label, onclick: fn }, icon(name, 16));
+      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
+        fieldBtn('upload', t('icon.upload'), () => file.click()),
+        fieldBtn('close', t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
