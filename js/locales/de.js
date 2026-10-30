@@ -32,7 +32,7 @@ export default {
   'count.suspended': '{n} pausiert',
   'count.duplicates': { one: '{n} Duplikat', other: '{n} Duplikate' },
   'tabs.saveGroup': { one: 'Tab in neuer Gruppe speichern', other: '{n} Tabs in neuer Gruppe speichern' },
-  'tabs.suspend': { one: 'Tab pausieren', other: '{n} Tabs pausieren' },
+  'tabs.suspend': { one: 'Tab pausieren', other: '{n} Tabs pausieren' }, 'tabs.wake': { one: 'Tab fortsetzen', other: '{n} Tabs fortsetzen' }, 'tab.wake': 'Fortsetzen', 'toast.woken': { one: '{n} Tab fortgesetzt', other: '{n} Tabs fortgesetzt' },
   'tabs.close': { one: 'Tab schließen', other: '{n} Tabs schließen' },
   'tabs.moveWindow': 'In neues Fenster verschieben',
 

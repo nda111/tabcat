@@ -30,7 +30,7 @@ export default {
   'count.suspended': '{n} 個休止中',
   'count.duplicates': '重複 {n} 個',
   'tabs.saveGroup': { one: 'タブを新しいグループに保存', other: '{n} 個のタブを新しいグループに保存' },
-  'tabs.suspend': { one: 'タブを休止', other: '{n} 個のタブを休止' },
+  'tabs.suspend': { one: 'タブを休止', other: '{n} 個のタブを休止' }, 'tabs.wake': { one: 'タブを再開', other: '{n} 個のタブを再開' }, 'tab.wake': '再開', 'toast.woken': '{n} 個のタブを再開しました',
   'tabs.close': { one: 'タブを閉じる', other: '{n} 個のタブを閉じる' },
   'tabs.moveWindow': '新しいウィンドウに移動',
 

@@ -22,7 +22,7 @@ export default {
   'tabs.title': 'Open tabs',
   'tabs.suspendShort': 'Suspend', 'tabs.dedupeShort': 'Dedupe', 'tabs.dedupeTip': 'Close duplicate tabs',
   'win.this': 'This window', 'win.other': 'The other window', 'win.nth': 'Other window {n}',
-  'win.saveThis': 'Save this window', 'win.save': 'Save window', 'win.suspend': 'Suspend inactive tabs', 'win.close': 'Close window',
+  'win.saveThis': 'Save this window', 'win.save': 'Save window', 'win.suspend': 'Suspend other tabs', 'win.close': 'Close window',
   'win.closeThis': 'Close this window?', 'win.closeOther': 'Close the other window?', 'win.closeNth': 'Close other window {n}?',
   'win.alsoTabs': { one: 'This also closes its {n} tab.', other: 'This also closes its {n} tabs.' },
   'win.alsoDash': 'This also closes this dashboard.',
@@ -33,7 +33,7 @@ export default {
   'count.suspended': '{n} suspended',
   'count.duplicates': { one: '{n} duplicate', other: '{n} duplicates' },
   'tabs.saveGroup': { one: 'Save tab to a new group', other: 'Save {n} tabs to a new group' },
-  'tabs.suspend': { one: 'Suspend tab', other: 'Suspend {n} tabs' },
+  'tabs.suspend': { one: 'Suspend tab', other: 'Suspend {n} tabs' }, 'tabs.wake': { one: 'Resume tab', other: 'Resume {n} tabs' }, 'tab.wake': 'Resume', 'toast.woken': { one: 'Resumed {n} tab', other: 'Resumed {n} tabs' },
   'tabs.close': { one: 'Close tab', other: 'Close {n} tabs' },
   'tabs.moveWindow': 'Move to a new window',
 
@@ -104,7 +104,7 @@ export default {
 
   // settings
   'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all',
-  'settings.autoSuspend': 'Auto-suspend inactive tabs after (in minutes; 0 turns it off)', 'settings.columns': 'Board columns (1–7)',
+  'settings.autoSuspend': 'Auto-suspend unused tabs after (in minutes; 0 turns it off)', 'settings.columns': 'Board columns (1–7)',
   'settings.language': 'Language', 'settings.langAuto': 'Browser default',
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
   'theme.auto': 'System', 'theme.light': 'Light', 'theme.dark': 'Dark',
@@ -150,7 +150,7 @@ Pick a workspace on the left and a category in the bar above the board; groups a
 </ul>`,
   'help.memory.html': `<h4>Memory</h4>
 <ul>
-<li><b>Suspend</b> unloads inactive tabs (they reload when opened); <b>Dedupe</b> closes duplicate tabs.</li>
+<li><b>Suspend</b> unloads the other tabs you aren’t looking at (they load again when opened or <b>resumed</b>); <b>Dedupe</b> closes duplicate tabs.</li>
 <li>Auto-suspend after N idle minutes is in Settings.</li>
 </ul>`,
   'help.keys.html': `<h4>Shortcuts</h4>

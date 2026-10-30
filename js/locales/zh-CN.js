@@ -30,7 +30,7 @@ export default {
   'count.suspended': '{n} 个已休眠',
   'count.duplicates': '{n} 个重复',
   'tabs.saveGroup': { one: '将标签页保存到新分组', other: '将 {n} 个标签页保存到新分组' },
-  'tabs.suspend': { one: '休眠标签页', other: '休眠 {n} 个标签页' },
+  'tabs.suspend': { one: '休眠标签页', other: '休眠 {n} 个标签页' }, 'tabs.wake': { one: '唤醒标签页', other: '唤醒 {n} 个标签页' }, 'tab.wake': '唤醒', 'toast.woken': '已唤醒 {n} 个标签页',
   'tabs.close': { one: '关闭标签页', other: '关闭 {n} 个标签页' },
   'tabs.moveWindow': '移到新窗口',
 

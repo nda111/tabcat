@@ -960,6 +960,7 @@ async function renderTabs() {
       iconImg(t.url, /^(https?:|data:)/.test(t.favIconUrl) ? t.favIconUrl : ''),
       h('span', { class: 'name' }, t.title || t.url),
       t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
+      t.discarded && canWake() && btn(icon('sun'), tr('tab.wake'), () => wakeTabs([t.id])),
       btn(icon('save'), tr('tab.save'), () => saveTabsTo([t.id])),
       noTip(btn(icon('close'), tr('tab.close'), () => { dropTabRows([t.id]); run(B.call('closeTabs', { tabIds: [t.id] })); }))))));
   });
@@ -968,6 +969,19 @@ async function renderTabs() {
   // always shown (so the row never reshuffles); greyed out when there is nothing to do
   $('#btn-suspend').disabled = !suspendable;
   $('#btn-dedupe').disabled = !dupes;
+  // Suspending (or waking) a tab replaces it with a new tab id: a row whose tab is gone takes over the new
+  // tab with the same URL in the same window, so it stays in place instead of leaving and coming back.
+  const shown = new Set([...document.querySelectorAll('#windows .tab-row')].map((r) => r.dataset.tab));
+  const fresh = all.filter((t) => !shown.has(String(t.id)));
+  for (const row of document.querySelectorAll('#windows .tab-row')) {
+    if (all.some((t) => String(t.id) === row.dataset.tab)) continue;
+    const winId = +row.closest('.win')?.dataset.window;
+    const i = fresh.findIndex((t) => t.windowId === winId && t.url === row.dataset.url);
+    if (i < 0) continue;
+    const [t] = fresh.splice(i, 1);
+    if (pickedTabs.delete(+row.dataset.tab)) pickedTabs.add(t.id);
+    row.dataset.tab = t.id;
+  }
   // closed tabs / windows shrink away first; the rest then slide to their new places, new ones pop in
   const live = new Set(all.map((t) => String(t.id)));
   const wins_ = new Set(wins.map((w) => String(w.id)));
@@ -1141,6 +1155,13 @@ document.addEventListener('pointerdown', (e) => {
   if (pickedTabs.size && !e.target.closest('#windows .tab-row, #menu')) clearTabs();
 }, true);
 
+// Waking suspended tabs (loading them again in the background) needs extension 0.2.7.
+const canWake = () => !!extVersion && !olderThan(extVersion, '0.2.7');
+async function wakeTabs(ids) {
+  const n = await run(B.call('wakeTabs', { tabIds: ids }));
+  if (n) toast(t('toast.woken', { n }));
+}
+
 async function closePickedTabs(ids) {
   clearTabs();
   dropTabRows(ids);
@@ -1162,6 +1183,7 @@ function dropTabRows(ids) {
 
 function tabsMenu(ids) {
   const n = ids.length;
+  const asleep = ids.filter((id) => document.querySelector(`#windows .tab-row.discarded[data-tab="${id}"]`));
   const cat = currentCat();
   return [
     cat && { icon: 'group', label: t('tabs.saveGroup', { n }), key: 'G', fn: async () => {
@@ -1173,6 +1195,7 @@ function tabsMenu(ids) {
       const done = await run(B.call('discardTabs', { tabIds: ids }));
       if (done != null) toast(t('toast.suspended', { n: done }));
     } },
+    asleep.length > 0 && canWake() && { icon: 'sun', label: t('tabs.wake', { n: asleep.length }), key: 'U', fn: () => { clearTabs(); wakeTabs(asleep); } },
     { icon: 'windows', label: t('tabs.moveWindow'), key: 'W', fn: () => { clearTabs(); run(B.call('moveToNewWindow', { tabIds: ids })); } },
     pickedTabs.size > 0 && { icon: 'close', label: t('menu.clearSel'), key: 'X', fn: clearTabs },
     '-',

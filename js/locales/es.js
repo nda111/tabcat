@@ -32,7 +32,7 @@ export default {
   'count.suspended': { one: '{n} suspendida', other: '{n} suspendidas' },
   'count.duplicates': { one: '{n} duplicada', other: '{n} duplicadas' },
   'tabs.saveGroup': { one: 'Guardar pestaña en un grupo nuevo', other: 'Guardar {n} pestañas en un grupo nuevo' },
-  'tabs.suspend': { one: 'Suspender pestaña', other: 'Suspender {n} pestañas' },
+  'tabs.suspend': { one: 'Suspender pestaña', other: 'Suspender {n} pestañas' }, 'tabs.wake': { one: 'Reanudar pestaña', other: 'Reanudar {n} pestañas' }, 'tab.wake': 'Reanudar', 'toast.woken': { one: '{n} pestaña reanudada', other: '{n} pestañas reanudadas' },
   'tabs.close': { one: 'Cerrar pestaña', other: 'Cerrar {n} pestañas' },
   'tabs.moveWindow': 'Mover a una ventana nueva',
 

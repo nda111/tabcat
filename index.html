@@ -67,7 +67,7 @@
     </div>
     <div class="panel-actions">
       <button class="btn small" id="btn-save-all" title="Save this window" data-i18n-attr="title:win.saveThis"><span class="sym" data-icon="save"></span><span class="label" data-i18n="win.saveThis">Save this window</span></button>
-      <button class="btn small" id="btn-suspend" title="Suspend inactive tabs" data-i18n-attr="title:win.suspend"><span class="sym" data-icon="suspend"></span><span class="label" data-i18n="tabs.suspendShort">Suspend</span></button>
+      <button class="btn small" id="btn-suspend" title="Suspend other tabs" data-i18n-attr="title:win.suspend"><span class="sym" data-icon="suspend"></span><span class="label" data-i18n="tabs.suspendShort">Suspend</span></button>
       <button class="btn small" id="btn-dedupe" title="Close duplicate tabs" data-i18n-attr="title:tabs.dedupeTip"><span class="sym" data-icon="dedupe"></span><span class="label" data-i18n="tabs.dedupeShort">Dedupe</span></button>
     </div>
     <div id="windows"></div>
@@ -113,7 +113,7 @@
         </label>
         <label class="check"><input type="checkbox" name="closeOnSave"> <span data-i18n="settings.closeOnSave">Close tabs after saving them</span></label>
         <label class="check"><input type="checkbox" name="groupTabs"> <span data-i18n="settings.groupTabs">Group tabs when opening all</span></label>
-        <label><span data-i18n="settings.autoSuspend">Auto-suspend inactive tabs after (in minutes; 0 turns it off)</span>
+        <label><span data-i18n="settings.autoSuspend">Auto-suspend unused tabs after (in minutes; 0 turns it off)</span>
           <input type="number" name="autoSuspendMinutes" min="0" step="1">
         </label>
         <label><span data-i18n="settings.columns">Board columns (1–7)</span>

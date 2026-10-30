@@ -17,20 +17,20 @@ export default {
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
-  'tabs.suspendShort': '일시 중지', 'tabs.dedupeShort': '중복 정리', 'tabs.dedupeTip': '중복 탭 닫기',
+  'tabs.suspendShort': '재우기', 'tabs.dedupeShort': '중복 정리', 'tabs.dedupeTip': '중복 탭 닫기',
   'win.this': '이 창', 'win.other': '다른 창', 'win.nth': '다른 창 {n}',
-  'win.saveThis': '이 창 저장하기', 'win.save': '창 저장하기', 'win.suspend': '비활성 탭 일시 중지', 'win.close': '창 닫기',
+  'win.saveThis': '이 창 저장하기', 'win.save': '창 저장하기', 'win.suspend': '다른 탭 재우기', 'win.close': '창 닫기',
   'win.closeThis': '이 창을 닫을까요?', 'win.closeOther': '다른 창을 닫을까요?', 'win.closeNth': '다른 창 {n}을 닫을까요?',
   'win.alsoTabs': '창에 있는 탭 {n}개도 함께 닫힙니다.',
   'win.alsoDash': '이 대시보드도 함께 닫힙니다.',
   'win.alsoBoth': '창에 있는 탭 {n}개와 이 대시보드도 함께 닫힙니다.',
-  'tab.suspended': '일시 중지됨', 'tab.active': '활성 탭', 'tab.save': '탭 저장하기', 'tab.close': '탭 닫기',
+  'tab.suspended': '잠듦', 'tab.active': '활성 탭', 'tab.save': '탭 저장하기', 'tab.close': '탭 닫기',
   'count.tabs': '탭 {n}개',
   'count.windows': '창 {n}개',
-  'count.suspended': '{n}개 일시 중지',
+  'count.suspended': '{n}개 잠듦',
   'count.duplicates': '중복 {n}개',
   'tabs.saveGroup': { one: '탭을 새 그룹에 저장하기', other: '탭 {n}개를 새 그룹에 저장하기' },
-  'tabs.suspend': { one: '탭 일시 중지', other: '탭 {n}개 일시 중지' },
+  'tabs.suspend': { one: '탭 재우기', other: '탭 {n}개 재우기' }, 'tabs.wake': { one: '탭 깨우기', other: '탭 {n}개 깨우기' }, 'tab.wake': '깨우기', 'toast.woken': '탭 {n}개를 깨웠습니다',
   'tabs.close': { one: '탭 닫기', other: '탭 {n}개 닫기' },
   'tabs.moveWindow': '새 창으로 옮기기',
 
@@ -82,7 +82,7 @@ export default {
   'toast.deleted': '“{name}” 삭제됨',
   'toast.deletedGroups': '그룹 {n}개 삭제됨',
   'toast.deletedItems': '항목 {n}개 삭제됨',
-  'toast.suspended': '탭 {n}개를 일시 중지했습니다',
+  'toast.suspended': '탭 {n}개를 재웠습니다',
   'toast.closedDupes': '중복 탭 {n}개를 닫았습니다',
   'toast.removedDupes': '중복 링크 {n}개를 제거했습니다',
   'toast.copiedUrls': 'URL {n}개를 복사했습니다',
@@ -95,7 +95,7 @@ export default {
   'err.notSettings': 'tabcat 설정 파일이 아닙니다', 'err.noSettings': '유효한 설정이 없습니다',
 
   'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기', 'settings.groupTabs': '모두 열기 시 탭 그룹으로 묶기',
-  'settings.autoSuspend': '비활성 탭 자동 일시 중지 (분 단위, 0이면 사용 안 함)', 'settings.columns': '보드 열 수 (1–7)',
+  'settings.autoSuspend': '안 쓰는 탭 자동으로 재우기 (분 단위, 0이면 사용 안 함)', 'settings.columns': '보드 열 수 (1–7)',
   'settings.language': '언어', 'settings.langAuto': '브라우저 기본값',
   'settings.appearance': '모양', 'settings.theme': '테마', 'settings.color': '색상',
   'theme.auto': '시스템', 'theme.light': '라이트', 'theme.dark': '다크',
@@ -114,7 +114,7 @@ export default {
 왼쪽에서 워크스페이스를, 보드 위 막대에서 카테고리를 고르세요. 보드의 카드가 그룹입니다.</p>`,
   'help.saving.html': `<h4>탭 저장</h4>
 <ul>
-<li><b>열린 탭</b>에서 탭을 끌어 그룹, 폴더, 링크 사이에 놓으세요. <kbd>Shift</kbd>+클릭이나 <kbd>Shift</kbd>+드래그로 여러 탭을 (창을 넘나들며) 고른 뒤, 하나를 끌면 모두 함께 옮겨집니다. 우클릭하면 저장 / 일시 중지 / 새 창으로 옮기기 / 닫기를 할 수 있습니다.</li>
+<li><b>열린 탭</b>에서 탭을 끌어 그룹, 폴더, 링크 사이에 놓으세요. <kbd>Shift</kbd>+클릭이나 <kbd>Shift</kbd>+드래그로 여러 탭을 (창을 넘나들며) 고른 뒤, 하나를 끌면 모두 함께 옮겨집니다. 우클릭하면 저장 / 재우기 / 새 창으로 옮기기 / 닫기를 할 수 있습니다.</li>
 <li>창 머리글을 끌면 그 창의 탭이 모두 저장됩니다. 그룹 사이 틈이나 열 아래에 놓으면 새 그룹이 만들어집니다.</li>
 <li>툴바 버튼: 탭 이름을 바꾸고 <b>저장 위치</b>에서 그룹이나 폴더를 고르세요.</li>
 <li>설정에서 <i>저장한 탭 닫기</i>를 켜면 저장한 탭이 닫힙니다.</li>
@@ -140,8 +140,8 @@ export default {
 </ul>`,
   'help.memory.html': `<h4>메모리</h4>
 <ul>
-<li><b>일시 중지</b>는 비활성 탭을 메모리에서 내립니다 (열면 다시 로드됩니다). <b>중복 정리</b>는 중복 탭을 닫습니다.</li>
-<li>N분 동안 쓰지 않은 탭을 자동으로 일시 중지하는 옵션은 설정에 있습니다.</li>
+<li><b>재우기</b>는 보고 있지 않은 다른 탭을 메모리에서 내립니다 (탭을 열거나 <b>깨우면</b> 다시 불러옵니다). <b>중복 정리</b>는 중복 탭을 닫습니다.</li>
+<li>N분 동안 안 쓰는 탭을 자동으로 재우는 옵션은 설정에 있습니다.</li>
 </ul>`,
   'help.keys.html': `<h4>단축키</h4>
 <table class="keys">

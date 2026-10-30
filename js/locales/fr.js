@@ -32,7 +32,7 @@ export default {
   'count.suspended': { one: '{n} suspendu', other: '{n} suspendus' },
   'count.duplicates': { one: '{n} doublon', other: '{n} doublons' },
   'tabs.saveGroup': { one: 'Enregistrer l’onglet dans un nouveau groupe', other: 'Enregistrer {n} onglets dans un nouveau groupe' },
-  'tabs.suspend': { one: 'Suspendre l’onglet', other: 'Suspendre {n} onglets' },
+  'tabs.suspend': { one: 'Suspendre l’onglet', other: 'Suspendre {n} onglets' }, 'tabs.wake': { one: 'Reprendre l’onglet', other: 'Reprendre {n} onglets' }, 'tab.wake': 'Reprendre', 'toast.woken': { one: '{n} onglet repris', other: '{n} onglets repris' },
   'tabs.close': { one: 'Fermer l’onglet', other: 'Fermer {n} onglets' },
   'tabs.moveWindow': 'Déplacer vers une nouvelle fenêtre',
 

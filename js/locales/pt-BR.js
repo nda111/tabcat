@@ -32,7 +32,7 @@ export default {
   'count.suspended': { one: '{n} suspensa', other: '{n} suspensas' },
   'count.duplicates': { one: '{n} duplicada', other: '{n} duplicadas' },
   'tabs.saveGroup': { one: 'Salvar aba em um novo grupo', other: 'Salvar {n} abas em um novo grupo' },
-  'tabs.suspend': { one: 'Suspender aba', other: 'Suspender {n} abas' },
+  'tabs.suspend': { one: 'Suspender aba', other: 'Suspender {n} abas' }, 'tabs.wake': { one: 'Retomar aba', other: 'Retomar {n} abas' }, 'tab.wake': 'Retomar', 'toast.woken': { one: '{n} aba retomada', other: '{n} abas retomadas' },
   'tabs.close': { one: 'Fechar aba', other: 'Fechar {n} abas' },
   'tabs.moveWindow': 'Mover para uma nova janela',
 
