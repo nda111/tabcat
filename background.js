@@ -53,6 +53,8 @@ function buildMenus() {
 chrome.runtime.onStartup.addListener(init);
 init();
 chrome.runtime.onInstalled.addListener(retirePinnedDashboards);
+// newly installed: the dashboard comes up (and offers its tour)
+chrome.runtime.onInstalled.addListener(({ reason }) => { if (reason === 'install') openDashboard(); });
 tintActionIcon();
 relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 
@@ -209,7 +211,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await openDashboard();
       break;
     case 'save-tab':
-      if (tab) await A.saveTabs([tab]);
+      if (tab) await saveTabs([tab]);
       break;
     case 'save-link': {
       const s = await S.loadSettings();
@@ -220,7 +222,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       break;
     }
     case 'save-window':
-      if (tab) await A.saveWindow(tab.windowId);
+      if (tab) await saveWindow(tab.windowId);
       break;
     case 'suspend':
       await A.suspendTabs({ windowId: tab?.windowId });
@@ -234,10 +236,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command === 'save-tab') {
     const [t] = tab ? [tab] : await chrome.tabs.query({ active: true, currentWindow: true });
-    if (t) await A.saveTabs([t]);
+    if (t) await saveTabs([t]);
   } else if (command === 'save-window') {
     const w = await chrome.windows.getLastFocused();
-    await A.saveWindow(w.id);
+    await saveWindow(w.id);
   } else if (command === 'open-dashboard') {
     await toggleDashboard(tab);
   }
@@ -353,21 +355,25 @@ async function snap(state) {
   await chrome.storage.local.set({ [SNAP + id]: state });
   return id;
 }
-// Puts back the state `entry` kept, returning a new entry that keeps the one it replaced
+// Puts back what `entry` kept (the state, closed tabs, or both), returning a new entry that keeps what
+// it replaced (for redo, or undo again)
 async function restore(entry) {
-  if (entry.closed) return { id: S.uid(), what: entry.what, opened: await A.reopenTabs(entry.closed) };
+  const out = { id: S.uid(), what: entry.what };
+  if (entry.closed) out.opened = await A.reopenTabs(entry.closed);
   if (entry.opened) {
     await chrome.tabs.remove(entry.opened.map((t) => t.id)).catch(() => {});
-    return { id: S.uid(), what: entry.what, closed: entry.opened };
+    out.closed = entry.opened;
   }
-  const before = (await chrome.storage.local.get(SNAP + entry.id))[SNAP + entry.id];
-  if (!before) return null;
-  let id;
-  await S.update(async (state) => {
-    id = await snap(structuredClone(state));
-    S.applyOp(state, { op: 'replace', state: before });
-  });
-  return { id, what: entry.what };
+  if (entry.data) {
+    const before = (await chrome.storage.local.get(SNAP + entry.id))[SNAP + entry.id];
+    if (!before) return null;
+    await S.update(async (state) => {
+      await chrome.storage.local.set({ [SNAP + out.id]: structuredClone(state) });
+      S.applyOp(state, { op: 'replace', state: before });
+    });
+    out.data = true;
+  }
+  return out;
 }
 // A new change: on top of the undo list (the oldest falls off past HISTORY_MAX); nothing left to redo
 function pushChange(h, entry) {
@@ -380,7 +386,7 @@ const historyHandlers = {
   // `before`: the state from before a change just made; `what` names it for the toasts. Returns its id.
   remember: ({ before, what }) => withHistory(async (h) => {
     const id = await snap(S.normalize(before));
-    await pushChange(h, { id, what: what ?? null });
+    await pushChange(h, { id, data: true, what: what ?? null });
     return id;
   }),
   // the last change, or the one with `id` (and everything after it); returns { what } or null
@@ -390,8 +396,8 @@ const historyHandlers = {
     const gone = h.undo.splice(i);
     const back = await restore(gone[0]);
     await dropSnaps(gone);
-    // (an older data change put back takes the later ones with it; closed tabs stay undoable)
-    if (gone.length > 1 && !gone[0].closed) h.undo.push(...gone.slice(1).filter((e) => e.closed));
+    // (an older data change put back takes the later ones with it; closing tabs alone stays undoable)
+    if (gone.length > 1 && gone[0].data) h.undo.push(...gone.slice(1).filter((e) => !e.data));
     if (!back) return null;
     h.redo.push(back);
     return { what: back.what };
@@ -407,6 +413,25 @@ const historyHandlers = {
   }),
 };
 // Closes duplicate tabs, remembered for undo; returns how many
+// Saves tabs (closing them, as set), remembered: undo takes the links out and opens the tabs again
+async function saveTabs(tabs, opts = {}, save = () => A.saveTabs(tabs, opts)) {
+  const settings = await S.loadSettings();
+  A.setDashboardUrl(settings.dashboardUrl);
+  const saving = tabs.filter(A.isSaveable);
+  const before = await S.load();
+  const result = await save();
+  if (result == null || !saving.length) return result;
+  const close = opts.close ?? settings.closeOnSave;
+  await withHistory(async (h) => pushChange(h, {
+    id: await snap(before), data: true, what: { verb: 'save', n: saving.length }, ...(close && { closed: saving.map(A.tabInfo) }),
+  }));
+  return result;
+}
+async function saveWindow(windowId, opts = {}) {
+  const tabs = (await chrome.tabs.query({ windowId })).filter((t) => !t.pinned);
+  return saveTabs(tabs, opts, () => A.saveWindow(windowId, opts));
+}
+
 async function closeDuplicates() {
   const closed = await A.closeDuplicates();
   if (closed.length) await withHistory((h) => pushChange(h, { id: S.uid(), what: { verb: 'closeDupes' }, closed }));
@@ -443,9 +468,9 @@ const handlers = {
   },
   async saveTabs({ tabIds, tabs, ...opts }) {
     if (tabIds) tabs = (await Promise.all(tabIds.map((id) => chrome.tabs.get(id).catch(() => null)))).filter(Boolean);
-    return A.saveTabs(tabs || [], opts);
+    return saveTabs(tabs || [], opts);
   },
-  saveWindow: ({ windowId, ...opts }) => A.saveWindow(windowId, opts),
+  saveWindow: ({ windowId, ...opts }) => saveWindow(windowId, opts),
   closeDuplicates: () => closeDuplicates(),
   suspendTabs: (args) => A.suspendTabs(args || {}),
   // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group

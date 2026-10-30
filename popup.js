@@ -13,12 +13,31 @@ function closePopup(delay = 0) {
   }, delay);
 }
 
-const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
+// The result of an action, below the buttons; `undoable`: with an Undo (the shared history's latest change)
+function msg(text, undoable = false) {
+  $('#msg-text').textContent = text;
+  $('#msg').hidden = !text;
+  $('#msg-undo').hidden = !undoable;
+}
+$('#msg-undo').addEventListener('click', async () => {
+  $('#msg-undo').hidden = true;
+  const { result } = await chrome.runtime.sendMessage({ cmd: 'undo', args: {} });
+  msg(result ? t('undone') : '');
+  showCounts();
+});
+// What the tidying buttons would touch, on them (off when there is none)
+async function showCounts() {
+  const all = await chrome.tabs.query({});
+  for (const [id, n] of [['suspend', A.suspendableTabs(all).length], ['dedupe', A.duplicateTabs(all).length]]) {
+    $(`#${id}-n`).textContent = n || '';
+    $(`#${id}`).disabled = !n;
+  }
+}
 
 (async function init() {
-  const [[tab], state, settings, all] = await Promise.all([
+  const [[tab], state, settings, commands] = await Promise.all([
     chrome.tabs.query({ active: true, currentWindow: true }),
-    S.load(), S.loadSettings(), chrome.tabs.query({}),
+    S.load(), S.loadSettings(), chrome.commands.getAll(),
   ]);
   setLang(settings.language);
   document.documentElement.lang = getLang();
@@ -33,8 +52,10 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     document.documentElement.style.setProperty('--hue', hue);
   }
   A.setDashboardUrl(settings.dashboardUrl);
-  const sleeping = all.filter((t) => t.discarded).length;
-  $('#stats').textContent = [t('tabCount', { n: all.length }), sleeping && t('sleeping', { n: sleeping })].filter(Boolean).join(' · ');
+  showCounts();
+  // the dashboard's shortcut as set (chrome://extensions/shortcuts), if any
+  $('#open-key').textContent = commands.find((c) => c.name === 'open-dashboard')?.shortcut || '';
+  $('#open-key').hidden = !$('#open-key').textContent;
 
   const target = groupPicker(S.allTargets(state), settings.lastGroupId);
   $('#close').checked = settings.closeOnSave;
@@ -64,13 +85,17 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   $('#save-window').addEventListener('click', async () => {
     msg(t('savingWindow'));
     const { result } = await chrome.runtime.sendMessage({ cmd: 'saveWindow', args: { windowId: tab.windowId, close: $('#close').checked } });
-    msg(t(result ? 'windowSaved' : 'nothingToSave'));
+    msg(t(result ? 'windowSaved' : 'nothingToSave'), !!result);
   });
-  $('#suspend').addEventListener('click', async () => msg(t('suspended', { n: await A.suspendTabs({}) })));
+  $('#suspend').addEventListener('click', async () => {
+    msg(t('suspended', { n: await A.suspendTabs({}) }));
+    showCounts();
+  });
   $('#dedupe').addEventListener('click', async () => { // (through the background, which remembers it for undo)
-  const { result } = await chrome.runtime.sendMessage({ cmd: 'closeDuplicates' });
-  msg(t('closedDupes', { n: result }));
-});
+    const { result } = await chrome.runtime.sendMessage({ cmd: 'closeDuplicates' });
+    msg(t('closedDupes', { n: result }), result > 0);
+    showCounts();
+  });
   $('#open').addEventListener('click', async () => {
     await chrome.runtime.sendMessage({ cmd: 'openDashboard' });
     closePopup();

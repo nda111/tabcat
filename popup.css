@@ -73,7 +73,21 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 .wide { width: 100%; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .grid .btn { white-space: normal; text-align: center; } /* long labels (some languages) wrap inside */
+.grid .span { grid-column: 1 / -1; }
+/* how many tabs a tidying button would touch: a small count after its label */
+.btn .count { margin-left: 2px; padding: 0 6px; border-radius: 9px; background: var(--hover); color: var(--muted); font-size: 11px; font-weight: 600; line-height: 17px; }
+.btn .count:empty { display: none; }
+/* the dashboard: a quiet line with its shortcut, under the buttons */
+.open-line {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 8px; padding: 6px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
+  transition: background-color .16s ease, color .16s ease;
+}
+.open-line:hover { background: var(--hover); color: var(--text); }
+.open-line kbd { padding: 1px 6px; border: 1px solid var(--border); border-radius: 5px; font: inherit; font-size: 11px; }
 #msg { margin: 8px 0 0; text-align: center; }
+.link-btn { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }
 
 /* "Save to" group picker */
 .field { margin-bottom: 8px; }

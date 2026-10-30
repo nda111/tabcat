@@ -37,9 +37,11 @@ def profile():
     atexit.register(shutil.rmtree, d, True)
     return d
 
-def launch(p, developer_mode=False, **kw):
+def launch(p, developer_mode=False, fresh=False, **kw):
     """Chromium with the extension; returns (context, service worker). developer_mode: as for anyone
-    loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off)."""
+    loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off).
+    Unless `fresh`, as if used before: the dashboard it opens on install is closed, and the page has
+    offered its tour already."""
     ext = extension_copy()
     prof = profile()
     if developer_mode:
@@ -48,6 +50,14 @@ def launch(p, developer_mode=False, **kw):
     ctx = p.chromium.launch_persistent_context(prof, channel='chromium', headless=True,
         args=[f'--disable-extensions-except={ext}', f'--load-extension={ext}'], **kw)
     sw = ctx.service_workers[0] if ctx.service_workers else ctx.wait_for_event('serviceworker')
+    if not fresh:
+        ctx.add_init_script("try { localStorage.setItem('tabcat:tourOffered', '1'); } catch {}")
+        for _ in range(30):  # (the dashboard it opens on install: gone)
+            opened = sw.evaluate("chrome.tabs.query({}).then(ts=>ts.filter(t=>/^https:\\/\\/tabcat\\.ghyeok\\.com/.test(t.url||t.pendingUrl||'')).map(t=>t.id))")
+            if opened:
+                sw.evaluate(f"chrome.tabs.remove({opened})")
+                break
+            time.sleep(.1)
     return ctx, sw
 
 def dashboard(ctx, errors, size=(1300, 800)):

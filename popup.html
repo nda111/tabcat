@@ -11,7 +11,7 @@
   <script type="module" src="popup.js"></script>
 </head>
 <body class="popup">
-  <div class="brand"><span class="logo"></span> tabcat <span class="muted small" id="stats"></span></div>
+  <div class="brand"><span class="logo"></span> tabcat</div>
 
   <section class="card" id="save-card">
     <div class="current">
@@ -36,11 +36,11 @@
   </section>
 
   <div class="grid">
-    <button class="btn" id="save-window" title="Save all tabs of this window as a new group" data-i18n-title="saveWindowTip"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span data-i18n="saveWindow">Save window</span></button>
-    <button class="btn" id="suspend" title="Unload inactive tabs from memory" data-i18n-title="suspendTip"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span data-i18n="suspend">Suspend tabs</span></button>
-    <button class="btn" id="dedupe"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2M12 14.5h5"/></svg><span data-i18n="dedupe">Close duplicates</span></button>
-    <button class="btn" id="open"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span data-i18n="openDashboard">Open dashboard</span></button>
+    <button class="btn span" id="save-window" title="Save all tabs of this window as a new group" data-i18n-title="saveWindowTip"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span data-i18n="saveWindow">Save window</span></button>
+    <button class="btn" id="suspend" title="Unload inactive tabs from memory" data-i18n-title="suspendTip"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span data-i18n="suspend">Suspend tabs</span><span class="count" id="suspend-n"></span></button>
+    <button class="btn" id="dedupe"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2M12 14.5h5"/></svg><span data-i18n="dedupe">Close duplicates</span><span class="count" id="dedupe-n"></span></button>
   </div>
-  <p class="muted small" id="msg" hidden></p>
+  <button type="button" class="open-line" id="open"><span data-i18n="openDashboard">Open dashboard</span><kbd id="open-key"></kbd></button>
+  <p class="muted small" id="msg" hidden><span id="msg-text"></span> <button type="button" class="link-btn" id="msg-undo" hidden data-i18n="undo">Undo</button></p>
 </body>
 </html>
