@@ -27,21 +27,25 @@ export default {
 
   'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über die Hilfe starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
 
-  'tour.welcome.title': 'Willkommen bei tabcat', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen, schließe sie und öffne sie wieder, wann immer du sie brauchst.',
+  'tour.welcome.title': 'Willkommen bei tabcat.', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen und öffne sie wieder, wann immer du sie brauchst.',
 
-  'tour.workspaces.title': 'Arbeitsbereiche', 'tour.workspaces.text': 'Die größten Einheiten: einer für die Arbeit, einer fürs Lernen … Hier auswählen, zum Sortieren ziehen.',
+  'tour.workspaces.title': 'Arbeitsbereiche', 'tour.workspaces.text': 'Die größten Einheiten. Teile deine Sachen auf, etwa Arbeit und Lernen. Zum Sortieren ziehen.',
 
-  'tour.categories.title': 'Kategorien', 'tour.categories.text': 'Themen innerhalb eines Arbeitsbereichs. Jede hat ihr eigenes Board mit Gruppen.',
+  'tour.tabs.title': 'Offene Tabs', 'tour.tabs.text': 'Deine offenen Fenster und Tabs. Du kannst auch {icon:save} ein Fenster speichern, {icon:suspend} Tabs schlafen legen oder {icon:dedupe} Duplikate aufräumen.',
 
-  'tour.groups.title': 'Gruppen', 'tour.groups.text': 'Karten mit Links und Ordnern. Zwischen Spalten ziehen, Namen per Doppelklick bearbeiten und eine ganze Gruppe mit {icon:open} Alle öffnen als Tabgruppe öffnen.',
+  'tour.categories.title': 'Kategorien', 'tour.categories.text': 'Themen innerhalb eines Arbeitsbereichs. Jede Kategorie hat ihre eigenen Gruppen.',
 
-  'tour.tabs.title': 'Offene Tabs', 'tour.tabs.text': 'Zieh einen Tab auf eine Gruppe, um ihn zu speichern (mit Umschalt mehrere). Hier kannst du auch {icon:save} ein Fenster speichern, {icon:suspend} Tabs pausieren oder {icon:dedupe} Duplikate schließen.',
+  'tour.groups.title': 'Gruppen', 'tour.groups.text': 'Karten mit Links und Ordnern. Gestalte sie nach deinem Geschmack und zieh sie, wohin du willst.',
 
-  'tour.search.title': 'Suche', 'tour.search.text': 'Finde jeden Link, Ordner und jede Gruppe. Auch mit Strg+F.',
+  'tour.search.title': 'Suche', 'tour.search.text': 'Suche Links, Ordner, Gruppen und mehr, von überall. Auch mit Strg+F.',
 
-  'tour.shortcut.title': 'Immer zur Hand', 'tour.shortcut.text': 'Strg+Umschalt+X holt das Dashboard in das Fenster, in dem du bist, und bringt dich wieder zurück. Die Schaltfläche in der Symbolleiste speichert den aktuellen Tab.',
+  'tour.more.title': 'Einstellungen und Hilfe', 'tour.more.text': 'Sprache, Design und Farben in den {icon:settings} Einstellungen, alle Tastenkürzel in der {icon:help} Hilfe.',
 
-  'tour.more.title': 'Einstellungen und Hilfe', 'tour.more.text': 'Sprache, Design und Farben in den {icon:settings} Einstellungen, alle Tastenkürzel in der {icon:help} Hilfe. Diese Tour kannst du jederzeit über die {icon:help} Hilfe neu starten.',
+  'tour.tour.title': 'Tour', 'tour.tour.text': 'Diese Tour kannst du jederzeit über die {icon:help} Hilfe neu starten.',
+
+  'tour.shortcut.title': 'Immer zur Hand', 'tour.shortcut.text': 'Mit Strg+Umschalt+X siehst du das Dashboard jederzeit. Noch einmal drücken bringt dich zurück zu deinem Tab.',
+
+  'tour.bye.title': 'Auf gute Zusammenarbeit.', 'tour.bye.text': 'Lass so viele Tabs offen, wie du magst. tabcat hilft dir, Ordnung zu halten.',
   'panel.expandWs': 'Arbeitsbereiche ausklappen', 'panel.collapseWs': 'Arbeitsbereiche einklappen',
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',

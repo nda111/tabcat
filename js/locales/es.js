@@ -27,21 +27,25 @@ export default {
 
   'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Ayuda.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
 
-  'tour.welcome.title': 'Te damos la bienvenida a tabcat', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos, ciérralas y vuelve a abrirlas cuando las necesites.',
+  'tour.welcome.title': 'Te damos la bienvenida a tabcat.', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos y vuelve a abrirlas cuando las necesites.',
 
-  'tour.workspaces.title': 'Espacios de trabajo', 'tour.workspaces.text': 'Las cajas más grandes: uno para el trabajo, otro para estudiar… Elige uno aquí; arrastra para reordenar.',
+  'tour.workspaces.title': 'Espacios de trabajo', 'tour.workspaces.text': 'Las cajas más grandes. Divide tus cosas, como trabajo y estudio. Arrastra para reordenar.',
 
-  'tour.categories.title': 'Categorías', 'tour.categories.text': 'Temas dentro de un espacio de trabajo. Cada una tiene su propio panel de grupos.',
+  'tour.tabs.title': 'Pestañas abiertas', 'tour.tabs.text': 'Tus ventanas y pestañas abiertas. También puedes {icon:save} guardar una ventana, {icon:suspend} dormir pestañas o {icon:dedupe} ordenar las duplicadas.',
 
-  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Tarjetas con enlaces y carpetas. Arrástralas entre columnas, haz doble clic en un nombre para editarlo y abre un grupo entero como grupo de pestañas con {icon:open} Abrir todo.',
+  'tour.categories.title': 'Categorías', 'tour.categories.text': 'Temas dentro de un espacio de trabajo. Cada categoría tiene sus propios grupos.',
 
-  'tour.tabs.title': 'Pestañas abiertas', 'tour.tabs.text': 'Arrastra una pestaña a un grupo para guardarla (Mayús elige varias). Desde aquí también puedes {icon:save} guardar una ventana, {icon:suspend} suspender pestañas o {icon:dedupe} cerrar duplicadas.',
+  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Tarjetas con enlaces y carpetas. Personalízalas y arrástralas donde quieras.',
 
-  'tour.search.title': 'Buscar', 'tour.search.text': 'Encuentra cualquier enlace, carpeta o grupo. También se abre con Ctrl+F.',
+  'tour.search.title': 'Buscar', 'tour.search.text': 'Busca enlaces, carpetas, grupos y más desde cualquier sitio. Ctrl+F también lo abre.',
 
-  'tour.shortcut.title': 'Siempre a mano', 'tour.shortcut.text': 'Ctrl+Shift+X trae el panel a la ventana en la que estás y te devuelve a donde estabas. El botón de la barra de herramientas guarda la pestaña actual.',
+  'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda.',
 
-  'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda. Puedes volver a empezar este recorrido desde {icon:help} Ayuda cuando quieras.',
+  'tour.tour.title': 'Recorrido', 'tour.tour.text': 'Puedes volver a empezar este recorrido desde {icon:help} Ayuda cuando quieras.',
+
+  'tour.shortcut.title': 'Siempre a mano', 'tour.shortcut.text': 'Pulsa Ctrl+Shift+X para ver el panel cuando quieras. Vuelve a pulsarlo para regresar a tu pestaña.',
+
+  'tour.bye.title': 'Llevémonos bien.', 'tour.bye.text': 'Deja abiertas todas las pestañas que quieras. tabcat te ayuda a mantenerlas en orden.',
   'panel.expandWs': 'Expandir espacios de trabajo', 'panel.collapseWs': 'Contraer espacios de trabajo',
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',

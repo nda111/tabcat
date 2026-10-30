@@ -25,21 +25,25 @@ export default {
 
   'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからヘルプでも始められます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
 
-  'tour.welcome.title': 'tabcat へようこそ', 'tour.welcome.text': 'タブをグループの中のリンクとして保存し、閉じても必要なときにまた開けます。',
+  'tour.welcome.title': 'tabcat へようこそ。', 'tour.welcome.text': 'タブをグループの中のリンクとして保存して、必要なときにまた開けます。',
 
-  'tour.workspaces.title': 'ワークスペース', 'tour.workspaces.text': 'いちばん大きなまとまりです。仕事、勉強などに分けてここで選びます。ドラッグで並べ替えられます。',
+  'tour.workspaces.title': 'ワークスペース', 'tour.workspaces.text': 'いちばん大きなまとまりです。仕事、勉強などに分けてみましょう。ドラッグで並べ替えられます。',
 
-  'tour.categories.title': 'カテゴリ', 'tour.categories.text': 'ワークスペースの中のテーマです。カテゴリごとにグループのボードがあります。',
+  'tour.tabs.title': '開いているタブ', 'tour.tabs.text': '開いているウィンドウとタブを表示します。{icon:save} ウィンドウを保存したり、{icon:suspend} タブを休止したり、{icon:dedupe} 重複したタブを整理したりもできます。',
 
-  'tour.groups.title': 'グループ', 'tour.groups.text': 'リンクとフォルダを入れるカードです。ドラッグで列を移し、名前をダブルクリックで編集し、{icon:open} すべて開くでタブグループとして開けます。',
+  'tour.categories.title': 'カテゴリ', 'tour.categories.text': 'ワークスペースの中のテーマです。カテゴリごとに別のグループを作れます。',
 
-  'tour.tabs.title': '開いているタブ', 'tour.tabs.text': 'タブをグループにドラッグすると保存されます。Shift で複数選べます。{icon:save} ウィンドウの保存、{icon:suspend} タブの休止、{icon:dedupe} 重複を閉じる操作もここでできます。',
+  'tour.groups.title': 'グループ', 'tour.groups.text': 'リンクとフォルダを入れるカードです。自由に飾って、ドラッグで並べられます。',
 
-  'tour.search.title': '検索', 'tour.search.text': 'リンク、フォルダ、グループをどこからでも探せます。Ctrl+F でも開けます。',
+  'tour.search.title': '検索', 'tour.search.text': 'リンク、フォルダ、グループなど、どこからでも検索できます。Ctrl+F でも開けます。',
 
-  'tour.shortcut.title': 'いつでも手もとに', 'tour.shortcut.text': 'Ctrl+Shift+X で今のウィンドウにダッシュボードを呼び出し、もう一度押すと元のタブに戻ります。ツールバーのボタンで今のタブをすぐ保存できます。',
+  'tour.more.title': '設定とヘルプ', 'tour.more.text': '言語、テーマ、色は {icon:settings} 設定で、すべてのショートカットは {icon:help} ヘルプで確認できます。',
 
-  'tour.more.title': '設定とヘルプ', 'tour.more.text': '言語、テーマ、色は {icon:settings} 設定で、すべてのショートカットは {icon:help} ヘルプで確認できます。このツアーは {icon:help} ヘルプからいつでも始められます。',
+  'tour.tour.title': 'ツアー', 'tour.tour.text': 'このツアーは {icon:help} ヘルプからいつでも始められます。',
+
+  'tour.shortcut.title': 'いつでも手もとに', 'tour.shortcut.text': 'Ctrl+Shift+X でいつでもダッシュボードを表示できます。もう一度押すと元のタブに戻ります。',
+
+  'tour.bye.title': 'これからよろしく。', 'tour.bye.text': 'タブは気楽に開いたままで大丈夫。整理は tabcat がお手伝いします。',
   'panel.expandWs': 'ワークスペースを展開', 'panel.collapseWs': 'ワークスペースを折りたたむ',
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',

@@ -529,7 +529,10 @@ document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer = n
 function restoreHover() {
   if (tipEl && !tipEl.offsetParent) hideTip(); // its element was re-rendered away or hidden
   if (!pointer) return;
-  for (let el = document.elementFromPoint(...pointer); el; el = el.parentElement) el.classList.add('hover');
+  const top = document.elementFromPoint(...pointer);
+  // (not over the tour, which nothing redraws: there a .hover would only switch its glides off)
+  if (top?.closest('#tour')) return;
+  for (let el = top; el; el = el.parentElement) el.classList.add('hover');
 }
 
 function renderSidebar() {
@@ -3702,12 +3705,14 @@ showInstall();
 const TOUR = [
   { key: 'welcome' },
   { key: 'workspaces', at: '#sidebar' },
+  { key: 'tabs', at: '#tabs-panel' },
   { key: 'categories', at: '#cat-bar' },
   { key: 'groups', at: '#board .group' },
-  { key: 'tabs', at: '#tabs-panel' },
   { key: 'search', at: '#search-box .search-field' },
+  { key: 'more', at: '#btn-help, #btn-settings', all: true }, // (both buttons, and what's between)
+  { key: 'tour', at: '#btn-help' },
   { key: 'shortcut' },
-  { key: 'more', at: '#sidebar .side-bottom > .side-btn' }, // (the buttons, not the line above them)
+  { key: 'bye' },
 ];
 const TOUR_OFFERED = 'tabcat:tourOffered';
 let tourStep = -1;
@@ -3753,8 +3758,10 @@ function showTourStep(i) {
 // right of it, left, below or above, whichever fits first
 function placeTour() {
   if (tourStep < 0) return;
-  // (a step's `at` may match several elements: the box round the ones shown)
-  const boxes = TOUR[tourStep].at ? [...document.querySelectorAll(TOUR[tourStep].at)].map((el) => el.getBoundingClientRect()).filter((b) => b.width > 0 && b.height > 0) : [];
+  // (`all`: the box round every element `at` matches that is shown; else the first one)
+  const { at: sel, all } = TOUR[tourStep];
+  const els = !sel ? [] : all ? [...document.querySelectorAll(sel)] : [document.querySelector(sel)].filter(Boolean);
+  const boxes = els.map((el) => el.getBoundingClientRect()).filter((b) => b.width > 0 && b.height > 0);
   const r = boxes.length ? {
     left: Math.min(...boxes.map((b) => b.left)), top: Math.min(...boxes.map((b) => b.top)),
     right: Math.max(...boxes.map((b) => b.right)), bottom: Math.max(...boxes.map((b) => b.bottom)),

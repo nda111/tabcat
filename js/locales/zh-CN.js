@@ -25,21 +25,25 @@ export default {
 
   'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从帮助开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
 
-  'tour.welcome.title': '欢迎使用 tabcat', 'tour.welcome.text': '把标签页作为链接保存在分组里，关掉后随时可以再打开。',
+  'tour.welcome.title': '欢迎使用 tabcat。', 'tour.welcome.text': '把标签页作为链接保存在分组里，需要时随时再打开。',
 
-  'tour.workspaces.title': '工作区', 'tour.workspaces.text': '最大的分类，比如工作、学习……在这里选择，拖动可调整顺序。',
+  'tour.workspaces.title': '工作区', 'tour.workspaces.text': '最大的分类。可以按工作、学习来划分。拖动可调整顺序。',
 
-  'tour.categories.title': '类别', 'tour.categories.text': '工作区里的主题。每个类别都有自己的分组看板。',
+  'tour.tabs.title': '打开的标签页', 'tour.tabs.text': '显示打开的浏览器窗口和标签页。还可以 {icon:save} 保存窗口、{icon:suspend} 休眠标签页、{icon:dedupe} 整理重复的标签页。',
 
-  'tour.groups.title': '分组', 'tour.groups.text': '装着链接和文件夹的卡片。可拖到其他列，双击名称编辑，也可以用 {icon:open} 全部打开一次以标签组打开。',
+  'tour.categories.title': '类别', 'tour.categories.text': '工作区里的主题。每个类别可以有不同的分组。',
 
-  'tour.tabs.title': '打开的标签页', 'tour.tabs.text': '把标签页拖到分组上即可保存（按住 Shift 可多选）。{icon:save} 保存窗口、{icon:suspend} 休眠标签页、{icon:dedupe} 关闭重复项也都在这里。',
+  'tour.groups.title': '分组', 'tour.groups.text': '装着链接和文件夹的卡片。可以随意装饰，拖动来摆放。',
 
-  'tour.search.title': '搜索', 'tour.search.text': '随时查找链接、文件夹和分组。也可以按 Ctrl+F 打开。',
+  'tour.search.title': '搜索', 'tour.search.text': '随时搜索链接、文件夹、分组等。也可以用 Ctrl+F 打开。',
 
-  'tour.shortcut.title': '随时在手边', 'tour.shortcut.text': '按 Ctrl+Shift+X 把仪表板调到当前窗口，再按一次回到原来的标签页。工具栏按钮可以直接保存当前标签页。',
+  'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。',
 
-  'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。随时可以从 {icon:help} 帮助重新开始这个导览。',
+  'tour.tour.title': '导览', 'tour.tour.text': '随时可以从 {icon:help} 帮助重新开始这个导览。',
+
+  'tour.shortcut.title': '随时在手边', 'tour.shortcut.text': '按 Ctrl+Shift+X 随时查看仪表板。再按一次回到原来的标签页。',
+
+  'tour.bye.title': '好好相处吧。', 'tour.bye.text': '标签页尽管开着，整理的事交给 tabcat。',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',

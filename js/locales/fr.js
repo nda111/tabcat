@@ -27,21 +27,25 @@ export default {
 
   'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis l’aide.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
 
-  'tour.welcome.title': 'Bienvenue dans tabcat', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes, fermez-les et rouvrez-les quand vous en avez besoin.',
+  'tour.welcome.title': 'Bienvenue dans tabcat.', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes et rouvrez-les quand vous en avez besoin.',
 
-  'tour.workspaces.title': 'Espaces de travail', 'tour.workspaces.text': 'Les plus grands ensembles : un pour le travail, un pour les études… Choisissez-en un ici ; faites glisser pour réordonner.',
+  'tour.workspaces.title': 'Espaces de travail', 'tour.workspaces.text': 'Les plus grands ensembles. Séparez vos activités, comme le travail et les études. Faites glisser pour réordonner.',
 
-  'tour.categories.title': 'Catégories', 'tour.categories.text': 'Des thèmes dans un espace de travail. Chacune a son propre tableau de groupes.',
+  'tour.tabs.title': 'Onglets ouverts', 'tour.tabs.text': 'Vos fenêtres et onglets ouverts. Vous pouvez aussi {icon:save} enregistrer une fenêtre, {icon:suspend} mettre des onglets en veille ou {icon:dedupe} ranger les doublons.',
 
-  'tour.groups.title': 'Groupes', 'tour.groups.text': 'Des cartes contenant liens et dossiers. Faites-les glisser entre les colonnes, double-cliquez sur un nom pour le modifier et ouvrez un groupe entier comme groupe d’onglets avec {icon:open} Tout ouvrir.',
+  'tour.categories.title': 'Catégories', 'tour.categories.text': 'Des thèmes dans un espace de travail. Chaque catégorie a ses propres groupes.',
 
-  'tour.tabs.title': 'Onglets ouverts', 'tour.tabs.text': 'Faites glisser un onglet sur un groupe pour l’enregistrer (Maj en sélectionne plusieurs). Ici aussi : {icon:save} enregistrer une fenêtre, {icon:suspend} suspendre des onglets ou {icon:dedupe} fermer les doublons.',
+  'tour.groups.title': 'Groupes', 'tour.groups.text': 'Des cartes contenant liens et dossiers. Personnalisez-les et placez-les où vous voulez.',
 
-  'tour.search.title': 'Recherche', 'tour.search.text': 'Trouvez n’importe quel lien, dossier ou groupe. Aussi avec Ctrl+F.',
+  'tour.search.title': 'Recherche', 'tour.search.text': 'Cherchez liens, dossiers, groupes et plus, depuis n’importe où. Aussi avec Ctrl+F.',
 
-  'tour.shortcut.title': 'Toujours à portée', 'tour.shortcut.text': 'Ctrl+Maj+X amène le tableau de bord dans la fenêtre où vous êtes, et vous ramène ensuite. Le bouton de la barre d’outils enregistre l’onglet en cours.',
+  'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide.',
 
-  'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide. Vous pouvez relancer cette visite depuis l’{icon:help} aide à tout moment.',
+  'tour.tour.title': 'Visite', 'tour.tour.text': 'Vous pouvez relancer cette visite depuis l’{icon:help} aide à tout moment.',
+
+  'tour.shortcut.title': 'Toujours à portée', 'tour.shortcut.text': 'Ctrl+Maj+X affiche le tableau de bord à tout moment. Appuyez encore pour revenir à votre onglet.',
+
+  'tour.bye.title': 'Faisons équipe.', 'tour.bye.text': 'Gardez autant d’onglets ouverts que vous voulez. tabcat vous aide à les garder en ordre.',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',

@@ -27,21 +27,25 @@ export default {
 
   'tour.offer.title': 'Quer fazer um tour rápido pelo tabcat?', 'tour.offer.text': 'Um minuto, passo a passo, pelas partes principais. Você também pode começar depois pela Ajuda.', 'tour.offer.ok': 'Fazer o tour', 'tour.offer.later': 'Depois',
 
-  'tour.welcome.title': 'Boas-vindas ao tabcat', 'tour.welcome.text': 'Salve abas como links em grupos, feche-as e abra de novo quando precisar.',
+  'tour.welcome.title': 'Boas-vindas ao tabcat.', 'tour.welcome.text': 'Salve abas como links em grupos e abra de novo quando precisar.',
 
-  'tour.workspaces.title': 'Espaços de trabalho', 'tour.workspaces.text': 'As maiores divisões: um para o trabalho, outro para os estudos… Escolha um aqui; arraste para reordenar.',
+  'tour.workspaces.title': 'Espaços de trabalho', 'tour.workspaces.text': 'As maiores divisões. Separe suas coisas, como trabalho e estudos. Arraste para reordenar.',
 
-  'tour.categories.title': 'Categorias', 'tour.categories.text': 'Temas dentro de um espaço de trabalho. Cada uma tem seu próprio painel de grupos.',
+  'tour.tabs.title': 'Abas abertas', 'tour.tabs.text': 'Suas janelas e abas abertas. Você também pode {icon:save} salvar uma janela, {icon:suspend} pôr abas para dormir ou {icon:dedupe} arrumar as duplicadas.',
 
-  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Cartões com links e pastas. Arraste entre colunas, clique duas vezes no nome para editar e abra um grupo inteiro como grupo de abas com {icon:open} Abrir tudo.',
+  'tour.categories.title': 'Categorias', 'tour.categories.text': 'Temas dentro de um espaço de trabalho. Cada categoria tem seus próprios grupos.',
 
-  'tour.tabs.title': 'Abas abertas', 'tour.tabs.text': 'Arraste uma aba para um grupo para salvá-la (Shift escolhe várias). Daqui você também pode {icon:save} salvar uma janela, {icon:suspend} suspender abas ou {icon:dedupe} fechar duplicadas.',
+  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Cartões com links e pastas. Personalize do seu jeito e arraste para onde quiser.',
 
-  'tour.search.title': 'Busca', 'tour.search.text': 'Encontre qualquer link, pasta ou grupo. Também abre com Ctrl+F.',
+  'tour.search.title': 'Busca', 'tour.search.text': 'Busque links, pastas, grupos e mais, de qualquer lugar. Ctrl+F também abre.',
 
-  'tour.shortcut.title': 'Sempre à mão', 'tour.shortcut.text': 'Ctrl+Shift+X traz o painel para a janela em que você está e leva você de volta. O botão da barra de ferramentas salva a aba atual.',
+  'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda.',
 
-  'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda. Você pode recomeçar este tour pela {icon:help} Ajuda a qualquer momento.',
+  'tour.tour.title': 'Tour', 'tour.tour.text': 'Você pode recomeçar este tour pela {icon:help} Ajuda a qualquer momento.',
+
+  'tour.shortcut.title': 'Sempre à mão', 'tour.shortcut.text': 'Aperte Ctrl+Shift+X para ver o painel a qualquer hora. Aperte de novo para voltar à sua aba.',
+
+  'tour.bye.title': 'Vamos nos dar bem.', 'tour.bye.text': 'Deixe quantas abas quiser abertas. O tabcat ajuda a manter tudo em ordem.',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
