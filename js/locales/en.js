@@ -49,7 +49,7 @@ export default {
 
   // menus
   'menu.openAll': 'Open all ({n})', 'menu.openAllWindow': 'Open all in new window', 'menu.delete': 'Delete', 'menu.edit': 'Edit…',
-  'menu.export': 'Export…', 'menu.addWindowTabs': 'Add all tabs of this window', 'menu.sortName': 'Sort links by name',
+  'menu.export': 'Export…', 'menu.addWindowTabs': 'Add all tabs of this window', 'menu.sortName': 'Sort by name',
   'menu.dedupe': 'Remove duplicate links', 'menu.open': 'Open', 'menu.openWindow': 'Open in new window', 'menu.copyUrl': 'Copy URL',
   'menu.copyUrls': 'Copy URLs', 'menu.clearSel': 'Clear selection',
   'menu.openLinks': { one: 'Open {n} link', other: 'Open {n} links' },

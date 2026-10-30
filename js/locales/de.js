@@ -46,7 +46,7 @@ export default {
   'act.edit': 'Bearbeiten', 'act.editFolder': 'Ordner bearbeiten',
 
   'menu.openAll': 'Alle öffnen ({n})', 'menu.openAllWindow': 'Alle in neuem Fenster öffnen', 'menu.delete': 'Löschen', 'menu.edit': 'Bearbeiten…',
-  'menu.export': 'Exportieren…', 'menu.addWindowTabs': 'Alle Tabs dieses Fensters hinzufügen', 'menu.sortName': 'Links nach Name sortieren',
+  'menu.export': 'Exportieren…', 'menu.addWindowTabs': 'Alle Tabs dieses Fensters hinzufügen', 'menu.sortName': 'Nach Name sortieren',
   'menu.dedupe': 'Doppelte Links entfernen', 'menu.open': 'Öffnen', 'menu.openWindow': 'In neuem Fenster öffnen', 'menu.copyUrl': 'URL kopieren',
   'menu.copyUrls': 'URLs kopieren', 'menu.clearSel': 'Auswahl aufheben',
   'menu.openLinks': { one: '{n} Link öffnen', other: '{n} Links öffnen' },

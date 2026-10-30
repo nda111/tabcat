@@ -44,7 +44,7 @@ export default {
   'act.edit': '編集', 'act.editFolder': 'フォルダを編集',
 
   'menu.openAll': 'すべて開く ({n})', 'menu.openAllWindow': 'すべて新しいウィンドウで開く', 'menu.delete': '削除', 'menu.edit': '編集…',
-  'menu.export': 'エクスポート…', 'menu.addWindowTabs': 'このウィンドウのタブをすべて追加', 'menu.sortName': 'リンクを名前順に並べ替え',
+  'menu.export': 'エクスポート…', 'menu.addWindowTabs': 'このウィンドウのタブをすべて追加', 'menu.sortName': '名前順に並べ替え',
   'menu.dedupe': '重複したリンクを削除', 'menu.open': '開く', 'menu.openWindow': '新しいウィンドウで開く', 'menu.copyUrl': 'URL をコピー',
   'menu.copyUrls': 'URL をコピー', 'menu.clearSel': '選択を解除',
   'menu.openLinks': '{n} 個のリンクを開く',

@@ -46,7 +46,7 @@ export default {
   'act.edit': 'Editar', 'act.editFolder': 'Editar pasta',
 
   'menu.openAll': 'Abrir tudo ({n})', 'menu.openAllWindow': 'Abrir tudo em uma nova janela', 'menu.delete': 'Excluir', 'menu.edit': 'Editar…',
-  'menu.export': 'Exportar…', 'menu.addWindowTabs': 'Adicionar todas as abas desta janela', 'menu.sortName': 'Ordenar links por nome',
+  'menu.export': 'Exportar…', 'menu.addWindowTabs': 'Adicionar todas as abas desta janela', 'menu.sortName': 'Ordenar por nome',
   'menu.dedupe': 'Remover links duplicados', 'menu.open': 'Abrir', 'menu.openWindow': 'Abrir em uma nova janela', 'menu.copyUrl': 'Copiar URL',
   'menu.copyUrls': 'Copiar URLs', 'menu.clearSel': 'Limpar seleção',
   'menu.openLinks': { one: 'Abrir {n} link', other: 'Abrir {n} links' },

@@ -46,7 +46,7 @@ export default {
   'act.edit': 'Modifier', 'act.editFolder': 'Modifier le dossier',
 
   'menu.openAll': 'Tout ouvrir ({n})', 'menu.openAllWindow': 'Tout ouvrir dans une nouvelle fenêtre', 'menu.delete': 'Supprimer', 'menu.edit': 'Modifier…',
-  'menu.export': 'Exporter…', 'menu.addWindowTabs': 'Ajouter tous les onglets de cette fenêtre', 'menu.sortName': 'Trier les liens par nom',
+  'menu.export': 'Exporter…', 'menu.addWindowTabs': 'Ajouter tous les onglets de cette fenêtre', 'menu.sortName': 'Trier par nom',
   'menu.dedupe': 'Supprimer les liens en double', 'menu.open': 'Ouvrir', 'menu.openWindow': 'Ouvrir dans une nouvelle fenêtre', 'menu.copyUrl': 'Copier l’URL',
   'menu.copyUrls': 'Copier les URL', 'menu.clearSel': 'Désélectionner',
   'menu.openLinks': { one: 'Ouvrir {n} lien', other: 'Ouvrir {n} liens' },

@@ -44,7 +44,7 @@ export default {
   'act.edit': '编辑', 'act.editFolder': '编辑文件夹',
 
   'menu.openAll': '全部打开 ({n})', 'menu.openAllWindow': '在新窗口中全部打开', 'menu.delete': '删除', 'menu.edit': '编辑…',
-  'menu.export': '导出…', 'menu.addWindowTabs': '添加此窗口的所有标签页', 'menu.sortName': '按名称排序链接',
+  'menu.export': '导出…', 'menu.addWindowTabs': '添加此窗口的所有标签页', 'menu.sortName': '按名称排序',
   'menu.dedupe': '移除重复链接', 'menu.open': '打开', 'menu.openWindow': '在新窗口中打开', 'menu.copyUrl': '复制网址',
   'menu.copyUrls': '复制网址', 'menu.clearSel': '取消选择',
   'menu.openLinks': '打开 {n} 个链接',

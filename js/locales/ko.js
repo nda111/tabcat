@@ -44,7 +44,7 @@ export default {
   'act.edit': '수정', 'act.editFolder': '폴더 수정',
 
   'menu.openAll': '모두 열기 ({n})', 'menu.openAllWindow': '모두 새 창에서 열기', 'menu.delete': '삭제', 'menu.edit': '수정…',
-  'menu.export': '내보내기…', 'menu.addWindowTabs': '이 창의 탭 모두 추가', 'menu.sortName': '이름순으로 링크 정렬',
+  'menu.export': '내보내기…', 'menu.addWindowTabs': '이 창의 탭 모두 추가', 'menu.sortName': '이름순으로 정렬',
   'menu.dedupe': '중복 링크 제거', 'menu.open': '열기', 'menu.openWindow': '새 창에서 열기', 'menu.copyUrl': 'URL 복사',
   'menu.copyUrls': 'URL 복사', 'menu.clearSel': '선택 해제',
   'menu.openLinks': '링크 {n}개 열기',

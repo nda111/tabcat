@@ -679,6 +679,7 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 @keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { to { opacity: 0; } }
 @keyframes surface-in { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: none; } }
 
 /* while a side panel opens / closes: text keeps to one line (clipped by the panel) instead of
@@ -690,7 +691,15 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 /* (scoped to the panel being toggled, so the other panel doesn't replay it) */
 body.ws-collapsed #sidebar.panel-anim .ws-add,
 body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
-body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .tab-row .name) { animation: fade-in .3s ease-out; }
+body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .win-head .icon-btn, .tab-row .name) { animation: fade-in .3s ease-out; }
+/* the rail's per-window tab counts fade in as it closes, and fade out where they were as it opens (out of
+   the flow, so the full header lays out as usual meanwhile) */
+body.tabs-collapsed #tabs-panel.panel-anim .win-count { animation: fade-in .25s ease-out; }
+#tabs-panel .win-head { position: relative; }
+body:not(.tabs-collapsed) #tabs-panel.panel-anim .win-count {
+  display: block; position: absolute; left: 0; top: 3px; width: 44px; text-align: center; font-size: 11px; pointer-events: none;
+  animation: fade-out .2s ease-out forwards;
+}
 /* the Workspaces heading surfaces from below the rows, as if rising from depth */
 body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in .38s cubic-bezier(.22, 1, .36, 1) .04s backwards; }
 #ws-toggle, .brand-logo { transition: opacity .15s; }
