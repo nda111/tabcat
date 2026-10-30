@@ -1096,6 +1096,7 @@ function noteGhost(el) {
   g.classList.add('note-ghost');
   return g;
 }
+const NO_BOX = { paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' };
 function holdNote() {
   if (!noteMorph) return null;
   const held0 = noteMorph;
@@ -1109,6 +1110,7 @@ function holdNote() {
     group.classList.remove('empty-group'); // keeps the body drawn while it closes (put back after)
     const from = shut ? held0.body : 0;
     Object.assign(body.style, { height: `${from}px`, overflow: 'hidden' });
+    if (!shut) group.querySelector('.group-head').style.borderBottomWidth = '0px'; // (its rule comes with the body)
     const ghost = shut ? held0.ghost : null;
     if (ghost) {
       const r = body.getBoundingClientRect();
@@ -1126,7 +1128,8 @@ function holdNote() {
     body.prepend(note);
   }
   if (!note) return null;
-  Object.assign(note.style, { height: `${height}px`, minHeight: '0', overflow: 'hidden' });
+  // held at nothing, padding and border too: else what is below is measured that much lower
+  Object.assign(note.style, { height: `${height}px`, minHeight: '0', overflow: 'hidden' }, height ? {} : NO_BOX);
   const { ghost } = held0;
   if (ghost) {
     const r = note.getBoundingClientRect();
@@ -1140,13 +1143,12 @@ function growNote(held) {
   if (held.body) return growBody(held);
   const { note, height, ghost } = held;
   const grow = () => {
-    note.style.height = '';
-    note.style.minHeight = '';
+    Object.assign(note.style, { height: '', minHeight: '' }, height ? {} : { paddingTop: '', paddingBottom: '', borderBottomWidth: '' });
     const to = note.getBoundingClientRect().height;
     note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
     // from / to nothing (an empty note): padding and border go too, or the box would pop in at
     // their size; and no spring when closing up, as its dip below zero would just stall at zero
-    const none = { height: '0px', paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' };
+    const none = { height: '0px', ...NO_BOX };
     const gone = note.matches('.note-spacer');
     note.animate([height ? { height: `${height}px` } : none, gone ? none : { height: `${to}px` }],
       { duration: gone ? 280 : 340, easing: gone ? 'cubic-bezier(.22, 1, .36, 1)' : SPRING })
@@ -1172,6 +1174,7 @@ function growNote(held) {
 
 function growBody({ body, group, shut, from, ghost, note }) {
   body.style.height = '';
+  group.querySelector('.group-head').style.borderBottomWidth = '';
   const to = shut ? 0 : body.getBoundingClientRect().height;
   const opts = shut ? { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' } : { duration: 340, easing: SPRING };
   const line = [{ borderBottomWidth: '1px' }, { borderBottomWidth: '0px' }]; // the header's rule over the body
