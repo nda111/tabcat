@@ -313,7 +313,8 @@ function animateLayout(before) {
   const wsChanged = before.ws !== currentWs()?.id; // (switchCats() handles the category bar itself)
   const held = holdNote();
   const card = holdCard();
-  try { animateMoves(before, wsChanged); } finally { openExpanded(); growNote(held); growCard(card); }
+  const opening = holdExpanding();
+  try { animateMoves(before, wsChanged); } finally { openExpanded(opening); growNote(held); growCard(card); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -1163,15 +1164,22 @@ async function toggleCollapse(node) {
   apply({ op: 'patch', id: node.id, fields: { collapsed: !node.collapsed } });
 }
 // (called at the end of animateLayout)
-function openExpanded() {
-  if (!expanding) return;
+// The contents of a group / folder being expanded are held shut while the layout is measured (like a
+// note, see holdNote), so what is below gets no slide of its own: it just follows them as they open.
+function holdExpanding() {
+  if (!expanding) return null;
   const body = contentsOf(expanding);
   expanding = null;
-  if (!body) return;
+  if (!body) return null;
   const h = body.getBoundingClientRect().height;
-  body.style.overflow = 'hidden';
-  body.style.minHeight = '0';
-  body.animate([{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }], { duration: 320, easing: SPRING })
+  Object.assign(body.style, { height: '0px', minHeight: '0', overflow: 'hidden' });
+  return { body, h };
+}
+function openExpanded(held) {
+  if (!held) return;
+  const { body, h } = held;
+  body.style.height = '';
+  body.animate([{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }], { duration: 320, easing: GLIDE })
     .finished.catch(() => {}).then(() => { body.style.overflow = ''; body.style.minHeight = ''; });
 }
 
