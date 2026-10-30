@@ -2302,12 +2302,34 @@ function showIndicator(t) {
   if (was !== card) { was?.classList.remove('drop-new'); card?.classList.add('drop-new'); }
 }
 
+// Past the right edge of the last column (while there are fewer than MAX_COLUMNS): a new column. A group
+// dropped there moves into it; links, folders, tabs or a window make a new group there.
+function newColumnTarget(e, d) {
+  const board = $('#board');
+  const n = boardColumns();
+  if (!board.dataset.parent || n >= MAX_COLUMNS) return null;
+  const type = d.kind === 'node' ? d.type : 'link';
+  if (type === 'category' || type === 'workspace') return null;
+  const last = [...board.querySelectorAll('.columns > .col')].at(-1);
+  if (!last) return null;
+  const lr = last.getBoundingClientRect(), br = board.getBoundingClientRect();
+  const edge = Math.min(lr.right, br.right - board.offsetWidth + board.clientWidth); // (a scrolled-away last column has no edge in view)
+  if (lr.right > edge + 1 || e.clientX < edge - 16 || e.clientX > br.right || e.clientY < br.top || e.clientY > br.bottom) return null;
+  const line = { x: Math.min(edge + 6, br.right - (board.offsetWidth - board.clientWidth) - 5), y: lr.top, w: 3, h: Math.max(40, br.bottom - lr.top - 12) };
+  const cat = T.locate(state, board.dataset.parent).node;
+  return type === 'group'
+    ? { action: 'column', categoryId: cat.id, column: n, line, newColumn: true }
+    : { mode: 'newGroup', categoryId: cat.id, column: n, line, newColumn: true };
+}
+
 const hLine = (r, before) => ({ x: r.left + 4, y: (before ? r.top : r.bottom) - 1, w: r.width - 8, h: 2 });
 const vLine = (r, before, gap = 7) => ({ x: (before ? r.left - gap : r.right + gap) - 1, y: r.top, w: 3, h: r.height });
 
 function resolveDrop(e, d) {
   const el = e.target instanceof Element ? e.target : e.target.parentElement;
   if (!el || el.closest('dialog, #menu')) return null;
+  const extra = el.closest('#board') && newColumnTarget(e, d);
+  if (extra) return extra;
   const type = d.kind === 'node' ? d.type : 'link'; // tabs / windows / external urls behave like links
   if (type === 'link') return resolveItemDrop(e, el, d);
   if (type === 'folder') { // a folder (with its subfolders) must stay within MAX_FOLDER_DEPTH
@@ -2508,6 +2530,7 @@ async function performDrop(d, t, e) {
     if (urls.length) await run(B.call('openUrls', { urls, windowId: t.windowId }));
     return;
   }
+  if (t.newColumn) await setColumns(boardColumns() + 1); // the column first, so what lands in it shows there
   if (d.kind === 'node') markMoving(d.ids || [d.id]);
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
   if (t.action === 'column') return moveToColumn(d.ids || [d.id], t);
