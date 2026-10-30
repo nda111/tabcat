@@ -417,10 +417,13 @@ function animateOut(ids) {
     const r = el.getBoundingClientRect();
     el.style.overflow = 'hidden';
     const across = el.closest('#cat-bar'); // tabs sit in a row: close up the width instead
-    const size = across ? 'width' : 'height';
+    // close up the padding and the row's gap too, or what is left of them jumps shut on removal
+    const shut = across
+      ? { width: '0px', paddingLeft: '0px', paddingRight: '0px', marginRight: `-${parseFloat(getComputedStyle(across).columnGap) || 0}px` }
+      : { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px' };
     const anims = [el.animate([
-      { opacity: 1, transform: 'none', [size]: `${across ? r.width : r.height}px` },
-      { opacity: 0, transform: 'scale(.96)', [size]: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px' },
+      { opacity: 1, transform: 'none', [across ? 'width' : 'height']: `${across ? r.width : r.height}px` },
+      { opacity: 0, transform: 'scale(.96)', ...shut },
     ], opts)];
     const gap = el.matches('.group') && [el.previousElementSibling, el.nextElementSibling].find((x) => x?.matches('.gap-slot'));
     if (gap) anims.push(gap.animate([{ height: '14px' }, { height: '0px' }], opts));
