@@ -90,6 +90,7 @@ export default {
   'toast.deletedItems': '항목 {n}개 삭제됨',
   'toast.suspended': '탭 {n}개를 재웠습니다.',
   'toast.closedDupes': '중복 탭 {n}개를 닫았습니다.',
+  'toast.extReloaded': 'tabcat 확장 프로그램이 다시 시작되었습니다. 편집을 마치면 페이지를 새로 불러옵니다.',
   'toast.removedDupes': '중복 링크 {n}개를 제거했습니다.',
   'toast.copiedUrls': 'URL {n}개를 복사했습니다.',
   'toast.imported': '워크스페이스 {n}개를 가져왔습니다.',

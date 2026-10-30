@@ -90,6 +90,7 @@ export default {
   'toast.deletedItems': '已删除 {n} 项',
   'toast.suspended': '已休眠 {n} 个标签页',
   'toast.closedDupes': '已关闭 {n} 个重复的标签页',
+  'toast.extReloaded': 'tabcat 扩展程序已重启。编辑完成后页面将重新加载。',
   'toast.removedDupes': '已移除 {n} 个重复链接',
   'toast.copiedUrls': '已复制 {n} 个网址',
   'toast.imported': '已导入 {n} 个工作区',

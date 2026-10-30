@@ -197,7 +197,25 @@ function dismissToast(el) {
 
 // Run an extension call, surfacing failures as a toast.
 async function run(promise) {
-  try { return await promise; } catch (err) { toast(err.message); return undefined; }
+  try { return await promise; } catch (err) {
+    // (the extension went away under the page: see reloadWhenIdle, not its own English message)
+    if (/extension is not available/.test(err.message)) reloadWhenIdle();
+    else toast(err.message);
+    return undefined;
+  }
+}
+
+// The extension went away under the page (reloaded or updated: the page's link to it can't come back):
+// load the page again, which links up with it anew, or waits on the notice if it is really gone. Not
+// in the middle of an edit (a dialog, a note): a toast says so, and the page reloads once that's done.
+let reloading = false;
+function reloadWhenIdle() {
+  if (reloading) return;
+  reloading = true;
+  const busy = () => document.querySelector('dialog[open]') || document.activeElement?.matches('input, textarea, select, [contenteditable]');
+  if (busy()) toast(t('toast.extReloaded'));
+  const attempt = () => (busy() ? setTimeout(attempt, 500) : location.reload());
+  setTimeout(attempt, 300); // (a moment for the updated extension to start)
 }
 const apply = (...ops) => run(B.apply(...ops));
 
@@ -3550,7 +3568,7 @@ B.on('settings', (s) => {
 });
 B.on('tabs', scheduleTabs);
 B.on('ready', (ext) => { if (ext) setExtension(ext); if (state) refresh(); }); // reconnected after the service worker restarted (or the extension was updated)
-B.on('disconnected', () => showNoExtension());
+B.on('disconnected', reloadWhenIdle);
 // Back to the dashboard (its tab shown again, or its window focused): redraw the open tabs at once.
 // While hidden, Chrome stretches the page's timers (up to a minute), so a pending redraw may lag.
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state) renderTabs(); });

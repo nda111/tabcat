@@ -90,6 +90,7 @@ export default {
   'toast.deletedItems': '{n} 個の項目を削除しました。',
   'toast.suspended': '{n} 個のタブを休止しました。',
   'toast.closedDupes': '重複したタブを {n} 個閉じました。',
+  'toast.extReloaded': 'tabcat 拡張機能が再起動しました。編集が終わるとページを再読み込みします。',
   'toast.removedDupes': '重複したリンクを {n} 個削除しました。',
   'toast.copiedUrls': '{n} 個の URL をコピーしました。',
   'toast.imported': '{n} 個のワークスペースをインポートしました。',

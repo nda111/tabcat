@@ -92,6 +92,7 @@ export default {
   'toast.deletedItems': { one: '{n} Element gelöscht', other: '{n} Elemente gelöscht' },
   'toast.suspended': { one: '{n} Tab pausiert', other: '{n} Tabs pausiert' },
   'toast.closedDupes': { one: '{n} doppelter Tab geschlossen', other: '{n} doppelte Tabs geschlossen' },
+  'toast.extReloaded': 'Die tabcat-Erweiterung wurde neu gestartet. Die Seite lädt neu, sobald du mit dem Bearbeiten fertig bist.',
   'toast.removedDupes': { one: '{n} doppelter Link entfernt', other: '{n} doppelte Links entfernt' },
   'toast.copiedUrls': { one: '{n} URL kopiert', other: '{n} URLs kopiert' },
   'toast.imported': { one: '{n} Arbeitsbereich importiert', other: '{n} Arbeitsbereiche importiert' },

@@ -92,6 +92,7 @@ export default {
   'toast.deletedItems': { one: 'Se eliminó {n} elemento.', other: 'Se eliminaron {n} elementos.' },
   'toast.suspended': { one: '{n} pestaña suspendida', other: '{n} pestañas suspendidas' },
   'toast.closedDupes': { one: 'Se cerró {n} pestaña duplicada.', other: 'Se cerraron {n} pestañas duplicadas.' },
+  'toast.extReloaded': 'La extensión de tabcat se reinició. La página se recargará cuando termines de editar.',
   'toast.removedDupes': { one: 'Se quitó {n} enlace duplicado.', other: 'Se quitaron {n} enlaces duplicados.' },
   'toast.copiedUrls': { one: 'Se copió {n} URL.', other: 'Se copiaron {n} URL.' },
   'toast.imported': { one: 'Se importó {n} espacio de trabajo.', other: 'Se importaron {n} espacios de trabajo.' },

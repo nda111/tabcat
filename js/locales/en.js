@@ -97,6 +97,7 @@ export default {
   'toast.deletedItems': { one: 'Deleted {n} item', other: 'Deleted {n} items' },
   'toast.suspended': { one: 'Suspended {n} tab', other: 'Suspended {n} tabs' },
   'toast.closedDupes': { one: 'Closed {n} duplicate tab', other: 'Closed {n} duplicate tabs' },
+  'toast.extReloaded': 'The tabcat extension restarted. The page reloads once you finish editing.',
   'toast.removedDupes': { one: 'Removed {n} duplicate link', other: 'Removed {n} duplicate links' },
   'toast.copiedUrls': { one: 'Copied {n} URL', other: 'Copied {n} URLs' },
   'toast.imported': { one: 'Imported {n} workspace', other: 'Imported {n} workspaces' },

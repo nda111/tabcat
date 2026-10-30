@@ -92,6 +92,7 @@ export default {
   'toast.deletedItems': { one: '{n} élément supprimé', other: '{n} éléments supprimés' },
   'toast.suspended': { one: '{n} onglet suspendu', other: '{n} onglets suspendus' },
   'toast.closedDupes': { one: '{n} onglet en double fermé', other: '{n} onglets en double fermés' },
+  'toast.extReloaded': 'L’extension tabcat a redémarré. La page se rechargera une fois la modification terminée.',
   'toast.removedDupes': { one: '{n} lien en double supprimé', other: '{n} liens en double supprimés' },
   'toast.copiedUrls': { one: '{n} URL copiée', other: '{n} URL copiées' },
   'toast.imported': { one: '{n} espace de travail importé', other: '{n} espaces de travail importés' },
