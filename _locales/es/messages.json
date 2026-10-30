@@ -1,6 +1,6 @@
 {
   "extDescription": {
-    "message": "Guarda, organiza y suspende pestañas: espacio de trabajo → categoría → grupo → carpeta/enlace, gestionado desde un panel web."
+    "message": "Guarda pestañas en grupos y vuelve a abrirlas cuando las necesites. Las que no usas se duermen y todo va más ligero."
   },
   "cmdPopup": {
     "message": "Abrir la ventana emergente de tabcat"

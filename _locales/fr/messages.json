@@ -1,6 +1,6 @@
 {
   "extDescription": {
-    "message": "Enregistrez, organisez et suspendez vos onglets : espace de travail → catégorie → groupe → dossier/lien, gérés depuis un tableau de bord web."
+    "message": "Rangez vos onglets dans des groupes et rouvrez-les au besoin. Les onglets inutilisés se mettent en veille, tout reste léger."
   },
   "cmdPopup": {
     "message": "Ouvrir la fenêtre tabcat"
