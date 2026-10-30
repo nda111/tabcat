@@ -602,7 +602,8 @@ dialog select:focus-visible { outline: none; border-color: var(--accent); }
   dialog select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
 }
 dialog textarea { min-height: 120px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
-dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 14px 0 0; }
+/* (the extension notice's card ends the same way: its action at the bottom right) */
+:is(dialog, .no-ext-card) menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 14px 0 0; }
 dialog fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; padding: 8px 10px; }
 dialog legend { font-size: 11px; color: var(--muted); }
 .file-btn { display: inline-block; margin: 0; font-weight: 400; }
