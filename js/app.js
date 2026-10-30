@@ -1422,8 +1422,10 @@ function openEditor(type, data = {}, title) {
           err.textContent = '';
         } catch { err.textContent = t('icon.bad'); }
       });
-      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
-        h('button', { class: 'btn small', type: 'button', onclick: () => file.click() }, t('icon.upload')),
+      const upload = h('button', { class: 'btn upload-btn', type: 'button', title: t('icon.upload'), 'aria-label': t('icon.upload'), onclick: () => file.click() }, icon('upload', 16));
+      // square: as wide as the field is tall (CSS stretches its height to the field's)
+      new ResizeObserver(() => { upload.style.width = `${input.offsetHeight}px`; }).observe(input);
+      return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file, upload,
         btn(icon('close'), t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
@@ -2531,7 +2533,16 @@ function hideTip() {
   clearTimeout(tipTimer);
   if (tipEl?.dataset.trunc) { delete tipEl.dataset.trunc; delete tipEl.dataset.tip; } // a borrowed full-name tip
   else if (tipEl?.dataset.tip != null) { tipEl.title = tipEl.dataset.tip; delete tipEl.dataset.tip; }
-  if (!tip.hidden) tipHiddenAt = Date.now();
+  if (!tip.hidden) {
+    tipHiddenAt = Date.now();
+    // a copy fades out quickly where it was, so the tip itself is free for the next one at once
+    const ghost = tip.cloneNode(true);
+    ghost.removeAttribute('id');
+    ghost.className = 'tip tip-out';
+    tip.after(ghost);
+    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 110, easing: 'ease-in', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => ghost.remove());
+  }
   tipEl = null;
   tip.hidden = true;
 }

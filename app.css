@@ -354,7 +354,7 @@ body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing
 body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .tab-row.hover .icon-btn { display: inline-grid; }
 
 /* ---------- collapsed side panels: icon rails ---------- */
-#tip {
+#tip, .tip-out {
   position: fixed; z-index: 60; max-width: 300px; padding: 6px 9px; border-radius: 7px; pointer-events: none;
   background: var(--panel); color: var(--text); border: 1px solid var(--border); /* follows the light / dark theme */
   font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.14);
@@ -468,6 +468,9 @@ dialog .field-label { display: block; font-weight: 600; }
 .icon-preview { display: flex; gap: 8px; align-items: center; }
 .icon-preview img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 .icon-preview input { flex: 1; min-width: 0; }
+/* as tall as the field beside it (whose margin-top it shares) */
+.icon-preview .upload-btn { flex: none; align-self: stretch; margin-top: 4px; padding: 0; display: grid; place-items: center; color: var(--muted); }
+.icon-preview .upload-btn:hover { color: var(--text); }
 
 .ctx-menu {
   position: fixed; z-index: 100; background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
