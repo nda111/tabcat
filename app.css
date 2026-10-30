@@ -703,21 +703,23 @@ dialog .field .swatches { margin-top: 6px; }
 .swatch.plain { background: var(--panel); box-shadow: inset 0 0 0 1px var(--border); }
 .swatch.plain:has(input:checked) { box-shadow: inset 0 0 0 1px var(--border), 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
 
-/* a coloured group: its own lighter (or, in the dark, deeper) shades of the panel colours, so the card,
-   its note, hover tints and borders all take the hue */
+/* a coloured group: its colour (Chrome's tab group colour) mixed into white, or in the dark into the
+   dark panel, for its panel, note, hover and border colours, so the card, its note, hover tints and
+   borders all take the tone of its tab group (oklab keeps yellow from going muddy) */
 .group[data-color] {
-  --panel: oklch(.975 .028 var(--g-hue)); --panel-2: oklch(.955 .038 var(--g-hue));
-  --hover: oklch(.925 .05 var(--g-hue)); --border: oklch(.885 .055 var(--g-hue));
+  --panel: color-mix(in oklab, var(--g) 9%, #fff); --panel-2: color-mix(in oklab, var(--g) 14%, #fff);
+  --hover: color-mix(in oklab, var(--g) 22%, #fff); --border: color-mix(in oklab, var(--g) 32%, #fff);
 }
+.swatch.group-swatch { background: var(--sw); } /* swatches in the pastel shade (Chrome's dark-theme tab group colours) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .group[data-color] {
-    --panel: oklch(.27 .035 var(--g-hue)); --panel-2: oklch(.245 .03 var(--g-hue));
-    --hover: oklch(.32 .045 var(--g-hue)); --border: oklch(.37 .05 var(--g-hue));
+    --panel: color-mix(in oklab, var(--g-dark) 14%, #222125); --panel-2: color-mix(in oklab, var(--g-dark) 11%, #1d1c20);
+    --hover: color-mix(in oklab, var(--g-dark) 22%, #222125); --border: color-mix(in oklab, var(--g-dark) 30%, #222125);
   }
 }
 :root[data-theme="dark"] .group[data-color] {
-  --panel: oklch(.27 .035 var(--g-hue)); --panel-2: oklch(.245 .03 var(--g-hue));
-  --hover: oklch(.32 .045 var(--g-hue)); --border: oklch(.37 .05 var(--g-hue));
+  --panel: color-mix(in oklab, var(--g-dark) 14%, #222125); --panel-2: color-mix(in oklab, var(--g-dark) 11%, #1d1c20);
+  --hover: color-mix(in oklab, var(--g-dark) 22%, #222125); --border: color-mix(in oklab, var(--g-dark) 30%, #222125);
 }
 
 /* Settings > Appearance: a name, then its choices */

@@ -15,6 +15,17 @@ let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, them
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
+// Group colours are Chrome's tab group colours, so a tab group opened from a group looks like its card:
+// [light theme, dark theme] as Chrome draws them, and the name to show (lime / teal / sky from before
+// these map to the nearest).
+const GROUP_COLORS = {
+  red: ['#d93025', '#f28b82', 'accent.red'], orange: ['#fa903e', '#fcad70', 'accent.orange'],
+  yellow: ['#f9ab00', '#fdd663', 'accent.yellow'], green: ['#188038', '#81c995', 'accent.green'],
+  cyan: ['#007b83', '#78d9ec', 'accent.teal'], blue: ['#1a73e8', '#8ab4f8', 'accent.blue'],
+  purple: ['#a142f4', '#d7aefb', 'accent.purple'], pink: ['#d01884', '#ff8bcb', 'accent.pink'],
+};
+const OLD_GROUP_COLORS = { lime: 'green', teal: 'cyan', sky: 'blue' };
+const groupColor = (c) => GROUP_COLORS[c] || GROUP_COLORS[OLD_GROUP_COLORS[c]] || null;
 let ui = loadUi();          // per-device view state: selected workspace / category, panel visibility
 let editingNoteId = null;
 let drag = null;            // { kind:'node', id, type } | { kind:'tab', tabIds } | { kind:'window', windowId } | { kind:'external' }
@@ -694,8 +705,8 @@ function renderGroup(g) {
   return h('div', {
     class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : '') + (selected.has(g.id) ? ' selected' : ''),
     // (dataset would turn a null into the string "null": the colour goes in only when there is one)
-    dataset: { id: g.id, type: 'group', ...(ACCENTS[g.color] != null && { color: g.color }) },
-    style: ACCENTS[g.color] != null ? `--g-hue: ${ACCENTS[g.color]}` : null,
+    dataset: { id: g.id, type: 'group', ...(groupColor(g.color) && { color: g.color }) },
+    style: groupColor(g.color) ? `--g: ${groupColor(g.color)[0]}; --g-dark: ${groupColor(g.color)[1]}` : null,
     // while groups are selected, a click anywhere on a card (de)selects it (its buttons and links are inert)
     onclick: (e) => { if (selected.size && !e.target.closest('.group-head')) toggleSelected(g.id); },
   },
@@ -1515,16 +1526,19 @@ function suggestName(type) {
   return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
 }
 
-// The group colour: the same round swatches as Settings > Color, after a plain one (the default card).
+// The group colour: round swatches like Settings > Color (in Chrome's tab group colours), after a plain
+// one (the default card).
 function colorField(label, input) {
   input.type = 'hidden';
+  if (OLD_GROUP_COLORS[input.value]) input.value = OLD_GROUP_COLORS[input.value];
   const swatch = (name) => {
-    const tip = t(name ? `accent.${name}` : 'color.none');
-    return h('label', { class: 'swatch' + (name ? '' : ' plain'), dataset: { accent: name || 'none' }, title: tip, style: name ? `--hue: ${ACCENTS[name]}` : null },
+    const c = GROUP_COLORS[name];
+    const tip = t(c ? c[2] : 'color.none');
+    return h('label', { class: 'swatch' + (c ? ' group-swatch' : ' plain'), dataset: { accent: name || 'none' }, title: tip, style: c ? `--sw: ${c[1]}` : null }, // (the pastel shade, in either theme)
       h('input', { type: 'radio', name: 'group-color', value: name, 'aria-label': tip, checked: input.value === name, onchange: () => { input.value = name; input.dispatchEvent(new Event('input', { bubbles: true })); } }));
   };
   return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label),
-    h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, swatch(''), ...Object.keys(ACCENTS).map(swatch)), input);
+    h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, swatch(''), ...Object.keys(GROUP_COLORS).map(swatch)), input);
 }
 
 // `onPreview(values)` (optional) hears the fields as they are edited, before any check.
