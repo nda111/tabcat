@@ -422,7 +422,7 @@ body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }
 body.tabs-collapsed .panel-head { padding: 8px 0 4px 10px; }
-body.tabs-collapsed .panel-title { display: none; }
+body.tabs-collapsed #tabs-panel .panel-title { display: none; } /* (outranks the #tabs-panel title rules below) */
 
 body.tabs-collapsed .panel-actions { flex-direction: column; align-items: flex-start; padding: 0 0 6px 14px; gap: 2px; }
 body.tabs-collapsed .panel-actions .btn { border: 0; background: transparent; padding: 4px 6px; }

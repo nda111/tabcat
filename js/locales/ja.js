@@ -102,7 +102,7 @@ export default {
   'accent.red': '赤', 'accent.orange': 'オレンジ', 'accent.yellow': '黄', 'accent.lime': 'ライム', 'accent.green': '緑',
   'accent.teal': 'ティール', 'accent.sky': 'スカイ', 'accent.blue': '青', 'accent.purple': '紫', 'accent.pink': 'ピンク',
   'settings.data': 'データ', 'data.export': 'データをエクスポート…', 'data.import': 'データをインポート…',
-  'data.exportSettings': '設定をエクスポート', 'data.importSettings': '設定をインポート', 'data.resetSettings': '設定をリセット', 'reset.title': 'すべての設定をリセットしますか？', 'reset.text': '言語、テーマ、色、列数などのオプションが既定値に戻ります。ワークスペース、グループ、リンクはそのままです。', 'reset.ok': 'リセット', 'toast.settingsReset': '設定を既定値に戻しました',
+  'data.exportSettings': '設定をエクスポート', 'data.importSettings': '設定をインポート', 'data.resetSettings': '設定をリセット', 'reset.title': 'すべての設定をリセットしますか？', 'reset.text': '言語、テーマ、色、列数などのオプションが既定値に戻ります。ワークスペース、グループ、リンクはリセットされません。', 'reset.ok': 'リセット', 'toast.settingsReset': '設定を既定値に戻しました',
   'data.note': 'インポートした項目は新しいワークスペースとして追加され、既存のデータは上書きされません。設定ファイルには上のオプションが含まれます (ダッシュボードのアドレスは除く)。',
   'settings.shortcuts': 'ショートカット',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Alt+Shift+D</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

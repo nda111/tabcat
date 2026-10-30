@@ -104,7 +104,7 @@ export default {
   'accent.red': 'Vermelho', 'accent.orange': 'Laranja', 'accent.yellow': 'Amarelo', 'accent.lime': 'Lima', 'accent.green': 'Verde',
   'accent.teal': 'Verde-azulado', 'accent.sky': 'Azul-celeste', 'accent.blue': 'Azul', 'accent.purple': 'Roxo', 'accent.pink': 'Rosa',
   'settings.data': 'Dados', 'data.export': 'Exportar dados…', 'data.import': 'Importar dados…',
-  'data.exportSettings': 'Exportar configurações', 'data.importSettings': 'Importar configurações', 'data.resetSettings': 'Redefinir configurações', 'reset.title': 'Redefinir todas as configurações?', 'reset.text': 'Idioma, tema, cor, colunas e as demais opções voltam ao padrão. Seus espaços de trabalho, grupos e links não são alterados.', 'reset.ok': 'Redefinir', 'toast.settingsReset': 'Configurações redefinidas',
+  'data.exportSettings': 'Exportar configurações', 'data.importSettings': 'Importar configurações', 'data.resetSettings': 'Redefinir configurações', 'reset.title': 'Redefinir todas as configurações?', 'reset.text': 'Idioma, tema, cor, colunas e as demais opções voltam ao padrão. Espaços de trabalho, grupos e links não são redefinidos.', 'reset.ok': 'Redefinir', 'toast.settingsReset': 'Configurações redefinidas',
   'data.note': 'A importação adiciona os itens escolhidos como novos espaços de trabalho; nada é sobrescrito. Os arquivos de configurações guardam as opções acima (não o endereço do painel).',
   'settings.shortcuts': 'Atalhos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Alt+Shift+D</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
