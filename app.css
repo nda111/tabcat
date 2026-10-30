@@ -690,7 +690,7 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 /* things that only exist in one state fade in instead of popping (only during a toggle, not on re-renders) */
 /* (scoped to the panel being toggled, so the other panel doesn't replay it) */
 body.ws-collapsed #sidebar.panel-anim .ws-add,
-body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count, .brand-name),
+body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count),
 body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .win-head .icon-btn, .tab-row .name) { animation: fade-in .3s ease-out; }
 /* the rail's per-window tab counts fade in as it closes, and fade out where they were as it opens (out of
    the flow, so the full header lays out as usual meanwhile) */
@@ -702,7 +702,10 @@ body:not(.tabs-collapsed) #tabs-panel.panel-anim .win-count {
 }
 /* the Workspaces heading surfaces from below the rows, as if rising from depth */
 body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in .38s cubic-bezier(.22, 1, .36, 1) .04s backwards; }
-#ws-toggle, .brand-logo { transition: opacity .15s; }
+/* collapsed: the logo and the expand button cross-fade unhurriedly on hover; opening, the logo is simply
+   there, and "tabcat" (one line, never faded) is uncovered by the widening panel */
+body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; }
+#ws-toggle { transition: opacity .15s; }
 
 /* collapsing: labels fade out first (the panel already narrows), then the rail layout takes over */
 .side-panel.fading :is(.brand-name, .side-title, .ws-item .name, .ws-item .count, .side-btn .label, .panel-title,
