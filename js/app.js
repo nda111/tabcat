@@ -3309,6 +3309,10 @@ B.on('settings', (s) => {
 B.on('tabs', scheduleTabs);
 B.on('ready', () => { if (state) refresh(); }); // reconnected after the service worker restarted
 B.on('disconnected', () => showNoExtension());
+// Back to the dashboard (its tab shown again, or its window focused): redraw the open tabs at once.
+// While hidden, Chrome stretches the page's timers (up to a minute), so a pending redraw may lag.
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state) renderTabs(); });
+window.addEventListener('focus', () => { if (state) scheduleTabs(); });
 
 function showNoExtension() {
   $('#no-ext-origin').textContent = location.origin;
