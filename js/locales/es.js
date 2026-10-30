@@ -97,7 +97,7 @@ export default {
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
 
   'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
-  'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos, 0 = nunca)', 'settings.columns': 'Columnas del tablero (1–7)',
+  'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos; con 0 se desactiva)', 'settings.columns': 'Columnas del tablero (1–7)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',
   'theme.auto': 'Sistema', 'theme.light': 'Claro', 'theme.dark': 'Oscuro',

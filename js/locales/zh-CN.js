@@ -95,7 +95,7 @@ export default {
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
 
   'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
-  'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟，0 = 关闭)', 'settings.columns': '面板列数 (1–7)',
+  'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟，设为 0 则关闭)', 'settings.columns': '面板列数 (1–7)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',
   'theme.auto': '系统', 'theme.light': '浅色', 'theme.dark': '深色',

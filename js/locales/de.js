@@ -97,7 +97,7 @@ export default {
   'err.notSettings': 'keine tabcat-Einstellungsdatei', 'err.noSettings': 'keine gültigen Einstellungen gefunden',
 
   'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren',
-  'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten, 0 = aus)', 'settings.columns': 'Spalten im Board (1–7)',
+  'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten; 0 schaltet es aus)', 'settings.columns': 'Spalten im Board (1–7)',
   'settings.language': 'Sprache', 'settings.langAuto': 'Browsersprache',
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',
   'theme.auto': 'System', 'theme.light': 'Hell', 'theme.dark': 'Dunkel',
