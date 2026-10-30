@@ -104,7 +104,7 @@ export default {
   'accent.red': 'Rojo', 'accent.orange': 'Naranja', 'accent.yellow': 'Amarillo', 'accent.lime': 'Lima', 'accent.green': 'Verde',
   'accent.teal': 'Verde azulado', 'accent.sky': 'Celeste', 'accent.blue': 'Azul', 'accent.purple': 'Morado', 'accent.pink': 'Rosa',
   'settings.data': 'Datos', 'data.export': 'Exportar datos…', 'data.import': 'Importar datos…',
-  'data.exportSettings': 'Exportar ajustes', 'data.importSettings': 'Importar ajustes', 'data.resetSettings': 'Restablecer ajustes', 'reset.title': '¿Restablecer todos los ajustes?', 'reset.text': 'El idioma, el tema, el color, las columnas y las demás opciones vuelven a sus valores predeterminados. Los espacios de trabajo, grupos y enlaces no se restablecen.', 'reset.ok': 'Restablecer', 'toast.settingsReset': 'Ajustes restablecidos',
+  'data.exportSettings': 'Exportar ajustes', 'data.importSettings': 'Importar ajustes', 'data.resetSettings': 'Restablecer ajustes', 'reset.title': '¿Restablecer todos los ajustes?', 'reset.text': 'El idioma, el tema, el color, las columnas y las demás opciones vuelven a sus valores predeterminados. Los espacios de trabajo, grupos y enlaces no se restablecen.', 'reset.ok': 'Restablecer', 'toast.settingsReset': 'Ajustes restablecidos', 'toast.undone': 'Deshecho', 'toast.redone': 'Rehecho',
   'data.note': 'Al importar, los elementos elegidos se añaden como espacios de trabajo nuevos; no se sobrescribe nada. Los archivos de ajustes contienen las opciones de arriba.',
   'settings.shortcuts': 'Atajos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Alt+Shift+D</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
@@ -148,6 +148,7 @@ Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el
   'help.keys.html': `<h4>Atajos</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Buscar</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Deshacer / rehacer un borrado o un movimiento</td></tr>
 <tr><td><kbd>?</kbd></td><td>Esta guía</td></tr>
 <tr><td><kbd>Supr</kbd> · <kbd>Esc</kbd></td><td>Eliminar / deseleccionar los grupos seleccionados</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Guardar una nota o el editor</td></tr>

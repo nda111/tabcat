@@ -104,7 +104,7 @@ export default {
   'accent.red': 'Rouge', 'accent.orange': 'Orange', 'accent.yellow': 'Jaune', 'accent.lime': 'Citron vert', 'accent.green': 'Vert',
   'accent.teal': 'Sarcelle', 'accent.sky': 'Bleu ciel', 'accent.blue': 'Bleu', 'accent.purple': 'Violet', 'accent.pink': 'Rose',
   'settings.data': 'Données', 'data.export': 'Exporter les données…', 'data.import': 'Importer des données…',
-  'data.exportSettings': 'Exporter les paramètres', 'data.importSettings': 'Importer des paramètres', 'data.resetSettings': 'Réinitialiser les réglages', 'reset.title': 'Réinitialiser tous les réglages ?', 'reset.text': 'La langue, le thème, la couleur, les colonnes et les autres options reviennent à leurs valeurs par défaut. Les espaces de travail, groupes et liens ne sont pas réinitialisés.', 'reset.ok': 'Réinitialiser', 'toast.settingsReset': 'Réglages réinitialisés',
+  'data.exportSettings': 'Exporter les paramètres', 'data.importSettings': 'Importer des paramètres', 'data.resetSettings': 'Réinitialiser les réglages', 'reset.title': 'Réinitialiser tous les réglages ?', 'reset.text': 'La langue, le thème, la couleur, les colonnes et les autres options reviennent à leurs valeurs par défaut. Les espaces de travail, groupes et liens ne sont pas réinitialisés.', 'reset.ok': 'Réinitialiser', 'toast.settingsReset': 'Réglages réinitialisés', 'toast.undone': 'Annulé', 'toast.redone': 'Rétabli',
   'data.note': 'L’import ajoute les éléments choisis comme nouveaux espaces de travail ; rien n’est écrasé. Les fichiers de paramètres contiennent les options ci-dessus.',
   'settings.shortcuts': 'Raccourcis',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Alt+Shift+D</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
@@ -148,6 +148,7 @@ Choisissez un espace de travail à gauche et une catégorie dans la barre au-des
   'help.keys.html': `<h4>Raccourcis</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Rechercher</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Annuler / rétablir une suppression ou un déplacement</td></tr>
 <tr><td><kbd>?</kbd></td><td>Ce guide</td></tr>
 <tr><td><kbd>Suppr</kbd> · <kbd>Échap</kbd></td><td>Supprimer / désélectionner les groupes sélectionnés</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Entrée</kbd></td><td>Enregistrer une note ou l’éditeur</td></tr>

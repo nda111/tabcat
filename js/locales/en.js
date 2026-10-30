@@ -111,7 +111,7 @@ export default {
   'accent.red': 'Red', 'accent.orange': 'Orange', 'accent.yellow': 'Yellow', 'accent.lime': 'Lime', 'accent.green': 'Green',
   'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink',
   'settings.data': 'Data', 'data.export': 'Export data…', 'data.import': 'Import data…',
-  'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Workspaces, groups and links are not reset.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults',
+  'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Workspaces, groups and links are not reset.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults', 'toast.undone': 'Undone', 'toast.redone': 'Redone',
   'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above.',
   'settings.shortcuts': 'Shortcuts',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
@@ -156,6 +156,7 @@ Pick a workspace on the left and a category in the bar above the board; groups a
   'help.keys.html': `<h4>Shortcuts</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Search</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Undo / redo a delete or move</td></tr>
 <tr><td><kbd>?</kbd></td><td>This guide</td></tr>
 <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>Delete / clear selected groups</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Save a note or the editor</td></tr>

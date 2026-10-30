@@ -610,11 +610,12 @@ dialog .field-label { display: block; font-weight: 600; }
   position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 200; /* above the search button */
   display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
 }
+/* toasts follow the light / dark theme, like the tooltips */
 .toast-item {
-  background: #2b2825; color: #fff; padding: 8px 14px; border-radius: 8px; display: flex; gap: 12px; align-items: center;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25); pointer-events: auto;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px;
+  display: flex; gap: 12px; align-items: center; box-shadow: 0 6px 24px rgba(0,0,0,.16); pointer-events: auto;
 }
-#toast button { background: transparent; border: 0; color: #ffb877; font-weight: 600; cursor: pointer; }
+#toast button { background: transparent; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; }
 
 .flash { animation: flash 1.2s ease-out; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: var(--shadow); } }

@@ -1422,6 +1422,38 @@ function saveNote(id, before, after) {
   else render();
 }
 
+// Undo / redo of deletes and moves (Ctrl+Z / Ctrl+Shift+Z, and a delete toast's Undo): the whole state
+// from before each one is kept (the last 50), and undoing puts it back (keeping the state it replaces for
+// redo). Undoing an older one (from its toast) also undoes what came after it.
+const undoStack = [];
+const redoStack = [];
+function remember(before) {
+  const entry = { before };
+  undoStack.push(entry);
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack.length = 0;
+  return entry;
+}
+async function undo(entry = undoStack.at(-1), quiet = false) {
+  const i = undoStack.lastIndexOf(entry);
+  if (i < 0) return;
+  undoStack.splice(i);
+  const now = structuredClone(state);
+  if (await apply({ op: 'replace', state: entry.before })) {
+    redoStack.push({ before: now });
+    if (!quiet) toast(t('toast.undone'));
+  }
+}
+async function redo() {
+  const entry = redoStack.pop();
+  if (!entry) return;
+  const now = structuredClone(state);
+  if (await apply({ op: 'replace', state: entry.before })) {
+    undoStack.push({ before: now });
+    toast(t('toast.redone'));
+  }
+}
+
 async function deleteNode(node) {
   const n = T.countLinks(node);
   if ((node.type === 'workspace' || node.type === 'category') && n > 0 &&
@@ -1433,7 +1465,8 @@ async function deleteNode(node) {
   const snapshot = structuredClone(state);
   await animateOut([node.id]);
   if (await apply({ op: 'remove', id: node.id })) {
-    toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
+    const entry = remember(snapshot);
+    toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => undo(entry, true));
   }
 }
 
@@ -2059,7 +2092,8 @@ async function deleteSelected() {
   selected.clear();
   await animateOut(groups.map((g) => g.id));
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
-    toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
+    const entry = remember(snapshot);
+    toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => undo(entry, true));
   }
 }
 
@@ -2206,7 +2240,8 @@ async function deleteItems() {
   const snapshot = structuredClone(state);
   await animateOut(nodes.map((n) => n.id));
   if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
-    toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => apply({ op: 'replace', state: snapshot }));
+    const entry = remember(snapshot);
+    toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => undo(entry, true));
   }
 }
 
@@ -2578,7 +2613,13 @@ function targetOps(t, groupName) {
   return [];
 }
 
+// (a move of saved things is remembered for undo; merging asks first and remembers itself)
 async function performDrop(d, t, e) {
+  const before = d.kind === 'node' && t.action !== 'open' && t.action !== 'merge' ? structuredClone(state) : null;
+  const done = await dropInto(d, t, e);
+  if (before && done) remember(before);
+}
+async function dropInto(d, t, e) {
   if (t.action === 'open') {
     const urls = (d.ids || [d.id]).flatMap((id) => { const r = T.locate(state, id); return r ? T.collectLinks(r.node).map((l) => l.url) : []; });
     if (urls.length) await run(B.call('openUrls', { urls, windowId: t.windowId }));
@@ -2592,10 +2633,7 @@ async function performDrop(d, t, e) {
   const pre = targetOps(t, d.kind === 'window' ? tr('name.window', { date: new Date().toLocaleString(getLang()) }) : null);
   const parentId = pre.length ? '$0' : t.parentId;
 
-  if (d.kind === 'node') {
-    await apply(...pre, ...moveOps(d.ids || [d.id], parentId, pre.length ? null : t.index));
-    return;
-  }
+  if (d.kind === 'node') return apply(...pre, ...moveOps(d.ids || [d.id], parentId, pre.length ? null : t.index));
   if (d.kind === 'external') {
     const url = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '')
       .split(/\r?\n/).map((s) => s.trim()).find((s) => s && !s.startsWith('#'));
@@ -2665,7 +2703,10 @@ async function mergeGroups(fromId, intoId) {
   const ok = await apply(
     { op: 'patch', id: intoId, fields: { items: [...into.items, ...from.items], note, collapsed: false } },
     { op: 'remove', id: fromId });
-  if (ok) toast(`Merged into “${into.name}”`, 'Undo', () => apply({ op: 'replace', state: snapshot }));
+  if (ok) {
+    const entry = remember(snapshot);
+    toast(t('toast.merged', { name: into.name }), t('common.undo'), () => undo(entry, true));
+  }
 }
 
 function endDrag() {
@@ -3352,6 +3393,13 @@ $('#btn-dedupe').addEventListener('click', async () => {
 
 
 document.addEventListener('keydown', (e) => {
+  // undo / redo a delete or move (not while typing: there the field's own undo applies)
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && ['z', 'y'].includes(e.key.toLowerCase())
+      && !e.target.closest?.('input, textarea, select, [contenteditable]') && !document.querySelector('dialog[open]')) {
+    e.preventDefault();
+    if (e.key.toLowerCase() === 'y' || e.shiftKey) redo(); else undo();
+    return;
+  }
   const menu = $('#menu');
   if (!menu.hidden && menu.dataset.closing == null) {
     // context menu: its letter runs an entry, arrows move between entries, Enter runs the focused one
