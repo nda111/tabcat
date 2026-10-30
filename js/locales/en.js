@@ -70,7 +70,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Enter to save',
   'icon.placeholder': 'Image URL, or upload a file. Empty: site favicon', 'icon.bad': 'Could not read that image.',
   'icon.upload': 'Upload', 'icon.clear': 'Clear',
-  'err.urlRequired': 'URL is required.', 'err.urlInvalid': 'URL is not valid.', 'err.nameRequired': 'Name is required.',
+  'err.urlRequired': 'URL is required.', 'err.urlInvalid': 'URL is not valid.', 'err.nameRequired': 'Name is required.', 'err.groupClash': 'A group with this name and symbol already exists.',
   'err.symbol': 'Symbol must be one emoji, letter or digit.',
   'emoji.search': 'Search emoji, or type a letter / digit', 'emoji.remove': 'Remove symbol', 'emoji.letter': 'Letter {c}',
   'emoji.none': 'No emoji found.', 'emoji.offline': 'Could not load the emoji list (offline?). You can still paste an emoji into the box.',

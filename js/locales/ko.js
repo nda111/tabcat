@@ -63,7 +63,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Enter로 저장',
   'icon.placeholder': '이미지 URL을 넣거나 파일을 올리세요. 비우면 사이트 파비콘', 'icon.bad': '이미지를 읽을 수 없습니다.',
   'icon.upload': '올리기', 'icon.clear': '지우기',
-  'err.urlRequired': 'URL을 입력하세요.', 'err.urlInvalid': '올바른 URL이 아닙니다.', 'err.nameRequired': '이름을 입력하세요.',
+  'err.urlRequired': 'URL을 입력하세요.', 'err.urlInvalid': '올바른 URL이 아닙니다.', 'err.nameRequired': '이름을 입력하세요.', 'err.groupClash': '이름과 심볼이 같은 그룹이 이미 있습니다.',
   'err.symbol': '심볼은 이모지, 글자, 숫자 중 하나여야 합니다.',
   'emoji.search': '이모지 검색 (영어), 또는 글자 / 숫자 입력', 'emoji.remove': '심볼 지우기', 'emoji.letter': '글자 {c}',
   'emoji.none': '찾은 이모지가 없습니다.', 'emoji.offline': '이모지 목록을 불러올 수 없습니다 (오프라인?). 이모지를 상자에 직접 붙여 넣을 수는 있습니다.',

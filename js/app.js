@@ -1553,6 +1553,15 @@ function colorField(label, input) {
 }
 
 // `onPreview(values)` (optional) hears the fields as they are edited, before any check.
+// Another group with this name (ignoring case) and symbol? (The extension keeps them apart, so a tab
+// group can be traced back to its group by its title.)
+function groupClash(name, symbol, exceptId) {
+  const key = `${name.trim().toLowerCase()}|${symbol}`;
+  let clash = false;
+  T.walk(state.workspaces, (n) => { if (n.type === 'group' && n.id !== exceptId && `${n.name.trim().toLowerCase()}|${n.symbol}` === key) clash = true; });
+  return clash;
+}
+
 function openEditor(type, data = {}, title, onPreview = null) {
   const dlg = $('#editor');
   const form = $('#editor-form');
@@ -1640,6 +1649,7 @@ function openEditor(type, data = {}, title, onPreview = null) {
       if (!v.name) return void (err.textContent = t('err.nameRequired'));
       if ('symbol' in v) v.symbol = T.normalizeSymbol(v.symbol);
       if ('symbol' in v && !T.isValidSymbol(v.symbol)) return void (err.textContent = t('err.symbol'));
+      if (type === 'group' && groupClash(v.name, v.symbol || '', data.id)) return void (err.textContent = t('err.groupClash'));
       finish(v);
     };
     form.addEventListener('submit', onSubmit);

@@ -65,7 +65,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Enter para salvar',
   'icon.placeholder': 'URL da imagem, ou envie um arquivo. Vazio: favicon do site', 'icon.bad': 'Não foi possível ler essa imagem.',
   'icon.upload': 'Enviar', 'icon.clear': 'Limpar',
-  'err.urlRequired': 'A URL é obrigatória.', 'err.urlInvalid': 'A URL não é válida.', 'err.nameRequired': 'O nome é obrigatório.',
+  'err.urlRequired': 'A URL é obrigatória.', 'err.urlInvalid': 'A URL não é válida.', 'err.nameRequired': 'O nome é obrigatório.', 'err.groupClash': 'Já existe um grupo com este nome e símbolo.',
   'err.symbol': 'O símbolo deve ser um emoji, uma letra ou um dígito.',
   'emoji.search': 'Pesquise um emoji (em inglês), ou digite uma letra / dígito', 'emoji.remove': 'Remover símbolo', 'emoji.letter': 'Letra {c}',
   'emoji.none': 'Nenhum emoji encontrado.', 'emoji.offline': 'Não foi possível carregar a lista de emojis (sem conexão?). Você ainda pode colar um emoji na caixa.',

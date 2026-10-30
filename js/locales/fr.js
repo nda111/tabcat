@@ -65,7 +65,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Entrée pour enregistrer',
   'icon.placeholder': 'URL d’une image, ou importez un fichier. Vide : favicon du site', 'icon.bad': 'Impossible de lire cette image.',
   'icon.upload': 'Importer', 'icon.clear': 'Effacer',
-  'err.urlRequired': 'L’URL est obligatoire.', 'err.urlInvalid': 'L’URL n’est pas valide.', 'err.nameRequired': 'Le nom est obligatoire.',
+  'err.urlRequired': 'L’URL est obligatoire.', 'err.urlInvalid': 'L’URL n’est pas valide.', 'err.nameRequired': 'Le nom est obligatoire.', 'err.groupClash': 'Un groupe avec ce nom et ce symbole existe déjà.',
   'err.symbol': 'Le symbole doit être un emoji, une lettre ou un chiffre.',
   'emoji.search': 'Rechercher un emoji (en anglais), ou taper une lettre / un chiffre', 'emoji.remove': 'Retirer le symbole', 'emoji.letter': 'Lettre {c}',
   'emoji.none': 'Aucun emoji trouvé.', 'emoji.offline': 'Impossible de charger la liste des emojis (hors ligne ?). Vous pouvez quand même coller un emoji dans la case.',

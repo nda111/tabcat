@@ -65,7 +65,7 @@ export default {
   'field.ctrlEnter': 'Strg+Enter zum Speichern',
   'icon.placeholder': 'Bild-URL oder Datei hochladen. Leer: Favicon der Website', 'icon.bad': 'Das Bild konnte nicht gelesen werden.',
   'icon.upload': 'Hochladen', 'icon.clear': 'Leeren',
-  'err.urlRequired': 'Die URL ist erforderlich.', 'err.urlInvalid': 'Die URL ist ungültig.', 'err.nameRequired': 'Der Name ist erforderlich.',
+  'err.urlRequired': 'Die URL ist erforderlich.', 'err.urlInvalid': 'Die URL ist ungültig.', 'err.nameRequired': 'Der Name ist erforderlich.', 'err.groupClash': 'Es gibt schon eine Gruppe mit diesem Namen und Symbol.',
   'err.symbol': 'Das Symbol muss ein Emoji, ein Buchstabe oder eine Ziffer sein.',
   'emoji.search': 'Emoji suchen (auf Englisch) oder Buchstaben / Ziffer eingeben', 'emoji.remove': 'Symbol entfernen', 'emoji.letter': 'Buchstabe {c}',
   'emoji.none': 'Keine Emojis gefunden.', 'emoji.offline': 'Die Emoji-Liste konnte nicht geladen werden (offline?). Du kannst trotzdem ein Emoji in das Feld einfügen.',

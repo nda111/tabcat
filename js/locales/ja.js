@@ -63,7 +63,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Enter で保存',
   'icon.placeholder': '画像の URL、またはファイルをアップロード。空欄ならサイトのファビコン', 'icon.bad': '画像を読み込めませんでした。',
   'icon.upload': 'アップロード', 'icon.clear': 'クリア',
-  'err.urlRequired': 'URL を入力してください。', 'err.urlInvalid': 'URL が正しくありません。', 'err.nameRequired': '名前を入力してください。',
+  'err.urlRequired': 'URL を入力してください。', 'err.urlInvalid': 'URL が正しくありません。', 'err.nameRequired': '名前を入力してください。', 'err.groupClash': '同じ名前とシンボルのグループがすでにあります。',
   'err.symbol': 'シンボルは絵文字、文字、数字のいずれか 1 つです。',
   'emoji.search': '絵文字を検索 (英語)、または文字 / 数字を入力', 'emoji.remove': 'シンボルを削除', 'emoji.letter': '文字 {c}',
   'emoji.none': '絵文字が見つかりません。', 'emoji.offline': '絵文字リストを読み込めませんでした (オフライン?)。絵文字をボックスに直接貼り付けることはできます。',

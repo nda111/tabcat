@@ -63,7 +63,7 @@ export default {
   'field.ctrlEnter': 'Ctrl+Enter 保存',
   'icon.placeholder': '图片网址，或上传文件。留空则使用网站图标', 'icon.bad': '无法读取该图片。',
   'icon.upload': '上传', 'icon.clear': '清除',
-  'err.urlRequired': '请输入网址。', 'err.urlInvalid': '网址无效。', 'err.nameRequired': '请输入名称。',
+  'err.urlRequired': '请输入网址。', 'err.urlInvalid': '网址无效。', 'err.nameRequired': '请输入名称。', 'err.groupClash': '已存在名称和符号相同的分组。',
   'err.symbol': '符号必须是一个表情、字母或数字。',
   'emoji.search': '搜索表情 (英文)，或输入字母 / 数字', 'emoji.remove': '移除符号', 'emoji.letter': '字母 {c}',
   'emoji.none': '未找到表情。', 'emoji.offline': '无法加载表情列表 (离线？)。你仍可以把表情粘贴到框中。',
