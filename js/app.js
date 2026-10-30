@@ -2322,13 +2322,57 @@ function newColumnTarget(e, d) {
     : { mode: 'newGroup', categoryId: cat.id, column: n, line, newColumn: true };
 }
 
+// A group dragged into the gap between two columns goes in between, as a column of its own: the columns
+// on the side with an empty column shift one step towards it (the nearer side if both have one; the
+// right if tied); with no empty column on either side a column is added (up to MAX_COLUMNS).
+function columnGapTarget(e, d) {
+  if (d.kind !== 'node' || d.type !== 'group') return null;
+  const board = $('#board');
+  if (!board.dataset.parent) return null;
+  const cols = [...board.querySelectorAll('.columns > .col')];
+  for (let i = 0; i < cols.length - 1; i++) {
+    const a = cols[i].getBoundingClientRect(), b = cols[i + 1].getBoundingClientRect();
+    if (e.clientX < a.right - 8 || e.clientX > b.left + 8 || e.clientY < a.top) continue;
+    const plan = insertPlan(i + 1, d.ids || [d.id]);
+    if (!plan) return null;
+    const br = board.getBoundingClientRect();
+    return { action: 'insertColumn', plan, line: { x: (a.right + b.left) / 2 - 1.5, y: a.top, w: 3, h: Math.max(40, br.bottom - a.top - 12) } };
+  }
+  return null;
+}
+// How to open a column at `k` (between columns k-1 and k) for `moving`: which columns shift which way.
+function insertPlan(k, moving) {
+  const cat = T.locate(state, $('#board').dataset.parent).node;
+  const n = boardColumns();
+  const lists = layoutColumns(cat, n).map((l) => l.filter((g) => !moving.includes(g.id))); // (the dragged ones leave)
+  let right = -1, left = -1;
+  for (let j = k; j < n; j++) if (!lists[j].length) { right = j; break; }
+  for (let j = k - 1; j >= 0; j--) if (!lists[j].length) { left = j; break; }
+  if (right >= 0 && (left < 0 || right - k <= k - 1 - left)) return { categoryId: cat.id, from: k, to: right - 1, by: 1, target: k, moving };
+  if (left >= 0) return { categoryId: cat.id, from: left + 1, to: k - 1, by: -1, target: k - 1, moving };
+  if (n < MAX_COLUMNS) return { categoryId: cat.id, from: k, to: Infinity, by: 1, target: k, add: true, moving };
+  return null;
+}
+async function insertColumn({ categoryId, from, to, by, target, add, moving }) {
+  if (add) await setColumns(boardColumns() + 1);
+  const cat = T.locate(state, categoryId).node;
+  const ops = [];
+  cat.groups.forEach((g, i) => {
+    if (moving.includes(g.id)) return;
+    const c = columnOf(cat, g, i);
+    if (c >= from && c <= to) ops.push({ op: 'patch', id: g.id, fields: { column: c + by } });
+  });
+  for (const id of moving) ops.push({ op: 'patch', id, fields: { column: target } });
+  return apply(...ops);
+}
+
 const hLine = (r, before) => ({ x: r.left + 4, y: (before ? r.top : r.bottom) - 1, w: r.width - 8, h: 2 });
 const vLine = (r, before, gap = 7) => ({ x: (before ? r.left - gap : r.right + gap) - 1, y: r.top, w: 3, h: r.height });
 
 function resolveDrop(e, d) {
   const el = e.target instanceof Element ? e.target : e.target.parentElement;
   if (!el || el.closest('dialog, #menu')) return null;
-  const extra = el.closest('#board') && newColumnTarget(e, d);
+  const extra = el.closest('#board') && (newColumnTarget(e, d) || columnGapTarget(e, d));
   if (extra) return extra;
   const type = d.kind === 'node' ? d.type : 'link'; // tabs / windows / external urls behave like links
   if (type === 'link') return resolveItemDrop(e, el, d);
@@ -2533,6 +2577,7 @@ async function performDrop(d, t, e) {
   if (t.newColumn) await setColumns(boardColumns() + 1); // the column first, so what lands in it shows there
   if (d.kind === 'node') markMoving(d.ids || [d.id]);
   if (t.action === 'merge') return mergeGroups(d.id, t.targetId);
+  if (t.action === 'insertColumn') return insertColumn(t.plan);
   if (t.action === 'column') return moveToColumn(d.ids || [d.id], t);
   const pre = targetOps(t, d.kind === 'window' ? tr('name.window', { date: new Date().toLocaleString(getLang()) }) : null);
   const parentId = pre.length ? '$0' : t.parentId;
