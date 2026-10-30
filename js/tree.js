@@ -88,8 +88,8 @@ export const LOGO_SYMBOL = ':tabcat:';
 export const isLogoSymbol = (s) => s === LOGO_SYMBOL;
 export const isValidSymbol = (s) => !s || isLetterSymbol(s) || isLogoSymbol(s) || isSingleEmoji(s);
 // a symbol as the start of a tab group's title: emoji only (the logo as a cat; a letter would read as
-// part of the name)
-export const textSymbol = (s) => (isLogoSymbol(s) ? '🐱' : s && !isLetterSymbol(s) ? s : '');
+// part of the name; any other drawn symbol, a :name: code, is left out)
+export const textSymbol = (s) => (isLogoSymbol(s) ? '🐱' : s && !isLetterSymbol(s) && !/^:[\w-]+:$/.test(s) ? s : '');
 
 export function normalizeUrl(u) {
   u = (u || '').trim();

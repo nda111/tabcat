@@ -1224,10 +1224,10 @@ document.addEventListener('pointerdown', (e) => {
   if (pickedTabs.size && !e.target.closest('#windows .tab-row, #menu')) clearTabs();
 }, true);
 
-// Waking suspended tabs (loading them again in the background) needs extension 0.2.7.
-const canWake = () => !!extVersion && !olderThan(extVersion, '0.2.7');
-// the logo as a symbol: an older extension refuses to store it
-const canLogoSymbol = () => !!extVersion && !olderThan(extVersion, '0.2.10');
+// waking suspended tabs (loading them again in the background); the logo as a symbol (an older
+// extension refuses to store it)
+const canWake = () => extFeatures.has('wakeTabs');
+const canLogoSymbol = () => extFeatures.has('logoSymbol');
 async function wakeTabs(ids) {
   const n = await run(B.call('wakeTabs', { tabIds: ids }));
   if (n) toast(t('toast.woken', { n }));
@@ -3537,7 +3537,7 @@ B.on('settings', (s) => {
   switchLang(s.language);
 });
 B.on('tabs', scheduleTabs);
-B.on('ready', () => { if (state) refresh(); }); // reconnected after the service worker restarted
+B.on('ready', (ext) => { if (ext) setExtension(ext); if (state) refresh(); }); // reconnected after the service worker restarted (or the extension was updated)
 B.on('disconnected', () => showNoExtension());
 // Back to the dashboard (its tab shown again, or its window focused): redraw the open tabs at once.
 // While hidden, Chrome stretches the page's timers (up to a minute), so a pending redraw may lag.
@@ -3570,6 +3570,14 @@ async function refresh() {
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
 const MIN_EXTENSION = '0.2.5'; // (0.2.5: group colours)
 let extVersion = null; // the connected extension's (shown in About)
+// What the connected extension can do: it says so (0.2.11 on); an older one, by its version
+let extFeatures = new Set();
+const FEATURES_BY_VERSION = [['wakeTabs', '0.2.7'], ['logoSymbol', '0.2.10']];
+function setExtension(ext) {
+  extVersion = ext.version || null;
+  extFeatures = new Set(Array.isArray(ext.features) ? ext.features
+    : FEATURES_BY_VERSION.filter(([, v]) => extVersion && !olderThan(extVersion, v)).map(([f]) => f));
+}
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
   for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
@@ -3610,7 +3618,7 @@ async function init() {
 }
 
 async function start(ext) {
-  extVersion = ext.version || null;
+  setExtension(ext);
   $('#no-ext').hidden = true;
   if (olderThan(ext.version, MIN_EXTENSION)) {
     toast(t('noext.old', { version: ext.version, min: MIN_EXTENSION }));
