@@ -3178,7 +3178,8 @@ function flipFrom(before) {
     const b = el.getBoundingClientRect();
     if (!a.width || !b.width) continue;
     const dx = a.left - b.left, dy = a.top - b.top;
-    if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 400, easing: SPRING });
+    // (no overshoot: rail <-> full moves are long, a spring would swing them well past their place)
+    if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 380, easing: GLIDE });
   }
 }
 

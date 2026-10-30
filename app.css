@@ -357,7 +357,11 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 /* sized to the one-line title + stats; stays put when the stats wrap */
 .panel-toggle.square { align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
-.panel-actions .btn { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.panel-actions .btn {
+  display: inline-flex; gap: 5px; align-items: center; white-space: nowrap;
+  /* the rail's flat icon buttons and the full panel's outlined ones turn into each other */
+  transition: background-color .2s ease, color .16s ease, border-color .2s ease, opacity .16s ease, padding .3s cubic-bezier(.22, 1, .36, 1);
+}
 .data-row .btn { display: inline-flex; gap: 5px; align-items: center; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
 /* labels slide away (rather than vanish) when the panel gets narrow, and slide back when it widens */
@@ -425,9 +429,9 @@ body.tabs-collapsed .panel-head { padding: 8px 0 4px 10px; }
 body.tabs-collapsed #tabs-panel .panel-title { display: none; } /* (outranks the #tabs-panel title rules below) */
 
 body.tabs-collapsed .panel-actions { flex-direction: column; align-items: flex-start; padding: 0 0 6px 14px; gap: 2px; }
-body.tabs-collapsed .panel-actions .btn { border: 0; background: transparent; padding: 4px 6px; }
+body.tabs-collapsed .panel-actions .btn { border-color: transparent; background: transparent; padding: 4px 6px; } /* (same 1px border, just unseen: no size jump) */
 body.tabs-collapsed .panel-actions .btn:hover { background: var(--hover); }
-body.tabs-collapsed .panel-actions .label { display: none; }
+body.tabs-collapsed .panel-actions .label { max-width: 0; opacity: 0; margin-left: -5px; } /* (folds away like a narrow panel's labels, and unfolds the same way) */
 body.tabs-collapsed #windows { padding: 0 6px 20px; }
 body.tabs-collapsed .win { margin: 0 0 6px; border-top: 1px solid var(--border); border-radius: 0; }
 body.tabs-collapsed .win-head { justify-content: center; padding: 3px 0 2px; }
@@ -663,7 +667,7 @@ dialog .field-label { display: block; font-weight: 600; }
 
 /* ---------- motion: springy pop-ups and panel toggles ---------- */
 :root { --spring-soft: cubic-bezier(.34, 1.25, .64, 1); }
-.side-panel { transition: width .4s var(--spring-soft); }
+.side-panel { transition: width .4s cubic-bezier(.22, 1.04, .36, 1); } /* (a hint of give when opening; see below for closing) */
 /* closing: no overshoot (a rail that dips below its width and back reads as a bounce) */
 body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel, .side-panel.fading { transition-timing-function: cubic-bezier(.22, 1, .36, 1); } /* (.fading: it starts narrowing before the rail class is set) */
 body.resizing .side-panel { transition: none; } /* follow the pointer exactly while resizing */
@@ -693,7 +697,7 @@ body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in 
 
 /* collapsing: labels fade out first (the panel already narrows), then the rail layout takes over */
 .side-panel.fading :is(.brand-name, .side-title, .ws-item .name, .ws-item .count, .side-btn .label, .panel-title,
-  .win-head .grow, .win-head .icon-btn, .tab-row .name, .tab-row .icon-btn, .panel-actions .label) { opacity: 0; transition: opacity .14s ease-out; }
+  .win-head .grow, .win-head .icon-btn, .tab-row .name, .tab-row .icon-btn, .panel-actions .label) { opacity: 0; transition: opacity .14s ease-out, max-width .3s cubic-bezier(.22, 1, .36, 1), margin .3s cubic-bezier(.22, 1, .36, 1); } /* (the action labels still fold, not snap, when they go icons-only meanwhile) */
 .side-panel.fading { white-space: nowrap; }
 
 /* the open-tabs title stays on one line and ends in "…" when narrow; the stats below it wrap between
