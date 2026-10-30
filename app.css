@@ -46,6 +46,10 @@
   transition: background-color .16s ease, color .16s ease, border-color .16s ease, opacity .16s ease;
 }
 html, body { height: 100%; margin: 0; }
+html { background: var(--bg); }
+html.booting body { visibility: hidden; } /* until the saved language, panels and look are applied (see index.html) */
+/* ...and nothing animates into place meanwhile (e.g. a saved panel width from the default one) */
+html.booting *, html.booting *::before, html.booting *::after { transition: none !important; animation: none !important; }
 body {
   display: flex; background: var(--bg); color: var(--text);
   font: 13px/1.45 Archivo, "Pretendard Adjusted", system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -503,6 +507,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; ma
 dialog fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; padding: 8px 10px; }
 dialog legend { font-size: 11px; color: var(--muted); }
 .file-btn { display: inline-block; margin: 0; font-weight: 400; }
+.data-row.reset-row { grid-template-columns: 1fr; } /* one button across */
 .data-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; } /* four buttons, one width */
 .data-row .btn { justify-content: center; text-align: center; } /* long labels wrap inside */
 

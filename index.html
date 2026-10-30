@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tabcat</title>
   <link rel="icon" href="icons/icon32.png">
+  <script>
+    // Before anything is drawn: the last theme / colour seen (so the page doesn't flash the defaults), and
+    // the page kept hidden until the language, panel widths and the rest are applied (app.js lifts this;
+    // the timeout is a safety net).
+    try {
+      const look = JSON.parse(localStorage.getItem('tabcat:look') || 'null');
+      const root = document.documentElement;
+      if (look?.theme && look.theme !== 'auto') root.dataset.theme = look.theme;
+      if (look?.accent && look.accent !== 'orange' && look.hue != null) { root.dataset.accent = look.accent; root.style.setProperty('--hue', look.hue); }
+    } catch { /* storage unavailable */ }
+    document.documentElement.classList.add('booting');
+    setTimeout(() => document.documentElement.classList.remove('booting'), 2000);
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
@@ -131,6 +144,9 @@
         <div class="data-row">
           <button type="button" class="btn" id="btn-export-settings"><span data-icon="download"></span><span data-i18n="data.exportSettings">Export settings</span></button>
           <label class="btn file-btn"><span data-icon="upload"></span><span data-i18n="data.importSettings">Import settings</span><input type="file" id="import-settings-file" accept=".json,application/json" hidden></label>
+        </div>
+        <div class="data-row reset-row">
+          <button type="button" class="btn" id="btn-reset-settings"><span data-icon="reset"></span><span data-i18n="data.resetSettings">Reset settings</span></button>
         </div>
         <p class="muted small" data-i18n="data.note">Import adds the selected items as new workspaces; nothing is overwritten.
           Settings files hold the options above (not the dashboard address).</p>

@@ -206,6 +206,8 @@ function applyTheme() {
   const hue = ACCENTS[settings.accent];
   if (hue == null || settings.accent === 'orange') { delete root.dataset.accent; root.style.removeProperty('--hue'); }
   else { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
+  // remembered for the next visit's first paint (see the script in index.html)
+  try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
 }
 
 const currentWs = () => state.workspaces.find((w) => w.id === ui.ws) || state.workspaces[0] || null;
@@ -959,7 +961,7 @@ async function renderTabs() {
       h('span', { class: 'name' }, t.title || t.url),
       t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
       btn(icon('save'), tr('tab.save'), () => saveTabsTo([t.id])),
-      noTip(btn(icon('close'), tr('tab.close'), () => run(B.call('closeTabs', { tabIds: [t.id] }))))))));
+      noTip(btn(icon('close'), tr('tab.close'), () => { dropTabRows([t.id]); run(B.call('closeTabs', { tabIds: [t.id] })); }))))));
   });
   $('#tab-stats').replaceChildren(...chunks([t('count.windows', { n: wins.length }), t('count.tabs', { n: all.length }),
     sleeping && t('count.suspended', { n: sleeping }), dupes && t('count.duplicates', { n: dupes })].filter(Boolean)));
@@ -1138,7 +1140,21 @@ document.addEventListener('pointerdown', (e) => {
 
 async function closePickedTabs(ids) {
   clearTabs();
+  dropTabRows(ids);
   await run(B.call('closeTabs', { tabIds: ids }));
+}
+
+// Closing tabs from the panel: their rows close up right away instead of waiting for the browser's tab
+// event and the refreshed list (the redraw that follows finds them gone and leaves the rest in place).
+function dropTabRows(ids) {
+  for (const id of ids) {
+    const row = document.querySelector(`#windows .tab-row[data-tab="${id}"]`);
+    if (!row || row.classList.contains('closing')) continue;
+    row.classList.add('closing');
+    row.style.overflow = 'hidden';
+    row.animate([{ opacity: 1, height: `${row.getBoundingClientRect().height}px` }, { opacity: 0, height: '0px', paddingTop: '0px', paddingBottom: '0px' }],
+      { duration: 160, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => row.remove());
+  }
 }
 
 function tabsMenu(ids) {
@@ -2762,7 +2778,8 @@ function switchTheme(s) {
   const changed = look !== (lookShown || `${settings.theme}|${settings.accent}`);
   lookShown = look;
   const swap = () => { settings = s; applyTheme(); };
-  if (changed && document.startViewTransition) document.startViewTransition(swap);
+  // (a transition cut short by the next one rejects `ready`: nothing to handle, the new one takes over)
+  if (changed && document.startViewTransition) document.startViewTransition(swap).ready.catch(() => {});
   else swap();
 }
 
@@ -2792,7 +2809,9 @@ async function switchLang(setting = 'auto', fade = true) {
   const parts = frames.flatMap((f) => [...(f === dlg ? $('#settings-form') : f).children].filter((el) => el.tagName !== 'FIELDSET'));
   const named = [...frames.map((el) => [el, 'settings-frame']), ...parts.map((el) => [el, 'settings-part'])];
   named.forEach(([el, cls], i) => { el.style.viewTransitionName = `settings-${i}`; el.style.viewTransitionClass = cls; });
-  document.startViewTransition(swap).finished.finally(() => named.forEach(([el]) => {
+  const vt = document.startViewTransition(swap);
+  vt.ready.catch(() => {}); // (cut short by the next one: nothing to handle)
+  vt.finished.finally(() => named.forEach(([el]) => {
     el.style.viewTransitionName = '';
     el.style.viewTransitionClass = '';
   }));
@@ -2946,6 +2965,20 @@ const SETTINGS_IO = {
   accent: (v) => Object.hasOwn(ACCENTS, v),
   columns: (v) => Number.isInteger(v) && v >= 1 && v <= MAX_COLUMNS,
 };
+
+// Settings > Data > Reset settings: every option above back to its default (after asking; the data is
+// not touched)
+const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange', columns: 3 };
+$('#btn-reset-settings').addEventListener('click', async () => {
+  if (!(await confirmDialog({ title: t('reset.title'), text: t('reset.text'), ok: t('reset.ok'), danger: true }))) return;
+  const s = await run(B.call('saveSettings', SETTINGS_DEFAULTS));
+  if (!s) return;
+  switchTheme(s);
+  relayoutBoard();
+  switchLang(s.language);
+  fillSettings();
+  toast(t('toast.settingsReset'));
+});
 
 $('#btn-export-settings').addEventListener('click', () => {
   const out = Object.fromEntries(Object.keys(SETTINGS_IO).map((k) => [k, settings[k]]));
@@ -3270,6 +3303,10 @@ async function init() {
   try { lang = localStorage.getItem('tabcat:lang') || 'auto'; } catch { /* storage unavailable */ }
   langShown = await setLang(lang);
   applyText();
+  // language, panels and look are in place: settle their styles while transitions are still off (so
+  // e.g. the saved panel width doesn't animate in from the default), then show the page
+  void document.body.offsetWidth;
+  document.documentElement.classList.remove('booting');
   const ext = await B.connect();
   extVersion = ext?.version || null;
   if (!ext) return showNoExtension();

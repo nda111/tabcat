@@ -104,7 +104,7 @@ export default {
   'accent.red': 'Rot', 'accent.orange': 'Orange', 'accent.yellow': 'Gelb', 'accent.lime': 'Limette', 'accent.green': 'Grün',
   'accent.teal': 'Petrol', 'accent.sky': 'Himmelblau', 'accent.blue': 'Blau', 'accent.purple': 'Lila', 'accent.pink': 'Pink',
   'settings.data': 'Daten', 'data.export': 'Daten exportieren…', 'data.import': 'Daten importieren…',
-  'data.exportSettings': 'Einstellungen exportieren', 'data.importSettings': 'Einstellungen importieren',
+  'data.exportSettings': 'Einstellungen exportieren', 'data.importSettings': 'Einstellungen importieren', 'data.resetSettings': 'Einstellungen zurücksetzen', 'reset.title': 'Alle Einstellungen zurücksetzen?', 'reset.text': 'Sprache, Design, Farbe, Spalten und die übrigen Optionen werden auf die Standardwerte gesetzt. Arbeitsbereiche, Gruppen und Links bleiben unverändert.', 'reset.ok': 'Zurücksetzen', 'toast.settingsReset': 'Einstellungen zurückgesetzt',
   'data.note': 'Beim Import kommen die gewählten Elemente als neue Arbeitsbereiche hinzu; nichts wird überschrieben. Einstellungsdateien enthalten die Optionen oben (nicht die Dashboard-Adresse).',
   'settings.shortcuts': 'Tastenkürzel',
   'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Alt+Shift+D</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

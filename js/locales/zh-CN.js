@@ -102,7 +102,7 @@ export default {
   'accent.red': '红', 'accent.orange': '橙', 'accent.yellow': '黄', 'accent.lime': '青柠', 'accent.green': '绿',
   'accent.teal': '青', 'accent.sky': '天蓝', 'accent.blue': '蓝', 'accent.purple': '紫', 'accent.pink': '粉',
   'settings.data': '数据', 'data.export': '导出数据…', 'data.import': '导入数据…',
-  'data.exportSettings': '导出设置', 'data.importSettings': '导入设置',
+  'data.exportSettings': '导出设置', 'data.importSettings': '导入设置', 'data.resetSettings': '重置设置', 'reset.title': '要重置所有设置吗？', 'reset.text': '语言、主题、颜色、列数等选项将恢复为默认值。工作区、分组和链接不受影响。', 'reset.ok': '重置', 'toast.settingsReset': '设置已恢复为默认值',
   'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项 (不含仪表板地址)。',
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Alt+Shift+D</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',

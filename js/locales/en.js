@@ -111,7 +111,7 @@ export default {
   'accent.red': 'Red', 'accent.orange': 'Orange', 'accent.yellow': 'Yellow', 'accent.lime': 'Lime', 'accent.green': 'Green',
   'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink',
   'settings.data': 'Data', 'data.export': 'Export data…', 'data.import': 'Import data…',
-  'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings',
+  'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Your workspaces, groups and links are not touched.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults',
   'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above (not the dashboard address).',
   'settings.shortcuts': 'Shortcuts',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
