@@ -229,13 +229,13 @@ async function relinkAll() {
   if (!chrome.tabGroups) return;
   for (const g of await chrome.tabGroups.query({})) await relinkTabGroup(g);
 }
-// a folder takes the colour of the group it is in; an emoji symbol leads the title (not a letter)
+// a folder takes the colour of the group it is in; an emoji symbol leads the title (not a letter or the logo)
 function tabGroupLook(state, nodeId) {
   const r = S.locate(state, nodeId);
   if (!r) return null;
   const n = r.node;
   const group = n.type === 'group' ? n : r.ancestors.find((a) => a.type === 'group');
-  return { title: n.symbol && !S.isLetterSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name || '', color: TAB_GROUP_COLOR[group?.color] || 'grey' };
+  return { title: S.textSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name || '', color: TAB_GROUP_COLOR[group?.color] || 'grey' };
 }
 async function syncTabGroups(state, saved = true) {
   if (!chrome.tabGroups) return;

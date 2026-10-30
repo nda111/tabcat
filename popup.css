@@ -47,6 +47,7 @@ button, input, select { font: inherit; color: inherit; }
   display: inline-block; flex: none; width: 22px; height: 22px;
   background: url(icons/logo.svg) center / contain no-repeat, var(--accent); background-blend-mode: luminosity;
   -webkit-mask: url(icons/logo.svg) center / contain no-repeat; mask: url(icons/logo.svg) center / contain no-repeat;
+  transition: background-color .16s ease; /* a new accent fades in, as on the controls around it */
 }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -84,6 +85,7 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 .picker-btn:hover, .picker-btn[aria-expanded="true"] { border-color: var(--accent); }
 .picker-btn .sym, .picker-item .sym { width: 18px; flex: none; text-align: center; font-size: 15px; }
 .sym.sym-icon { display: inline-grid; place-items: center; color: var(--muted); }
+.sym .logo { width: 1.15em; height: 1.15em; vertical-align: -.2em; } /* the logo as a symbol */
 .picker-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .picker-main > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #target-name { font-size: 13px; font-weight: 600; }
