@@ -443,8 +443,8 @@ body.ws-collapsed .side-title { display: none; }
 /* square, like the buttons below; the symbol sits in the middle (x = 28px, where it is when expanded) */
 body.ws-collapsed :is(.ws-item, .ws-add) { width: 36px; height: 36px; padding: 0; margin: 0 0 2px 2px; justify-content: center; }
 body.ws-collapsed .ws-item .sym { font-size: 17px; width: auto; }
-body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 8px; margin-left: 2px; } /* square, the icon centred in it */
-body.ws-collapsed .side-btn .sym svg { width: 20px; height: 20px; } /* as large as the workspaces' icons */
+body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 9px; margin-left: 2px; } /* square, the icon centred in it */
+body.ws-collapsed .side-btn .sym svg { width: 18px; height: 18px; } /* about as large as the workspaces' icons, with as much room */
 body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }
