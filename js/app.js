@@ -1671,6 +1671,8 @@ function symbolField(label, input, err, blankIcon = null) {
   function show(list, note = '') {
     grid.replaceChildren(...list.map((e) => h('button', {
       type: 'button', title: e.name || e.unicode, dataset: { emoji: e.unicode }, onclick: () => set(e.unicode),
+      // Enter on a symbol (focused by the click that picked it) saves, rather than picking it again
+      onkeydown: (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); set(e.unicode); input.form?.requestSubmit(); } },
     }, T.isLetterSymbol(e.unicode) || T.isLogoSymbol(e.unicode) ? symbolEl(e.unicode) : e.unicode)));
     status.textContent = note;
     sync();
@@ -1708,7 +1710,13 @@ function symbolField(label, input, err, blankIcon = null) {
     }, 120);
   });
   search.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); grid.querySelector('button')?.click(); }
+    // Enter picks the first match; with nothing to search, or the match already picked, it saves
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const first = grid.querySelector('button');
+      if (!search.value.trim() || !first || first.dataset.emoji === input.value) input.form?.requestSubmit();
+      else first.click();
+    }
     if (e.key === 'Escape' && search.value) { e.preventDefault(); search.value = ''; showDefaults(); }
   });
   input.addEventListener('input', sync);
