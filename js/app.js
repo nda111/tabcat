@@ -504,10 +504,12 @@ async function setColumns(v) {
 let wheelAcc = 0, wheelCols = null, wheelTimer = null;
 function wheelColumns(e) {
   e.preventDefault();
+  wheelHint(e); // (the control may have been redrawn under a still pointer)
   wheelAcc += e.deltaY;
   if (Math.abs(wheelAcc) < 40) return;
   const from = wheelCols ?? boardColumns();
   const to = Math.min(MAX_COLUMNS, Math.max(1, from + (wheelAcc < 0 ? 1 : -1)));
+  nudgeWheelHint(wheelAcc < 0 ? -1 : 1);
   wheelAcc = 0;
   if (to === from) return;
   wheelCols = to;
@@ -516,16 +518,37 @@ function wheelColumns(e) {
   setColumns(to);
 }
 
+// The badge rides along with the pointer, just off its corner (clear of the count, which hides the
+// pointer so the number stays readable). A wheel step nudges its wheel that way.
+const wheelBadge = $('#wheel-hint');
+function wheelHint(e) {
+  const off = e.target.closest?.('.col-ctl > .ico');
+  wheelBadge.classList.toggle('on', !off);
+  wheelBadge.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+}
+function hideWheelHint() { wheelBadge.classList.remove('on'); }
+function nudgeWheelHint(dir) {
+  wheelBadge.querySelector('.wheel').animate([{ transform: `translateY(${dir * 3}px)` }, { transform: 'none' }], { duration: 260, easing: SPRING });
+}
+for (const type of ['blur', 'dragstart']) window.addEventListener(type, hideWheelHint);
+
 function columnControl() {
   const n = boardColumns();
   const set = setColumns;
-  // the icon names the control; everywhere else the tip says it scrolls (the buttons keep their name above that)
-  const scroll = t('cols.scroll');
-  return h('div', { class: 'col-ctl', title: scroll, onwheel: wheelColumns },
+  // the icon has the tooltip; over the rest a wheel badge follows the pointer instead (see wheelHint)
+  const step = (name, label, fn, disabled) => {
+    const b = Object.assign(btn(icon(name, 13), null, fn), { disabled });
+    b.setAttribute('aria-label', label);
+    return b;
+  };
+  return h('div', {
+    class: 'col-ctl', role: 'group', 'aria-label': t('cols.title'), 'aria-description': t('cols.scroll'), 'data-no-tip': true,
+    onwheel: wheelColumns, onpointermove: wheelHint, onpointerleave: hideWheelHint,
+  },
     Object.assign(icon('columns', 15), { title: t('cols.title') }),
-    Object.assign(btn(icon('minus', 13), `${t('cols.fewer')}\n${scroll}`, () => set(n - 1)), { disabled: n <= 1 }),
+    step('minus', t('cols.fewer'), () => set(n - 1), n <= 1),
     h('span', { class: 'col-n' }, n),
-    Object.assign(btn(icon('plus', 13), `${t('cols.more')}\n${scroll}`, () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
+    step('plus', t('cols.more'), () => set(n + 1), n >= MAX_COLUMNS));
 }
 
 function renderBoard() {

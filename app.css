@@ -181,6 +181,15 @@ body.ws-collapsed .ws-add { display: flex; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
 .bar-split { width: 1px; height: 16px; margin: 0 8px; background: var(--border); flex: none; }
 .col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); cursor: none; } /* the wheel works it */
+/* wheel badge following the pointer over the column control (see wheelHint) */
+#wheel-hint { position: fixed; left: 0; top: 0; z-index: 70; pointer-events: none; opacity: 0; transition: opacity .12s ease; }
+#wheel-hint.on { opacity: 1; }
+#wheel-hint .chip {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px;
+  background: var(--panel); border: 1px solid var(--border); color: var(--text); box-shadow: 0 3px 10px rgba(0,0,0,.14);
+  transform: translate(10px, 14px); transition: transform .16s cubic-bezier(.34, 1.32, .64, 1);
+}
+#wheel-hint:not(.on) .chip { transform: translate(10px, 14px) scale(.8); }
 .col-ctl .icon-btn:disabled { opacity: .35; cursor: default; }
 
 .empty {
