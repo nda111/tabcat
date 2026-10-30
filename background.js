@@ -90,12 +90,34 @@ async function retirePinnedDashboards() {
   await chrome.storage.local.set({ [S.SETTINGS_KEY]: kept });
 }
 
-// The dashboard shortcut goes back and forth: pressed anywhere, it brings up the dashboard (remembering
-// the tab it was pressed on); pressed on the dashboard, it goes back to that tab. (Remembered in session
-// storage: the worker may sleep between the two.)
+// The dashboard comes to you: shortcut, popup, menu, or its address typed / a link to it, it shows in the
+// window you're in as that window's first tab, pinned (just an icon there). There is one: opened, or moved
+// over from another window (as it is: no reload), or pinned if it was a plain tab. Nothing else is
+// imposed: unpin it or close it as you like. The shortcut also goes back: pressed on the dashboard, it
+// returns to the tab it was pressed on. (That tab is kept in session storage: the worker may sleep
+// between the two presses.)
 const CAME_FROM = 'tabcat:cameFrom';
+async function dashboardHere(windowId, keep = null) {
+  const s = await S.loadSettings();
+  A.setDashboardUrl(s.dashboardUrl);
+  // (an installed app window's dashboard can't move into a browser window: only tabs count)
+  const dash = (await chrome.tabs.query({ windowType: 'normal' })).filter((t) => isDashTab(t) && t.id !== keep)
+    .sort((a, b) => b.pinned - a.pinned)[0];
+  if (dash) {
+    if (dash.windowId !== windowId) await chrome.tabs.move(dash.id, { windowId, index: 0 });
+    await chrome.tabs.update(dash.id, { pinned: true, active: true });
+    await chrome.tabs.move(dash.id, { index: 0 });
+  } else await chrome.tabs.create({ windowId, url: s.dashboardUrl, pinned: true, index: 0 });
+  await chrome.windows.update(windowId, { focused: true });
+}
+// The window to bring it to: the tab's, unless that has no tab strip (a popup): the last browser window
+async function windowFor(tab) {
+  if (tab && (await chrome.windows.get(tab.windowId)).type === 'normal') return tab.windowId;
+  return (await chrome.windows.getLastFocused({ windowTypes: ['normal'] })).id;
+}
+const activeTab = async () => (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
 async function toggleDashboard(tab) {
-  tab ??= (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
+  tab ??= await activeTab();
   A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
   if (tab && isDashTab(tab)) {
     const from = (await chrome.storage.session.get(CAME_FROM))[CAME_FROM];
@@ -107,29 +129,84 @@ async function toggleDashboard(tab) {
     return;
   }
   if (tab) await chrome.storage.session.set({ [CAME_FROM]: tab.id });
-  await openDashboard();
+  await dashboardHere(await windowFor(tab));
+}
+async function openDashboard() {
+  const tab = await activeTab();
+  if (tab && !isDashTab(tab)) await chrome.storage.session.set({ [CAME_FROM]: tab.id });
+  await dashboardHere(await windowFor(tab));
 }
 
-// Focuses an open dashboard tab, or opens one; newTab always opens a fresh tab.
-async function openDashboard({ newTab = false } = {}) {
-  const s = await S.loadSettings();
-  A.setDashboardUrl(s.dashboardUrl);
-  const tabs = newTab ? [] : await chrome.tabs.query({});
-  const existing = tabs.find((t) => A.isDashboard(t.url) && !/newtab/.test(t.url));
-  if (existing) {
-    await chrome.tabs.update(existing.id, { active: true });
-    await chrome.windows.update(existing.windowId, { focused: true });
-  } else {
-    await chrome.tabs.create({ url: s.dashboardUrl });
-  }
+// Going to its address (typed, a bookmark, a link) brings it the same way, and the tab that went there
+// goes back to what it showed. A new tab, with nothing to go back to, becomes the dashboard if there is
+// none yet, else closes. (What each tab showed is kept in session storage, for a worker woken by the
+// visit: from when the browser starts or the extension is installed, and as tabs open; a tab opened
+// straight onto the dashboard counts as a new one. Not known: it goes back if it can, else closes.)
+const SHOWN = 'tabcat:tabUrls';
+const NEW_TAB = /^($|about:(blank|newtab)|[a-z-]+:\/\/(newtab|new-tab-page)\b)/;
+let shownChain = Promise.resolve();
+chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
+  if (!change.url) return;
+  const step = shownChain.then(async () => {
+    const shown = (await chrome.storage.session.get(SHOWN))[SHOWN] || {};
+    const before = shown[tabId];
+    shown[tabId] = change.url;
+    await chrome.storage.session.set({ [SHOWN]: shown });
+    A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
+    if (!isDashTab(tab) || before === change.url || (before && A.isDashboard(before))) return; // (not a visit: moves within it)
+    // (pinned: it is the dashboard already, e.g. the one dashboardHere just opened; or the app window)
+    if (tab.pinned || (await chrome.windows.get(tab.windowId)).type !== 'normal') return;
+    const others = (await chrome.tabs.query({ windowType: 'normal' })).filter((t) => t.id !== tabId && isDashTab(t));
+    const wasNew = before == null ? !others.length : NEW_TAB.test(before); // (not known: see above)
+    if (wasNew && !others.length) { // this new tab becomes the dashboard
+      await chrome.tabs.update(tabId, { pinned: true });
+      await chrome.tabs.move(tabId, { index: 0 });
+      return;
+    }
+    await dashboardHere(tab.windowId, tabId);
+    if (wasNew) return void chrome.tabs.remove(tabId);
+    // (the visit is reported as it starts: there is a page to go back to only once it commits)
+    let back = false;
+    for (let i = 0; i < 15 && !back; i++) {
+      back = await chrome.tabs.goBack(tabId).then(() => true, () => false);
+      if (!back) await new Promise((r) => setTimeout(r, 100));
+    }
+    if (back) await chrome.storage.session.set({ [CAME_FROM]: tabId }); // (the shortcut goes back there)
+    else await chrome.tabs.remove(tabId).catch(() => {});
+  });
+  shownChain = step.catch(() => {});
+});
+// (tabs not known yet: what they show now; one opening straight onto the dashboard: as a new tab)
+function recordShown(tabs) {
+  shownChain = shownChain.then(async () => {
+    const shown = (await chrome.storage.session.get(SHOWN))[SHOWN] || {};
+    A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
+    for (const t of tabs) {
+      const url = t.url || t.pendingUrl || '';
+      if (!(t.id in shown)) shown[t.id] = A.isDashboard(url) ? '' : url;
+    }
+    await chrome.storage.session.set({ [SHOWN]: shown });
+  }).catch(() => {});
 }
+chrome.tabs.onCreated.addListener((tab) => recordShown([tab]));
+const seedShown = async () => recordShown(await chrome.tabs.query({}));
+chrome.runtime.onStartup.addListener(seedShown);
+chrome.runtime.onInstalled.addListener(seedShown);
+chrome.tabs.onRemoved.addListener((tabId) => {
+  shownChain = shownChain.then(async () => {
+    const shown = (await chrome.storage.session.get(SHOWN))[SHOWN] || {};
+    if (!(tabId in shown)) return;
+    delete shown[tabId];
+    await chrome.storage.session.set({ [SHOWN]: shown });
+  }).catch(() => {});
+});
 
 /* ================= context menu & shortcuts ================= */
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
     case 'go-tabcat':
-      await openDashboard({ newTab: true });
+      await openDashboard();
       break;
     case 'save-tab':
       if (tab) await A.saveTabs([tab]);

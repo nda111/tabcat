@@ -58,6 +58,19 @@ def dashboard(ctx, errors, size=(1300, 800)):
     d.wait_for_selector('.ws-item', timeout=15000)
     return d
 
+def second_dashboard(ctx, sw, errors):
+    """Another dashboard beside the first (as an installed app window would be): a visit to the address
+    is brought to the one there is, so this one is a tab pinned first (left as it is), then sent there."""
+    before = set(sw.evaluate("chrome.tabs.query({}).then(ts=>ts.map(t=>t.id))"))
+    d = ctx.new_page()
+    tab = next(t for t in sw.evaluate("chrome.tabs.query({}).then(ts=>ts.map(t=>t.id))") if t not in before)
+    sw.evaluate(f"chrome.tabs.update({tab}, {{pinned: true}})")
+    d.set_viewport_size({'width': 1300, 'height': 800})
+    d.on('pageerror', lambda e: errors.append(str(e)))
+    d.goto(URL)
+    d.wait_for_selector('.ws-item', timeout=15000)
+    return d
+
 def seed(sw, d, ws):
     """Replaces workspace `ws` (by id) in the stored data and opens it on the dashboard."""
     sw.evaluate("(w)=>chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces=s.workspaces.filter(x=>x.id!==w.id); s.workspaces.push(w); return chrome.storage.local.set({tabcat:s})})", ws)
@@ -79,4 +92,4 @@ def workspace(i, groups):
             'categories': [{'id': i + '-c', 'type': 'category', 'name': 'C', 'groups': groups}]}
 
 __all__ = ['sync_playwright', 'check', 'done', 'serve', 'launch', 'dashboard', 'seed', 'settings',
-           'link', 'folder', 'group', 'workspace', 'URL', 'time']
+           'second_dashboard', 'link', 'folder', 'group', 'workspace', 'URL', 'time']
