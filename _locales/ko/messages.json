@@ -9,9 +9,9 @@
     "message": "tabcat 대시보드 열기"
   },
   "cmdSaveTab": {
-    "message": "현재 탭 저장"
+    "message": "현재 탭 저장하기"
   },
   "cmdSaveWindow": {
-    "message": "창의 모든 탭을 새 그룹으로 저장"
+    "message": "창의 모든 탭을 새 그룹으로 저장하기"
   }
 }
