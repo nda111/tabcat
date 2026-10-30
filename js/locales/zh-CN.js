@@ -14,7 +14,7 @@ export default {
   'noext.copied': '地址已复制。请粘贴到新标签页的地址栏中。',
   'boot.loading': '正在加载…',
   'browser.title': '不支持此浏览器',
-  'browser.need': 'tabcat 是 Chrome 扩展程序，只能在可安装 Chrome 扩展程序的电脑版 Chromium 浏览器中使用，例如 Chrome、Edge、Brave、Whale、Opera 和 Vivaldi。手机和平板浏览器、Samsung Internet、Firefox 和 Safari 都无法使用。',
+  'browser.need': 'tabcat 是 Chrome 扩展程序。\n它可在能安装 Chrome 扩展程序的电脑版 Chromium 浏览器中使用，例如 Chrome、Edge、Brave、Whale、Opera 和 Vivaldi。\n手机或平板浏览器、Samsung Internet、Firefox、Safari 等都无法使用。',
   'browser.open': '请在受支持的浏览器中使用 tabcat。',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
 

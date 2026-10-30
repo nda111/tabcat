@@ -14,7 +14,7 @@ export default {
   'noext.copied': 'アドレスをコピーしました。新しいタブのアドレスバーに貼り付けてください。',
   'boot.loading': '読み込み中…',
   'browser.title': 'このブラウザには対応していません',
-  'browser.need': 'tabcat は Chrome 拡張機能なので、Chrome、Edge、Brave、Whale、Opera、Vivaldi など、Chrome 拡張機能をインストールできるパソコン用の Chromium ブラウザで動作します。スマートフォン・タブレットのブラウザ、Samsung Internet、Firefox、Safari では使えません。',
+  'browser.need': 'tabcat は Chrome 拡張機能です。\nChrome、Edge、Brave、Whale、Opera、Vivaldi など、Chrome 拡張機能をインストールできるパソコン用の Chromium ブラウザで動作します。\nスマートフォンやタブレットのブラウザ、Samsung Internet、Firefox、Safari などでは使えません。',
   'browser.open': '対応しているブラウザで tabcat をご利用ください。',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
 

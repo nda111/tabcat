@@ -14,7 +14,7 @@ export default {
   'noext.copied': '주소를 복사했습니다. 새 탭의 주소창에 붙여 넣으세요.',
   'boot.loading': '불러오는 중…',
   'browser.title': '지원하지 않는 브라우저입니다',
-  'browser.need': 'tabcat은 Chrome 확장 프로그램이라 Chrome, Edge, Brave, Whale, Opera, Vivaldi처럼 Chrome 확장 프로그램을 설치할 수 있는 컴퓨터용 Chromium 브라우저에서 동작합니다. 휴대폰·태블릿 브라우저, 삼성 인터넷, Firefox, Safari에서는 쓸 수 없습니다.',
+  'browser.need': 'tabcat은 Chrome 확장 프로그램입니다.\nChrome, Edge, Brave, Whale, Opera, Vivaldi처럼 Chrome 확장 프로그램을 설치할 수 있는 컴퓨터용 Chromium 브라우저에서 동작합니다.\n휴대폰 또는 태블릿 브라우저, 삼성 인터넷, Firefox, Safari 등에서는 쓸 수 없습니다.',
   'browser.open': '지원되는 브라우저로 tabcat을 사용해 주세요.',
   'noext.old': 'tabcat 확장 프로그램({version})이 이 대시보드에 필요한 버전({min})보다 오래되었습니다. 새로고침하거나 업데이트하세요.',
 

@@ -16,7 +16,7 @@ export default {
   'noext.copied': 'Endereço copiado. Cole-o na barra de endereços de uma nova aba.',
   'boot.loading': 'Carregando…',
   'browser.title': 'Este navegador não é compatível',
-  'browser.need': 'O tabcat é uma extensão do Chrome, então funciona em navegadores Chromium para computador que instalam extensões do Chrome, como Chrome, Edge, Brave, Whale, Opera e Vivaldi. Navegadores de celular e tablet, Samsung Internet, Firefox e Safari não conseguem executá-lo.',
+  'browser.need': 'O tabcat é uma extensão do Chrome.\nEle funciona em navegadores Chromium para computador que podem instalar extensões do Chrome, como Chrome, Edge, Brave, Whale, Opera e Vivaldi.\nNão pode ser usado em navegadores de celular ou tablet, Samsung Internet, Firefox, Safari e outros.',
   'browser.open': 'Use o tabcat em um navegador compatível.',
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
 

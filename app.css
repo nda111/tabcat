@@ -69,6 +69,7 @@ html.booting #boot {
 .boot-ring { position: relative; width: 132px; height: 132px; display: grid; place-items: center; }
 .boot-ring svg { position: absolute; inset: 0; animation: boot-turn 2s linear infinite; }
 .boot-ring circle { fill: none; stroke-width: 4; }
+.boot-ring .arc { stroke-width: 6; } /* (thick enough for its round ends to read as round) */
 .boot-ring .track { stroke: color-mix(in srgb, var(--accent) 16%, transparent); }
 .boot-ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 1 289; transform-origin: center; animation: boot-arc 1.5s ease-in-out infinite; }
 .boot-ring img { animation: boot-bob 1.5s ease-in-out infinite; } /* a gentle nod in time with the arc */
@@ -696,6 +697,7 @@ dialog .field-label { display: block; font-weight: 600; }
 .no-ext-card h2 { margin: 0 0 6px; }
 .no-ext-card ol { padding-left: 20px; }
 .no-ext-card li { margin-bottom: 6px; }
+.no-ext-card .lines { white-space: pre-line; } /* (a sentence per line) */
 .no-ext-card code { background: var(--hover); padding: 0 4px; border-radius: 4px; }
 
 /* ---------- search: a round magnifier at the bottom centre that springs open into a field ---------- */

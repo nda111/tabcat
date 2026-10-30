@@ -16,7 +16,7 @@ export default {
   'noext.copied': 'Address copied. Paste it into a new tab’s address bar.',
   'boot.loading': 'Loading…',
   'browser.title': 'This browser isn’t supported',
-  'browser.need': 'tabcat is a Chrome extension, so it works in desktop Chromium browsers that install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi. Phone and tablet browsers, Samsung Internet, Firefox and Safari can’t run it.',
+  'browser.need': 'tabcat is a Chrome extension.\nIt works in desktop Chromium browsers that can install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi.\nIt can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safari and the like.',
   'browser.open': 'Please use tabcat in a supported browser.',
   'noext.old': 'The tabcat extension ({version}) is older than this dashboard needs ({min}): reload or update it.',
 
