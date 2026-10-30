@@ -2148,8 +2148,9 @@ function itemClick(e, node) {
 // group's links / folders, it picks those (the rows its height spans, whatever its width) until the
 // pointer leaves the group: below the card going down, above the line under its header going up; then
 // it selects groups. Started anywhere else, covering two or more groups, a group's whole header, or most
-// of a group selects groups. Shift inverts what the box covers, as with clicks.
-function smartBox(e) {
+// of a group selects groups. Shift inverts what the box covers, as with clicks; `add` (a plain drag in
+// the group of the current pick) adds it instead.
+function smartBox(e, add = false) {
   e.preventDefault(); // no native drag of what is under the pointer
   e.stopImmediatePropagation();
   const baseGroups = new Set(selected), baseItems = new Set(pickedItems), baseItemGroup = pickedGroup;
@@ -2160,7 +2161,7 @@ function smartBox(e) {
   const meets = (a, r) => a.left < r.right && a.right > r.left && a.top < r.bottom && a.bottom > r.top;
   const covers = (r, a) => r.left <= a.left && r.right >= a.right && r.top <= a.top && r.bottom >= a.bottom;
   const overlap = (a, r) => Math.max(0, Math.min(a.right, r.right) - Math.max(a.left, r.left)) * Math.max(0, Math.min(a.bottom, r.bottom) - Math.max(a.top, r.top));
-  const invert = (set, base, ids) => { set.clear(); base.forEach((id) => set.add(id)); ids.forEach((id) => (base.has(id) ? set.delete(id) : set.add(id))); };
+  const invert = (set, base, ids) => { set.clear(); base.forEach((id) => set.add(id)); ids.forEach((id) => (base.has(id) && !add ? set.delete(id) : set.add(id))); };
   const onMove = (ev) => {
     if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
     if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
@@ -2219,38 +2220,7 @@ $('#board').addEventListener('pointerdown', (e) => {
   const gid = body.closest('.group').dataset.id;
   const active = pickedItems.size && pickedGroup === gid;
   if (!active || e.target.closest('.item')) return; // (Shift-drags are handled by smartBox)
-  e.preventDefault(); // no native drag of the item under the pointer
-  const base = new Set(pickedItems);
-  const x0 = e.clientX, y0 = e.clientY;
-  const bound = body.getBoundingClientRect();
-  const box = h('div', { id: 'marquee' });
-  let moved = false;
-  const onMove = (ev) => {
-    if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
-    if (!moved) { moved = true; hideTip(); document.body.append(box); document.body.classList.add('selecting'); }
-    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-    const x1 = clamp(ev.clientX, bound.left, bound.right), y1 = clamp(ev.clientY, bound.top, bound.bottom);
-    const r = { left: Math.min(x0, x1), top: Math.min(y0, y1), right: Math.max(x0, x1), bottom: Math.max(y0, y1) };
-    Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
-    pickedItems.clear();
-    base.forEach((id) => pickedItems.add(id));
-    for (const row of body.querySelectorAll('.link-row, .folder-head')) {
-      const c = row.getBoundingClientRect();
-      if (c.left < r.right && c.right > r.left && c.top < r.bottom && c.bottom > r.top) pickedItems.add(row.closest('.item').dataset.id);
-    }
-    pickedGroup = pickedItems.size ? gid : null;
-    if (selected.size) clearSelection();
-    paintItems();
-  };
-  const onUp = () => {
-    removeEventListener('pointermove', onMove);
-    removeEventListener('pointerup', onUp);
-    box.remove();
-    document.body.classList.remove('selecting');
-    if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
-  };
-  addEventListener('pointermove', onMove);
-  addEventListener('pointerup', onUp);
+  return smartBox(e, true); // (the same box as a Shift-drag, adding to the pick)
 });
 
 const pickedNodes = () => [...pickedItems].map((id) => T.locate(state, id)?.node).filter(Boolean);
