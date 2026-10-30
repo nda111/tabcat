@@ -109,6 +109,7 @@ export default {
   'data.exportSettings': '설정 내보내기', 'data.importSettings': '설정 가져오기', 'data.resetSettings': '설정 초기화', 'reset.title': '설정을 모두 초기화할까요?', 'reset.text': '언어, 테마, 색상, 열 개수 등 모든 옵션이 기본값으로 돌아갑니다. 워크스페이스, 그룹, 링크는 초기화되지 않습니다.', 'reset.ok': '초기화', 'toast.settingsReset': '설정을 기본값으로 되돌렸습니다.', 'toast.undone': '되돌렸습니다.', 'toast.redone': '다시 실행했습니다.',
   'noun.group': '그룹', 'noun.groupN': '그룹 {n}개', 'noun.link': '링크', 'noun.linkN': '링크 {n}개', 'noun.folder': '폴더', 'noun.folderN': '폴더 {n}개', 'noun.item': '항목', 'noun.itemN': '항목 {n}개', 'noun.workspace': '워크스페이스', 'noun.workspaceN': '워크스페이스 {n}개', 'noun.category': '카테고리', 'noun.categoryN': '카테고리 {n}개',
   'undo.delete': '{what} 삭제를 취소했습니다.', 'redo.delete': '{what} 삭제를 다시 실행했습니다.', 'undo.move': '{what} 이동을 취소했습니다.', 'redo.move': '{what} 이동을 다시 실행했습니다.', 'undo.merge': '그룹 합치기를 취소했습니다.', 'redo.merge': '그룹 합치기를 다시 실행했습니다.',
+  'undo.closeDupes': '중복 탭 닫기를 취소했습니다.', 'redo.closeDupes': '중복 탭 닫기를 다시 실행했습니다.', 'undo.dedupe': '중복 링크 제거를 취소했습니다.', 'redo.dedupe': '중복 링크 제거를 다시 실행했습니다.',
   'data.note': '가져온 항목은 새 워크스페이스로 추가되며 기존 데이터를 덮어쓰지 않습니다. 설정 파일에는 위의 옵션이 담깁니다.',
   'settings.shortcuts': '단축키',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Alt+Shift+D</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

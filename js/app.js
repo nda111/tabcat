@@ -1528,7 +1528,7 @@ async function redo() {
 const whatOf = (verb, nodes) => ({ verb, n: nodes.length, type: nodes.every((x) => x.type === nodes[0].type) ? nodes[0].type : 'item' });
 function undoText(dir, what) {
   if (!what) return t(dir === 'undo' ? 'toast.undone' : 'toast.redone');
-  if (what.verb === 'merge') return t(`${dir}.merge`);
+  if (!what.type) return t(`${dir}.${what.verb}`); // (merge, closeDupes, dedupe: one sentence each)
   const noun = what.n > 1 ? t(`noun.${what.type}N`, { n: what.n }) : t(`noun.${what.type}`);
   return t(`${dir}.${what.verb}`, { what: noun });
 }
@@ -2110,8 +2110,11 @@ async function dedupeLinks(node) {
   const prune = (items) => items.filter((n) => n.type === 'folder' ? (n.items = prune(n.items), true)
     : seen.has(n.url) ? (removed++, false) : (seen.add(n.url), true));
   const items = prune(structuredClone(node.items));
-  if (removed) await apply({ op: 'patch', id: node.id, fields: { items } });
-  toast(t('toast.removedDupes', { n: removed }));
+  const snapshot = structuredClone(state);
+  if (removed && await apply({ op: 'patch', id: node.id, fields: { items } })) {
+    const entry = await remember(snapshot, { verb: 'dedupe' });
+    toast(t('toast.removedDupes', { n: removed }), t('common.undo'), () => undo(entry, true));
+  } else toast(t('toast.removedDupes', { n: removed }));
 }
 
 /* ================= group selection ================= */
@@ -3483,7 +3486,9 @@ $('#btn-save-all').addEventListener('click', () => saveWindow(currentWindowId));
 $('#btn-suspend').addEventListener('click', () => suspend({}));
 $('#btn-dedupe').addEventListener('click', async () => {
   const n = await run(B.call('closeDuplicates'));
-  if (n != null) toast(t('toast.closedDupes', { n }));
+  // (the extension remembers it in the shared history; an older one can't take it back)
+  if (n) toast(t('toast.closedDupes', { n }), ...(extFeatures.has('sharedHistory') ? [t('common.undo'), () => undo(null, true)] : []));
+  else if (n != null) toast(t('toast.closedDupes', { n }));
 });
 
 
