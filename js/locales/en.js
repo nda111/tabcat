@@ -16,7 +16,7 @@ export default {
   'noext.old': 'The tabcat extension ({version}) is older than this dashboard needs ({min}): reload or update it.',
 
   // side panels
-  'side.workspaces': 'Workspaces', 'side.help': 'Help', 'side.settings': 'Settings',
+  'side.workspaces': 'Workspaces', 'side.info': 'About', 'side.help': 'Help', 'side.settings': 'Settings',
   'panel.expandWs': 'Expand workspaces', 'panel.collapseWs': 'Collapse workspaces',
   'panel.expandTabs': 'Expand open tabs', 'panel.collapseTabs': 'Collapse open tabs',
   'tabs.title': 'Open tabs',
@@ -118,7 +118,7 @@ export default {
   'settings.done': 'Done',
 
   // help
-  'help.title': 'Using tabcat',
+  'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.dashboard': 'Dashboard', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
   'help.org.html': `<h4>How things are organized</h4>
 <p><b>Workspace</b> › <b>Category</b> › <b>Group</b> › <b>Folder</b> (up to 4 levels) and <b>Link</b>.
 Pick a workspace on the left and a category in the bar above the board; groups are the cards on the board.</p>`,

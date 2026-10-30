@@ -13,7 +13,7 @@ export default {
   'noext.retry': '重试',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
 
-  'side.workspaces': '工作区', 'side.help': '帮助', 'side.settings': '设置',
+  'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',
@@ -108,7 +108,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Alt+Shift+D</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
 
-  'help.title': '使用 tabcat',
+  'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.dashboard': '仪表板', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。
 在左侧选择工作区，在面板上方的栏中选择类别；面板上的卡片就是分组。</p>`,

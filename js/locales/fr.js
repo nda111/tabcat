@@ -15,7 +15,7 @@ export default {
   'noext.retry': 'Réessayer',
   'noext.old': 'L’extension tabcat ({version}) est plus ancienne que ce qu’exige ce tableau de bord ({min}) : rechargez-la ou mettez-la à jour.',
 
-  'side.workspaces': 'Espaces de travail', 'side.help': 'Aide', 'side.settings': 'Paramètres',
+  'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',
@@ -110,7 +110,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Alt+Shift+D</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Terminé',
 
-  'help.title': 'Utiliser tabcat',
+  'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.dashboard': 'Tableau de bord', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
   'help.org.html': `<h4>Organisation</h4>
 <p><b>Espace de travail</b> › <b>Catégorie</b> › <b>Groupe</b> › <b>Dossier</b> (jusqu’à 4 niveaux) et <b>Lien</b>.
 Choisissez un espace de travail à gauche et une catégorie dans la barre au-dessus du tableau ; les groupes sont les cartes du tableau.</p>`,

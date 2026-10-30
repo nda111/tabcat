@@ -13,7 +13,7 @@ export default {
   'noext.retry': '다시 시도',
   'noext.old': 'tabcat 확장 프로그램({version})이 이 대시보드에 필요한 버전({min})보다 오래되었습니다. 새로고침하거나 업데이트하세요.',
 
-  'side.workspaces': '워크스페이스', 'side.help': '도움말', 'side.settings': '설정',
+  'side.workspaces': '워크스페이스', 'side.info': '정보', 'side.help': '도움말', 'side.settings': '설정',
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
@@ -108,7 +108,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Alt+Shift+D</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
 
-  'help.title': 'tabcat 사용법',
+  'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.dashboard': '대시보드', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
   'help.org.html': `<h4>구성</h4>
 <p><b>워크스페이스</b> › <b>카테고리</b> › <b>그룹</b> › <b>폴더</b> (최대 4단계)와 <b>링크</b>.
 왼쪽에서 워크스페이스를, 보드 위 막대에서 카테고리를 고르세요. 보드의 카드가 그룹입니다.</p>`,

@@ -15,7 +15,7 @@ export default {
   'noext.retry': 'Tentar de novo',
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
 
-  'side.workspaces': 'Espaços de trabalho', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
+  'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
@@ -110,7 +110,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Alt+Shift+D</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
 
-  'help.title': 'Como usar o tabcat',
+  'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.dashboard': 'Painel', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.
 Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do quadro; os grupos são os cartões do quadro.</p>`,

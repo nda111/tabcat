@@ -13,7 +13,7 @@ export default {
   'noext.retry': '再試行',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
 
-  'side.workspaces': 'ワークスペース', 'side.help': 'ヘルプ', 'side.settings': '設定',
+  'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
   'panel.expandWs': 'ワークスペースを展開', 'panel.collapseWs': 'ワークスペースを折りたたむ',
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
@@ -108,7 +108,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Alt+Shift+D</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '完了',
 
-  'help.title': 'tabcat の使い方',
+  'help.title': 'ヘルプ', 'info.title': '情報', 'info.extension': '拡張機能', 'info.minimum': '必要な拡張機能', 'info.dashboard': 'ダッシュボード', 'info.source': 'ソースコード', 'info.issues': '問題を報告', 'info.notConnected': '未接続',
   'help.org.html': `<h4>構成</h4>
 <p><b>ワークスペース</b> › <b>カテゴリ</b> › <b>グループ</b> › <b>フォルダ</b> (最大 4 階層) と <b>リンク</b>。
 左でワークスペースを、ボード上のバーでカテゴリを選びます。ボード上のカードがグループです。</p>`,

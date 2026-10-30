@@ -927,17 +927,21 @@ async function renderTabs() {
   }
 
   const others = wins.filter((w) => w.id !== currentWindowId);
+  const shut = new Set((ui.winCollapsed || []).filter((id) => wins.some((w) => w.id === id))); // (closed windows forgotten)
+  if (shut.size !== (ui.winCollapsed || []).length) { ui.winCollapsed = [...shut]; saveUi(); }
   const blocks = wins.map((w) => {
     const name = windowName(w, others);
     const label = `${name} · ${t('count.tabs', { n: w.tabs.length })}`;
-    return h('div', { class: 'win', dataset: { window: w.id } },
+    const collapsed = shut.has(w.id);
+    return h('div', { class: 'win' + (collapsed ? ' collapsed' : ''), dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true' },
+        Object.assign(btn(icon('chevron', 14), t(collapsed ? 'act.expand' : 'act.collapse'), () => toggleWin(w.id)), { className: 'icon-btn win-twisty' }),
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
         w.tabs.length > 0 && btn(icon('save'), t(w.id === currentWindowId ? 'win.saveThis' : 'win.save'), () => saveWindow(w.id)),
         w.tabs.some(canSuspend) && btn(icon('suspend'), t('win.suspend'), () => suspend({ windowId: w.id })),
         noTip(btn(icon('close'), t('win.close'), () => closeWindow(w, others)))),
-      w.tabs.map((t) => h('div', {
+      !collapsed && h('div', { class: 'win-tabs' }, w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
         title: [t.title || t.url, t.url, t.discarded ? tr('tab.suspended') : t.active ? tr('tab.active') : ''].filter(Boolean).join('\n'),
@@ -952,7 +956,7 @@ async function renderTabs() {
       h('span', { class: 'name' }, t.title || t.url),
       t.discarded && h('span', { class: 'muted' }, icon('suspend', 13)),
       btn(icon('save'), tr('tab.save'), () => saveTabsTo([t.id])),
-      noTip(btn(icon('close'), tr('tab.close'), () => run(B.call('closeTabs', { tabIds: [t.id] })))))));
+      noTip(btn(icon('close'), tr('tab.close'), () => run(B.call('closeTabs', { tabIds: [t.id] }))))))));
   });
   $('#tab-stats').replaceChildren(...chunks([t('count.windows', { n: wins.length }), t('count.tabs', { n: all.length }),
     sleeping && t('count.suspended', { n: sleeping }), dupes && t('count.duplicates', { n: dupes })].filter(Boolean)));
@@ -977,7 +981,19 @@ async function renderTabs() {
   const hadRows = document.querySelectorAll('#windows .tab-row').length > 0;
   const before = new Map([...document.querySelectorAll('#windows .tab-row, #windows .win')].map((el) => [keyOf(el), el.getBoundingClientRect()]));
   $('#windows').replaceChildren(...blocks);
+  // a window being expanded: its tabs are held shut while the rest is measured (so the windows below
+  // get no slide of their own), then open up with them following
+  let opening = null;
+  if (winExpanding != null) {
+    const body = document.querySelector(`#windows .win[data-window="${winExpanding}"] > .win-tabs`);
+    winExpanding = null;
+    if (body) {
+      opening = { body, h: body.getBoundingClientRect().height };
+      Object.assign(body.style, { height: '0px', overflow: 'hidden' });
+    }
+  }
   for (const el of document.querySelectorAll('#windows .tab-row, #windows .win')) {
+    if (opening?.body.contains(el)) continue;
     const a = before.get(keyOf(el));
     if (!a) {
       if (hadRows && el.matches('.tab-row')) el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
@@ -989,7 +1005,38 @@ async function renderTabs() {
     const dy = a.top - b.top - pdy;
     if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 360, easing: SPRING });
   }
+  if (opening) {
+    const { body, h } = opening;
+    body.style.height = '';
+    body.animate([{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }], { duration: 300, easing: GLIDE })
+      .finished.catch(() => {}).then(() => { body.style.overflow = ''; });
+    body.parentElement.querySelector('.win-twisty .ico')?.animate([{ transform: 'rotate(-90deg)' }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
+  }
   restoreHover();
+}
+
+// Collapse / expand a window in the open tabs panel (remembered on this device while it is open). Its
+// tabs close up first, then it is drawn collapsed; expanding opens them (see renderTabs).
+let winExpanding = null;
+async function toggleWin(id) {
+  const shut = new Set(ui.winCollapsed || []);
+  if (shut.has(id)) {
+    shut.delete(id);
+    winExpanding = id;
+  } else {
+    shut.add(id);
+    const win = document.querySelector(`#windows .win[data-window="${id}"]`);
+    const body = win?.querySelector(':scope > .win-tabs');
+    win?.querySelector('.win-twisty .ico')?.animate([{ transform: 'none' }, { transform: 'rotate(-90deg)' }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+    if (body) {
+      body.style.overflow = 'hidden';
+      await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
+        { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+    }
+  }
+  ui.winCollapsed = [...shut];
+  saveUi();
+  renderTabs();
 }
 
 // "This window" for the dashboard's own window; the rest read naturally for how many there are.
@@ -2907,6 +2954,15 @@ function openGuide() {
 }
 $('#btn-help').addEventListener('click', openGuide);
 
+// About: versions and where tabcat lives.
+$('#btn-info').addEventListener('click', () => {
+  $('#info-ext').textContent = extVersion || t('info.notConnected');
+  $('#info-min').textContent = MIN_EXTENSION;
+  const dlg = $('#info');
+  dlg.showModal();
+  dlg.querySelector('button').blur();
+});
+
 /* ---------- side panels: collapse and resize ---------- */
 
 // Tooltips: every [title] outside dialogs shows in one styled tooltip (the native title is parked in
@@ -3170,6 +3226,7 @@ async function refresh() {
 
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
 const MIN_EXTENSION = '0.2.5'; // (0.2.5: group colours)
+let extVersion = null; // the connected extension's (shown in About)
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
   for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
@@ -3184,6 +3241,7 @@ async function init() {
   langShown = await setLang(lang);
   applyText();
   const ext = await B.connect();
+  extVersion = ext?.version || null;
   if (!ext) return showNoExtension();
   $('#no-ext').hidden = true;
   if (olderThan(ext.version, MIN_EXTENSION)) {

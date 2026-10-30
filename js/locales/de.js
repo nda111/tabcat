@@ -15,7 +15,7 @@ export default {
   'noext.retry': 'Erneut versuchen',
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
 
-  'side.workspaces': 'Arbeitsbereiche', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
+  'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
   'panel.expandWs': 'Arbeitsbereiche ausklappen', 'panel.collapseWs': 'Arbeitsbereiche einklappen',
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',
@@ -110,7 +110,7 @@ export default {
   'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Alt+Shift+D</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Fertig',
 
-  'help.title': 'tabcat verwenden',
+  'help.title': 'Hilfe', 'info.title': 'Info', 'info.extension': 'Erweiterung', 'info.minimum': 'Benötigte Erweiterung', 'info.dashboard': 'Dashboard', 'info.source': 'Quellcode', 'info.issues': 'Problem melden', 'info.notConnected': 'nicht verbunden',
   'help.org.html': `<h4>Wie alles geordnet ist</h4>
 <p><b>Arbeitsbereich</b> › <b>Kategorie</b> › <b>Gruppe</b> › <b>Ordner</b> (bis zu 4 Ebenen) und <b>Link</b>.
 Wähle links einen Arbeitsbereich und in der Leiste über dem Board eine Kategorie; die Karten auf dem Board sind die Gruppen.</p>`,

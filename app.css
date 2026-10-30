@@ -128,6 +128,13 @@ body.ws-collapsed .ws-add { display: flex; }
 
 /* guide */
 #help { width: 620px; }
+/* Help / About titles: the logo in place of the word tabcat */
+.logo-title { display: flex; align-items: center; gap: 8px; }
+.logo-title img { flex: none; }
+#info { width: 420px; }
+.info-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.info-list dt { color: var(--muted); }
+.info-list dd { margin: 0; overflow-wrap: anywhere; }
 .guide { font-size: 13px; }
 .guide section + section { margin-top: 14px; }
 .guide h4 { margin: 0 0 4px; font-size: 13px; }
@@ -230,8 +237,9 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
-/* as tall as the collapse button, so the header keeps its height when a group gains or loses its contents */
-.group-head .node-line { min-height: 26px; }
+/* the collapse button takes no more height than the name, so the header keeps its height when a group
+   gains or loses its contents (and the name sits close to the tools below) */
+.group-head .collapse-btn { margin-block: -2px; }
 .node-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .node-line .count { color: var(--muted); font-size: 11px; }
 .node-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
@@ -358,13 +366,16 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 .panel-actions .btn:disabled { opacity: .45; cursor: default; }
 .panel-actions .btn:disabled:hover { background: var(--panel); }
 .side-btn .sym { display: inline-flex; }
+.side-btn .label { text-box: trim-both cap alphabetic; } /* the label's capitals centred on the icon, not its line box */
 #windows { overflow-x: hidden; overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
 .win-head {
   display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; /* buttons stay at the top when the name wraps */
   color: var(--muted); cursor: grab; user-select: none;
 }
-.win-head .grow { flex: 1; min-width: 0; }
+.win-head .grow { flex: 1; min-width: 0; line-height: 16px; padding-top: 4px; } /* one line sits level with the 24px buttons */
+.win-twisty .ico { transition: transform .15s ease-out; }
+.win.collapsed .win-twisty .ico { transform: rotate(-90deg); }
 .win-count { display: none; }
 body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing: 0; }
 .tab-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: 6px; cursor: grab; }
