@@ -691,3 +691,12 @@ dialog .theme-opt input, dialog .swatch input { position: absolute; inset: 0; wi
 
 /* theme / accent switch: the old look cross-fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; animation-timing-function: ease; }
+/* language switch with Settings open (see switchLang): every box and item springs to its new place;
+   the empty boxes stretch to their new size, the items keep theirs (pinned top-left, never scaled) */
+::view-transition-group(*.settings-frame), ::view-transition-group(*.settings-part) {
+  animation-duration: .5s; animation-timing-function: cubic-bezier(.34, 1.32, .64, 1);
+}
+::view-transition-old(*.settings-frame), ::view-transition-new(*.settings-frame) { height: 100%; animation-duration: .35s; }
+::view-transition-old(*.settings-part), ::view-transition-new(*.settings-part) {
+  inset: 0 auto auto 0; width: auto; height: auto; animation-duration: .35s;
+}

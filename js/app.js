@@ -499,13 +499,30 @@ async function setColumns(v) {
   if (s) { settings = s; fillSettings(); relayoutBoard(); }
 }
 
+// Scrolling over the count steps it: up adds a column. A trackpad's small deltas add up to a step;
+// steps taken before the last save came back count from the pending value.
+let wheelAcc = 0, wheelCols = null, wheelTimer = null;
+function wheelColumns(e) {
+  e.preventDefault();
+  wheelAcc += e.deltaY;
+  if (Math.abs(wheelAcc) < 40) return;
+  const from = wheelCols ?? boardColumns();
+  const to = Math.min(MAX_COLUMNS, Math.max(1, from + (wheelAcc < 0 ? 1 : -1)));
+  wheelAcc = 0;
+  if (to === from) return;
+  wheelCols = to;
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(() => { wheelCols = null; }, 500);
+  setColumns(to);
+}
+
 function columnControl() {
   const n = boardColumns();
   const set = setColumns;
   return h('div', { class: 'col-ctl', title: t('cols.title') },
     icon('columns', 15),
     Object.assign(btn(icon('minus', 13), t('cols.fewer'), () => set(n - 1)), { disabled: n <= 1 }),
-    h('span', { class: 'col-n' }, n),
+    h('span', { class: 'col-n', onwheel: wheelColumns }, n),
     Object.assign(btn(icon('plus', 13), t('cols.more'), () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
 }
 
@@ -2395,8 +2412,19 @@ async function switchLang(setting = 'auto', fade = true) {
     renderSidebar(); renderHead(); renderCats(); renderBoard();
     await renderTabs();
   };
-  if (fade && document.startViewTransition) document.startViewTransition(swap);
-  else await swap();
+  if (!fade || !document.startViewTransition) return swap();
+  // An open Settings dialog moves with a spring instead: its boxes (the dialog, each fieldset) are
+  // pictured empty and stretch to their new size, and everything in them moves the same way at its own
+  // size, so nothing shifts against the box it sits in; only the text itself cross-fades.
+  const dlg = $('#settings');
+  const frames = dlg.open ? [dlg, ...dlg.querySelectorAll('#settings-form > fieldset')] : [];
+  const parts = frames.flatMap((f) => [...(f === dlg ? $('#settings-form') : f).children].filter((el) => el.tagName !== 'FIELDSET'));
+  const named = [...frames.map((el) => [el, 'settings-frame']), ...parts.map((el) => [el, 'settings-part'])];
+  named.forEach(([el, cls], i) => { el.style.viewTransitionName = `settings-${i}`; el.style.viewTransitionClass = cls; });
+  document.startViewTransition(swap).finished.finally(() => named.forEach(([el]) => {
+    el.style.viewTransitionName = '';
+    el.style.viewTransitionClass = '';
+  }));
 }
 
 // Everything built once from strings: the page's own text, panel tooltips, the action row's fit.
