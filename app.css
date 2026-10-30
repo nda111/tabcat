@@ -180,7 +180,7 @@ body.ws-collapsed .ws-add { display: flex; }
 #board.empty-cat .col:first-child .add-group { opacity: 1; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
 .bar-split { width: 1px; height: 16px; margin: 0 8px; background: var(--border); flex: none; }
-.col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); }
+.col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); cursor: none; } /* the wheel works it */
 .col-ctl .icon-btn:disabled { opacity: .35; cursor: default; }
 
 .empty {

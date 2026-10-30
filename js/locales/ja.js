@@ -35,7 +35,7 @@ export default {
   'tabs.moveWindow': '新しいウィンドウに移動',
 
   'head.none': 'ワークスペースがありません',
-  'cols.title': '列', 'cols.fewer': '列を減らす', 'cols.more': '列を増やす',
+  'cols.title': '列', 'cols.fewer': '列を減らす', 'cols.more': '列を増やす', 'cols.scroll': 'スクロールで列数を変更',
   'board.noWs': 'ワークスペースがまだありません。', 'board.createWs': 'ワークスペースを作成',
   'board.noCats': 'このワークスペースにはカテゴリがありません。', 'board.createCat': 'カテゴリを作成',
   'note.placeholder': 'Markdown メモ…  (Ctrl+Enter で保存)', 'note.clickTip': 'クリックしてメモを編集',

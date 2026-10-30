@@ -39,7 +39,7 @@ export default {
 
   // board
   'head.none': 'No workspace',
-  'cols.title': 'Columns', 'cols.fewer': 'Fewer columns', 'cols.more': 'More columns',
+  'cols.title': 'Columns', 'cols.fewer': 'Fewer columns', 'cols.more': 'More columns', 'cols.scroll': 'Scroll to change the column count',
   'board.noWs': 'No workspace yet.', 'board.createWs': 'Create workspace',
   'board.noCats': 'This workspace has no categories.', 'board.createCat': 'Create category',
   'note.placeholder': 'Markdown note…  (Ctrl+Enter to save)', 'note.clickTip': 'Click to edit note',

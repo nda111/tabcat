@@ -35,7 +35,7 @@ export default {
   'tabs.moveWindow': '移到新窗口',
 
   'head.none': '没有工作区',
-  'cols.title': '列数', 'cols.fewer': '减少列', 'cols.more': '增加列',
+  'cols.title': '列数', 'cols.fewer': '减少列', 'cols.more': '增加列', 'cols.scroll': '滚动以更改列数',
   'board.noWs': '还没有工作区。', 'board.createWs': '创建工作区',
   'board.noCats': '此工作区没有类别。', 'board.createCat': '创建类别',
   'note.placeholder': 'Markdown 笔记…  (Ctrl+Enter 保存)', 'note.clickTip': '点击编辑笔记',

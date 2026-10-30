@@ -37,7 +37,7 @@ export default {
   'tabs.moveWindow': 'Mover a una ventana nueva',
 
   'head.none': 'Sin espacio de trabajo',
-  'cols.title': 'Columnas', 'cols.fewer': 'Menos columnas', 'cols.more': 'Más columnas',
+  'cols.title': 'Columnas', 'cols.fewer': 'Menos columnas', 'cols.more': 'Más columnas', 'cols.scroll': 'Desplaza para cambiar el número de columnas',
   'board.noWs': 'Aún no hay espacios de trabajo.', 'board.createWs': 'Crear espacio de trabajo',
   'board.noCats': 'Este espacio de trabajo no tiene categorías.', 'board.createCat': 'Crear categoría',
   'note.placeholder': 'Nota en Markdown…  (Ctrl+Enter para guardar)', 'note.clickTip': 'Haz clic para editar la nota',

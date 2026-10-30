@@ -519,11 +519,13 @@ function wheelColumns(e) {
 function columnControl() {
   const n = boardColumns();
   const set = setColumns;
-  return h('div', { class: 'col-ctl', title: t('cols.title'), onwheel: wheelColumns },
-    icon('columns', 15),
-    Object.assign(btn(icon('minus', 13), t('cols.fewer'), () => set(n - 1)), { disabled: n <= 1 }),
+  // the icon names the control; everywhere else the tip says it scrolls (the buttons keep their name above that)
+  const scroll = t('cols.scroll');
+  return h('div', { class: 'col-ctl', title: scroll, onwheel: wheelColumns },
+    Object.assign(icon('columns', 15), { title: t('cols.title') }),
+    Object.assign(btn(icon('minus', 13), `${t('cols.fewer')}\n${scroll}`, () => set(n - 1)), { disabled: n <= 1 }),
     h('span', { class: 'col-n' }, n),
-    Object.assign(btn(icon('plus', 13), t('cols.more'), () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
+    Object.assign(btn(icon('plus', 13), `${t('cols.more')}\n${scroll}`, () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
 }
 
 function renderBoard() {

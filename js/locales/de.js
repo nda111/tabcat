@@ -37,7 +37,7 @@ export default {
   'tabs.moveWindow': 'In neues Fenster verschieben',
 
   'head.none': 'Kein Arbeitsbereich',
-  'cols.title': 'Spalten', 'cols.fewer': 'Weniger Spalten', 'cols.more': 'Mehr Spalten',
+  'cols.title': 'Spalten', 'cols.fewer': 'Weniger Spalten', 'cols.more': 'Mehr Spalten', 'cols.scroll': 'Scrollen, um die Spaltenzahl zu ändern',
   'board.noWs': 'Noch kein Arbeitsbereich.', 'board.createWs': 'Arbeitsbereich erstellen',
   'board.noCats': 'Dieser Arbeitsbereich hat keine Kategorien.', 'board.createCat': 'Kategorie erstellen',
   'note.placeholder': 'Markdown-Notiz…  (Strg+Enter zum Speichern)', 'note.clickTip': 'Klicken, um die Notiz zu bearbeiten',

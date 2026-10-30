@@ -35,7 +35,7 @@ export default {
   'tabs.moveWindow': '새 창으로 옮기기',
 
   'head.none': '워크스페이스 없음',
-  'cols.title': '열', 'cols.fewer': '열 줄이기', 'cols.more': '열 늘리기',
+  'cols.title': '열', 'cols.fewer': '열 줄이기', 'cols.more': '열 늘리기', 'cols.scroll': '스크롤해서 열 개수 바꾸기',
   'board.noWs': '아직 워크스페이스가 없습니다.', 'board.createWs': '워크스페이스 만들기',
   'board.noCats': '이 워크스페이스에는 카테고리가 없습니다.', 'board.createCat': '카테고리 만들기',
   'note.placeholder': '마크다운 노트…  (Ctrl+Enter로 저장)', 'note.clickTip': '클릭해서 노트 수정',
