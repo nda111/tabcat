@@ -107,10 +107,10 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 /* ================= RPC (popup messages + dashboard bridge) ================= */
 
 // Every handler receives (args, senderTab). senderTab is the dashboard's own tab when called via the bridge.
-// tabcat group colours -> Chrome's tab group colours (the plain card -> grey)
+// tabcat group colours are Chrome's tab group colours (the plain card -> grey; older names mapped)
 const TAB_GROUP_COLOR = {
-  red: 'red', orange: 'orange', yellow: 'yellow', lime: 'green', green: 'green',
-  teal: 'cyan', sky: 'blue', blue: 'blue', purple: 'purple', pink: 'pink',
+  red: 'red', orange: 'orange', yellow: 'yellow', green: 'green', cyan: 'cyan', blue: 'blue', purple: 'purple', pink: 'pink',
+  lime: 'green', teal: 'cyan', sky: 'blue',
 };
 
 // Tab groups opened from a group or folder keep following its name, emoji and colour: tab group id ->
