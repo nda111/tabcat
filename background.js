@@ -107,6 +107,12 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 /* ================= RPC (popup messages + dashboard bridge) ================= */
 
 // Every handler receives (args, senderTab). senderTab is the dashboard's own tab when called via the bridge.
+// tabcat group colours -> Chrome's tab group colours (the plain card -> grey)
+const TAB_GROUP_COLOR = {
+  red: 'red', orange: 'orange', yellow: 'yellow', lime: 'green', green: 'green',
+  teal: 'cyan', sky: 'blue', blue: 'blue', purple: 'purple', pink: 'pink',
+};
+
 const handlers = {
   getState: () => S.load(),
   getSettings: () => S.loadSettings(),
@@ -137,18 +143,37 @@ const handlers = {
   saveWindow: ({ windowId, ...opts }) => A.saveWindow(windowId, opts),
   closeDuplicates: () => A.closeDuplicates(),
   suspendTabs: (args) => A.suspendTabs(args || {}),
-  async openUrls({ urls, newWindow, windowId, active }, senderTab) {
-    urls = (urls || []).filter((u) => /^(https?|ftp|file|chrome|edge|brave|about):/i.test(u));
-    if (!urls.length) return 0;
-    if (newWindow) await chrome.windows.create({ url: urls, focused: true });
-    else {
+  // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group
+  // named after it (older dashboards send only `urls`)
+  async openUrls({ urls, groups, newWindow, windowId, active }, senderTab) {
+    const ok = (u) => /^(https?|ftp|file|chrome|edge|brave|about):/i.test(u);
+    const sets = groups?.length && chrome.tabGroups
+      ? groups.map((g) => ({ ...g, urls: (g.urls || []).filter(ok) })).filter((g) => g.urls.length)
+      : [{ urls: (urls || []).filter(ok) }];
+    const all = sets.flatMap((g) => g.urls);
+    if (!all.length) return 0;
+    let tabIds;
+    if (newWindow) {
+      const w = await chrome.windows.create({ url: all, focused: true });
+      tabIds = w.tabs.map((t) => t.id);
+    } else {
       // open next to the dashboard tab, in the requested (or dashboard's) window
       const target = windowId ?? senderTab?.windowId;
-      for (let i = 0; i < urls.length; i++) {
-        await chrome.tabs.create({ url: urls[i], windowId: target, active: !!active && i === 0 });
+      tabIds = [];
+      for (let i = 0; i < all.length; i++) {
+        tabIds.push((await chrome.tabs.create({ url: all[i], windowId: target, active: !!active && i === 0 })).id);
       }
     }
-    return urls.length;
+    let at = 0;
+    for (const g of sets) {
+      const ids = tabIds.slice(at, at += g.urls.length);
+      if (!('title' in g) || !ids.length) continue;
+      try {
+        const groupId = await chrome.tabs.group({ tabIds: ids });
+        await chrome.tabGroups.update(groupId, { title: g.title || '', color: TAB_GROUP_COLOR[g.color] || 'grey', collapsed: false });
+      } catch { /* left ungrouped (e.g. the window closed meanwhile) */ }
+    }
+    return all.length;
   },
   async activateTab({ tabId }) {
     const t = await chrome.tabs.update(tabId, { active: true });
