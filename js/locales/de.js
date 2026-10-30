@@ -100,7 +100,7 @@ export default {
   'err.notJson': 'keine JSON-Datei', 'err.noWorkspaces': 'keine Arbeitsbereiche gefunden',
   'err.notSettings': 'keine tabcat-Einstellungsdatei', 'err.noSettings': 'keine gültigen Einstellungen gefunden',
 
-  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren',
+  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren', 'settings.pinDashboard': 'Dashboard links in der Tableiste jedes Fensters anheften',
   'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten)', 'settings.off': 'Aus', 'settings.columns': 'Spalten im Board (1–8)',
   'settings.language': 'Sprache', 'settings.langAuto': 'Browsersprache',
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',

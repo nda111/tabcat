@@ -100,7 +100,7 @@ export default {
   'err.notJson': 'no es un archivo JSON', 'err.noWorkspaces': 'no se encontraron espacios de trabajo',
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
 
-  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
+  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo', 'settings.pinDashboard': 'Fijar el panel a la izquierda de la barra de pestañas de cada ventana',
   'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos)', 'settings.off': 'Desactivado', 'settings.columns': 'Columnas del tablero (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',

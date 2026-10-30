@@ -100,7 +100,7 @@ export default {
   'err.notJson': 'não é um arquivo JSON', 'err.noWorkspaces': 'nenhum espaço de trabalho encontrado',
   'err.notSettings': 'não é um arquivo de configurações do tabcat', 'err.noSettings': 'nenhuma configuração válida encontrada',
 
-  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo',
+  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo', 'settings.pinDashboard': 'Fixar o painel à esquerda da barra de abas de cada janela',
   'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos)', 'settings.off': 'Desativado', 'settings.columns': 'Colunas do quadro (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma do navegador',
   'settings.appearance': 'Aparência', 'settings.theme': 'Tema', 'settings.color': 'Cor',

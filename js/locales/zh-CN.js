@@ -98,7 +98,7 @@ export default {
   'err.notJson': '不是 JSON 文件', 'err.noWorkspaces': '未找到工作区',
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
 
-  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
+  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组', 'settings.pinDashboard': '在每个窗口标签栏的最左侧固定面板',
   'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟)', 'settings.off': '关闭', 'settings.columns': '面板列数 (1–8)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',

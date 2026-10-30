@@ -11,7 +11,7 @@ const tr = t; // for code where `t` is a tab or a drop target
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
+let settings = { closeOnSave: true, groupTabs: true, pinDashboard: false, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 // (mono has no hue: the other theme's background, see app.css)
@@ -208,9 +208,28 @@ function applyTheme() {
   if (settings.accent === 'mono') { root.dataset.accent = 'mono'; root.style.removeProperty('--hue'); }
   else if (hue == null || settings.accent === 'orange') { delete root.dataset.accent; root.style.removeProperty('--hue'); }
   else { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
+  tintFavicon();
   // remembered for the next visit's first paint (see the script in index.html)
   try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
 }
+
+// The tab's icon: the logo in the accent colour (a pinned dashboard tab shows nothing else). The logo
+// keeps its shading (its eyes, its ears' insides): only its colour turns to the accent.
+const logo = Object.assign(new Image(), { src: 'icons/icon128.png' });
+function tintFavicon() {
+  if (!logo.complete) return void logo.addEventListener('load', tintFavicon, { once: true });
+  const c = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
+  const g = c.getContext('2d');
+  g.drawImage(logo, 0, 0, 64, 64);
+  g.globalCompositeOperation = 'color'; // the accent's hue and saturation over the logo's lightness
+  g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  g.fillRect(0, 0, 64, 64);
+  g.globalCompositeOperation = 'destination-in'; // back to the logo's shape
+  g.drawImage(logo, 0, 0, 64, 64);
+  $('#favicon').href = c.toDataURL();
+}
+// (the accent differs between light and dark)
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', tintFavicon);
 
 const currentWs = () => state.workspaces.find((w) => w.id === ui.ws) || state.workspaces[0] || null;
 function currentCat(ws = currentWs()) {
@@ -2916,6 +2935,7 @@ function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.groupTabs.checked = settings.groupTabs !== false;
+  f.pinDashboard.checked = !!settings.pinDashboard;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
@@ -2935,6 +2955,7 @@ $('#settings-form').addEventListener('change', async (e) => {
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
     groupTabs: f.groupTabs.checked,
+    pinDashboard: f.pinDashboard.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
     language: f.language.value,
     theme: f.theme.value,
@@ -3133,6 +3154,7 @@ const SETTINGS_IO = {
   language: (v) => v === 'auto' || Object.hasOwn(LANGS, v),
   closeOnSave: (v) => typeof v === 'boolean',
   groupTabs: (v) => typeof v === 'boolean',
+  pinDashboard: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
   accent: (v) => Object.hasOwn(ACCENTS, v),
@@ -3141,7 +3163,7 @@ const SETTINGS_IO = {
 
 // Settings > Data > Reset settings: every option above back to its default (after asking; the data is
 // not touched)
-const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
+const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, pinDashboard: false, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
 $('#btn-reset-settings').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('reset.title'), text: t('reset.text'), ok: t('reset.ok'), danger: true }))) return;
   const s = await run(B.call('saveSettings', SETTINGS_DEFAULTS));

@@ -98,7 +98,7 @@ export default {
   'err.notJson': 'JSON ファイルではありません', 'err.noWorkspaces': 'ワークスペースが見つかりません',
   'err.notSettings': 'tabcat の設定ファイルではありません', 'err.noSettings': '有効な設定が見つかりません',
 
-  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる',
+  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる', 'settings.pinDashboard': 'すべてのウィンドウのタブバー左端にダッシュボードを固定',
   'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分)', 'settings.off': 'オフ', 'settings.columns': 'ボードの列数 (1–8)',
   'settings.language': '言語', 'settings.langAuto': 'ブラウザの設定',
   'settings.appearance': '外観', 'settings.theme': 'テーマ', 'settings.color': '色',

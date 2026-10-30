@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tabcat</title>
-  <link rel="icon" href="icons/icon32.png">
+  <link rel="icon" href="icons/icon32.png" id="favicon">
   <script>
     // Before anything is drawn: the last theme / colour seen (so the page doesn't flash the defaults), and
     // the page kept hidden until the language, panel widths and the rest are applied (app.js lifts this;
@@ -131,6 +131,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
         </label>
         <label class="check"><input type="checkbox" name="closeOnSave"> <span data-i18n="settings.closeOnSave">Close tabs after saving them</span></label>
         <label class="check"><input type="checkbox" name="groupTabs"> <span data-i18n="settings.groupTabs">Group tabs when opening all</span></label>
+        <label class="check"><input type="checkbox" name="pinDashboard"> <span data-i18n="settings.pinDashboard">Pin the dashboard at the left of every window’s tab bar</span></label>
         <label><span data-i18n="settings.autoSuspend">Auto-suspend unused tabs after (minutes)</span>
           <input type="number" name="autoSuspendMinutes" min="0" step="1" data-zero="settings.off">
         </label>
