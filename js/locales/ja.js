@@ -13,7 +13,7 @@ export default {
   'noext.retry': '再試行',
   'browser.title': 'このブラウザには対応していません',
   'browser.need': 'tabcat は Chrome 拡張機能なので、Chrome、Edge、Brave、Whale、Opera、Vivaldi など、Chrome 拡張機能をインストールできるパソコン用の Chromium ブラウザで動作します。スマートフォン・タブレットのブラウザ、Samsung Internet、Firefox、Safari では使えません。',
-  'browser.open': 'パソコンでこれらのブラウザからこのアドレスを開いてください。',
+  'browser.open': '対応しているブラウザで tabcat をご利用ください。',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
 
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',

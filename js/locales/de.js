@@ -15,7 +15,7 @@ export default {
   'noext.retry': 'Erneut versuchen',
   'browser.title': 'Dieser Browser wird nicht unterstützt',
   'browser.need': 'tabcat ist eine Chrome-Erweiterung und läuft daher in Chromium-Browsern für den Computer, die Chrome-Erweiterungen installieren, etwa Chrome, Edge, Brave, Whale, Opera und Vivaldi. Browser auf Handys und Tablets, Samsung Internet, Firefox und Safari können sie nicht ausführen.',
-  'browser.open': 'Öffne diese Adresse auf einem Computer in einem dieser Browser:',
+  'browser.open': 'Bitte nutze tabcat in einem unterstützten Browser.',
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
 
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',

@@ -15,7 +15,7 @@ export default {
   'noext.retry': 'Retry',
   'browser.title': 'This browser isn’t supported',
   'browser.need': 'tabcat is a Chrome extension, so it works in desktop Chromium browsers that install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi. Phone and tablet browsers, Samsung Internet, Firefox and Safari can’t run it.',
-  'browser.open': 'Open this address in one of those browsers on a computer:',
+  'browser.open': 'Please use tabcat in a supported browser.',
   'noext.old': 'The tabcat extension ({version}) is older than this dashboard needs ({min}): reload or update it.',
 
   // side panels

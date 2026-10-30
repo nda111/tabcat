@@ -3519,7 +3519,7 @@ async function init() {
   // its place, so the board is never glimpsed before a notice.
   const show = () => { void document.body.offsetWidth; document.documentElement.classList.remove('booting'); };
   if (!supportedBrowser()) {
-    $('#browser-url').textContent = location.href;
+    Object.assign($('#browser-url'), { href: location.href }).firstChild.textContent = location.href;
     $('#no-browser').hidden = false;
     return show();
   }
