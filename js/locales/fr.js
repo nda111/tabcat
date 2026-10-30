@@ -105,7 +105,7 @@ export default {
   'settings.appearance': 'Apparence', 'settings.theme': 'Thème', 'settings.color': 'Couleur',
   'theme.auto': 'Système', 'theme.light': 'Clair', 'theme.dark': 'Sombre',
   'accent.red': 'Rouge', 'accent.orange': 'Orange', 'accent.yellow': 'Jaune', 'accent.lime': 'Citron vert', 'accent.green': 'Vert',
-  'accent.teal': 'Sarcelle', 'accent.sky': 'Bleu ciel', 'accent.blue': 'Bleu', 'accent.purple': 'Violet', 'accent.pink': 'Rose',
+  'accent.teal': 'Sarcelle', 'accent.sky': 'Bleu ciel', 'accent.blue': 'Bleu', 'accent.purple': 'Violet', 'accent.pink': 'Rose', 'accent.mono': 'Monochrome',
   'settings.data': 'Données', 'data.export': 'Exporter les données…', 'data.import': 'Importer des données…',
   'data.exportSettings': 'Exporter les paramètres', 'data.importSettings': 'Importer des paramètres', 'data.resetSettings': 'Réinitialiser les réglages', 'reset.title': 'Réinitialiser tous les réglages ?', 'reset.text': 'La langue, le thème, la couleur, les colonnes et les autres options reviennent à leurs valeurs par défaut. Les espaces de travail, groupes et liens ne sont pas réinitialisés.', 'reset.ok': 'Réinitialiser', 'toast.settingsReset': 'Réglages réinitialisés', 'toast.undone': 'Annulé', 'toast.redone': 'Rétabli',
   'noun.group': 'groupe', 'noun.groupN': '{n} groupes', 'noun.link': 'lien', 'noun.linkN': '{n} liens', 'noun.folder': 'dossier', 'noun.folderN': '{n} dossiers', 'noun.item': 'élément', 'noun.itemN': '{n} éléments', 'noun.workspace': 'espace de travail', 'noun.workspaceN': '{n} espaces de travail', 'noun.category': 'catégorie', 'noun.categoryN': '{n} catégories',

@@ -105,7 +105,7 @@ export default {
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',
   'theme.auto': 'System', 'theme.light': 'Hell', 'theme.dark': 'Dunkel',
   'accent.red': 'Rot', 'accent.orange': 'Orange', 'accent.yellow': 'Gelb', 'accent.lime': 'Limette', 'accent.green': 'Grün',
-  'accent.teal': 'Petrol', 'accent.sky': 'Himmelblau', 'accent.blue': 'Blau', 'accent.purple': 'Lila', 'accent.pink': 'Pink',
+  'accent.teal': 'Petrol', 'accent.sky': 'Himmelblau', 'accent.blue': 'Blau', 'accent.purple': 'Lila', 'accent.pink': 'Pink', 'accent.mono': 'Monochrom',
   'settings.data': 'Daten', 'data.export': 'Daten exportieren…', 'data.import': 'Daten importieren…',
   'data.exportSettings': 'Einstellungen exportieren', 'data.importSettings': 'Einstellungen importieren', 'data.resetSettings': 'Einstellungen zurücksetzen', 'reset.title': 'Alle Einstellungen zurücksetzen?', 'reset.text': 'Sprache, Design, Farbe, Spalten und die übrigen Optionen werden auf die Standardwerte gesetzt. Arbeitsbereiche, Gruppen und Links werden nicht zurückgesetzt.', 'reset.ok': 'Zurücksetzen', 'toast.settingsReset': 'Einstellungen zurückgesetzt', 'toast.undone': 'Rückgängig gemacht', 'toast.redone': 'Wiederhergestellt',
   'noun.group': 'Gruppe', 'noun.groupN': '{n} Gruppen', 'noun.link': 'Link', 'noun.linkN': '{n} Links', 'noun.folder': 'Ordner', 'noun.folderN': '{n} Ordner', 'noun.item': 'Element', 'noun.itemN': '{n} Elemente', 'noun.workspace': 'Arbeitsbereich', 'noun.workspaceN': '{n} Arbeitsbereiche', 'noun.category': 'Kategorie', 'noun.categoryN': '{n} Kategorien',

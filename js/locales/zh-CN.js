@@ -103,7 +103,7 @@ export default {
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',
   'theme.auto': '系统', 'theme.light': '浅色', 'theme.dark': '深色',
   'accent.red': '红', 'accent.orange': '橙', 'accent.yellow': '黄', 'accent.lime': '青柠', 'accent.green': '绿',
-  'accent.teal': '青', 'accent.sky': '天蓝', 'accent.blue': '蓝', 'accent.purple': '紫', 'accent.pink': '粉',
+  'accent.teal': '青', 'accent.sky': '天蓝', 'accent.blue': '蓝', 'accent.purple': '紫', 'accent.pink': '粉', 'accent.mono': '黑白',
   'settings.data': '数据', 'data.export': '导出数据…', 'data.import': '导入数据…',
   'data.exportSettings': '导出设置', 'data.importSettings': '导入设置', 'data.resetSettings': '重置设置', 'reset.title': '要重置所有设置吗？', 'reset.text': '语言、主题、颜色、列数等选项将恢复为默认值。工作区、分组和链接不会被重置。', 'reset.ok': '重置', 'toast.settingsReset': '设置已恢复为默认值', 'toast.undone': '已撤销', 'toast.redone': '已重做',
   'noun.group': '分组', 'noun.groupN': '{n} 个分组', 'noun.link': '链接', 'noun.linkN': '{n} 个链接', 'noun.folder': '文件夹', 'noun.folderN': '{n} 个文件夹', 'noun.item': '项目', 'noun.itemN': '{n} 个项目', 'noun.workspace': '工作区', 'noun.workspaceN': '{n} 个工作区', 'noun.category': '类别', 'noun.categoryN': '{n} 个类别',

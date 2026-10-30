@@ -14,7 +14,8 @@
       const root = document.documentElement;
       if (look?.theme && look.theme !== 'auto') root.dataset.theme = look.theme;
       const accent = look?.accent || 'purple', hue = look?.accent ? look.hue : 300; // (a first visit: the default, purple)
-      if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
+      if (accent === 'mono') root.dataset.accent = 'mono';
+      else if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
     } catch { /* storage unavailable */ }
     document.documentElement.classList.add('booting');
     setTimeout(() => document.documentElement.classList.remove('booting'), 2000);

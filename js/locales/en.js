@@ -112,7 +112,7 @@ export default {
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
   'theme.auto': 'System', 'theme.light': 'Light', 'theme.dark': 'Dark',
   'accent.red': 'Red', 'accent.orange': 'Orange', 'accent.yellow': 'Yellow', 'accent.lime': 'Lime', 'accent.green': 'Green',
-  'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink',
+  'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink', 'accent.mono': 'Mono',
   'settings.data': 'Data', 'data.export': 'Export data…', 'data.import': 'Import data…',
   'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Workspaces, groups and links are not reset.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults', 'toast.undone': 'Undone', 'toast.redone': 'Redone',
   'noun.group': 'the group', 'noun.groupN': '{n} groups', 'noun.link': 'the link', 'noun.linkN': '{n} links', 'noun.folder': 'the folder', 'noun.folderN': '{n} folders', 'noun.item': 'the item', 'noun.itemN': '{n} items', 'noun.workspace': 'the workspace', 'noun.workspaceN': '{n} workspaces', 'noun.category': 'the category', 'noun.categoryN': '{n} categories',

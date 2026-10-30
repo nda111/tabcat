@@ -14,7 +14,8 @@ let state = null;
 let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
-const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
+// (mono has no hue: the other theme's background, see app.css)
+const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350, mono: null };
 // Group colours are Chrome's tab group colours, so a tab group opened from a group looks like its card:
 // [light theme, dark theme] as Chrome draws them, and the name to show (lime / teal / sky from before
 // these map to the nearest).
@@ -204,7 +205,8 @@ function applyTheme() {
   if (settings.theme === 'auto') delete root.dataset.theme;
   else root.dataset.theme = settings.theme;
   const hue = ACCENTS[settings.accent];
-  if (hue == null || settings.accent === 'orange') { delete root.dataset.accent; root.style.removeProperty('--hue'); }
+  if (settings.accent === 'mono') { root.dataset.accent = 'mono'; root.style.removeProperty('--hue'); }
+  else if (hue == null || settings.accent === 'orange') { delete root.dataset.accent; root.style.removeProperty('--hue'); }
   else { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
   // remembered for the next visit's first paint (see the script in index.html)
   try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
@@ -2842,7 +2844,7 @@ document.addEventListener('click', (e) => {
 });
 
 $('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
-  h('label', { class: 'swatch', dataset: { accent: name, i18nAttr: `title:accent.${name}` }, style: `--hue: ${hue}` },
+  h('label', { class: 'swatch', dataset: { accent: name, i18nAttr: `title:accent.${name}` }, style: hue != null ? `--hue: ${hue}` : null },
     h('input', { type: 'radio', name: 'accent', value: name, dataset: { i18nAttr: `aria-label:accent.${name}` } }))));
 
 // each language is listed in its own name; the first entry follows the browser
@@ -2917,7 +2919,7 @@ function fillSettings() {
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
-  f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'purple';
+  f.accent.value = Object.hasOwn(ACCENTS, settings.accent) ? settings.accent : 'purple';
   f.columns.value = boardColumns();
   syncSteppers();
 }

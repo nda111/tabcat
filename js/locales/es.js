@@ -105,7 +105,7 @@ export default {
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',
   'theme.auto': 'Sistema', 'theme.light': 'Claro', 'theme.dark': 'Oscuro',
   'accent.red': 'Rojo', 'accent.orange': 'Naranja', 'accent.yellow': 'Amarillo', 'accent.lime': 'Lima', 'accent.green': 'Verde',
-  'accent.teal': 'Verde azulado', 'accent.sky': 'Celeste', 'accent.blue': 'Azul', 'accent.purple': 'Morado', 'accent.pink': 'Rosa',
+  'accent.teal': 'Verde azulado', 'accent.sky': 'Celeste', 'accent.blue': 'Azul', 'accent.purple': 'Morado', 'accent.pink': 'Rosa', 'accent.mono': 'Monocromo',
   'settings.data': 'Datos', 'data.export': 'Exportar datos…', 'data.import': 'Importar datos…',
   'data.exportSettings': 'Exportar ajustes', 'data.importSettings': 'Importar ajustes', 'data.resetSettings': 'Restablecer ajustes', 'reset.title': '¿Restablecer todos los ajustes?', 'reset.text': 'El idioma, el tema, el color, las columnas y las demás opciones vuelven a sus valores predeterminados. Los espacios de trabajo, grupos y enlaces no se restablecen.', 'reset.ok': 'Restablecer', 'toast.settingsReset': 'Ajustes restablecidos', 'toast.undone': 'Deshecho', 'toast.redone': 'Rehecho',
   'noun.group': 'grupo', 'noun.groupN': '{n} grupos', 'noun.link': 'enlace', 'noun.linkN': '{n} enlaces', 'noun.folder': 'carpeta', 'noun.folderN': '{n} carpetas', 'noun.item': 'elemento', 'noun.itemN': '{n} elementos', 'noun.workspace': 'espacio de trabajo', 'noun.workspaceN': '{n} espacios de trabajo', 'noun.category': 'categoría', 'noun.categoryN': '{n} categorías',

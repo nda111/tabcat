@@ -103,7 +103,7 @@ export default {
   'settings.appearance': '모양', 'settings.theme': '테마', 'settings.color': '색상',
   'theme.auto': '시스템', 'theme.light': '라이트', 'theme.dark': '다크',
   'accent.red': '빨강', 'accent.orange': '주황', 'accent.yellow': '노랑', 'accent.lime': '라임', 'accent.green': '초록',
-  'accent.teal': '청록', 'accent.sky': '하늘', 'accent.blue': '파랑', 'accent.purple': '보라', 'accent.pink': '분홍',
+  'accent.teal': '청록', 'accent.sky': '하늘', 'accent.blue': '파랑', 'accent.purple': '보라', 'accent.pink': '분홍', 'accent.mono': '흑백',
   'settings.data': '데이터', 'data.export': '데이터 내보내기…', 'data.import': '데이터 가져오기…',
   'data.exportSettings': '설정 내보내기', 'data.importSettings': '설정 가져오기', 'data.resetSettings': '설정 초기화', 'reset.title': '설정을 모두 초기화할까요?', 'reset.text': '언어, 테마, 색상, 열 개수 등 모든 옵션이 기본값으로 돌아갑니다. 워크스페이스, 그룹, 링크는 초기화되지 않습니다.', 'reset.ok': '초기화', 'toast.settingsReset': '설정을 기본값으로 되돌렸습니다.', 'toast.undone': '되돌렸습니다.', 'toast.redone': '다시 실행했습니다.',
   'noun.group': '그룹', 'noun.groupN': '그룹 {n}개', 'noun.link': '링크', 'noun.linkN': '링크 {n}개', 'noun.folder': '폴더', 'noun.folderN': '폴더 {n}개', 'noun.item': '항목', 'noun.itemN': '항목 {n}개', 'noun.workspace': '워크스페이스', 'noun.workspaceN': '워크스페이스 {n}개', 'noun.category': '카테고리', 'noun.categoryN': '카테고리 {n}개',
