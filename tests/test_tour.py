@@ -1,5 +1,5 @@
 # Installed fresh: sample links to start from; the dashboard comes up and offers a tour once; the tour
-# lights each part in turn; afterwards it starts from the sidebar.
+# lights each part in turn and ends saying where to find it again; afterwards it starts from Help.
 from harness import *
 
 serve()
@@ -34,12 +34,13 @@ with sync_playwright() as p:
     check(icons == 3 and '{icon' not in d.inner_text('#tour-text'), f'controls are named with their own icons ({icons})')
     check(d.inner_text('#tour-text .tour-key') == 'Space', 'the text ends with the key that steps on')
     check(d.inner_text('#tour-next') == 'Done', 'the last step ends with Done')
+    check('start this tour again from' in d.inner_text('#tour-text') and d.evaluate("document.querySelectorAll('#tour-text .tour-icon').length") == 3, 'and says it starts again from Help (with its icon)')
     d.click('#tour-next'); time.sleep(.3)
     check(not d.is_visible('#tour'), 'Done closes it')
     d.reload(); d.wait_for_selector('.ws-item'); time.sleep(1.2)
     check(d.locator('#confirm[open]').count() == 0, 'not offered again')
-    d.click('#btn-tour'); time.sleep(.4)
-    check(d.is_visible('#tour'), "the sidebar's Tour starts it")
+    d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
+    check(d.is_visible('#tour') and d.locator('#help[open]').count() == 0, "Help's Take the tour starts it (Help makes way)")
     d.keyboard.press('ArrowRight'); time.sleep(.3)
     check(d.inner_text('#tour-count') == '2 of 8', '→ steps on')
     d.click('#tour-prev'); time.sleep(.3); d.keyboard.press(' '); time.sleep(.3)  # (focus on Back: Space still goes on)
