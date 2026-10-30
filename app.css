@@ -63,11 +63,23 @@ html.booting :not(#boot, #boot *), html.booting :not(#boot, #boot *)::before, ht
 #boot { display: none; }
 html.booting #boot {
   visibility: visible; position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; background: var(--bg); opacity: 0; animation: boot-in .3s ease .2s forwards;
+  background: var(--bg); opacity: 0; animation: boot-in .3s ease .2s forwards;
 }
-.boot-spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); animation: boot-spin .8s linear infinite; }
+/* the logo inside a ring whose arc runs round, growing and shrinking as it goes (r 46: 289 around) */
+.boot-ring { position: relative; width: 132px; height: 132px; display: grid; place-items: center; }
+.boot-ring svg { position: absolute; inset: 0; animation: boot-turn 2s linear infinite; }
+.boot-ring circle { fill: none; stroke-width: 4; }
+.boot-ring .track { stroke: color-mix(in srgb, var(--accent) 16%, transparent); }
+.boot-ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 1 289; transform-origin: center; animation: boot-arc 1.5s ease-in-out infinite; }
+.boot-ring img { animation: boot-bob 1.5s ease-in-out infinite; } /* a gentle nod in time with the arc */
 @keyframes boot-in { to { opacity: 1; } }
-@keyframes boot-spin { to { transform: rotate(1turn); } }
+@keyframes boot-turn { to { transform: rotate(1turn); } }
+@keyframes boot-arc {
+  0% { stroke-dasharray: 1 289; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 150 289; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 150 289; stroke-dashoffset: -288; }
+}
+@keyframes boot-bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.04); } }
 body {
   display: flex; background: var(--bg); color: var(--text);
   font: 13px/1.45 Archivo, "Pretendard Adjusted", system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
