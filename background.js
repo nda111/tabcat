@@ -90,6 +90,26 @@ async function retirePinnedDashboards() {
   await chrome.storage.local.set({ [S.SETTINGS_KEY]: kept });
 }
 
+// The dashboard shortcut goes back and forth: pressed anywhere, it brings up the dashboard (remembering
+// the tab it was pressed on); pressed on the dashboard, it goes back to that tab. (Remembered in session
+// storage: the worker may sleep between the two.)
+const CAME_FROM = 'tabcat:cameFrom';
+async function toggleDashboard(tab) {
+  tab ??= (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0];
+  A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
+  if (tab && isDashTab(tab)) {
+    const from = (await chrome.storage.session.get(CAME_FROM))[CAME_FROM];
+    const back = from != null && await chrome.tabs.get(from).catch(() => null); // (closed since: stay)
+    if (back) {
+      await chrome.tabs.update(back.id, { active: true });
+      await chrome.windows.update(back.windowId, { focused: true });
+    }
+    return;
+  }
+  if (tab) await chrome.storage.session.set({ [CAME_FROM]: tab.id });
+  await openDashboard();
+}
+
 // Focuses an open dashboard tab, or opens one; newTab always opens a fresh tab.
 async function openDashboard({ newTab = false } = {}) {
   const s = await S.loadSettings();
@@ -142,7 +162,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     const w = await chrome.windows.getLastFocused();
     await A.saveWindow(w.id);
   } else if (command === 'open-dashboard') {
-    await openDashboard();
+    await toggleDashboard(tab);
   }
 });
 
