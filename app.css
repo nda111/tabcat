@@ -271,6 +271,8 @@ dialog a:not([class]), #no-ext a:not([class]) { color: var(--accent); }
 /* stands in for a note that was emptied while it closes up */
 .note-spacer { background: var(--panel-2); border-bottom: 1px solid var(--border); }
 /* the old note / editor text fading out over its replacement */
+/* a group's old symbol shrinking away where it was (see growCard) */
+.sym-leaving { position: fixed; z-index: 5; margin: 0; pointer-events: none; }
 .note-ghost {
   position: fixed; z-index: 5; margin: 0; overflow: hidden; pointer-events: none;
   background: transparent !important; border-color: transparent !important; cursor: default;

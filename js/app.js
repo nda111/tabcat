@@ -1619,8 +1619,12 @@ function holdCard() {
 // What a card looked like (its height and the colours its group colour sets), so a redrawn card can
 // ease from there: the height with the same glide as the cards below it, the colours with a fade.
 const LOOK_PARTS = [[null, ['backgroundColor', 'borderColor']], ['.group-head', ['borderBottomColor']], ['.note', ['backgroundColor', 'borderBottomColor']]];
+const headPart = (el, cls) => el.querySelector(`:scope > .group-head > .${cls}`);
 function cardLook(el) {
+  const sym = headPart(el, 'node-sym');
   return {
+    sym: sym && { html: sym.innerHTML, rect: sym.getBoundingClientRect(), copy: sym.cloneNode(true) },
+    infoLeft: headPart(el, 'node-info')?.getBoundingClientRect().left,
     height: el.getBoundingClientRect().height,
     parts: LOOK_PARTS.map(([sel, props]) => {
       const part = sel ? el.querySelector(sel) : el;
@@ -1636,6 +1640,24 @@ function growCard(held) {
     const part = sel ? el.querySelector(sel) : el;
     if (part && look.parts[i]) part.animate([look.parts[i], {}], { duration: 240, easing: 'ease' });
   });
+  // a new symbol springs in while the old one shrinks away where it was; when the symbol's column
+  // opens or closes, the name and tools slide over instead of jumping
+  const sym = headPart(el, 'node-sym');
+  const old = look.sym;
+  if (old && sym?.innerHTML !== old.html) {
+    const { copy, rect } = old;
+    copy.classList.add('sym-leaving');
+    Object.assign(copy.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+    document.body.append(copy);
+    copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => copy.remove());
+  }
+  if (sym && sym.innerHTML !== old?.html) {
+    sym.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: SPRING });
+  }
+  const info = headPart(el, 'node-info');
+  const dx = info && look.infoLeft != null ? look.infoLeft - info.getBoundingClientRect().left : 0;
+  if (Math.abs(dx) >= 0.5) info.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 360, easing: GLIDE });
   if (Math.abs(to - look.height) < 0.5) return;
   el.style.height = '';
   el.animate([{ height: `${look.height}px` }, { height: `${to}px` }], { duration: 420, easing: GLIDE })
