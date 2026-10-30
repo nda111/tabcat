@@ -23,7 +23,7 @@ export default {
 
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
 
-  'side.tour': 'Recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}', 'tour.keys.html': '<kbd>Espacio</kbd> o <kbd>→</kbd> para seguir · <kbd>Esc</kbd> para cerrar',
+  'side.tour': 'Recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
 
   'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Recorrido en la barra lateral.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
 

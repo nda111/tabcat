@@ -21,7 +21,7 @@ export default {
 
   'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
 
-  'side.tour': '둘러보기', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}', 'tour.keys.html': '<kbd>Space</kbd> 또는 <kbd>→</kbd>로 넘기고, <kbd>Esc</kbd>로 닫습니다',
+  'side.tour': '둘러보기', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
 
   'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드립니다. 나중에 사이드바의 둘러보기에서도 볼 수 있습니다.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
 

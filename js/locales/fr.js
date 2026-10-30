@@ -23,7 +23,7 @@ export default {
 
   'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
 
-  'side.tour': 'Visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}', 'tour.keys.html': '<kbd>Espace</kbd> ou <kbd>→</kbd> pour continuer · <kbd>Échap</kbd> pour fermer',
+  'side.tour': 'Visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
 
   'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis Visite dans la barre latérale.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
 

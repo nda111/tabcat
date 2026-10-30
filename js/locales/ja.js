@@ -21,7 +21,7 @@ export default {
 
   'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
 
-  'side.tour': 'ツアー', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}', 'tour.keys.html': '<kbd>Space</kbd> か <kbd>→</kbd> で次へ・<kbd>Esc</kbd> で閉じる',
+  'side.tour': 'ツアー', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}',
 
   'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからサイドバーの「ツアー」でも見られます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
 

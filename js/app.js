@@ -3707,7 +3707,7 @@ const TOUR = [
   { key: 'tabs', at: '#tabs-panel' },
   { key: 'search', at: '#search-box .search-field' },
   { key: 'shortcut' },
-  { key: 'more', at: '#sidebar .side-bottom' },
+  { key: 'more', at: '#sidebar .side-bottom > .side-btn' }, // (the buttons, not the line above them)
 ];
 const TOUR_OFFERED = 'tabcat:tourOffered';
 let tourStep = -1;
@@ -3742,9 +3742,9 @@ function showTourStep(i) {
   $('#tour-count').textContent = t('tour.count', { i: i + 1, n: TOUR.length });
   $('#tour-title').textContent = t(`tour.${key}.title`);
   // (a {icon:name} in the text: that control's own icon, as the page shows it)
+  // (and at its end, the key that steps on)
   $('#tour-text').replaceChildren(...t(`tour.${key}.text`).split(/\{icon:(\w+)\}/)
-    .map((part, j) => (j % 2 ? h('span', { class: 'tour-icon' }, icon(part, 15)) : part)));
-  $('#tour-keys').innerHTML = t('tour.keys.html');
+    .map((part, j) => (j % 2 ? h('span', { class: 'tour-icon' }, icon(part, 15)) : part)), ' ', h('kbd', { class: 'tour-key' }, 'Space'));
   $('#tour-prev').hidden = i === 0;
   $('#tour-next').textContent = t(i === TOUR.length - 1 ? 'tour.done' : 'tour.next');
   placeTour();
@@ -3753,9 +3753,13 @@ function showTourStep(i) {
 // right of it, left, below or above, whichever fits first
 function placeTour() {
   if (tourStep < 0) return;
-  const el = TOUR[tourStep].at && document.querySelector(TOUR[tourStep].at);
-  const box = el?.getBoundingClientRect();
-  const r = box && box.width > 0 && box.height > 0 ? box : null;
+  // (a step's `at` may match several elements: the box round the ones shown)
+  const boxes = TOUR[tourStep].at ? [...document.querySelectorAll(TOUR[tourStep].at)].map((el) => el.getBoundingClientRect()).filter((b) => b.width > 0 && b.height > 0) : [];
+  const r = boxes.length ? {
+    left: Math.min(...boxes.map((b) => b.left)), top: Math.min(...boxes.map((b) => b.top)),
+    right: Math.max(...boxes.map((b) => b.right)), bottom: Math.max(...boxes.map((b) => b.bottom)),
+  } : null;
+  if (r) Object.assign(r, { width: r.right - r.left, height: r.bottom - r.top });
   const spot = $('#tour .tour-spot');
   const card = $('#tour .tour-card');
   const pad = 6;

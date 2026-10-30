@@ -23,7 +23,7 @@ export default {
 
   'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
 
-  'side.tour': 'Tour', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}', 'tour.keys.html': '<kbd>Leertaste</kbd> oder <kbd>→</kbd> für weiter · <kbd>Esc</kbd> zum Schließen',
+  'side.tour': 'Tour', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}',
 
   'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über „Tour“ in der Seitenleiste starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
 

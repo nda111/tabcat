@@ -179,8 +179,7 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
 .tour-card p { margin: 0 0 14px; line-height: 1.55; }
 .tour-card p { white-space: normal; }
 .tour-icon { display: inline-grid; place-items: center; vertical-align: -.2em; margin: 0 1px; color: var(--icon); }
-.tour-keys { margin: -4px 0 12px; }
-.tour-keys kbd { padding: 0 5px; border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 11px; }
+.tour-key { margin-left: 2px; padding: 0 5px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font: inherit; font-size: 11px; white-space: nowrap; }
 .tour-actions { display: flex; align-items: center; gap: 6px; }
 .tour-actions .grow { flex: 1; }
 /* "Install app": its × (hide it for good; Settings still offers it) shows on hover, at the row's end */

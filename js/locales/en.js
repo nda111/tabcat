@@ -22,7 +22,7 @@ export default {
   // side panels
   'side.workspaces': 'Workspaces', 'side.info': 'About', 'side.help': 'Help', 'side.settings': 'Settings',
   'side.install': 'Install app', 'install.hide': 'Hide (you can still install it from Settings)', 'settings.app': 'App', 'toast.installed': 'Installed tabcat as an app',
-  'side.tour': 'Tour', 'tour.skip': 'Skip', 'tour.prev': 'Back', 'tour.next': 'Next', 'tour.done': 'Done', 'tour.count': '{i} of {n}', 'tour.keys.html': '<kbd>Space</kbd> or <kbd>→</kbd> for next · <kbd>Esc</kbd> to close',
+  'side.tour': 'Tour', 'tour.skip': 'Skip', 'tour.prev': 'Back', 'tour.next': 'Next', 'tour.done': 'Done', 'tour.count': '{i} of {n}',
   'tour.offer.title': 'Take a quick tour of tabcat?', 'tour.offer.text': 'A minute, step by step, through the main parts. You can also start it later from Tour in the sidebar.', 'tour.offer.ok': 'Take the tour', 'tour.offer.later': 'Later',
   'tour.welcome.title': 'Welcome to tabcat', 'tour.welcome.text': 'Save tabs as links in groups, close them, and open them again whenever you need them.',
   'tour.workspaces.title': 'Workspaces', 'tour.workspaces.text': 'The biggest boxes: one for work, one for study… Pick one here; drag to reorder.',

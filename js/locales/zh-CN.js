@@ -21,7 +21,7 @@ export default {
 
   'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
 
-  'side.tour': '导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}', 'tour.keys.html': '按 <kbd>Space</kbd> 或 <kbd>→</kbd> 下一步 · <kbd>Esc</kbd> 关闭',
+  'side.tour': '导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
 
   'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从侧边栏的“导览”开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
 
