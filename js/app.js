@@ -499,7 +499,7 @@ async function setColumns(v) {
   if (s) { settings = s; fillSettings(); relayoutBoard(); }
 }
 
-// Scrolling over the count steps it: up adds a column. A trackpad's small deltas add up to a step;
+// Scrolling over the control (icon, buttons, count or the gaps between) steps it: up adds a column. A trackpad's small deltas add up to a step;
 // steps taken before the last save came back count from the pending value.
 let wheelAcc = 0, wheelCols = null, wheelTimer = null;
 function wheelColumns(e) {
@@ -519,10 +519,10 @@ function wheelColumns(e) {
 function columnControl() {
   const n = boardColumns();
   const set = setColumns;
-  return h('div', { class: 'col-ctl', title: t('cols.title') },
+  return h('div', { class: 'col-ctl', title: t('cols.title'), onwheel: wheelColumns },
     icon('columns', 15),
     Object.assign(btn(icon('minus', 13), t('cols.fewer'), () => set(n - 1)), { disabled: n <= 1 }),
-    h('span', { class: 'col-n', onwheel: wheelColumns }, n),
+    h('span', { class: 'col-n' }, n),
     Object.assign(btn(icon('plus', 13), t('cols.more'), () => set(n + 1)), { disabled: n >= MAX_COLUMNS }));
 }
 
