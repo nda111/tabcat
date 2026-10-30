@@ -368,7 +368,7 @@ dialog a:not([class]), :is(#no-ext, #no-browser) a:not([class]) { color: var(--a
 
 /* ---------- items ---------- */
 .items { list-style: none; margin: 0; padding: 4px; min-height: 30px; }
-.items .items { padding: 0 0 0 7px; margin-left: 7px; border-left: 1px solid var(--border); min-height: 6px; }
+.items .items { padding: 0; margin-left: var(--fold-mid); border-left: 1px solid var(--border); min-height: 6px; }
 /* nesting deeper than four levels stops indenting, so deep folders keep room for their names */
 .items .items .items .items .items .items { padding-left: 0; margin-left: 0; border-left: 0; }
 .item { border-radius: 6px; }
@@ -386,7 +386,11 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .folder-head { gap: 6px; }
 .folder-head .twisty { display: inline-flex; color: var(--icon); transition: transform .12s; }
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
-.folder-head > .sym { font-size: 15px; }
+/* the symbol in a fixed slot, so a folder's items (and the line beside them) start under its middle:
+   6px padding + 13px chevron + 6px gap + half the 18px slot (the line is the 1px just before it) */
+.folder-head > .sym { font-size: 15px; flex: none; width: 18px; height: 18px; display: inline-grid; place-items: center; }
+.folder-head > .sym-letter { font-size: 11px; border-radius: 5px; }
+.items { --fold-mid: 33px; }
 .sym.sym-icon { display: inline-grid; place-items: center; color: var(--icon); } /* a default line icon in place of a symbol */
 .folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
 .folder-head .node-line .name { font-size: 13px; font-weight: 400; }
