@@ -125,6 +125,10 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
 .ws-item .sym { width: 18px; text-align: center; }
 .ws-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws-item .count { color: var(--muted); font-size: 11px; }
+/* the counts, the New workspace button and the collapse button share one centre line: a count is centred
+   in a fixed slot (wider numbers spill evenly to both sides), the + button sits 2px further right */
+.ws-item .count { flex: none; display: inline-flex; justify-content: center; width: 20px; }
+.side-title #add-ws { margin-right: -2px; }
 .side-bottom { border-top: 1px solid var(--border); padding-top: 8px; }
 /* "new workspace" at the end of the list: only in the collapsed rail */
 .ws-add { display: none; align-items: center; justify-content: center; padding: 7px 0; border-radius: 7px; color: var(--muted); cursor: pointer; }
