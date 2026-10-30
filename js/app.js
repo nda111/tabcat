@@ -3125,6 +3125,7 @@ function applyPanels() {
     document.body.style.setProperty(`--${key}-w`, ui[p.width] ? ui[p.width] + 'px' : null);
     $(p.toggle).title = t(p.tips[collapsed ? 0 : 1]);
   }
+  $('#sidebar .brand-logo').title = ui.wsCollapsed ? '' : t(PANELS.ws.tips[1]); // (collapsed: the expand button covers it)
   applyRailTitles();
 }
 
@@ -3139,6 +3140,9 @@ function applyRailTitles() {
 
 const PANEL_FLIP = '.brand-logo, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
 const panelAnimTimer = {};
+
+// The logo collapses the workspaces panel like its button does (collapsed, the expand button sits on it).
+$('#sidebar .brand-logo').addEventListener('click', () => { if (!ui.wsCollapsed) $('#ws-toggle').click(); });
 
 for (const p of Object.values(PANELS)) {
   $(p.toggle).addEventListener('click', () => {
