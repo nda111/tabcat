@@ -315,6 +315,8 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .note a { color: var(--accent); }
 /* plain links in dialogs and notices use the theme colour */
 dialog a:not([class]), :is(#no-ext, #no-browser) a:not([class]) { color: var(--accent); }
+/* links change colour with a new accent / theme as the controls around them do */
+:is(dialog a:not([class]), :is(#no-ext, #no-browser) a:not([class]), .note a) { transition: color .16s ease; }
 .note-edit {
   display: block; /* no inline baseline gap under it */ width: 100%; min-height: 90px; border: 0; border-bottom: 1px solid var(--border); padding: 8px 12px;
   background: var(--panel-2); resize: none; overflow: hidden; field-sizing: content; /* grows with its lines */
@@ -799,9 +801,8 @@ body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; 
 .swatch:hover { transform: scale(1.12); }
 .swatch:has(input:checked) { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
 /* mono: split by a line through the centre at 60°, light theme's background on the left, dark theme's on the right */
-.swatch[data-accent="mono"] { /* each half rimmed in the other's colour */
-  border: 1.5px solid transparent;
-  background: linear-gradient(120deg, #f4f2ef 50%, #18171a 50%) padding-box, linear-gradient(120deg, #18171a 50%, #f4f2ef 50%) border-box;
+.swatch[data-accent="mono"] { /* each half rimmed in the other's colour (an SVG: smooth edges, unlike gradient stops) */
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><defs><clipPath id='l'><path d='M21 -6.32L1 28.32H-9V-6.32Z'/></clipPath></defs><circle cx='11' cy='11' r='11' fill='%23f4f2ef'/><circle cx='11' cy='11' r='9.5' fill='%2318171a'/><g clip-path='url(%23l)'><circle cx='11' cy='11' r='11' fill='%2318171a'/><circle cx='11' cy='11' r='9.5' fill='%23f4f2ef'/></g></svg>") center / 100% 100% no-repeat;
 }
 .swatch:has(input:focus-visible) { outline: 1px solid var(--accent); outline-offset: 4px; }
 
