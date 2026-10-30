@@ -94,7 +94,7 @@ export default {
   'err.notJson': 'JSON 파일이 아닙니다', 'err.noWorkspaces': '워크스페이스가 없습니다',
   'err.notSettings': 'tabcat 설정 파일이 아닙니다', 'err.noSettings': '유효한 설정이 없습니다',
 
-  'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기',
+  'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기', 'settings.groupTabs': '모두 열기 시 탭 그룹으로 묶기',
   'settings.autoSuspend': '비활성 탭 자동 일시 중지 (분, 0 = 끔)', 'settings.columns': '보드 열 수 (1–7)',
   'settings.language': '언어', 'settings.langAuto': '브라우저 기본값',
   'settings.appearance': '모양', 'settings.theme': '테마', 'settings.color': '색상',

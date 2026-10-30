@@ -103,7 +103,7 @@ export default {
   'err.notSettings': 'not a tabcat settings file', 'err.noSettings': 'no valid settings found',
 
   // settings
-  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them',
+  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all',
   'settings.autoSuspend': 'Auto-suspend inactive tabs after (minutes, 0 = off)', 'settings.columns': 'Board columns (1–7)',
   'settings.language': 'Language', 'settings.langAuto': 'Browser default',
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
