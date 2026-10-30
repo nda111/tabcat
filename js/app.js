@@ -2523,7 +2523,7 @@ $('#btn-help').addEventListener('click', openGuide);
 const tip = $('#tip');
 const RAILS = 'body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel';
 const BESIDE = '.ws-item, .tab-row, .win-head';
-const TIP_DELAY = 350;
+const TIP_DELAY = 180;
 let tipEl = null;
 let tipTimer = null;
 let tipHiddenAt = 0;
