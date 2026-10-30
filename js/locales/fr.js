@@ -6,7 +6,6 @@ export default {
   'def.category': 'Général',
   'name.window': 'Fenêtre {date}',
   'name.untitled': '(sans titre)',
-
   'noext.title': 'Extension tabcat introuvable.',
   'noext.need': 'tabcat fonctionne avec une extension de navigateur.',
   'noext.step1.html': 'Ouvrez <a href="chrome://extensions" data-copy>chrome://extensions</a>, activez le <b>Mode développeur</b>, cliquez sur <b>Charger l’extension non empaquetée</b> et installez le dossier de l’<a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>extension tabcat</a>.',
@@ -18,34 +17,21 @@ export default {
   'browser.need': 'tabcat est une extension Chrome.\nElle fonctionne dans les navigateurs Chromium pour ordinateur qui peuvent installer des extensions Chrome, comme Chrome, Edge, Brave, Whale, Opera et Vivaldi.\nElle ne peut pas être utilisée dans les navigateurs de téléphones ou de tablettes, Samsung Internet, Firefox, Safari, etc.',
   'browser.open': 'Utilisez tabcat dans un navigateur pris en charge.',
   'noext.old': 'L’extension tabcat ({version}) est plus ancienne que ce qu’exige ce tableau de bord ({min}) : rechargez-la ou mettez-la à jour.',
-
   'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
-
   'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
-
   'help.tour': 'Faire la visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
-
   'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis l’aide.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
-
   'tour.welcome.title': 'Bienvenue dans tabcat.', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes et rouvrez-les quand vous en avez besoin.',
-
   'tour.workspaces.title': 'Espaces de travail', 'tour.workspaces.text': 'Les plus grands ensembles. Séparez vos activités, comme le travail et les études. Faites glisser pour réordonner.',
-
   'tour.tabs.title': 'Onglets ouverts', 'tour.tabs.text': 'Vos fenêtres et onglets ouverts. Vous pouvez aussi {icon:save} enregistrer une fenêtre, {icon:suspend} mettre des onglets en veille ou {icon:dedupe} ranger les doublons.',
-
   'tour.categories.title': 'Catégories', 'tour.categories.text': 'Des thèmes dans un espace de travail. Chaque catégorie a ses propres groupes.',
-
   'tour.groups.title': 'Groupes', 'tour.groups.text': 'Des cartes contenant liens et dossiers. Personnalisez-les et placez-les où vous voulez.',
-
   'tour.search.title': 'Recherche', 'tour.search.text': 'Cherchez liens, dossiers, groupes et plus, depuis n’importe où. Aussi avec Ctrl+F.',
-
+  'tour.install.title': 'Installer l’app', 'tour.install.text': 'Essayez tabcat comme application.',
   'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide.',
-
   'tour.tour.title': 'Visite', 'tour.tour.text': 'Vous pouvez relancer cette visite depuis l’{icon:help} aide à tout moment.',
-
   'tour.shortcut.title': 'Toujours à portée', 'tour.shortcut.text': 'Ctrl+Maj+X affiche le tableau de bord à tout moment. Appuyez encore pour revenir à votre onglet.',
-
-  'tour.bye.title': 'Faisons équipe.', 'tour.bye.text': 'Gardez autant d’onglets ouverts que vous voulez. tabcat vous aide à les garder en ordre.',
+  'tour.bye.title': 'Faisons équipe. 😸', 'tour.bye.text': 'Gardez autant d’onglets ouverts que vous voulez. tabcat vous aide à les garder en ordre.',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',
@@ -65,7 +51,6 @@ export default {
   'tabs.suspend': { one: 'Suspendre l’onglet', other: 'Suspendre {n} onglets' }, 'tabs.wake': { one: 'Reprendre l’onglet', other: 'Reprendre {n} onglets' }, 'tab.wake': 'Reprendre', 'toast.woken': { one: '{n} onglet repris', other: '{n} onglets repris' },
   'tabs.close': { one: 'Fermer l’onglet', other: 'Fermer {n} onglets' },
   'tabs.moveWindow': 'Déplacer vers une nouvelle fenêtre',
-
   'head.none': 'Aucun espace de travail',
   'cols.title': 'Colonnes', 'cols.fewer': 'Moins de colonnes', 'cols.more': 'Plus de colonnes', 'cols.scroll': 'Faites défiler pour changer le nombre de colonnes',
   'board.noWs': 'Aucun espace de travail pour l’instant.', 'board.createWs': 'Créer un espace de travail',
@@ -74,7 +59,6 @@ export default {
   'act.expand': 'Déplier', 'act.collapse': 'Replier', 'act.addLink': 'Ajouter un lien', 'act.addFolder': 'Ajouter un dossier',
   'act.addSubfolder': 'Ajouter un sous-dossier', 'act.editNote': 'Modifier la note', 'act.openAll': 'Tout ouvrir', 'act.more': 'Plus',
   'act.edit': 'Modifier', 'act.editFolder': 'Modifier le dossier',
-
   'menu.openAll': 'Tout ouvrir ({n})', 'menu.openAllWindow': 'Tout ouvrir dans une nouvelle fenêtre', 'menu.delete': 'Supprimer', 'menu.edit': 'Modifier…',
   'menu.export': 'Exporter…', 'menu.addWindowTabs': 'Ajouter tous les onglets de cette fenêtre', 'menu.sortName': 'Trier par nom',
   'menu.dedupe': 'Supprimer les liens en double', 'menu.open': 'Ouvrir', 'menu.openWindow': 'Ouvrir dans une nouvelle fenêtre', 'menu.copyUrl': 'Copier l’URL',
@@ -82,11 +66,9 @@ export default {
   'menu.openLinks': { one: 'Ouvrir {n} lien', other: 'Ouvrir {n} liens' },
   'menu.deleteItems': { one: 'Supprimer {n} élément', other: 'Supprimer {n} éléments' },
   'menu.deleteGroups': { one: 'Supprimer {n} groupe', other: 'Supprimer {n} groupes' },
-
   'search.aria': 'Rechercher (Ctrl+F)', 'search.placeholder': 'Rechercher liens, groupes, dossiers, notes…',
   'search.links': 'Liens · {n}', 'search.containers': 'Espaces de travail, groupes et dossiers · {n}', 'search.none': 'Aucun résultat.',
   'search.foot': '↑↓ se déplacer · Entrée ouvrir · Ctrl+Entrée onglet en arrière-plan · Échap fermer',
-
   'common.cancel': 'Annuler', 'common.save': 'Enregistrer', 'common.close': 'Fermer', 'common.ok': 'OK', 'common.undo': 'Annuler',
   'new.workspace': 'Nouvel espace de travail', 'new.category': 'Nouvelle catégorie', 'new.group': 'Nouveau groupe', 'new.folder': 'Nouveau dossier', 'new.link': 'Nouveau lien',
   'edit.workspace': 'Modifier l’espace de travail', 'edit.category': 'Modifier la catégorie', 'edit.group': 'Modifier le groupe', 'edit.folder': 'Modifier le dossier', 'edit.link': 'Modifier le lien',
@@ -110,7 +92,6 @@ export default {
   'merge.ok': 'Fusionner',
   'picker.all': 'Tout sélectionner', 'picker.none': 'Aucun', 'picker.count': '{n} sur {total} sélectionnés', 'picker.toggle': 'Déplier / replier',
   'export.title': 'Exporter les données', 'export.ok': 'Exporter', 'import.title': 'Importer depuis {file}', 'import.ok': 'Importer',
-
   'toast.deleted': '« {name} » supprimé',
   'toast.deletedGroups': { one: '{n} groupe supprimé', other: '{n} groupes supprimés' },
   'toast.deletedItems': { one: '{n} élément supprimé', other: '{n} éléments supprimés' },
@@ -126,7 +107,6 @@ export default {
   'toast.importFailed': 'Échec de l’import : {error}', 'toast.settingsImported': 'Paramètres importés',
   'err.notJson': 'ce n’est pas un fichier JSON', 'err.noWorkspaces': 'aucun espace de travail trouvé',
   'err.notSettings': 'ce n’est pas un fichier de paramètres tabcat', 'err.noSettings': 'aucun paramètre valide trouvé',
-
   'settings.title': 'Paramètres', 'settings.general': 'Général', 'settings.closeOnSave': 'Fermer les onglets après leur enregistrement', 'settings.groupTabs': 'Grouper les onglets en ouvrant tout',
   'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes)', 'settings.off': 'Désactivé', 'settings.columns': 'Colonnes du tableau (1–8)',
   'settings.language': 'Langue', 'settings.langAuto': 'Langue du navigateur',
@@ -144,7 +124,6 @@ export default {
   'settings.shortcuts': 'Raccourcis',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Ctrl+Shift+X</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Terminé',
-
   'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
   'help.org.html': `<h4>Organisation</h4>
 <p><b>Espace de travail</b> › <b>Catégorie</b> › <b>Groupe</b> › <b>Dossier</b> (jusqu’à 4 niveaux) et <b>Lien</b>.

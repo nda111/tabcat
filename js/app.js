@@ -3673,17 +3673,43 @@ $('#no-ext-retry').addEventListener('click', () => location.reload());
 // Installed, the dashboard opens in its own window (no tab bar), from the taskbar / dock or Ctrl+Shift+C.
 // Chrome says when it can install it (beforeinstallprompt: not when installed, or opened as the app);
 // then the sidebar offers it (until hidden with its ×) and Settings > General does too.
+// Chrome makes its offer a few seconds after the page loads; one it made before is remembered, so the
+// button is there from the start (pressed before the offer comes, it waits for it). Installed since in
+// some other way, no offer comes: after a while the button goes.
 const INSTALL_HIDDEN = 'tabcat:installHidden';
+const INSTALLABLE = 'tabcat:installable';
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+};
 let installPrompt = window.installPrompt || null; // (kept by the script in index.html if it came early)
+let installKnown = !matchMedia('(display-mode: standalone)').matches && store.get(INSTALLABLE) === '1';
 function showInstall() {
-  let hidden = false;
-  try { hidden = localStorage.getItem(INSTALL_HIDDEN) === '1'; } catch { /* storage unavailable */ }
-  $('#btn-install').hidden = !installPrompt || hidden;
-  $('#install-row').hidden = !installPrompt;
+  const offered = !!installPrompt || installKnown;
+  $('#btn-install').hidden = !offered || store.get(INSTALL_HIDDEN) === '1';
+  $('#install-row').hidden = !offered;
 }
-addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; showInstall(); });
-addEventListener('appinstalled', () => { installPrompt = null; showInstall(); toast(t('toast.installed')); });
+addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  store.set(INSTALLABLE, '1');
+  showInstall();
+});
+addEventListener('appinstalled', () => {
+  installPrompt = null;
+  installKnown = false;
+  store.set(INSTALLABLE, null);
+  showInstall();
+  toast(t('toast.installed'));
+});
+setTimeout(() => {
+  if (installPrompt || !installKnown) return;
+  installKnown = false; // (no offer: installed meanwhile)
+  store.set(INSTALLABLE, null);
+  showInstall();
+}, 6000);
 async function install() {
+  if (!installPrompt) await new Promise((done) => { addEventListener('beforeinstallprompt', done, { once: true }); setTimeout(done, 4000); });
   const p = installPrompt;
   if (!p) return;
   installPrompt = null; // (each offer prompts once; Chrome offers again if this one is declined)
@@ -3692,7 +3718,7 @@ async function install() {
 }
 $('#btn-install').addEventListener('click', (e) => {
   if (!e.target.closest('#install-dismiss')) return void install();
-  try { localStorage.setItem(INSTALL_HIDDEN, '1'); } catch { /* storage unavailable */ }
+  store.set(INSTALL_HIDDEN, '1');
   showInstall();
 });
 $('#settings-install').addEventListener('click', install);
@@ -3709,13 +3735,16 @@ const TOUR = [
   { key: 'categories', at: '#cat-bar' },
   { key: 'groups', at: '#board .group' },
   { key: 'search', at: '#search-box .search-field' },
+  { key: 'install', at: '#btn-install', when: () => !$('#btn-install').hidden }, // (only while it can be installed)
   { key: 'more', at: '#btn-help, #btn-settings', all: true }, // (both buttons, and what's between)
   { key: 'tour', at: '#btn-help' },
   { key: 'shortcut' },
   { key: 'bye' },
 ];
 const TOUR_OFFERED = 'tabcat:tourOffered';
+let tour = TOUR; // this time's steps (see `when`)
 let tourStep = -1;
+let tourSide = 0; // where the card went last: it stays on that side while it fits there (see placeTour)
 
 async function offerTour() {
   try {
@@ -3725,21 +3754,23 @@ async function offerTour() {
   if (await confirmDialog({ title: t('tour.offer.title'), text: t('tour.offer.text'), ok: t('tour.offer.ok'), cancel: t('tour.offer.later') })) startTour();
 }
 function startTour() {
-  const tour = $('#tour');
-  tour.getAnimations().forEach((a) => a.cancel()); // (started again while fading out: just stays)
-  tour.hidden = false;
+  tour = TOUR.filter((s) => !s.when || s.when());
+  tourSide = 0;
+  const box = $('#tour');
+  box.getAnimations().forEach((a) => a.cancel()); // (started again while fading out: just stays)
+  box.hidden = false;
   // the first step is simply there: the spot and card don't glide in from where they were last time
-  tour.classList.add('placing');
+  box.classList.add('placing');
   showTourStep(0);
-  void tour.offsetWidth;
-  tour.classList.remove('placing');
+  void box.offsetWidth;
+  box.classList.remove('placing');
   $('#tour-next').focus();
 }
 function endTour() {
   tourStep = -1;
-  const tour = $('#tour');
-  tour.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out' })
-    .finished.then(() => { if (tourStep < 0) tour.hidden = true; }, () => {});
+  const box = $('#tour');
+  box.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out' })
+    .finished.then(() => { if (tourStep < 0) box.hidden = true; }, () => {});
 }
 // From one step to the next, the old text fades out over the new one fading in, and the card's height
 // glides like its place does
@@ -3760,15 +3791,15 @@ function showTourStep(i) {
     old.setAttribute('aria-hidden', 'true');
   }
   tourStep = i;
-  const { key } = TOUR[i];
-  $('#tour-count').textContent = t('tour.count', { i: i + 1, n: TOUR.length });
+  const { key } = tour[i];
+  $('#tour-count').textContent = t('tour.count', { i: i + 1, n: tour.length });
   $('#tour-title').textContent = t(`tour.${key}.title`);
   // (a {icon:name} in the text: that control's own icon, as the page shows it)
   // (and at its end, the key that steps on)
   $('#tour-text').replaceChildren(...t(`tour.${key}.text`).split(/\{icon:(\w+)\}/)
     .map((part, j) => (j % 2 ? h('span', { class: 'tour-icon' }, icon(part, 15)) : part)), ' ', h('kbd', { class: 'tour-key' }, 'Space'));
   $('#tour-prev').hidden = i === 0;
-  $('#tour-next').textContent = t(i === TOUR.length - 1 ? 'tour.done' : 'tour.next');
+  $('#tour-next').textContent = t(i === tour.length - 1 ? 'tour.done' : 'tour.next');
   placeTour();
   if (!old) return;
   card.append(old);
@@ -3785,7 +3816,7 @@ function showTourStep(i) {
 function placeTour() {
   if (tourStep < 0) return;
   // (`all`: the box round every element `at` matches that is shown; else the first one)
-  const { at: sel, all } = TOUR[tourStep];
+  const { at: sel, all } = tour[tourStep];
   const els = !sel ? [] : all ? [...document.querySelectorAll(sel)] : [document.querySelector(sel)].filter(Boolean);
   const boxes = els.map((el) => el.getBoundingClientRect()).filter((b) => b.width > 0 && b.height > 0);
   const r = boxes.length ? {
@@ -3807,12 +3838,18 @@ function placeTour() {
   const clampX = (x) => Math.min(Math.max(x, m), innerWidth - w - m);
   let at = [(innerWidth - w) / 2, (innerHeight - h) / 2];
   if (r) {
-    at = [
+    const sides = [
       [r.right + pad + gap, clampY(r.top), r.right + pad + gap + w <= innerWidth - m],
       [r.left - pad - gap - w, clampY(r.top), r.left - pad - gap - w >= m],
       [clampX(r.left), r.bottom + pad + gap, r.bottom + pad + gap + h <= innerHeight - m],
       [clampX(r.left), r.top - pad - gap - h, r.top - pad - gap - h >= m],
-    ].find(([, , fits]) => fits) || at;
+    ];
+    // the side it was on last if it fits there, so it doesn't swing from side to side; else the first that does
+    const side = sides[tourSide][2] ? tourSide : sides.findIndex(([, , fits]) => fits);
+    if (side >= 0) {
+      tourSide = side;
+      at = sides[side];
+    }
   }
   card.style.left = `${at[0]}px`;
   card.style.top = `${at[1]}px`;
@@ -3821,7 +3858,7 @@ function placeTour() {
 $('#help-tour').addEventListener('click', () => { $('#help').close(); startTour(); });
 $('#tour-skip').addEventListener('click', endTour);
 $('#tour-prev').addEventListener('click', () => showTourStep(Math.max(0, tourStep - 1)));
-$('#tour-next').addEventListener('click', () => (tourStep === TOUR.length - 1 ? endTour() : showTourStep(tourStep + 1)));
+$('#tour-next').addEventListener('click', () => (tourStep === tour.length - 1 ? endTour() : showTourStep(tourStep + 1)));
 // while it is up: Space or → steps on, ← back, Esc ends; no other key reaches the page beneath (the
 // card's buttons still take Tab and Enter)
 document.addEventListener('keydown', (e) => {

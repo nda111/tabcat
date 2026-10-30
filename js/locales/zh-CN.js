@@ -4,7 +4,6 @@ export default {
   'def.category': '常规',
   'name.window': '窗口 {date}',
   'name.untitled': '(无标题)',
-
   'noext.title': '找不到 tabcat 扩展程序。',
   'noext.need': 'tabcat 需要与浏览器扩展程序配合使用。',
   'noext.step1.html': '打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。',
@@ -16,34 +15,21 @@ export default {
   'browser.need': 'tabcat 是 Chrome 扩展程序。\n它可在能安装 Chrome 扩展程序的电脑版 Chromium 浏览器中使用，例如 Chrome、Edge、Brave、Whale、Opera 和 Vivaldi。\n手机或平板浏览器、Samsung Internet、Firefox、Safari 等都无法使用。',
   'browser.open': '请在受支持的浏览器中使用 tabcat。',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
-
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
-
   'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
-
   'help.tour': '开始导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
-
   'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从帮助开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
-
   'tour.welcome.title': '欢迎使用 tabcat。', 'tour.welcome.text': '把标签页作为链接保存在分组里，需要时随时再打开。',
-
   'tour.workspaces.title': '工作区', 'tour.workspaces.text': '最大的分类。可以按工作、学习来划分。拖动可调整顺序。',
-
   'tour.tabs.title': '打开的标签页', 'tour.tabs.text': '显示打开的浏览器窗口和标签页。还可以 {icon:save} 保存窗口、{icon:suspend} 休眠标签页、{icon:dedupe} 整理重复的标签页。',
-
   'tour.categories.title': '类别', 'tour.categories.text': '工作区里的主题。每个类别可以有不同的分组。',
-
   'tour.groups.title': '分组', 'tour.groups.text': '装着链接和文件夹的卡片。可以随意装饰，拖动来摆放。',
-
   'tour.search.title': '搜索', 'tour.search.text': '随时搜索链接、文件夹、分组等。也可以用 Ctrl+F 打开。',
-
+  'tour.install.title': '安装为应用', 'tour.install.text': '试试把 tabcat 当作应用来用。',
   'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。',
-
   'tour.tour.title': '导览', 'tour.tour.text': '随时可以从 {icon:help} 帮助重新开始这个导览。',
-
   'tour.shortcut.title': '随时在手边', 'tour.shortcut.text': '按 Ctrl+Shift+X 随时查看仪表板。再按一次回到原来的标签页。',
-
-  'tour.bye.title': '好好相处吧。', 'tour.bye.text': '标签页尽管开着，整理的事交给 tabcat。',
+  'tour.bye.title': '好好相处吧。 😸', 'tour.bye.text': '标签页尽管开着，整理的事交给 tabcat。',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',
@@ -63,7 +49,6 @@ export default {
   'tabs.suspend': { one: '休眠标签页', other: '休眠 {n} 个标签页' }, 'tabs.wake': { one: '唤醒标签页', other: '唤醒 {n} 个标签页' }, 'tab.wake': '唤醒', 'toast.woken': '已唤醒 {n} 个标签页',
   'tabs.close': { one: '关闭标签页', other: '关闭 {n} 个标签页' },
   'tabs.moveWindow': '移到新窗口',
-
   'head.none': '没有工作区',
   'cols.title': '列数', 'cols.fewer': '减少列', 'cols.more': '增加列', 'cols.scroll': '滚动以更改列数',
   'board.noWs': '还没有工作区。', 'board.createWs': '创建工作区',
@@ -72,7 +57,6 @@ export default {
   'act.expand': '展开', 'act.collapse': '收起', 'act.addLink': '添加链接', 'act.addFolder': '添加文件夹',
   'act.addSubfolder': '添加子文件夹', 'act.editNote': '编辑笔记', 'act.openAll': '全部打开', 'act.more': '更多',
   'act.edit': '编辑', 'act.editFolder': '编辑文件夹',
-
   'menu.openAll': '全部打开 ({n})', 'menu.openAllWindow': '在新窗口中全部打开', 'menu.delete': '删除', 'menu.edit': '编辑…',
   'menu.export': '导出…', 'menu.addWindowTabs': '添加此窗口的所有标签页', 'menu.sortName': '按名称排序',
   'menu.dedupe': '移除重复链接', 'menu.open': '打开', 'menu.openWindow': '在新窗口中打开', 'menu.copyUrl': '复制网址',
@@ -80,11 +64,9 @@ export default {
   'menu.openLinks': '打开 {n} 个链接',
   'menu.deleteItems': '删除 {n} 项',
   'menu.deleteGroups': '删除 {n} 个分组',
-
   'search.aria': '搜索 (Ctrl+F)', 'search.placeholder': '搜索链接、分组、文件夹、笔记…',
   'search.links': '链接 · {n}', 'search.containers': '工作区、分组和文件夹 · {n}', 'search.none': '没有结果。',
   'search.foot': '↑↓ 移动 · Enter 打开 · Ctrl+Enter 后台打开 · Esc 关闭',
-
   'common.cancel': '取消', 'common.save': '保存', 'common.close': '关闭', 'common.ok': '确定', 'common.undo': '撤销',
   'new.workspace': '新建工作区', 'new.category': '新建类别', 'new.group': '新建分组', 'new.folder': '新建文件夹', 'new.link': '新建链接',
   'edit.workspace': '编辑工作区', 'edit.category': '编辑类别', 'edit.group': '编辑分组', 'edit.folder': '编辑文件夹', 'edit.link': '编辑链接',
@@ -108,7 +90,6 @@ export default {
   'merge.ok': '合并',
   'picker.all': '全选', 'picker.none': '全不选', 'picker.count': '已选择 {n} / {total}', 'picker.toggle': '展开 / 收起',
   'export.title': '导出数据', 'export.ok': '导出', 'import.title': '从 {file} 导入', 'import.ok': '导入',
-
   'toast.deleted': '已删除“{name}”',
   'toast.deletedGroups': '已删除 {n} 个分组',
   'toast.deletedItems': '已删除 {n} 项',
@@ -124,7 +105,6 @@ export default {
   'toast.importFailed': '导入失败：{error}', 'toast.settingsImported': '已导入设置',
   'err.notJson': '不是 JSON 文件', 'err.noWorkspaces': '未找到工作区',
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
-
   'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
   'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟)', 'settings.off': '关闭', 'settings.columns': '面板列数 (1–8)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
@@ -142,7 +122,6 @@ export default {
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
-
   'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。

@@ -6,7 +6,6 @@ export default {
   'def.category': 'General',
   'name.window': 'Ventana {date}',
   'name.untitled': '(sin título)',
-
   'noext.title': 'No se encontró la extensión tabcat.',
   'noext.need': 'tabcat funciona junto con una extensión del navegador.',
   'noext.step1.html': 'Abre <a href="chrome://extensions" data-copy>chrome://extensions</a>, activa el <b>Modo de desarrollador</b>, haz clic en <b>Cargar descomprimida</b> e instala la carpeta de la <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>extensión tabcat</a>.',
@@ -18,34 +17,21 @@ export default {
   'browser.need': 'tabcat es una extensión de Chrome.\nFunciona en navegadores Chromium de escritorio que pueden instalar extensiones de Chrome, como Chrome, Edge, Brave, Whale, Opera y Vivaldi.\nNo se puede usar en navegadores de móviles o tabletas, Samsung Internet, Firefox, Safari y similares.',
   'browser.open': 'Usa tabcat en un navegador compatible.',
   'noext.old': 'La extensión tabcat ({version}) es más antigua de lo que necesita este panel ({min}): vuelve a cargarla o actualízala.',
-
   'side.workspaces': 'Espacios de trabajo', 'side.info': 'Información', 'side.help': 'Ayuda', 'side.settings': 'Ajustes',
-
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
-
   'help.tour': 'Hacer el recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
-
   'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Ayuda.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
-
   'tour.welcome.title': 'Te damos la bienvenida a tabcat.', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos y vuelve a abrirlas cuando las necesites.',
-
   'tour.workspaces.title': 'Espacios de trabajo', 'tour.workspaces.text': 'Las cajas más grandes. Divide tus cosas, como trabajo y estudio. Arrastra para reordenar.',
-
   'tour.tabs.title': 'Pestañas abiertas', 'tour.tabs.text': 'Tus ventanas y pestañas abiertas. También puedes {icon:save} guardar una ventana, {icon:suspend} dormir pestañas o {icon:dedupe} ordenar las duplicadas.',
-
   'tour.categories.title': 'Categorías', 'tour.categories.text': 'Temas dentro de un espacio de trabajo. Cada categoría tiene sus propios grupos.',
-
   'tour.groups.title': 'Grupos', 'tour.groups.text': 'Tarjetas con enlaces y carpetas. Personalízalas y arrástralas donde quieras.',
-
   'tour.search.title': 'Buscar', 'tour.search.text': 'Busca enlaces, carpetas, grupos y más desde cualquier sitio. Ctrl+F también lo abre.',
-
+  'tour.install.title': 'Instalar como app', 'tour.install.text': 'Prueba tabcat como app.',
   'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda.',
-
   'tour.tour.title': 'Recorrido', 'tour.tour.text': 'Puedes volver a empezar este recorrido desde {icon:help} Ayuda cuando quieras.',
-
   'tour.shortcut.title': 'Siempre a mano', 'tour.shortcut.text': 'Pulsa Ctrl+Shift+X para ver el panel cuando quieras. Vuelve a pulsarlo para regresar a tu pestaña.',
-
-  'tour.bye.title': 'Llevémonos bien.', 'tour.bye.text': 'Deja abiertas todas las pestañas que quieras. tabcat te ayuda a mantenerlas en orden.',
+  'tour.bye.title': 'Llevémonos bien. 😸', 'tour.bye.text': 'Deja abiertas todas las pestañas que quieras. tabcat te ayuda a mantenerlas en orden.',
   'panel.expandWs': 'Expandir espacios de trabajo', 'panel.collapseWs': 'Contraer espacios de trabajo',
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',
@@ -65,7 +51,6 @@ export default {
   'tabs.suspend': { one: 'Suspender pestaña', other: 'Suspender {n} pestañas' }, 'tabs.wake': { one: 'Reanudar pestaña', other: 'Reanudar {n} pestañas' }, 'tab.wake': 'Reanudar', 'toast.woken': { one: '{n} pestaña reanudada', other: '{n} pestañas reanudadas' },
   'tabs.close': { one: 'Cerrar pestaña', other: 'Cerrar {n} pestañas' },
   'tabs.moveWindow': 'Mover a una ventana nueva',
-
   'head.none': 'Sin espacio de trabajo',
   'cols.title': 'Columnas', 'cols.fewer': 'Menos columnas', 'cols.more': 'Más columnas', 'cols.scroll': 'Desplaza para cambiar el número de columnas',
   'board.noWs': 'Aún no hay espacios de trabajo.', 'board.createWs': 'Crear espacio de trabajo',
@@ -74,7 +59,6 @@ export default {
   'act.expand': 'Expandir', 'act.collapse': 'Contraer', 'act.addLink': 'Añadir enlace', 'act.addFolder': 'Añadir carpeta',
   'act.addSubfolder': 'Añadir subcarpeta', 'act.editNote': 'Editar nota', 'act.openAll': 'Abrir todo', 'act.more': 'Más',
   'act.edit': 'Editar', 'act.editFolder': 'Editar carpeta',
-
   'menu.openAll': 'Abrir todo ({n})', 'menu.openAllWindow': 'Abrir todo en una ventana nueva', 'menu.delete': 'Eliminar', 'menu.edit': 'Editar…',
   'menu.export': 'Exportar…', 'menu.addWindowTabs': 'Añadir todas las pestañas de esta ventana', 'menu.sortName': 'Ordenar por nombre',
   'menu.dedupe': 'Quitar enlaces duplicados', 'menu.open': 'Abrir', 'menu.openWindow': 'Abrir en una ventana nueva', 'menu.copyUrl': 'Copiar URL',
@@ -82,11 +66,9 @@ export default {
   'menu.openLinks': { one: 'Abrir {n} enlace', other: 'Abrir {n} enlaces' },
   'menu.deleteItems': { one: 'Eliminar {n} elemento', other: 'Eliminar {n} elementos' },
   'menu.deleteGroups': { one: 'Eliminar {n} grupo', other: 'Eliminar {n} grupos' },
-
   'search.aria': 'Buscar (Ctrl+F)', 'search.placeholder': 'Buscar enlaces, grupos, carpetas, notas…',
   'search.links': 'Enlaces · {n}', 'search.containers': 'Espacios de trabajo, grupos y carpetas · {n}', 'search.none': 'Sin resultados.',
   'search.foot': '↑↓ mover · Enter abrir · Ctrl+Enter pestaña en segundo plano · Esc cerrar',
-
   'common.cancel': 'Cancelar', 'common.save': 'Guardar', 'common.close': 'Cerrar', 'common.ok': 'Aceptar', 'common.undo': 'Deshacer',
   'new.workspace': 'Nuevo espacio de trabajo', 'new.category': 'Nueva categoría', 'new.group': 'Nuevo grupo', 'new.folder': 'Nueva carpeta', 'new.link': 'Nuevo enlace',
   'edit.workspace': 'Editar espacio de trabajo', 'edit.category': 'Editar categoría', 'edit.group': 'Editar grupo', 'edit.folder': 'Editar carpeta', 'edit.link': 'Editar enlace',
@@ -110,7 +92,6 @@ export default {
   'merge.ok': 'Combinar',
   'picker.all': 'Seleccionar todo', 'picker.none': 'Ninguno', 'picker.count': '{n} de {total} seleccionados', 'picker.toggle': 'Expandir / contraer',
   'export.title': 'Exportar datos', 'export.ok': 'Exportar', 'import.title': 'Importar desde {file}', 'import.ok': 'Importar',
-
   'toast.deleted': 'Se eliminó «{name}».',
   'toast.deletedGroups': { one: 'Se eliminó {n} grupo.', other: 'Se eliminaron {n} grupos.' },
   'toast.deletedItems': { one: 'Se eliminó {n} elemento.', other: 'Se eliminaron {n} elementos.' },
@@ -126,7 +107,6 @@ export default {
   'toast.importFailed': 'Error al importar: {error}', 'toast.settingsImported': 'Ajustes importados',
   'err.notJson': 'no es un archivo JSON', 'err.noWorkspaces': 'no se encontraron espacios de trabajo',
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
-
   'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
   'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos)', 'settings.off': 'Desactivado', 'settings.columns': 'Columnas del tablero (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
@@ -144,7 +124,6 @@ export default {
   'settings.shortcuts': 'Atajos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Ctrl+Shift+X</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Listo',
-
   'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',
   'help.org.html': `<h4>Cómo se organiza todo</h4>
 <p><b>Espacio de trabajo</b> › <b>Categoría</b> › <b>Grupo</b> › <b>Carpeta</b> (hasta 4 niveles) y <b>Enlace</b>.

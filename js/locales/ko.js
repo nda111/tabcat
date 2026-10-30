@@ -4,7 +4,6 @@ export default {
   'def.category': '일반',
   'name.window': '창 {date}',
   'name.untitled': '(제목 없음)',
-
   'noext.title': 'tabcat 확장 프로그램을 찾을 수 없습니다.',
   'noext.need': 'tabcat은 브라우저 확장 프로그램과 함께 작동합니다.',
   'noext.step1.html': '<a href="chrome://extensions" data-copy>chrome://extensions</a>를 열고 <b>개발자 모드</b>를 켠 뒤, <b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat 익스텐션</a> 폴더를 설치하세요.',
@@ -16,34 +15,21 @@ export default {
   'browser.need': 'tabcat은 Chrome 확장 프로그램입니다.\nChrome, Edge, Brave, Whale, Opera, Vivaldi처럼 Chrome 확장 프로그램을 설치할 수 있는 컴퓨터용 Chromium 브라우저에서 동작합니다.\n휴대폰 또는 태블릿 브라우저, 삼성 인터넷, Firefox, Safari 등에서는 사용할 수 없습니다.',
   'browser.open': '지원되는 브라우저로 tabcat을 사용해 주세요.',
   'noext.old': 'tabcat 확장 프로그램({version})이 이 대시보드에 필요한 버전({min})보다 오래되었습니다. 새로고침하거나 업데이트하세요.',
-
   'side.workspaces': '워크스페이스', 'side.info': '정보', 'side.help': '도움말', 'side.settings': '설정',
-
   'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
-
   'help.tour': '둘러보기 시작', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
-
   'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드릴게요. 나중에 도움말에서도 시작할 수 있어요.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
-
   'tour.welcome.title': 'tabcat에 오신 것을 환영합니다.', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 필요할 때 다시 열어볼 수 있어요.',
-
   'tour.workspaces.title': '워크스페이스', 'tour.workspaces.text': '가장 큰 묶음입니다. 업무, 공부처럼 작업을 나눠보세요. 끌어서 순서를 바꿀 수 있어요.',
-
   'tour.tabs.title': '열린 탭', 'tour.tabs.text': '열린 브라우저 창과 탭을 보여줘요. {icon:save} 창을 저장하고, {icon:suspend} 탭을 재우고, {icon:dedupe} 중복되는 탭을 정리할 수도 있어요.',
-
   'tour.categories.title': '카테고리', 'tour.categories.text': '워크스페이스 안의 주제입니다. 카테고리마다 다른 그룹을 만들 수 있어요.',
-
   'tour.groups.title': '그룹', 'tour.groups.text': '링크와 폴더를 담는 카드예요. 마음대로 카드를 꾸미고, 끌어서 배치할 수 있어요.',
-
   'tour.search.title': '검색', 'tour.search.text': '링크, 폴더, 그룹 등 어디서든 검색해보세요. Ctrl+F 단축키로 열 수 있어요.',
-
+  'tour.install.title': '앱으로 설치', 'tour.install.text': 'tabcat을 앱으로 사용해보세요.',
   'tour.more.title': '설정과 도움말', 'tour.more.text': '{icon:settings} 설정에서 언어, 테마, 색을, {icon:help} 도움말에서 모든 단축키를 볼 수 있어요.',
-
   'tour.tour.title': '둘러보기', 'tour.tour.text': '이 투어는 {icon:help} 도움말에서 언제든 다시 시작할 수 있습니다.',
-
   'tour.shortcut.title': '언제든 가까이', 'tour.shortcut.text': 'Ctrl+Shift+X를 누르면 언제든 대시보드를 볼 수 있어요. 다시 누르면 보던 탭으로 돌아갑니다.',
-
-  'tour.bye.title': '잘 지내봐요.', 'tour.bye.text': '이제 탭은 마음 편히 열어 두세요. 정리는 tabcat이 도와드릴게요.',
+  'tour.bye.title': '잘 지내봐요. 😸', 'tour.bye.text': '이제 탭은 마음 편히 열어 두세요. 정리는 tabcat이 도와드릴게요.',
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
@@ -63,7 +49,6 @@ export default {
   'tabs.suspend': { one: '탭 재우기', other: '탭 {n}개 재우기' }, 'tabs.wake': { one: '탭 깨우기', other: '탭 {n}개 깨우기' }, 'tab.wake': '깨우기', 'toast.woken': '탭 {n}개를 깨웠습니다.',
   'tabs.close': { one: '탭 닫기', other: '탭 {n}개 닫기' },
   'tabs.moveWindow': '새 창으로 옮기기',
-
   'head.none': '워크스페이스 없음',
   'cols.title': '열', 'cols.fewer': '열 줄이기', 'cols.more': '열 늘리기', 'cols.scroll': '스크롤해서 열 개수 바꾸기',
   'board.noWs': '아직 워크스페이스가 없습니다.', 'board.createWs': '워크스페이스 만들기',
@@ -72,7 +57,6 @@ export default {
   'act.expand': '펼치기', 'act.collapse': '접기', 'act.addLink': '링크 추가', 'act.addFolder': '폴더 추가',
   'act.addSubfolder': '하위 폴더 추가', 'act.editNote': '노트 수정', 'act.openAll': '모두 열기', 'act.more': '더 보기',
   'act.edit': '수정', 'act.editFolder': '폴더 수정',
-
   'menu.openAll': '모두 열기 ({n})', 'menu.openAllWindow': '모두 새 창에서 열기', 'menu.delete': '삭제', 'menu.edit': '수정…',
   'menu.export': '내보내기…', 'menu.addWindowTabs': '이 창의 탭 모두 추가', 'menu.sortName': '이름순으로 정렬',
   'menu.dedupe': '중복 링크 제거', 'menu.open': '열기', 'menu.openWindow': '새 창에서 열기', 'menu.copyUrl': 'URL 복사',
@@ -80,11 +64,9 @@ export default {
   'menu.openLinks': '링크 {n}개 열기',
   'menu.deleteItems': '항목 {n}개 삭제',
   'menu.deleteGroups': '그룹 {n}개 삭제',
-
   'search.aria': '검색 (Ctrl+F)', 'search.placeholder': '링크, 그룹, 폴더, 노트 검색…',
   'search.links': '링크 · {n}', 'search.containers': '워크스페이스, 그룹, 폴더 · {n}', 'search.none': '결과가 없습니다.',
   'search.foot': '↑↓ 이동 · Enter 열기 · Ctrl+Enter 백그라운드 탭 · Esc 닫기',
-
   'common.cancel': '취소', 'common.save': '저장', 'common.close': '닫기', 'common.ok': '확인', 'common.undo': '실행 취소',
   'new.workspace': '새 워크스페이스', 'new.category': '새 카테고리', 'new.group': '새 그룹', 'new.folder': '새 폴더', 'new.link': '새 링크',
   'edit.workspace': '워크스페이스 수정', 'edit.category': '카테고리 수정', 'edit.group': '그룹 수정', 'edit.folder': '폴더 수정', 'edit.link': '링크 수정',
@@ -108,7 +90,6 @@ export default {
   'merge.ok': '합치기',
   'picker.all': '모두 선택', 'picker.none': '선택 안 함', 'picker.count': '{total}개 중 {n}개 선택', 'picker.toggle': '펼치기 / 접기',
   'export.title': '데이터 내보내기', 'export.ok': '내보내기', 'import.title': '{file}에서 가져오기', 'import.ok': '가져오기',
-
   'toast.deleted': '“{name}” 삭제됨',
   'toast.deletedGroups': '그룹 {n}개 삭제됨',
   'toast.deletedItems': '항목 {n}개 삭제됨',
@@ -124,7 +105,6 @@ export default {
   'toast.importFailed': '가져오기 실패: {error}', 'toast.settingsImported': '설정을 가져왔습니다.',
   'err.notJson': 'JSON 파일이 아닙니다', 'err.noWorkspaces': '워크스페이스가 없습니다',
   'err.notSettings': 'tabcat 설정 파일이 아닙니다', 'err.noSettings': '유효한 설정이 없습니다',
-
   'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기', 'settings.groupTabs': '모두 열기 시 탭 그룹으로 묶기',
   'settings.autoSuspend': '안 쓰는 탭 자동으로 재우기 (분 단위)', 'settings.off': '사용 안 함', 'settings.columns': '보드 열 수 (1–8)',
   'settings.language': '언어', 'settings.langAuto': '브라우저 기본값',
@@ -142,7 +122,6 @@ export default {
   'settings.shortcuts': '단축키',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Ctrl+Shift+X</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
-
   'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
   'help.org.html': `<h4>구성</h4>
 <p><b>워크스페이스</b> › <b>카테고리</b> › <b>그룹</b> › <b>폴더</b> (최대 4단계)와 <b>링크</b>.

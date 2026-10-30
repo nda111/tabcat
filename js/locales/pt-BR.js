@@ -6,7 +6,6 @@ export default {
   'def.category': 'Geral',
   'name.window': 'Janela {date}',
   'name.untitled': '(sem título)',
-
   'noext.title': 'Extensão do tabcat não encontrada.',
   'noext.need': 'O tabcat funciona junto com uma extensão do navegador.',
   'noext.step1.html': 'Abra <a href="chrome://extensions" data-copy>chrome://extensions</a>, ative o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e instale a pasta da <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>extensão do tabcat</a>.',
@@ -18,34 +17,21 @@ export default {
   'browser.need': 'O tabcat é uma extensão do Chrome.\nEle funciona em navegadores Chromium para computador que podem instalar extensões do Chrome, como Chrome, Edge, Brave, Whale, Opera e Vivaldi.\nNão pode ser usado em navegadores de celular ou tablet, Samsung Internet, Firefox, Safari e outros.',
   'browser.open': 'Use o tabcat em um navegador compatível.',
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
-
   'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
-
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (ainda dá para instalar nas Configurações)', 'settings.app': 'App', 'toast.installed': 'tabcat instalado como app',
-
   'help.tour': 'Fazer o tour', 'tour.skip': 'Pular', 'tour.prev': 'Voltar', 'tour.next': 'Próximo', 'tour.done': 'Concluir', 'tour.count': '{i} de {n}',
-
   'tour.offer.title': 'Quer fazer um tour rápido pelo tabcat?', 'tour.offer.text': 'Um minuto, passo a passo, pelas partes principais. Você também pode começar depois pela Ajuda.', 'tour.offer.ok': 'Fazer o tour', 'tour.offer.later': 'Depois',
-
   'tour.welcome.title': 'Boas-vindas ao tabcat.', 'tour.welcome.text': 'Salve abas como links em grupos e abra de novo quando precisar.',
-
   'tour.workspaces.title': 'Espaços de trabalho', 'tour.workspaces.text': 'As maiores divisões. Separe suas coisas, como trabalho e estudos. Arraste para reordenar.',
-
   'tour.tabs.title': 'Abas abertas', 'tour.tabs.text': 'Suas janelas e abas abertas. Você também pode {icon:save} salvar uma janela, {icon:suspend} pôr abas para dormir ou {icon:dedupe} arrumar as duplicadas.',
-
   'tour.categories.title': 'Categorias', 'tour.categories.text': 'Temas dentro de um espaço de trabalho. Cada categoria tem seus próprios grupos.',
-
   'tour.groups.title': 'Grupos', 'tour.groups.text': 'Cartões com links e pastas. Personalize do seu jeito e arraste para onde quiser.',
-
   'tour.search.title': 'Busca', 'tour.search.text': 'Busque links, pastas, grupos e mais, de qualquer lugar. Ctrl+F também abre.',
-
+  'tour.install.title': 'Instalar como app', 'tour.install.text': 'Experimente usar o tabcat como app.',
   'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda.',
-
   'tour.tour.title': 'Tour', 'tour.tour.text': 'Você pode recomeçar este tour pela {icon:help} Ajuda a qualquer momento.',
-
   'tour.shortcut.title': 'Sempre à mão', 'tour.shortcut.text': 'Aperte Ctrl+Shift+X para ver o painel a qualquer hora. Aperte de novo para voltar à sua aba.',
-
-  'tour.bye.title': 'Vamos nos dar bem.', 'tour.bye.text': 'Deixe quantas abas quiser abertas. O tabcat ajuda a manter tudo em ordem.',
+  'tour.bye.title': 'Vamos nos dar bem. 😸', 'tour.bye.text': 'Deixe quantas abas quiser abertas. O tabcat ajuda a manter tudo em ordem.',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
@@ -65,7 +51,6 @@ export default {
   'tabs.suspend': { one: 'Suspender aba', other: 'Suspender {n} abas' }, 'tabs.wake': { one: 'Retomar aba', other: 'Retomar {n} abas' }, 'tab.wake': 'Retomar', 'toast.woken': { one: '{n} aba retomada', other: '{n} abas retomadas' },
   'tabs.close': { one: 'Fechar aba', other: 'Fechar {n} abas' },
   'tabs.moveWindow': 'Mover para uma nova janela',
-
   'head.none': 'Nenhum espaço de trabalho',
   'cols.title': 'Colunas', 'cols.fewer': 'Menos colunas', 'cols.more': 'Mais colunas', 'cols.scroll': 'Role para mudar o número de colunas',
   'board.noWs': 'Ainda não há espaços de trabalho.', 'board.createWs': 'Criar espaço de trabalho',
@@ -74,7 +59,6 @@ export default {
   'act.expand': 'Expandir', 'act.collapse': 'Recolher', 'act.addLink': 'Adicionar link', 'act.addFolder': 'Adicionar pasta',
   'act.addSubfolder': 'Adicionar subpasta', 'act.editNote': 'Editar nota', 'act.openAll': 'Abrir tudo', 'act.more': 'Mais',
   'act.edit': 'Editar', 'act.editFolder': 'Editar pasta',
-
   'menu.openAll': 'Abrir tudo ({n})', 'menu.openAllWindow': 'Abrir tudo em uma nova janela', 'menu.delete': 'Excluir', 'menu.edit': 'Editar…',
   'menu.export': 'Exportar…', 'menu.addWindowTabs': 'Adicionar todas as abas desta janela', 'menu.sortName': 'Ordenar por nome',
   'menu.dedupe': 'Remover links duplicados', 'menu.open': 'Abrir', 'menu.openWindow': 'Abrir em uma nova janela', 'menu.copyUrl': 'Copiar URL',
@@ -82,11 +66,9 @@ export default {
   'menu.openLinks': { one: 'Abrir {n} link', other: 'Abrir {n} links' },
   'menu.deleteItems': { one: 'Excluir {n} item', other: 'Excluir {n} itens' },
   'menu.deleteGroups': { one: 'Excluir {n} grupo', other: 'Excluir {n} grupos' },
-
   'search.aria': 'Pesquisar (Ctrl+F)', 'search.placeholder': 'Pesquisar links, grupos, pastas, notas…',
   'search.links': 'Links · {n}', 'search.containers': 'Espaços de trabalho, grupos e pastas · {n}', 'search.none': 'Nenhum resultado.',
   'search.foot': '↑↓ mover · Enter abrir · Ctrl+Enter aba em segundo plano · Esc fechar',
-
   'common.cancel': 'Cancelar', 'common.save': 'Salvar', 'common.close': 'Fechar', 'common.ok': 'OK', 'common.undo': 'Desfazer',
   'new.workspace': 'Novo espaço de trabalho', 'new.category': 'Nova categoria', 'new.group': 'Novo grupo', 'new.folder': 'Nova pasta', 'new.link': 'Novo link',
   'edit.workspace': 'Editar espaço de trabalho', 'edit.category': 'Editar categoria', 'edit.group': 'Editar grupo', 'edit.folder': 'Editar pasta', 'edit.link': 'Editar link',
@@ -110,7 +92,6 @@ export default {
   'merge.ok': 'Mesclar',
   'picker.all': 'Selecionar tudo', 'picker.none': 'Nenhum', 'picker.count': '{n} de {total} selecionados', 'picker.toggle': 'Expandir / recolher',
   'export.title': 'Exportar dados', 'export.ok': 'Exportar', 'import.title': 'Importar de {file}', 'import.ok': 'Importar',
-
   'toast.deleted': '“{name}” excluído',
   'toast.deletedGroups': { one: '{n} grupo excluído', other: '{n} grupos excluídos' },
   'toast.deletedItems': { one: '{n} item excluído', other: '{n} itens excluídos' },
@@ -126,7 +107,6 @@ export default {
   'toast.importFailed': 'Falha na importação: {error}', 'toast.settingsImported': 'Configurações importadas',
   'err.notJson': 'não é um arquivo JSON', 'err.noWorkspaces': 'nenhum espaço de trabalho encontrado',
   'err.notSettings': 'não é um arquivo de configurações do tabcat', 'err.noSettings': 'nenhuma configuração válida encontrada',
-
   'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo',
   'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos)', 'settings.off': 'Desativado', 'settings.columns': 'Colunas do quadro (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma do navegador',
@@ -144,7 +124,6 @@ export default {
   'settings.shortcuts': 'Atalhos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
-
   'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.

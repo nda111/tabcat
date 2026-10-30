@@ -4,7 +4,6 @@ export default {
   'def.category': '一般',
   'name.window': 'ウィンドウ {date}',
   'name.untitled': '(無題)',
-
   'noext.title': 'tabcat 拡張機能が見つかりません。',
   'noext.need': 'tabcat はブラウザの拡張機能と一緒に動作します。',
   'noext.step1.html': '<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。',
@@ -16,34 +15,21 @@ export default {
   'browser.need': 'tabcat は Chrome 拡張機能です。\nChrome、Edge、Brave、Whale、Opera、Vivaldi など、Chrome 拡張機能をインストールできるパソコン用の Chromium ブラウザで動作します。\nスマートフォンやタブレットのブラウザ、Samsung Internet、Firefox、Safari などでは使えません。',
   'browser.open': '対応しているブラウザで tabcat をご利用ください。',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
-
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
-
   'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
-
   'help.tour': 'ツアーを始める', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}',
-
   'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからヘルプでも始められます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
-
   'tour.welcome.title': 'tabcat へようこそ。', 'tour.welcome.text': 'タブをグループの中のリンクとして保存して、必要なときにまた開けます。',
-
   'tour.workspaces.title': 'ワークスペース', 'tour.workspaces.text': 'いちばん大きなまとまりです。仕事、勉強などに分けてみましょう。ドラッグで並べ替えられます。',
-
   'tour.tabs.title': '開いているタブ', 'tour.tabs.text': '開いているウィンドウとタブを表示します。{icon:save} ウィンドウを保存したり、{icon:suspend} タブを休止したり、{icon:dedupe} 重複したタブを整理したりもできます。',
-
   'tour.categories.title': 'カテゴリ', 'tour.categories.text': 'ワークスペースの中のテーマです。カテゴリごとに別のグループを作れます。',
-
   'tour.groups.title': 'グループ', 'tour.groups.text': 'リンクとフォルダを入れるカードです。自由に飾って、ドラッグで並べられます。',
-
   'tour.search.title': '検索', 'tour.search.text': 'リンク、フォルダ、グループなど、どこからでも検索できます。Ctrl+F でも開けます。',
-
+  'tour.install.title': 'アプリとしてインストール', 'tour.install.text': 'tabcat をアプリとして使ってみましょう。',
   'tour.more.title': '設定とヘルプ', 'tour.more.text': '言語、テーマ、色は {icon:settings} 設定で、すべてのショートカットは {icon:help} ヘルプで確認できます。',
-
   'tour.tour.title': 'ツアー', 'tour.tour.text': 'このツアーは {icon:help} ヘルプからいつでも始められます。',
-
   'tour.shortcut.title': 'いつでも手もとに', 'tour.shortcut.text': 'Ctrl+Shift+X でいつでもダッシュボードを表示できます。もう一度押すと元のタブに戻ります。',
-
-  'tour.bye.title': 'これからよろしく。', 'tour.bye.text': 'タブは気楽に開いたままで大丈夫。整理は tabcat がお手伝いします。',
+  'tour.bye.title': 'これからよろしく。 😸', 'tour.bye.text': 'タブは気楽に開いたままで大丈夫。整理は tabcat がお手伝いします。',
   'panel.expandWs': 'ワークスペースを展開', 'panel.collapseWs': 'ワークスペースを折りたたむ',
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
@@ -63,7 +49,6 @@ export default {
   'tabs.suspend': { one: 'タブを休止', other: '{n} 個のタブを休止' }, 'tabs.wake': { one: 'タブを再開', other: '{n} 個のタブを再開' }, 'tab.wake': '再開', 'toast.woken': '{n} 個のタブを再開しました。',
   'tabs.close': { one: 'タブを閉じる', other: '{n} 個のタブを閉じる' },
   'tabs.moveWindow': '新しいウィンドウに移動',
-
   'head.none': 'ワークスペースがありません',
   'cols.title': '列', 'cols.fewer': '列を減らす', 'cols.more': '列を増やす', 'cols.scroll': 'スクロールで列数を変更',
   'board.noWs': 'ワークスペースがまだありません。', 'board.createWs': 'ワークスペースを作成',
@@ -72,7 +57,6 @@ export default {
   'act.expand': '展開', 'act.collapse': '折りたたむ', 'act.addLink': 'リンクを追加', 'act.addFolder': 'フォルダを追加',
   'act.addSubfolder': 'サブフォルダを追加', 'act.editNote': 'メモを編集', 'act.openAll': 'すべて開く', 'act.more': 'その他',
   'act.edit': '編集', 'act.editFolder': 'フォルダを編集',
-
   'menu.openAll': 'すべて開く ({n})', 'menu.openAllWindow': 'すべて新しいウィンドウで開く', 'menu.delete': '削除', 'menu.edit': '編集…',
   'menu.export': 'エクスポート…', 'menu.addWindowTabs': 'このウィンドウのタブをすべて追加', 'menu.sortName': '名前順に並べ替え',
   'menu.dedupe': '重複したリンクを削除', 'menu.open': '開く', 'menu.openWindow': '新しいウィンドウで開く', 'menu.copyUrl': 'URL をコピー',
@@ -80,11 +64,9 @@ export default {
   'menu.openLinks': '{n} 個のリンクを開く',
   'menu.deleteItems': '{n} 個の項目を削除',
   'menu.deleteGroups': '{n} 個のグループを削除',
-
   'search.aria': '検索 (Ctrl+F)', 'search.placeholder': 'リンク、グループ、フォルダ、メモを検索…',
   'search.links': 'リンク · {n}', 'search.containers': 'ワークスペース、グループ、フォルダ · {n}', 'search.none': '見つかりませんでした。',
   'search.foot': '↑↓ 移動 · Enter 開く · Ctrl+Enter バックグラウンドで開く · Esc 閉じる',
-
   'common.cancel': 'キャンセル', 'common.save': '保存', 'common.close': '閉じる', 'common.ok': 'OK', 'common.undo': '元に戻す',
   'new.workspace': '新しいワークスペース', 'new.category': '新しいカテゴリ', 'new.group': '新しいグループ', 'new.folder': '新しいフォルダ', 'new.link': '新しいリンク',
   'edit.workspace': 'ワークスペースを編集', 'edit.category': 'カテゴリを編集', 'edit.group': 'グループを編集', 'edit.folder': 'フォルダを編集', 'edit.link': 'リンクを編集',
@@ -108,7 +90,6 @@ export default {
   'merge.ok': '統合',
   'picker.all': 'すべて選択', 'picker.none': '選択しない', 'picker.count': '{total} 個中 {n} 個を選択', 'picker.toggle': '展開 / 折りたたむ',
   'export.title': 'データをエクスポート', 'export.ok': 'エクスポート', 'import.title': '{file} からインポート', 'import.ok': 'インポート',
-
   'toast.deleted': '「{name}」を削除しました。',
   'toast.deletedGroups': '{n} 個のグループを削除しました。',
   'toast.deletedItems': '{n} 個の項目を削除しました。',
@@ -124,7 +105,6 @@ export default {
   'toast.importFailed': 'インポートに失敗しました: {error}', 'toast.settingsImported': '設定をインポートしました。',
   'err.notJson': 'JSON ファイルではありません', 'err.noWorkspaces': 'ワークスペースが見つかりません',
   'err.notSettings': 'tabcat の設定ファイルではありません', 'err.noSettings': '有効な設定が見つかりません',
-
   'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる',
   'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分)', 'settings.off': 'オフ', 'settings.columns': 'ボードの列数 (1–8)',
   'settings.language': '言語', 'settings.langAuto': 'ブラウザの設定',
@@ -142,7 +122,6 @@ export default {
   'settings.shortcuts': 'ショートカット',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Ctrl+Shift+X</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '完了',
-
   'help.title': 'ヘルプ', 'info.title': '情報', 'info.extension': '拡張機能', 'info.minimum': '必要な拡張機能', 'info.source': 'ソースコード', 'info.issues': '問題を報告', 'info.notConnected': '未接続',
   'help.org.html': `<h4>構成</h4>
 <p><b>ワークスペース</b> › <b>カテゴリ</b> › <b>グループ</b> › <b>フォルダ</b> (最大 4 階層) と <b>リンク</b>。
