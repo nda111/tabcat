@@ -396,7 +396,10 @@ body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing
 .tab-row:hover, .tab-row.hover { background: var(--hover); }
 /* a window's active tab: bold, not orange (orange means "selected") */
 .tab-row.active .name { font-weight: 600; }
-.tab-row.discarded { opacity: .55; }
+/* a suspended tab: its icon, name and moon are dimmed (not the whole row, so its buttons stay as clear as
+   any row's); hovered, the moon gives way to the wake button */
+.tab-row.discarded > :is(img, .name, .muted) { opacity: .55; }
+.tab-row.discarded:is(:hover, .hover) > .muted { display: none; }
 .tab-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* row buttons take no space until hover, so narrow panels keep more of the title */
 .tab-row .icon-btn { display: none; }
