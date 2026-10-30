@@ -608,7 +608,8 @@ function renderBoard() {
 const groupCache = new Map(); // id -> { key, el }
 function cachedGroup(g) {
   if (preview?.id === g.id) g = { ...g, ...preview.fields };
-  const key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}`;
+  let key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}`;
+  if (preview && preview.id !== g.id && key.includes(`"id":"${preview.id}"`)) key += JSON.stringify(preview.fields); // (an item in it)
   const c = groupCache.get(g.id);
   if (c && c.key === key && !c.el.getAnimations({ subtree: true }).length) return c.el;
   const el = renderGroup(g);
@@ -735,6 +736,7 @@ function renderItems(items, parentId, depth) {
 }
 
 function renderLink(l) {
+  if (preview?.id === l.id) l = { ...l, ...preview.fields };
   return h('li', { class: 'item link' + (pickedItems.has(l.id) ? ' picked' : ''), draggable: 'true', dataset: { id: l.id, type: 'link' } },
     h('div', {
       class: 'link-row', title: [l.name || l.url, l.url, l.description].filter(Boolean).join('\n'),
@@ -753,6 +755,7 @@ function renderLink(l) {
 // One compact row (folders sit among links): chevron, symbol, name, count; the action buttons
 // appear on hover and take no space otherwise.
 function renderFolder(f, depth) {
+  if (preview?.id === f.id) f = { ...f, ...preview.fields };
   return h('li', { class: 'item folder' + (f.collapsed ? ' collapsed' : '') + (pickedItems.has(f.id) ? ' picked' : ''), dataset: { id: f.id, type: 'folder' } },
     h('div', {
       class: 'folder-head', draggable: 'true',
@@ -1370,20 +1373,37 @@ function symbolField(label, input, err) {
     if (em) recordEmoji(em);
   }
   // Picked or cleared (not typed): the old symbol shrinks away over the box while the new one springs
-  // in, the box itself staying put. The new one grows by font size, the only way to scale an input's
-  // text; the old one is a copy laid over it (inside the dialog, which sits above the page).
+  // in, the box itself staying put. Both are copies laid over the box (inside the dialog, which sits
+  // above the page) and scaled with a transform: animating the input's own font size made the glyph
+  // bob as each size was laid out again. The copies are inputs too (bare: no border or fill), so the
+  // glyph sits exactly where the box draws it. The box's own text is hidden while the new copy grows.
+  let popping = null; // { anim, copy }
+  const overBox = (text, look) => {
+    const copy = input.cloneNode();
+    copy.removeAttribute('name');
+    Object.assign(copy, { value: text, readOnly: true, tabIndex: -1 });
+    copy.classList.add('sym-copy');
+    copy.setAttribute('aria-hidden', 'true');
+    Object.assign(copy.style, { left: `${input.offsetLeft}px`, top: `${input.offsetTop}px`, fontSize: look.fontSize, fontWeight: look.fontWeight, color: look.color });
+    wrap.append(copy);
+    return copy;
+  };
   function popSymbol(old, was) {
+    if (popping) { popping.anim.cancel(); popping.copy.remove(); popping = null; input.style.fontSize = ''; }
     if (input.value) {
-      const size = parseFloat(getComputedStyle(input).fontSize);
-      input.animate([{ fontSize: `${size * 0.55}px` }, { fontSize: `${size}px` }], { duration: 260, easing: SPRING });
+      const copy = overBox(input.value, getComputedStyle(input));
+      input.style.fontSize = '0px';
+      const anim = copy.animate([{ opacity: 0, transform: 'scale(.55)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
+      const mine = popping = { anim, copy };
+      anim.finished.catch(() => {}).then(() => {
+        if (popping !== mine) return;
+        popping = null;
+        copy.remove();
+        input.style.fontSize = '';
+      });
     }
     if (!old) return;
-    const copy = h('span', { class: 'sym-leaving-box', 'aria-hidden': 'true' }, old);
-    Object.assign(copy.style, {
-      left: `${input.offsetLeft}px`, top: `${input.offsetTop}px`, width: `${input.offsetWidth}px`, height: `${input.offsetHeight}px`,
-      fontSize: was.fontSize, fontWeight: was.fontWeight, color: was.color,
-    });
-    wrap.append(copy);
+    const copy = overBox(old, was);
     copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' })
       .finished.catch(() => {}).then(() => copy.remove());
   }
@@ -1527,14 +1547,14 @@ function openEditor(type, data = {}, title, onPreview = null) {
         if (!f) return;
         try {
           input.value = await imageToDataUrl(f);
-          input.dispatchEvent(new Event('input'));
+          input.dispatchEvent(new Event('input', { bubbles: true }));
           err.textContent = '';
         } catch { err.textContent = t('icon.bad'); }
       });
       const fieldBtn = (name, label, fn) => h('button', { class: 'btn field-btn', type: 'button', title: label, 'aria-label': label, onclick: fn }, icon(name, 16));
       return h('label', {}, label, h('div', { class: 'icon-preview' }, preview, input, file,
         fieldBtn('upload', t('icon.upload'), () => file.click()),
-        fieldBtn('close', t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input')); })));
+        fieldBtn('close', t('icon.clear'), () => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); })));
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
@@ -1589,15 +1609,17 @@ function openEditor(type, data = {}, title, onPreview = null) {
   });
 }
 
+const LIVE_EDIT = new Set(['group', 'folder', 'link']);
 async function editNode(node) {
-  if (node.type !== 'group') {
+  if (!LIVE_EDIT.has(node.type)) {
     const v = await openEditor(node.type, node);
     if (v) apply({ op: 'patch', id: node.id, fields: v });
     return;
   }
-  // a group shows its edits on the board while the editor is open: Save keeps them, Cancel / Esc
-  // puts the group back as it was
-  const v = await openEditor(node.type, node, undefined, (fields) => showPreview(node.id, fields));
+  // a group, folder or link shows its edits on the board while the editor is open: Save keeps them,
+  // Cancel / Esc puts it back as it was. (Not a link's URL until saved: every keystroke would fetch
+  // another favicon.)
+  const v = await openEditor(node.type, node, undefined, ({ url, ...fields }) => showPreview(node.id, fields));
   if (!v) return showPreview(node.id, null);
   showPreview(node.id, v);
   const seq = stateSeq;
@@ -1617,9 +1639,20 @@ function showPreview(id, fields) {
   previewFrame = requestAnimationFrame(() => {
     const was = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
     cardMorph = was && { id, was, look: cardLook(was) };
+    const item = document.querySelector(`#board .item[data-id="${CSS.escape(id)}"]`);
+    const mark = item && itemMark(item);
     render();
     cardMorph = null;
+    // a folder's symbol or a link's icon that changed springs in like a group's symbol
+    const now = document.querySelector(`#board .item[data-id="${CSS.escape(id)}"]`);
+    const el = now && now !== item && itemMark(now);
+    if (el && el.key !== mark.key) el.el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
   });
+}
+// the icon of a link row / the symbol of a folder row, and what it shows
+function itemMark(item) {
+  const el = item.querySelector(':scope > .link-row > img.fav, :scope > .folder-head > .sym');
+  return el && { el, key: el.tagName === 'IMG' ? el.getAttribute('src') : el.textContent };
 }
 
 // A redrawn card eases from how it looked (see showPreview). Like a note (holdNote), it is held at
