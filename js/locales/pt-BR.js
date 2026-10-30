@@ -13,6 +13,9 @@ export default {
   'noext.step2.html': 'Confira se a origem desta página (<code id="no-ext-origin"></code>) está em <code>content_scripts.matches</code> e <code>web_accessible_resources.matches</code> no <code>manifest.json</code> da extensão.',
   'noext.step3': 'Recarregue esta página.',
   'noext.retry': 'Tentar de novo',
+  'browser.title': 'O tabcat precisa de um navegador baseado no Chromium',
+  'browser.need': 'O tabcat funciona como extensão para navegadores baseados no Chromium, como Chrome, Edge, Brave, Whale, Opera e Vivaldi, por isso não funciona neste navegador.',
+  'browser.open': 'Abra este endereço em um navegador baseado no Chromium:',
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
 
   'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
@@ -97,7 +100,7 @@ export default {
   'err.notSettings': 'não é um arquivo de configurações do tabcat', 'err.noSettings': 'nenhuma configuração válida encontrada',
 
   'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo',
-  'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos; 0 desativa)', 'settings.columns': 'Colunas do quadro (1–7)',
+  'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos)', 'settings.off': 'Desativado', 'settings.columns': 'Colunas do quadro (1–7)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma do navegador',
   'settings.appearance': 'Aparência', 'settings.theme': 'Tema', 'settings.color': 'Cor',
   'theme.auto': 'Sistema', 'theme.light': 'Claro', 'theme.dark': 'Escuro',

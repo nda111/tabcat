@@ -13,6 +13,9 @@ export default {
   'noext.step2.html': 'Vérifiez que l’origine de cette page (<code id="no-ext-origin"></code>) figure dans <code>content_scripts.matches</code> et <code>web_accessible_resources.matches</code> du fichier <code>manifest.json</code> de l’extension.',
   'noext.step3': 'Rechargez cette page.',
   'noext.retry': 'Réessayer',
+  'browser.title': 'tabcat nécessite un navigateur basé sur Chromium',
+  'browser.need': 'tabcat fonctionne comme extension pour les navigateurs basés sur Chromium (Chrome, Edge, Brave, Whale, Opera, Vivaldi) et ne peut donc pas fonctionner dans ce navigateur.',
+  'browser.open': 'Ouvrez cette adresse dans un navigateur basé sur Chromium :',
   'noext.old': 'L’extension tabcat ({version}) est plus ancienne que ce qu’exige ce tableau de bord ({min}) : rechargez-la ou mettez-la à jour.',
 
   'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
@@ -97,7 +100,7 @@ export default {
   'err.notSettings': 'ce n’est pas un fichier de paramètres tabcat', 'err.noSettings': 'aucun paramètre valide trouvé',
 
   'settings.title': 'Paramètres', 'settings.general': 'Général', 'settings.closeOnSave': 'Fermer les onglets après leur enregistrement', 'settings.groupTabs': 'Grouper les onglets en ouvrant tout',
-  'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes ; 0 pour désactiver)', 'settings.columns': 'Colonnes du tableau (1–7)',
+  'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes)', 'settings.off': 'Désactivé', 'settings.columns': 'Colonnes du tableau (1–7)',
   'settings.language': 'Langue', 'settings.langAuto': 'Langue du navigateur',
   'settings.appearance': 'Apparence', 'settings.theme': 'Thème', 'settings.color': 'Couleur',
   'theme.auto': 'Système', 'theme.light': 'Clair', 'theme.dark': 'Sombre',

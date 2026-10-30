@@ -13,6 +13,9 @@ export default {
   'noext.step2.html': 'Make sure this page\'s origin (<code id="no-ext-origin"></code>) is listed in <code>content_scripts.matches</code> and <code>web_accessible_resources.matches</code> of the extension\'s <code>manifest.json</code>.',
   'noext.step3': 'Reload this page.',
   'noext.retry': 'Retry',
+  'browser.title': 'tabcat needs a Chromium-based browser',
+  'browser.need': 'tabcat runs as an extension for Chromium-based browsers such as Chrome, Edge, Brave, Whale, Opera and Vivaldi, so it can’t work in this browser.',
+  'browser.open': 'Open this address in a Chromium-based browser:',
   'noext.old': 'The tabcat extension ({version}) is older than this dashboard needs ({min}): reload or update it.',
 
   // side panels
@@ -104,7 +107,7 @@ export default {
 
   // settings
   'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all',
-  'settings.autoSuspend': 'Auto-suspend unused tabs after (in minutes; 0 turns it off)', 'settings.columns': 'Board columns (1–7)',
+  'settings.autoSuspend': 'Auto-suspend unused tabs after (minutes)', 'settings.off': 'Off', 'settings.columns': 'Board columns (1–7)',
   'settings.language': 'Language', 'settings.langAuto': 'Browser default',
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
   'theme.auto': 'System', 'theme.light': 'Light', 'theme.dark': 'Dark',

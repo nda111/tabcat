@@ -11,6 +11,9 @@ export default {
   'noext.step2.html': '确认此页面的来源 (<code id="no-ext-origin"></code>) 已列在扩展程序 <code>manifest.json</code> 的 <code>content_scripts.matches</code> 和 <code>web_accessible_resources.matches</code> 中。',
   'noext.step3': '重新加载此页面。',
   'noext.retry': '重试',
+  'browser.title': '需要基于 Chromium 的浏览器',
+  'browser.need': 'tabcat 是 Chrome、Edge、Brave、Whale、Opera、Vivaldi 等基于 Chromium 的浏览器的扩展程序，因此无法在此浏览器中使用。',
+  'browser.open': '请在基于 Chromium 的浏览器中打开此地址：',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
 
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
@@ -95,7 +98,7 @@ export default {
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
 
   'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
-  'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟，设为 0 则关闭)', 'settings.columns': '面板列数 (1–7)',
+  'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟)', 'settings.off': '关闭', 'settings.columns': '面板列数 (1–7)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',
   'theme.auto': '系统', 'theme.light': '浅色', 'theme.dark': '深色',

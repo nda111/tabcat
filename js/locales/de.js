@@ -13,6 +13,9 @@ export default {
   'noext.step2.html': 'Prüfe, dass der Ursprung dieser Seite (<code id="no-ext-origin"></code>) in <code>content_scripts.matches</code> und <code>web_accessible_resources.matches</code> der <code>manifest.json</code> der Erweiterung steht.',
   'noext.step3': 'Lade diese Seite neu.',
   'noext.retry': 'Erneut versuchen',
+  'browser.title': 'tabcat braucht einen Chromium-basierten Browser',
+  'browser.need': 'tabcat läuft als Erweiterung für Chromium-basierte Browser wie Chrome, Edge, Brave, Whale, Opera und Vivaldi und funktioniert daher in diesem Browser nicht.',
+  'browser.open': 'Öffne diese Adresse in einem Chromium-basierten Browser:',
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
 
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
@@ -97,7 +100,7 @@ export default {
   'err.notSettings': 'keine tabcat-Einstellungsdatei', 'err.noSettings': 'keine gültigen Einstellungen gefunden',
 
   'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren',
-  'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten; 0 schaltet es aus)', 'settings.columns': 'Spalten im Board (1–7)',
+  'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten)', 'settings.off': 'Aus', 'settings.columns': 'Spalten im Board (1–7)',
   'settings.language': 'Sprache', 'settings.langAuto': 'Browsersprache',
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',
   'theme.auto': 'System', 'theme.light': 'Hell', 'theme.dark': 'Dunkel',

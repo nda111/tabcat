@@ -13,6 +13,9 @@ export default {
   'noext.step2.html': 'Comprueba que el origen de esta página (<code id="no-ext-origin"></code>) aparece en <code>content_scripts.matches</code> y <code>web_accessible_resources.matches</code> del <code>manifest.json</code> de la extensión.',
   'noext.step3': 'Vuelve a cargar esta página.',
   'noext.retry': 'Reintentar',
+  'browser.title': 'tabcat necesita un navegador basado en Chromium',
+  'browser.need': 'tabcat funciona como extensión para navegadores basados en Chromium, como Chrome, Edge, Brave, Whale, Opera y Vivaldi, así que no puede funcionar en este navegador.',
+  'browser.open': 'Abre esta dirección en un navegador basado en Chromium:',
   'noext.old': 'La extensión tabcat ({version}) es más antigua de lo que necesita este panel ({min}): vuelve a cargarla o actualízala.',
 
   'side.workspaces': 'Espacios de trabajo', 'side.info': 'Información', 'side.help': 'Ayuda', 'side.settings': 'Ajustes',
@@ -97,7 +100,7 @@ export default {
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
 
   'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
-  'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos; con 0 se desactiva)', 'settings.columns': 'Columnas del tablero (1–7)',
+  'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos)', 'settings.off': 'Desactivado', 'settings.columns': 'Columnas del tablero (1–7)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',
   'theme.auto': 'Sistema', 'theme.light': 'Claro', 'theme.dark': 'Oscuro',

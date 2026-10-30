@@ -11,7 +11,7 @@ const tr = t; // for code where `t` is a tab or a drop target
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange', language: 'auto' };
+let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 const ACCENTS = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
@@ -513,7 +513,7 @@ function renderCats() {
 }
 
 // Board column count (a setting; stepper at the right end of the category bar).
-const boardColumns = () => Math.min(MAX_COLUMNS, Math.max(1, settings.columns || 3));
+const boardColumns = () => Math.min(MAX_COLUMNS, Math.max(1, settings.columns || 5));
 async function setColumns(v) {
   const s = await run(B.call('saveSettings', { columns: Math.min(MAX_COLUMNS, Math.max(1, v)) }));
   if (s) { settings = s; fillSettings(); relayoutBoard(); }
@@ -2851,11 +2851,13 @@ function syncSteppers() {
     const v = +input.value;
     down.disabled = input.min !== '' && v <= +input.min;
     up.disabled = input.max !== '' && v >= +input.max;
+    if (input.dataset.zero) input.parentElement.classList.toggle('zero', input.value !== '' && v === 0);
   }
 }
 for (const input of document.querySelectorAll('#settings-form input[type=number]')) {
   const wrap = h('div', { class: 'stepper' });
   input.replaceWith(wrap);
+  input.addEventListener('input', syncSteppers);
   const step = (dir) => {
     const before = input.value;
     if (dir > 0) input.stepUp(); else input.stepDown();
@@ -2880,7 +2882,7 @@ for (const input of document.querySelectorAll('#settings-form input[type=number]
     for (const type of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(type, stop);
     return b;
   };
-  wrap.append(input, button(-1), button(1));
+  wrap.append(input, input.dataset.zero && h('span', { class: 'step-zero', 'data-i18n': input.dataset.zero }, t(input.dataset.zero)), button(-1), button(1));
   input.addEventListener('input', syncSteppers);
 }
 
@@ -2891,7 +2893,7 @@ function fillSettings() {
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
-  f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'orange';
+  f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'purple';
   f.columns.value = boardColumns();
   syncSteppers();
 }
@@ -3113,7 +3115,7 @@ const SETTINGS_IO = {
 
 // Settings > Data > Reset settings: every option above back to its default (after asking; the data is
 // not touched)
-const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'orange', columns: 3 };
+const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
 $('#btn-reset-settings').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('reset.title'), text: t('reset.text'), ok: t('reset.ok'), danger: true }))) return;
   const s = await run(B.call('saveSettings', SETTINGS_DEFAULTS));
@@ -3445,6 +3447,12 @@ B.on('disconnected', () => showNoExtension());
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state) renderTabs(); });
 window.addEventListener('focus', () => { if (state) scheduleTabs(); });
 
+// tabcat is a Chromium extension: elsewhere (Firefox, Safari, Chrome on iOS…) say so before looking for it.
+// (navigator.userAgentData exists only in Chromium browsers, and every one of them lists a "Chromium" brand)
+const chromium = () => navigator.userAgentData
+  ? navigator.userAgentData.brands.some((b) => b.brand === 'Chromium')
+  : /\b(Chrome|Chromium)\//.test(navigator.userAgent) && 'chrome' in window;
+
 function showNoExtension() {
   $('#no-ext-origin').textContent = location.origin;
   $('#no-ext').hidden = false;
@@ -3478,6 +3486,11 @@ async function init() {
   // e.g. the saved panel width doesn't animate in from the default), then show the page
   void document.body.offsetWidth;
   document.documentElement.classList.remove('booting');
+  if (!chromium()) {
+    $('#browser-url').textContent = location.href;
+    $('#no-browser').hidden = false;
+    return;
+  }
   const ext = await B.connect();
   extVersion = ext?.version || null;
   if (!ext) return showNoExtension();

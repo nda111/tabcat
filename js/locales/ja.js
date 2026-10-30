@@ -11,6 +11,9 @@ export default {
   'noext.step2.html': 'このページのオリジン (<code id="no-ext-origin"></code>) が拡張機能の <code>manifest.json</code> の <code>content_scripts.matches</code> と <code>web_accessible_resources.matches</code> に含まれていることを確認します。',
   'noext.step3': 'このページを再読み込みします。',
   'noext.retry': '再試行',
+  'browser.title': 'Chromium ベースのブラウザが必要です',
+  'browser.need': 'tabcat は Chrome、Edge、Brave、Whale、Opera、Vivaldi などの Chromium ベースのブラウザの拡張機能として動作するため、このブラウザでは使えません。',
+  'browser.open': 'Chromium ベースのブラウザでこのアドレスを開いてください。',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
 
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
@@ -95,7 +98,7 @@ export default {
   'err.notSettings': 'tabcat の設定ファイルではありません', 'err.noSettings': '有効な設定が見つかりません',
 
   'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる',
-  'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分。0 にするとオフ)', 'settings.columns': 'ボードの列数 (1–7)',
+  'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分)', 'settings.off': 'オフ', 'settings.columns': 'ボードの列数 (1–7)',
   'settings.language': '言語', 'settings.langAuto': 'ブラウザの設定',
   'settings.appearance': '外観', 'settings.theme': 'テーマ', 'settings.color': '色',
   'theme.auto': 'システム', 'theme.light': 'ライト', 'theme.dark': 'ダーク',

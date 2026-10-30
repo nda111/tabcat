@@ -13,7 +13,8 @@
       const look = JSON.parse(localStorage.getItem('tabcat:look') || 'null');
       const root = document.documentElement;
       if (look?.theme && look.theme !== 'auto') root.dataset.theme = look.theme;
-      if (look?.accent && look.accent !== 'orange' && look.hue != null) { root.dataset.accent = look.accent; root.style.setProperty('--hue', look.hue); }
+      const accent = look?.accent || 'purple', hue = look?.accent ? look.hue : 300; // (a first visit: the default, purple)
+      if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
     } catch { /* storage unavailable */ }
     document.documentElement.classList.add('booting');
     setTimeout(() => document.documentElement.classList.remove('booting'), 2000);
@@ -28,6 +29,14 @@
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
+  <div id="no-browser" hidden>
+    <div class="no-ext-card">
+      <img src="icons/icon128.png" alt="" width="64" height="64">
+      <h2 data-i18n="browser.title">tabcat needs a Chromium-based browser</h2>
+      <p data-i18n="browser.need">tabcat runs as an extension for Chromium-based browsers such as Chrome, Edge, Brave, Whale, Opera and Vivaldi, so it can’t work in this browser.</p>
+      <p><span data-i18n="browser.open">Open this address in a Chromium-based browser:</span> <code id="browser-url"></code></p>
+    </div>
+  </div>
   <div id="no-ext" hidden>
     <div class="no-ext-card">
       <img src="icons/icon128.png" alt="" width="64" height="64">
@@ -113,8 +122,8 @@
         </label>
         <label class="check"><input type="checkbox" name="closeOnSave"> <span data-i18n="settings.closeOnSave">Close tabs after saving them</span></label>
         <label class="check"><input type="checkbox" name="groupTabs"> <span data-i18n="settings.groupTabs">Group tabs when opening all</span></label>
-        <label><span data-i18n="settings.autoSuspend">Auto-suspend unused tabs after (in minutes; 0 turns it off)</span>
-          <input type="number" name="autoSuspendMinutes" min="0" step="1">
+        <label><span data-i18n="settings.autoSuspend">Auto-suspend unused tabs after (minutes)</span>
+          <input type="number" name="autoSuspendMinutes" min="0" step="1" data-zero="settings.off">
         </label>
         <label><span data-i18n="settings.columns">Board columns (1–7)</span>
           <input type="number" name="columns" min="1" max="7" step="1">
