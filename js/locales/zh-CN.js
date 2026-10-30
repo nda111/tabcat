@@ -58,7 +58,7 @@ export default {
   'common.cancel': '取消', 'common.save': '保存', 'common.close': '关闭', 'common.ok': '确定', 'common.undo': '撤销',
   'new.workspace': '新建工作区', 'new.category': '新建类别', 'new.group': '新建分组', 'new.folder': '新建文件夹', 'new.link': '新建链接',
   'edit.workspace': '编辑工作区', 'edit.category': '编辑类别', 'edit.group': '编辑分组', 'edit.folder': '编辑文件夹', 'edit.link': '编辑链接',
-  'field.name': '名称', 'field.symbol': '符号', 'field.description': '描述', 'field.note': '笔记 (Markdown)',
+  'field.name': '名称', 'field.symbol': '符号', 'field.description': '描述', 'field.note': '笔记 (Markdown)', 'field.color': '颜色', 'color.none': '默认',
   'field.url': '网址', 'field.icon': '图标', 'field.symbolHint': '{label} (表情、字母或数字，可选)',
   'field.ctrlEnter': 'Ctrl+Enter 保存',
   'icon.placeholder': '图片网址，或上传文件。留空则使用网站图标', 'icon.bad': '无法读取该图片。',

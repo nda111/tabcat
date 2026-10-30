@@ -60,7 +60,7 @@ export default {
   'common.cancel': 'Abbrechen', 'common.save': 'Speichern', 'common.close': 'Schließen', 'common.ok': 'OK', 'common.undo': 'Rückgängig',
   'new.workspace': 'Neuer Arbeitsbereich', 'new.category': 'Neue Kategorie', 'new.group': 'Neue Gruppe', 'new.folder': 'Neuer Ordner', 'new.link': 'Neuer Link',
   'edit.workspace': 'Arbeitsbereich bearbeiten', 'edit.category': 'Kategorie bearbeiten', 'edit.group': 'Gruppe bearbeiten', 'edit.folder': 'Ordner bearbeiten', 'edit.link': 'Link bearbeiten',
-  'field.name': 'Name', 'field.symbol': 'Symbol', 'field.description': 'Beschreibung', 'field.note': 'Notiz (Markdown)',
+  'field.name': 'Name', 'field.symbol': 'Symbol', 'field.description': 'Beschreibung', 'field.note': 'Notiz (Markdown)', 'field.color': 'Farbe', 'color.none': 'Standard',
   'field.url': 'URL', 'field.icon': 'Symbolbild', 'field.symbolHint': '{label} (Emoji, Buchstabe oder Ziffer, optional)',
   'field.ctrlEnter': 'Strg+Enter zum Speichern',
   'icon.placeholder': 'Bild-URL oder Datei hochladen. Leer: Favicon der Website', 'icon.bad': 'Das Bild konnte nicht gelesen werden.',

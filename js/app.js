@@ -29,7 +29,7 @@ const EMOJIS = ['🐱', '📁', '📂', '📌', '⭐', '🔥', '💡', '📚', '
 const FIELDS = {
   workspace: [['name', 'text', true], ['symbol', 'emoji'], ['description', 'textarea']],
   category: [['name', 'text', true]],
-  group: [['name', 'text', true], ['symbol', 'emoji'], ['note', 'textarea']],
+  group: [['name', 'text', true], ['symbol', 'emoji'], ['color', 'color'], ['note', 'textarea']],
   folder: [['name', 'text', true], ['symbol', 'emoji']],
   link: [['url', 'url', true], ['name', 'text', true], ['icon', 'icon'], ['description', 'textarea']],
 };
@@ -690,7 +690,9 @@ function renderGroup(g) {
   const empty = !g.items.length && !g.note && !editing;
   return h('div', {
     class: 'group' + (empty ? ' empty-group' : g.collapsed ? ' collapsed' : '') + (selected.has(g.id) ? ' selected' : ''),
-    dataset: { id: g.id, type: 'group' },
+    // (dataset would turn a null into the string "null": the colour goes in only when there is one)
+    dataset: { id: g.id, type: 'group', ...(ACCENTS[g.color] != null && { color: g.color }) },
+    style: ACCENTS[g.color] != null ? `--g-hue: ${ACCENTS[g.color]}` : null,
     // while groups are selected, a click anywhere on a card (de)selects it (its buttons and links are inert)
     onclick: (e) => { if (selected.size && !e.target.closest('.group-head')) toggleSelected(g.id); },
   },
@@ -1453,6 +1455,18 @@ function suggestName(type) {
   return `${randomName()} ${Math.floor(Math.random() * 90) + 10}`;
 }
 
+// The group colour: the same round swatches as Settings > Color, after a plain one (the default card).
+function colorField(label, input) {
+  input.type = 'hidden';
+  const swatch = (name) => {
+    const tip = t(name ? `accent.${name}` : 'color.none');
+    return h('label', { class: 'swatch' + (name ? '' : ' plain'), dataset: { accent: name || 'none' }, title: tip, style: name ? `--hue: ${ACCENTS[name]}` : null },
+      h('input', { type: 'radio', name: 'group-color', value: name, 'aria-label': tip, checked: input.value === name, onchange: () => { input.value = name; } }));
+  };
+  return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label),
+    h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, swatch(''), ...Object.keys(ACCENTS).map(swatch)), input);
+}
+
 function openEditor(type, data = {}, title) {
   const dlg = $('#editor');
   const form = $('#editor-form');
@@ -1477,6 +1491,7 @@ function openEditor(type, data = {}, title) {
     if (key === 'name' && suggestion) input.placeholder = suggestion;
     inputs[key] = input;
     if (kind === 'emoji') return symbolField(label, input, err);
+    if (kind === 'color') return colorField(label, input);
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
       input.placeholder = t('icon.placeholder');
@@ -2937,7 +2952,7 @@ async function refresh() {
 }
 
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
-const MIN_EXTENSION = '0.2.2';
+const MIN_EXTENSION = '0.2.5'; // (0.2.5: group colours)
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
   for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);

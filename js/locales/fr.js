@@ -60,7 +60,7 @@ export default {
   'common.cancel': 'Annuler', 'common.save': 'Enregistrer', 'common.close': 'Fermer', 'common.ok': 'OK', 'common.undo': 'Annuler',
   'new.workspace': 'Nouvel espace de travail', 'new.category': 'Nouvelle catégorie', 'new.group': 'Nouveau groupe', 'new.folder': 'Nouveau dossier', 'new.link': 'Nouveau lien',
   'edit.workspace': 'Modifier l’espace de travail', 'edit.category': 'Modifier la catégorie', 'edit.group': 'Modifier le groupe', 'edit.folder': 'Modifier le dossier', 'edit.link': 'Modifier le lien',
-  'field.name': 'Nom', 'field.symbol': 'Symbole', 'field.description': 'Description', 'field.note': 'Note (Markdown)',
+  'field.name': 'Nom', 'field.symbol': 'Symbole', 'field.description': 'Description', 'field.note': 'Note (Markdown)', 'field.color': 'Couleur', 'color.none': 'Par défaut',
   'field.url': 'URL', 'field.icon': 'Icône', 'field.symbolHint': '{label} (emoji, lettre ou chiffre, facultatif)',
   'field.ctrlEnter': 'Ctrl+Entrée pour enregistrer',
   'icon.placeholder': 'URL d’une image, ou importez un fichier. Vide : favicon du site', 'icon.bad': 'Impossible de lire cette image.',

@@ -58,7 +58,7 @@ export default {
   'common.cancel': 'キャンセル', 'common.save': '保存', 'common.close': '閉じる', 'common.ok': 'OK', 'common.undo': '元に戻す',
   'new.workspace': '新しいワークスペース', 'new.category': '新しいカテゴリ', 'new.group': '新しいグループ', 'new.folder': '新しいフォルダ', 'new.link': '新しいリンク',
   'edit.workspace': 'ワークスペースを編集', 'edit.category': 'カテゴリを編集', 'edit.group': 'グループを編集', 'edit.folder': 'フォルダを編集', 'edit.link': 'リンクを編集',
-  'field.name': '名前', 'field.symbol': 'シンボル', 'field.description': '説明', 'field.note': 'メモ (Markdown)',
+  'field.name': '名前', 'field.symbol': 'シンボル', 'field.description': '説明', 'field.note': 'メモ (Markdown)', 'field.color': '色', 'color.none': 'デフォルト',
   'field.url': 'URL', 'field.icon': 'アイコン', 'field.symbolHint': '{label} (絵文字、文字、数字、任意)',
   'field.ctrlEnter': 'Ctrl+Enter で保存',
   'icon.placeholder': '画像の URL、またはファイルをアップロード。空欄ならサイトのファビコン', 'icon.bad': '画像を読み込めませんでした。',

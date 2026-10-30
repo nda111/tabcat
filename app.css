@@ -693,6 +693,29 @@ body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in 
 .swatch:has(input:checked) { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
 .swatch:has(input:focus-visible) { outline: 1px solid var(--accent); outline-offset: 4px; }
 
+/* the group editor's colour row: a plain swatch (the default card) before the colours */
+dialog .field { margin-bottom: 10px; font-weight: 600; }
+dialog .field .swatches { margin-top: 6px; }
+.swatch.plain { background: var(--panel); box-shadow: inset 0 0 0 1px var(--border); }
+.swatch.plain:has(input:checked) { box-shadow: inset 0 0 0 1px var(--border), 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+
+/* a coloured group: its own lighter (or, in the dark, deeper) shades of the panel colours, so the card,
+   its note, hover tints and borders all take the hue */
+.group[data-color] {
+  --panel: oklch(.975 .028 var(--g-hue)); --panel-2: oklch(.955 .038 var(--g-hue));
+  --hover: oklch(.925 .05 var(--g-hue)); --border: oklch(.885 .055 var(--g-hue));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .group[data-color] {
+    --panel: oklch(.27 .035 var(--g-hue)); --panel-2: oklch(.245 .03 var(--g-hue));
+    --hover: oklch(.32 .045 var(--g-hue)); --border: oklch(.37 .05 var(--g-hue));
+  }
+}
+:root[data-theme="dark"] .group[data-color] {
+  --panel: oklch(.27 .035 var(--g-hue)); --panel-2: oklch(.245 .03 var(--g-hue));
+  --hover: oklch(.32 .045 var(--g-hue)); --border: oklch(.37 .05 var(--g-hue));
+}
+
 /* Settings > Appearance: a name, then its choices */
 .setting-row { display: flex; align-items: center; gap: 12px; min-height: 40px; }
 .setting-row + .setting-row { margin-top: 4px; }

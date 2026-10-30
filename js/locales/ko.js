@@ -58,7 +58,7 @@ export default {
   'common.cancel': '취소', 'common.save': '저장', 'common.close': '닫기', 'common.ok': '확인', 'common.undo': '실행 취소',
   'new.workspace': '새 워크스페이스', 'new.category': '새 카테고리', 'new.group': '새 그룹', 'new.folder': '새 폴더', 'new.link': '새 링크',
   'edit.workspace': '워크스페이스 수정', 'edit.category': '카테고리 수정', 'edit.group': '그룹 수정', 'edit.folder': '폴더 수정', 'edit.link': '링크 수정',
-  'field.name': '이름', 'field.symbol': '심볼', 'field.description': '설명', 'field.note': '노트 (마크다운)',
+  'field.name': '이름', 'field.symbol': '심볼', 'field.description': '설명', 'field.note': '노트 (마크다운)', 'field.color': '색상', 'color.none': '기본',
   'field.url': 'URL', 'field.icon': '아이콘', 'field.symbolHint': '{label} (이모지, 글자 또는 숫자, 선택)',
   'field.ctrlEnter': 'Ctrl+Enter로 저장',
   'icon.placeholder': '이미지 URL을 넣거나 파일을 올리세요. 비우면 사이트 파비콘', 'icon.bad': '이미지를 읽을 수 없습니다.',
