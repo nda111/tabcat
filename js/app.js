@@ -542,9 +542,16 @@ function wheelColumns(e) {
 // so the number stays readable): it shows while the pointer is over the buttons, the count or the gaps.
 // A wheel step nudges its wheel that way.
 const wheelBadge = $('#wheel-hint');
+// (a popover, so it shows over the Settings dialog too: shown again as it turns on, to come out on top)
 function wheelHint(e) {
-  const ctl = e.target.closest?.('.col-ctl');
-  wheelBadge.classList.toggle('on', !!ctl && !e.target.closest('.col-ctl > .ico'));
+  const ctl = e.target.closest?.('.col-ctl, .stepper');
+  const on = !!ctl && !e.target.closest('.col-ctl > .ico');
+  if (on && !wheelBadge.classList.contains('on')) {
+    if (wheelBadge.matches(':popover-open')) wheelBadge.hidePopover();
+    wheelBadge.showPopover();
+  }
+  wheelBadge.classList.toggle('on', on);
+  if (ctl) wheelBadge.classList.toggle('below', ctl.matches('.stepper')); // (Settings: clear of the label above)
   if (ctl) wheelBadge.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
 }
 function hideWheelHint() { wheelBadge.classList.remove('on'); }
@@ -2855,18 +2862,35 @@ function syncSteppers() {
   }
 }
 for (const input of document.querySelectorAll('#settings-form input[type=number]')) {
-  const wrap = h('div', { class: 'stepper' });
+  const wrap = h('div', { class: 'stepper', onwheel: (e) => wheelStep(e), onpointermove: wheelHint, onpointerleave: hideWheelHint });
   input.replaceWith(wrap);
-  input.addEventListener('input', syncSteppers);
+  const zero = input.dataset.zero ? h('span', { class: 'step-zero', 'data-i18n': input.dataset.zero }, t(input.dataset.zero)) : null;
   const step = (dir) => {
     const before = input.value;
     if (dir > 0) input.stepUp(); else input.stepDown();
     if (input.value === before) return false;
-    input.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: SPRING });
     syncSteppers();
+    // the new value slides in: the number, or "Off" in its place (the old one goes at once, no overlap)
+    const shown = zero && wrap.classList.contains('zero') ? zero : input;
+    shown.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: SPRING });
     return true;
   };
   const save = () => input.dispatchEvent(new Event('change', { bubbles: true }));
+  // scrolling over the field steps it (up: more), with the wheel badge as on the board's column control;
+  // a trackpad's small deltas add up to a step, and a burst of steps saves once it settles
+  let acc = 0, saveTimer = null;
+  const wheelStep = (e) => {
+    e.preventDefault();
+    wheelHint(e);
+    acc += e.deltaY;
+    if (Math.abs(acc) < 40) return;
+    const dir = acc < 0 ? 1 : -1;
+    acc = 0;
+    nudgeWheelHint(-dir);
+    if (!step(dir)) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 400);
+  };
   const button = (dir) => {
     const b = h('button', { type: 'button', class: 'step-btn', tabindex: '-1', 'aria-hidden': 'true' }, icon(dir > 0 ? 'plus' : 'minus', 14));
     let timer = null, held = false;
@@ -2882,7 +2906,7 @@ for (const input of document.querySelectorAll('#settings-form input[type=number]
     for (const type of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(type, stop);
     return b;
   };
-  wrap.append(input, input.dataset.zero && h('span', { class: 'step-zero', 'data-i18n': input.dataset.zero }, t(input.dataset.zero)), button(-1), button(1));
+  wrap.append(...[input, zero, button(-1), button(1)].filter(Boolean));
   input.addEventListener('input', syncSteppers);
 }
 
