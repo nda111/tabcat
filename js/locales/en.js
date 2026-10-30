@@ -169,7 +169,7 @@ Pick a workspace on the left and a category in the bar above the board; groups a
   'help.notes.html': `<h4>Notes and symbols</h4>
 <ul>
 <li>Group notes are Markdown with task checkboxes and math: <code>$…$</code> or <code>\\(…\\)</code> inline, <code>$$…$$</code> or <code>\\[…\\]</code> on its own, and LaTeX environments such as <code>\\begin{align}…\\end{align}</code> or <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
-<li>A symbol is one emoji, letter or digit; search emoji by name (in English) in the editor.</li>
+<li>A symbol is one emoji, letter or digit, or the tabcat logo; search emoji by name (in English) in the editor.</li>
 </ul>`,
   'help.memory.html': `<h4>Memory</h4>
 <ul>
@@ -179,13 +179,13 @@ Pick a workspace on the left and a category in the bar above the board; groups a
   'help.keys.html': `<h4>Shortcuts</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Search</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Undo / redo a delete or move</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Undo / redo (deleting, moving, saving, closing duplicates…)</td></tr>
 <tr><td><kbd>?</kbd></td><td>This guide</td></tr>
 <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>Delete / clear selected groups</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Save a note or the editor</td></tr>
 <tr><td>Letter in a menu</td><td>Run that entry of a right-click / ⋯ menu (e.g. <kbd>D</kbd> delete, <kbd>E</kbd> edit)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>Save this tab / window (anywhere)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Open the dashboard (anywhere)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>Bring up the dashboard; again to go back (anywhere)</td></tr>
 </table>`,
   'help.data.html': `<h4>Your data</h4>
 <p>Everything is stored in this browser by the extension, never on a server. Export / import it (or just your settings) in Settings.</p>`,

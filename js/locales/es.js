@@ -152,7 +152,7 @@ Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el
   'help.notes.html': `<h4>Notas y símbolos</h4>
 <ul>
 <li>Las notas de grupo son Markdown con casillas de tareas y matemáticas: <code>$…$</code> o <code>\\(…\\)</code> en línea, <code>$$…$$</code> o <code>\\[…\\]</code> aparte, y entornos LaTeX como <code>\\begin{align}…\\end{align}</code> o <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
-<li>Un símbolo es un emoji, una letra o un dígito; en el editor puedes buscar emojis por su nombre (en inglés).</li>
+<li>Un símbolo es un emoji, una letra, un dígito o el logo de tabcat; en el editor puedes buscar emojis por su nombre (en inglés).</li>
 </ul>`,
   'help.memory.html': `<h4>Memoria</h4>
 <ul>
@@ -162,13 +162,13 @@ Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el
   'help.keys.html': `<h4>Atajos</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Buscar</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Deshacer / rehacer un borrado o un movimiento</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Deshacer / rehacer (borrar, mover, guardar, cerrar duplicadas…)</td></tr>
 <tr><td><kbd>?</kbd></td><td>Esta guía</td></tr>
 <tr><td><kbd>Supr</kbd> · <kbd>Esc</kbd></td><td>Eliminar / deseleccionar los grupos seleccionados</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Guardar una nota o el editor</td></tr>
 <tr><td>Letra en un menú</td><td>Ejecuta esa entrada del menú contextual / ⋯ (p. ej. <kbd>D</kbd> eliminar, <kbd>E</kbd> editar)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>Guardar esta pestaña / ventana (en cualquier sitio)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Abrir el panel (en cualquier sitio)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>Traer el panel; otra vez para volver (en cualquier sitio)</td></tr>
 </table>`,
   'help.data.html': `<h4>Tus datos</h4>
 <p>La extensión guarda todo en este navegador, nunca en un servidor. Puedes exportarlo / importarlo (o solo tus ajustes) en Ajustes.</p>`,

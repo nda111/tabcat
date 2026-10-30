@@ -150,7 +150,7 @@ export default {
   'help.notes.html': `<h4>笔记和符号</h4>
 <ul>
 <li>分组笔记是支持任务复选框和数学公式的 Markdown：行内用 <code>$…$</code> 或 <code>\\(…\\)</code>，独立成行用 <code>$$…$$</code> 或 <code>\\[…\\]</code>，也支持 <code>\\begin{align}…\\end{align}</code>、<code>\\begin{pmatrix}…\\end{pmatrix}</code> 等 LaTeX 环境。</li>
-<li>符号是一个表情、字母或数字；可在编辑器中按名称 (英文) 搜索表情。</li>
+<li>符号是一个表情、字母、数字或 tabcat 标志；可在编辑器中按名称 (英文) 搜索表情。</li>
 </ul>`,
   'help.memory.html': `<h4>内存</h4>
 <ul>
@@ -160,13 +160,13 @@ export default {
   'help.keys.html': `<h4>快捷键</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>搜索</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做删除或移动</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>撤销 / 重做 (删除、移动、保存、关闭重复项等)</td></tr>
 <tr><td><kbd>?</kbd></td><td>本指南</td></tr>
 <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>删除 / 取消选择所选分组</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>保存笔记或编辑器</td></tr>
 <tr><td>菜单中的字母</td><td>执行右键 / ⋯ 菜单中的对应项 (例如 <kbd>D</kbd> 删除，<kbd>E</kbd> 编辑)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>保存此标签页 / 窗口 (任何页面)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>打开仪表板 (任何页面)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>调出仪表板，再按一次回到原标签页 (任何页面)</td></tr>
 </table>`,
   'help.data.html': `<h4>你的数据</h4>
 <p>所有数据都由扩展程序保存在此浏览器中，从不上传到服务器。可在设置中导出 / 导入数据 (或仅设置)。</p>`,

@@ -152,7 +152,7 @@ Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do qua
   'help.notes.html': `<h4>Notas e símbolos</h4>
 <ul>
 <li>As notas de grupo são Markdown com caixas de tarefa e matemática: <code>$…$</code> ou <code>\\(…\\)</code> no texto, <code>$$…$$</code> ou <code>\\[…\\]</code> em linha própria, e ambientes LaTeX como <code>\\begin{align}…\\end{align}</code> ou <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
-<li>Um símbolo é um emoji, uma letra ou um dígito; no editor, pesquise emojis pelo nome (em inglês).</li>
+<li>Um símbolo é um emoji, uma letra, um dígito ou o logo do tabcat; no editor, pesquise emojis pelo nome (em inglês).</li>
 </ul>`,
   'help.memory.html': `<h4>Memória</h4>
 <ul>
@@ -162,13 +162,13 @@ Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do qua
   'help.keys.html': `<h4>Atalhos</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Pesquisar</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Desfazer / refazer uma exclusão ou movimentação</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Desfazer / refazer (excluir, mover, salvar, fechar duplicadas…)</td></tr>
 <tr><td><kbd>?</kbd></td><td>Este guia</td></tr>
 <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>Excluir / desmarcar os grupos selecionados</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Salvar uma nota ou o editor</td></tr>
 <tr><td>Letra num menu</td><td>Executa essa entrada do menu de contexto / ⋯ (ex.: <kbd>D</kbd> excluir, <kbd>E</kbd> editar)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>Salvar esta aba / janela (em qualquer lugar)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Abrir o painel (em qualquer lugar)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>Trazer o painel; de novo para voltar (em qualquer lugar)</td></tr>
 </table>`,
   'help.data.html': `<h4>Seus dados</h4>
 <p>A extensão guarda tudo neste navegador, nunca num servidor. Exporte / importe tudo (ou só as configurações) nas Configurações.</p>`,

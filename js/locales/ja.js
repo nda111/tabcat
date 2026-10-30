@@ -150,7 +150,7 @@ export default {
   'help.notes.html': `<h4>メモとシンボル</h4>
 <ul>
 <li>グループのメモはタスクのチェックボックスと数式に対応した Markdown です。インラインは <code>$…$</code> か <code>\\(…\\)</code>、独立した行は <code>$$…$$</code> か <code>\\[…\\]</code>、さらに <code>\\begin{align}…\\end{align}</code> や <code>\\begin{pmatrix}…\\end{pmatrix}</code> などの LaTeX 環境が使えます。</li>
-<li>シンボルは絵文字、文字、数字のいずれか 1 つです。編集画面で絵文字を名前 (英語) で検索できます。</li>
+<li>シンボルは絵文字、文字、数字、tabcat ロゴのいずれか 1 つです。編集画面で絵文字を名前 (英語) で検索できます。</li>
 </ul>`,
   'help.memory.html': `<h4>メモリ</h4>
 <ul>
@@ -160,13 +160,13 @@ export default {
   'help.keys.html': `<h4>ショートカット</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>検索</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>削除・移動を元に戻す / やり直す</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>元に戻す / やり直す (削除、移動、保存、重複を閉じるなど)</td></tr>
 <tr><td><kbd>?</kbd></td><td>このガイド</td></tr>
 <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>選択したグループを削除 / 選択を解除</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>メモや編集画面を保存</td></tr>
 <tr><td>メニューの文字</td><td>右クリック / ⋯ メニューのその項目を実行 (例: <kbd>D</kbd> 削除、<kbd>E</kbd> 編集)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>このタブ / ウィンドウを保存 (どこでも)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>ダッシュボードを開く (どこでも)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>ダッシュボードを呼び出す、もう一度で元のタブへ (どこでも)</td></tr>
 </table>`,
   'help.data.html': `<h4>データについて</h4>
 <p>データはすべて拡張機能がこのブラウザに保存し、サーバーには送りません。設定からデータ (または設定だけ) をエクスポート / インポートできます。</p>`,

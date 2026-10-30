@@ -152,7 +152,7 @@ Choisissez un espace de travail à gauche et une catégorie dans la barre au-des
   'help.notes.html': `<h4>Notes et symboles</h4>
 <ul>
 <li>Les notes de groupe sont en Markdown, avec cases à cocher et formules : <code>$…$</code> ou <code>\\(…\\)</code> dans le texte, <code>$$…$$</code> ou <code>\\[…\\]</code> sur une ligne à part, et des environnements LaTeX comme <code>\\begin{align}…\\end{align}</code> ou <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
-<li>Un symbole est un emoji, une lettre ou un chiffre ; dans l’éditeur, cherchez les emojis par leur nom (en anglais).</li>
+<li>Un symbole est un emoji, une lettre, un chiffre ou le logo tabcat ; dans l’éditeur, cherchez les emojis par leur nom (en anglais).</li>
 </ul>`,
   'help.memory.html': `<h4>Mémoire</h4>
 <ul>
@@ -162,13 +162,13 @@ Choisissez un espace de travail à gauche et une catégorie dans la barre au-des
   'help.keys.html': `<h4>Raccourcis</h4>
 <table class="keys">
 <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>Rechercher</td></tr>
-<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Annuler / rétablir une suppression ou un déplacement</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Annuler / rétablir (suppression, déplacement, enregistrement, fermeture des doublons…)</td></tr>
 <tr><td><kbd>?</kbd></td><td>Ce guide</td></tr>
 <tr><td><kbd>Suppr</kbd> · <kbd>Échap</kbd></td><td>Supprimer / désélectionner les groupes sélectionnés</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Entrée</kbd></td><td>Enregistrer une note ou l’éditeur</td></tr>
 <tr><td>Lettre dans un menu</td><td>Exécute cette entrée du menu clic droit / ⋯ (p. ex. <kbd>D</kbd> supprimer, <kbd>E</kbd> modifier)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>Enregistrer cet onglet / cette fenêtre (partout)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Ouvrir le tableau de bord (partout)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>Faire venir le tableau de bord ; encore pour revenir (partout)</td></tr>
 </table>`,
   'help.data.html': `<h4>Vos données</h4>
 <p>Tout est stocké dans ce navigateur par l’extension, jamais sur un serveur. Exportez-les / importez-les (ou seulement vos paramètres) dans les Paramètres.</p>`,

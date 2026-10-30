@@ -152,7 +152,7 @@ Wähle links einen Arbeitsbereich und in der Leiste über dem Board eine Kategor
   'help.notes.html': `<h4>Notizen und Symbole</h4>
 <ul>
 <li>Gruppennotizen sind Markdown mit Aufgaben-Kontrollkästchen und Mathematik: <code>$…$</code> oder <code>\\(…\\)</code> im Text, <code>$$…$$</code> oder <code>\\[…\\]</code> abgesetzt, und LaTeX-Umgebungen wie <code>\\begin{align}…\\end{align}</code> oder <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
-<li>Ein Symbol ist ein Emoji, ein Buchstabe oder eine Ziffer; im Editor suchst du Emojis nach ihrem (englischen) Namen.</li>
+<li>Ein Symbol ist ein Emoji, ein Buchstabe, eine Ziffer oder das tabcat-Logo; im Editor suchst du Emojis nach ihrem (englischen) Namen.</li>
 </ul>`,
   'help.memory.html': `<h4>Arbeitsspeicher</h4>
 <ul>
@@ -162,13 +162,13 @@ Wähle links einen Arbeitsbereich und in der Leiste über dem Board eine Kategor
   'help.keys.html': `<h4>Tastenkürzel</h4>
 <table class="keys">
 <tr><td><kbd>Strg</kbd>+<kbd>F</kbd></td><td>Suchen</td></tr>
-<tr><td><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Löschen oder Verschieben rückgängig machen / wiederholen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>Rückgängig / wiederholen (Löschen, Verschieben, Speichern, Duplikate schließen …)</td></tr>
 <tr><td><kbd>?</kbd></td><td>Diese Anleitung</td></tr>
 <tr><td><kbd>Entf</kbd> · <kbd>Esc</kbd></td><td>Ausgewählte Gruppen löschen / Auswahl aufheben</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>Enter</kbd></td><td>Notiz oder Editor speichern</td></tr>
 <tr><td>Buchstabe im Menü</td><td>Führt diesen Eintrag des Rechtsklick- / ⋯-Menüs aus (z. B. <kbd>D</kbd> löschen, <kbd>E</kbd> bearbeiten)</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd></td><td>Diesen Tab / dieses Fenster speichern (überall)</td></tr>
-<tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd></td><td>Dashboard öffnen (überall)</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></td><td>Dashboard holen; nochmal zurück zum Tab (überall)</td></tr>
 </table>`,
   'help.data.html': `<h4>Deine Daten</h4>
 <p>Die Erweiterung speichert alles in diesem Browser, nie auf einem Server. Exportieren / importieren kannst du sie (oder nur deine Einstellungen) in den Einstellungen.</p>`,
