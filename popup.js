@@ -76,7 +76,11 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
 })();
 
 // Emoji symbols show as text, letter/digit symbols as a badge.
+// (null: a folder's default, the line folder icon, as on the dashboard)
+const FOLDER_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
 function setSym(el, s) {
+  el.classList.toggle('sym-icon', s == null);
+  if (s == null) { el.classList.remove('sym-letter'); el.innerHTML = FOLDER_ICON; return; }
   const letter = S.isLetterSymbol(s);
   el.classList.toggle('sym-letter', letter);
   if (!letter) return void (el.textContent = s);
@@ -99,7 +103,7 @@ function groupPicker(entries, initialId) {
   const list = $('#target-list');
   const headOf = ({ ws, cat }) => `${ws.symbol ? ws.symbol + ' ' : ''}${ws.name} › ${cat.name}`;
   const pathOf = (e) => [headOf(e), ...e.trail].join(' › ');
-  const symOf = (e) => e.node.symbol || (e.node.type === 'folder' ? '📁' : '🗂️');
+  const symOf = (e) => e.node.symbol || (e.node.type === 'folder' ? null : '🗂️');
   const picker = { value: '' };
   let items = [];
   let active = -1;

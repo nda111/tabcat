@@ -71,6 +71,7 @@ body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 }
 .picker-btn:hover, .picker-btn[aria-expanded="true"] { border-color: var(--accent); }
 .picker-btn .sym, .picker-item .sym { width: 18px; flex: none; text-align: center; font-size: 15px; }
+.sym.sym-icon { display: inline-grid; place-items: center; color: var(--muted); }
 .picker-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .picker-main > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #target-name { font-size: 13px; font-weight: 600; }
