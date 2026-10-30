@@ -487,10 +487,11 @@ function renderHead() {
   const ws = currentWs();
   const head = $('#ws-head');
   if (!ws) { head.replaceChildren(h('h1', {}, t('head.none'))); return; }
-  // only the name / symbol edit the workspace; the space beside it is where search opens
-  head.replaceChildren(
-    h('h1', { title: t('edit.workspace'), onclick: () => editNode(ws) }, ws.symbol && symbolEl(ws.symbol), ws.name),
-    h('span', { class: 'desc' }, ws.description || ''));
+  // symbol, name and description together open the workspace's editor; the space beside them is where
+  // search opens
+  head.replaceChildren(h('div', { class: 'ws-title', onclick: () => editNode(ws) },
+    h('h1', {}, ws.symbol && symbolEl(ws.symbol), ws.name),
+    ws.description && h('span', { class: 'desc' }, ws.description)));
   head.oncontextmenu = (e) => nodeMenu(e, ws);
 }
 
@@ -950,7 +951,7 @@ async function renderTabs() {
       !collapsed && h('div', { class: 'win-tabs' }, w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),
         draggable: 'true', dataset: { tab: t.id, url: t.url },
-        title: [t.title || t.url, t.url, t.discarded ? tr('tab.suspended') : t.active ? tr('tab.active') : ''].filter(Boolean).join('\n'),
+        title: [t.title || t.url, t.url, t.discarded ? tr('tab.suspended') : ''].filter(Boolean).join('\n'),
         onclick: (e) => {
           if (e.shiftKey) return void toggleTab(t.id); // Shift-click selects instead of switching
           clearTabs();

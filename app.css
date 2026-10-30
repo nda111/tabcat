@@ -175,7 +175,7 @@ body.ws-collapsed .ws-add { display: flex; }
 #main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 #topbar { display: flex; align-items: center; gap: 12px; padding: 12px 18px 6px; }
 #ws-head { flex: 0 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
-#ws-head h1 { cursor: pointer; }
+#ws-head .ws-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; cursor: pointer; }
 #ws-head h1 { font-size: 20px; margin: 0; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 #ws-head .desc { color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -235,6 +235,9 @@ body.ws-collapsed .ws-add { display: flex; }
 }
 .group.collapsed .group-head, .group.empty-group .group-head { border-bottom: 0; }
 .group.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* picking groups / links / folders: the selection fades in and out (the classes are toggled in place) */
+#board .group { outline: 2px solid transparent; outline-offset: 2px; transition: outline-color .16s ease; }
+#board .group.selected { outline-color: var(--accent); }
 #marquee.picking-items { border-style: dashed; } /* the box is picking links / folders */
 #marquee { position: fixed; z-index: 40; pointer-events: none; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 3px; }
 body.selecting { user-select: none; cursor: crosshair; }
@@ -750,7 +753,8 @@ body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; 
 #tabs-panel .panel-actions { flex-wrap: nowrap; }
 
 /* links / folders picked inside a group */
-.item.picked > :is(.link-row, .folder-head) { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+#board .item > :is(.link-row, .folder-head) { box-shadow: inset 0 0 0 1.5px transparent; transition: background-color .16s ease, color .16s ease, box-shadow .16s ease; }
+#board .item.picked > :is(.link-row, .folder-head) { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 /* open tabs picked with Shift */
 .tab-row.picked { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
