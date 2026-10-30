@@ -23,9 +23,9 @@ export default {
 
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (ainda dá para instalar nas Configurações)', 'settings.app': 'App', 'toast.installed': 'tabcat instalado como app',
 
-  'side.tour': 'Tour', 'tour.skip': 'Pular', 'tour.prev': 'Voltar', 'tour.next': 'Próximo', 'tour.done': 'Concluir', 'tour.count': '{i} de {n}',
+  'help.tour': 'Fazer o tour', 'tour.skip': 'Pular', 'tour.prev': 'Voltar', 'tour.next': 'Próximo', 'tour.done': 'Concluir', 'tour.count': '{i} de {n}',
 
-  'tour.offer.title': 'Quer fazer um tour rápido pelo tabcat?', 'tour.offer.text': 'Um minuto, passo a passo, pelas partes principais. Você também pode começar depois pelo Tour na barra lateral.', 'tour.offer.ok': 'Fazer o tour', 'tour.offer.later': 'Depois',
+  'tour.offer.title': 'Quer fazer um tour rápido pelo tabcat?', 'tour.offer.text': 'Um minuto, passo a passo, pelas partes principais. Você também pode começar depois pela Ajuda.', 'tour.offer.ok': 'Fazer o tour', 'tour.offer.later': 'Depois',
 
   'tour.welcome.title': 'Boas-vindas ao tabcat', 'tour.welcome.text': 'Salve abas como links em grupos, feche-as e abra de novo quando precisar.',
 
@@ -41,7 +41,7 @@ export default {
 
   'tour.shortcut.title': 'Sempre à mão', 'tour.shortcut.text': 'Ctrl+Shift+X traz o painel para a janela em que você está e leva você de volta. O botão da barra de ferramentas salva a aba atual.',
 
-  'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda. {icon:compass} Tour mostra isto de novo.',
+  'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda. Você pode recomeçar este tour pela {icon:help} Ajuda a qualquer momento.',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',

@@ -21,9 +21,9 @@ export default {
 
   'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
 
-  'side.tour': '导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
+  'help.tour': '开始导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
 
-  'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从侧边栏的“导览”开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
+  'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从帮助开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
 
   'tour.welcome.title': '欢迎使用 tabcat', 'tour.welcome.text': '把标签页作为链接保存在分组里，关掉后随时可以再打开。',
 
@@ -39,7 +39,7 @@ export default {
 
   'tour.shortcut.title': '随时在手边', 'tour.shortcut.text': '按 Ctrl+Shift+X 把仪表板调到当前窗口，再按一次回到原来的标签页。工具栏按钮可以直接保存当前标签页。',
 
-  'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。点 {icon:compass} 导览可以再看一次。',
+  'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。随时可以从 {icon:help} 帮助重新开始这个导览。',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',

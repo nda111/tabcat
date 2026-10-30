@@ -21,9 +21,9 @@ export default {
 
   'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
 
-  'side.tour': '둘러보기', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
+  'help.tour': '둘러보기 시작', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
 
-  'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드립니다. 나중에 사이드바의 둘러보기에서도 볼 수 있습니다.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
+  'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드립니다. 나중에 도움말에서도 시작할 수 있습니다.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
 
   'tour.welcome.title': 'tabcat에 오신 것을 환영합니다', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 닫았다가 필요할 때 다시 열 수 있습니다.',
 
@@ -39,7 +39,7 @@ export default {
 
   'tour.shortcut.title': '언제든 가까이', 'tour.shortcut.text': 'Ctrl+Shift+X를 누르면 지금 창으로 대시보드를 불러오고, 다시 누르면 보던 탭으로 돌아갑니다. 툴바 버튼으로는 보던 탭을 바로 저장합니다.',
 
-  'tour.more.title': '설정과 도움말', 'tour.more.text': '{icon:settings} 설정에서 언어, 테마, 색을, {icon:help} 도움말에서 모든 단축키를 볼 수 있습니다. {icon:compass} 둘러보기로 이 안내를 다시 볼 수 있습니다.',
+  'tour.more.title': '설정과 도움말', 'tour.more.text': '{icon:settings} 설정에서 언어, 테마, 색을, {icon:help} 도움말에서 모든 단축키를 볼 수 있습니다. 이 투어는 {icon:help} 도움말에서 언제든 다시 시작할 수 있습니다.',
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',

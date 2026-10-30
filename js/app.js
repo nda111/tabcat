@@ -3698,7 +3698,7 @@ showInstall();
 /* ---------- tour ---------- */
 
 // A walk round the page, a step at a time: the part a step is about stays lit, the rest dimmed, with a
-// card beside it. Offered once, the first time the dashboard opens (see start); then from the sidebar.
+// card beside it. Offered once, the first time the dashboard opens (see start); then from Help.
 const TOUR = [
   { key: 'welcome' },
   { key: 'workspaces', at: '#sidebar' },
@@ -3784,7 +3784,8 @@ function placeTour() {
   card.style.left = `${at[0]}px`;
   card.style.top = `${at[1]}px`;
 }
-$('#btn-tour').addEventListener('click', startTour);
+// (started again from Help: the dialog makes way for it)
+$('#help-tour').addEventListener('click', () => { $('#help').close(); startTour(); });
 $('#tour-skip').addEventListener('click', endTour);
 $('#tour-prev').addEventListener('click', () => showTourStep(Math.max(0, tourStep - 1)));
 $('#tour-next').addEventListener('click', () => (tourStep === TOUR.length - 1 ? endTour() : showTourStep(tourStep + 1)));

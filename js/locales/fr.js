@@ -23,9 +23,9 @@ export default {
 
   'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
 
-  'side.tour': 'Visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
+  'help.tour': 'Faire la visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
 
-  'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis Visite dans la barre latérale.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
+  'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis l’aide.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
 
   'tour.welcome.title': 'Bienvenue dans tabcat', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes, fermez-les et rouvrez-les quand vous en avez besoin.',
 
@@ -41,7 +41,7 @@ export default {
 
   'tour.shortcut.title': 'Toujours à portée', 'tour.shortcut.text': 'Ctrl+Maj+X amène le tableau de bord dans la fenêtre où vous êtes, et vous ramène ensuite. Le bouton de la barre d’outils enregistre l’onglet en cours.',
 
-  'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide. {icon:compass} Visite relance ce guide.',
+  'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide. Vous pouvez relancer cette visite depuis l’{icon:help} aide à tout moment.',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',

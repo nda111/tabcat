@@ -23,9 +23,9 @@ export default {
 
   'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
 
-  'side.tour': 'Tour', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}',
+  'help.tour': 'Tour starten', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}',
 
-  'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über „Tour“ in der Seitenleiste starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
+  'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über die Hilfe starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
 
   'tour.welcome.title': 'Willkommen bei tabcat', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen, schließe sie und öffne sie wieder, wann immer du sie brauchst.',
 
@@ -41,7 +41,7 @@ export default {
 
   'tour.shortcut.title': 'Immer zur Hand', 'tour.shortcut.text': 'Strg+Umschalt+X holt das Dashboard in das Fenster, in dem du bist, und bringt dich wieder zurück. Die Schaltfläche in der Symbolleiste speichert den aktuellen Tab.',
 
-  'tour.more.title': 'Einstellungen und Hilfe', 'tour.more.text': 'Sprache, Design und Farben in den {icon:settings} Einstellungen, alle Tastenkürzel in der {icon:help} Hilfe. Mit {icon:compass} Tour siehst du das hier wieder.',
+  'tour.more.title': 'Einstellungen und Hilfe', 'tour.more.text': 'Sprache, Design und Farben in den {icon:settings} Einstellungen, alle Tastenkürzel in der {icon:help} Hilfe. Diese Tour kannst du jederzeit über die {icon:help} Hilfe neu starten.',
   'panel.expandWs': 'Arbeitsbereiche ausklappen', 'panel.collapseWs': 'Arbeitsbereiche einklappen',
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',

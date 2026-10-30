@@ -23,9 +23,9 @@ export default {
 
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
 
-  'side.tour': 'Recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
+  'help.tour': 'Hacer el recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
 
-  'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Recorrido en la barra lateral.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
+  'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Ayuda.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
 
   'tour.welcome.title': 'Te damos la bienvenida a tabcat', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos, ciérralas y vuelve a abrirlas cuando las necesites.',
 
@@ -41,7 +41,7 @@ export default {
 
   'tour.shortcut.title': 'Siempre a mano', 'tour.shortcut.text': 'Ctrl+Shift+X trae el panel a la ventana en la que estás y te devuelve a donde estabas. El botón de la barra de herramientas guarda la pestaña actual.',
 
-  'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda. {icon:compass} Recorrido lo repite.',
+  'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda. Puedes volver a empezar este recorrido desde {icon:help} Ayuda cuando quieras.',
   'panel.expandWs': 'Expandir espacios de trabajo', 'panel.collapseWs': 'Contraer espacios de trabajo',
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',
