@@ -113,6 +113,44 @@ const TAB_GROUP_COLOR = {
   teal: 'cyan', sky: 'blue', blue: 'blue', purple: 'purple', pink: 'pink',
 };
 
+// Tab groups opened from a group or folder keep following its name, emoji and colour: tab group id ->
+// node id, in session storage (tab group ids don't outlive the browser session).
+const TAB_GROUPS_KEY = 'tabcat:tabGroups';
+const tabGroupMap = async () => (await chrome.storage.session.get(TAB_GROUPS_KEY))[TAB_GROUPS_KEY] || {};
+async function rememberTabGroup(groupId, nodeId) {
+  const m = await tabGroupMap();
+  m[groupId] = nodeId;
+  await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
+}
+// a folder takes the colour of the group it is in; an emoji symbol leads the title (not a letter)
+function tabGroupLook(state, nodeId) {
+  const r = S.locate(state, nodeId);
+  if (!r) return null;
+  const n = r.node;
+  const group = n.type === 'group' ? n : r.ancestors.find((a) => a.type === 'group');
+  return { title: n.symbol && !S.isLetterSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name || '', color: TAB_GROUP_COLOR[group?.color] || 'grey' };
+}
+async function syncTabGroups(state) {
+  if (!chrome.tabGroups) return;
+  const m = await tabGroupMap();
+  let gone = false;
+  for (const [id, nodeId] of Object.entries(m)) {
+    const look = tabGroupLook(state, nodeId);
+    if (!look) continue; // (the group or folder was deleted: its tab group is left as it is)
+    try {
+      const g = await chrome.tabGroups.get(+id);
+      if (g.title !== look.title || g.color !== look.color) await chrome.tabGroups.update(+id, look);
+    } catch { delete m[id]; gone = true; } // the tab group was closed
+  }
+  if (gone) await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
+}
+chrome.tabGroups?.onRemoved.addListener(async (g) => {
+  const m = await tabGroupMap();
+  if (!(g.id in m)) return;
+  delete m[g.id];
+  await chrome.storage.session.set({ [TAB_GROUPS_KEY]: m });
+});
+
 const handlers = {
   getState: () => S.load(),
   getSettings: () => S.loadSettings(),
@@ -171,9 +209,23 @@ const handlers = {
       try {
         const groupId = await chrome.tabs.group({ tabIds: ids });
         await chrome.tabGroups.update(groupId, { title: g.title || '', color: TAB_GROUP_COLOR[g.color] || 'grey', collapsed: false });
+        if (g.id) await rememberTabGroup(groupId, g.id);
       } catch { /* left ungrouped (e.g. the window closed meanwhile) */ }
     }
     return all.length;
+  },
+  // the dashboard's group / folder editor, as it is edited: its tab groups follow the unsaved
+  // fields (`fields` null: back to the saved ones)
+  async previewTabGroups({ id, fields }) {
+    if (!Object.keys(await tabGroupMap()).length) return true;
+    let state = await S.load();
+    if (fields) {
+      state = structuredClone(state);
+      const r = S.locate(state, id);
+      if (r) Object.assign(r.node, fields);
+    }
+    await syncTabGroups(state);
+    return true;
   },
   async activateTab({ tabId }) {
     const t = await chrome.tabs.update(tabId, { active: true });
@@ -247,7 +299,11 @@ function broadcast(event, data) {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (changes[S.KEY]) broadcast('state', S.normalize(changes[S.KEY].newValue));
+  if (changes[S.KEY]) {
+    const state = S.normalize(changes[S.KEY].newValue);
+    broadcast('state', state);
+    syncTabGroups(state);
+  }
   if (changes[S.SETTINGS_KEY]) {
     const o = changes[S.SETTINGS_KEY].oldValue || {};
     const n = { ...S.DEFAULT_SETTINGS, ...(changes[S.SETTINGS_KEY].newValue || {}) };
