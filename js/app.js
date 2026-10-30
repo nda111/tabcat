@@ -982,6 +982,8 @@ async function renderTabs() {
     if (pickedTabs.delete(+row.dataset.tab)) pickedTabs.add(t.id);
     row.dataset.tab = t.id;
   }
+  // which tabs were asleep, so a tab that falls asleep / wakes up eases to its new look (rows are redrawn)
+  const wasAsleep = new Map([...document.querySelectorAll('#windows .tab-row')].map((r) => [r.dataset.tab, r.classList.contains('discarded')]));
   // closed tabs / windows shrink away first; the rest then slide to their new places, new ones pop in
   const live = new Set(all.map((t) => String(t.id)));
   const wins_ = new Set(wins.map((w) => String(w.id)));
@@ -1023,6 +1025,15 @@ async function renderTabs() {
     const pdy = parentMoved ? parentMoved.top - el.closest('.win').getBoundingClientRect().top : 0;
     const dy = a.top - b.top - pdy;
     if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 360, easing: SPRING });
+  }
+  for (const row of document.querySelectorAll('#windows .tab-row')) {
+    const was = wasAsleep.get(row.dataset.tab);
+    const now = row.classList.contains('discarded');
+    if (was == null || was === now) continue;
+    for (const part of row.querySelectorAll(':scope > :is(img, .name)')) {
+      part.animate([{ opacity: was ? 0.55 : 1 }, { opacity: now ? 0.55 : 1 }], { duration: 300, easing: 'ease' });
+    }
+    row.querySelector(':scope > .muted')?.animate([{ opacity: 0 }, { opacity: 0.55 }], { duration: 300, easing: 'ease' });
   }
   if (opening) {
     const { body, h } = opening;
@@ -1183,16 +1194,18 @@ function dropTabRows(ids) {
 
 function tabsMenu(ids) {
   const n = ids.length;
+  // sleep only what is awake, wake only what is asleep (each entry shows only when it has tabs to act on)
   const asleep = ids.filter((id) => document.querySelector(`#windows .tab-row.discarded[data-tab="${id}"]`));
+  const awake = ids.filter((id) => !asleep.includes(id));
   const cat = currentCat();
   return [
     cat && { icon: 'group', label: t('tabs.saveGroup', { n }), key: 'G', fn: async () => {
       clearTabs();
       await run(B.call('saveTabs', { tabIds: ids, close: settings.closeOnSave, newGroup: { categoryId: cat.id, name: suggestName('group'), column: 0 } }));
     } },
-    { icon: 'suspend', label: t('tabs.suspend', { n }), key: 'S', fn: async () => {
+    awake.length > 0 && { icon: 'suspend', label: t('tabs.suspend', { n: awake.length }), key: 'S', fn: async () => {
       clearTabs();
-      const done = await run(B.call('discardTabs', { tabIds: ids }));
+      const done = await run(B.call('discardTabs', { tabIds: awake }));
       if (done != null) toast(t('toast.suspended', { n: done }));
     } },
     asleep.length > 0 && canWake() && { icon: 'sun', label: t('tabs.wake', { n: asleep.length }), key: 'U', fn: () => { clearTabs(); wakeTabs(asleep); } },
