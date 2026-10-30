@@ -92,7 +92,9 @@ function chunks(parts) {
 }
 
 // A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge.
+// `fallback` may be an icon element: shown (muted, as a line icon) when there is no symbol.
 function symbolEl(symbol, fallback = '') {
+  if (!symbol && fallback instanceof Node) return h('span', { class: 'sym sym-icon' }, fallback);
   const s = symbol || fallback;
   return T.isLetterSymbol(s)
     ? h('span', { class: 'sym sym-letter' }, h('span', { class: 'sym-glyph' }, s))
@@ -776,7 +778,7 @@ function renderFolder(f, depth) {
       oncontextmenu: (e) => nodeMenu(e, f),
     },
     h('span', { class: 'twisty' }, icon('chevron', 13)),
-    symbolEl(f.symbol, '📁'),
+    symbolEl(f.symbol, icon('folder', 15)), // a folder's default: the line folder icon (no emoji, so none in its tab group)
     h('span', { class: 'node-line' },
       h('span', { class: 'name' }, f.name),
       h('span', { class: 'count' }, T.countLinks(f))),
@@ -845,7 +847,7 @@ function renderSearchResults() {
   const linkRows = links.slice(0, 100).map((it) =>
     row(it, iconImg(it.n.url, it.n.icon), [it.path, it.path && ' · ', highlight(it.n.url, q)], (e) => openLink(it.n, e)));
   const contRows = containers.slice(0, 100).map((it) =>
-    row(it, symbolEl(it.n.symbol, { workspace: '🗃️', category: '🏷️', group: '🗂️', folder: '📁' }[it.n.type]),
+    row(it, symbolEl(it.n.symbol, it.n.type === 'folder' ? icon('folder', 15) : { workspace: '🗃️', category: '🏷️', group: '🗂️' }[it.n.type]),
       [t(`type.${it.n.type}`), it.path && ' · ' + it.path], () => reveal(it.n, it.anc)));
   const section = (title, rows) => (rows.length ? [h('h4', {}, title), ...rows] : []);
   const body = [...section(t('search.links', { n: links.length }), linkRows), ...section(t('search.containers', { n: containers.length }), contRows)];
@@ -1378,7 +1380,8 @@ function confirmDialog({ title, text = '', ok = t('common.ok'), danger = false }
 
 // Symbol field: a square showing the emoji (clearable), a search box, and a grid that shows
 // recent/common emoji when the box is empty and live search results while typing.
-function symbolField(label, input, err) {
+// `blankIcon`: shown faintly in the empty box (a folder's default icon), so an empty symbol reads as it.
+function symbolField(label, input, err, blankIcon = null) {
   input.classList.add('sym-box');
   input.maxLength = 16;
   input.addEventListener('input', () => {
@@ -1389,7 +1392,7 @@ function symbolField(label, input, err) {
   const status = h('div', { class: 'emoji-status muted small' });
   const search = h('input', { type: 'search', class: 'emoji-search', placeholder: t('emoji.search'), autocomplete: 'off' });
   const clear = h('button', { type: 'button', class: 'sym-clear', title: t('emoji.remove'), onclick: () => set('') }, icon('close', 11));
-  const wrap = h('div', { class: 'sym-wrap' }, input, clear);
+  const wrap = h('div', { class: 'sym-wrap' }, input, blankIcon && h('span', { class: 'sym-default', 'aria-hidden': 'true' }, blankIcon), clear);
 
   function set(em) {
     const old = input.value;
@@ -1565,7 +1568,7 @@ function openEditor(type, data = {}, title, onPreview = null) {
     input.value = data[key] || '';
     if (key === 'name' && suggestion) input.placeholder = suggestion;
     inputs[key] = input;
-    if (kind === 'emoji') return symbolField(label, input, err);
+    if (kind === 'emoji') return symbolField(label, input, err, type === 'folder' ? icon('folder', 20) : null);
     if (kind === 'color') return colorField(label, input);
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');

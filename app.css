@@ -299,6 +299,7 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .folder-head .twisty { display: inline-flex; color: var(--muted); transition: transform .12s; }
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
 .folder-head > .sym { font-size: 15px; }
+.sym.sym-icon { display: inline-grid; place-items: center; color: var(--muted); } /* a default line icon in place of a symbol */
 .folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
 .folder-head .node-line .name { font-size: 13px; font-weight: 400; }
 .folder-head .head-actions { align-items: center; gap: 0; }
@@ -510,6 +511,9 @@ dialog legend { font-size: 11px; color: var(--muted); }
 .error { color: var(--danger); min-height: 1em; margin: 4px 0 0; font-size: 12px; }
 .sym-row { display: flex; gap: 8px; align-items: stretch; margin-top: 4px; }
 .sym-wrap { position: relative; flex: none; }
+/* a folder's default icon, faint in the empty symbol box (the box's top margin is 4px) */
+.sym-default { position: absolute; left: 0; top: 4px; width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted); pointer-events: none; opacity: 0; transition: opacity .12s ease; }
+.sym-wrap.blank .sym-default { opacity: .75; }
 /* copies of the editor's symbol laid over its box while they grow in / shrink away (see popSymbol) */
 dialog input.sym-copy { position: absolute; margin: 0; border-color: transparent; background: transparent; box-shadow: none; outline: none; pointer-events: none; }
 dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
