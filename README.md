@@ -22,7 +22,7 @@ web page (allowed origins only)           extension
 
 1. **Load the extension**: open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*,
    and select the root of a `main` checkout.
-2. **Open the dashboard**: <https://tabcat.ghyeok.com/>, the popup's *Open dashboard* button, or `Alt+Shift+D`.
+2. **Open the dashboard**: <https://tabcat.ghyeok.com/>, the popup's *Open dashboard* button, or `Ctrl+Shift+X`.
    A local copy of the `pages` branch works too (see *Development*).
 
 Allowed dashboard origins (see `content_scripts[0].matches` and `web_accessible_resources[0].matches` in
@@ -77,7 +77,7 @@ Workspace  (Name*, Symbol, Description)
 | Opening | Click: new tab · Ctrl/middle click: background · Shift: new window · open a whole group/folder |
 | Search | `/` or `Ctrl+K`, searches links, groups, folders and notes; Enter opens the first hit |
 | Popup | Rename the current tab and save it to any group (searchable picker) · right-click the toolbar button → *Go tabcat* opens the dashboard in a new tab · save window · suspend · close duplicates · open dashboard |
-| Shortcuts | `Alt+Shift+C` popup · `Alt+Shift+D` dashboard · `Alt+Shift+S` save tab · `Alt+Shift+A` save window |
+| Shortcuts | `Alt+Shift+C` popup · `Ctrl+Shift+X` dashboard · `Alt+Shift+S` save tab · `Alt+Shift+A` save window |
 | Data | JSON export / import of selected workspaces, categories and groups (import adds, never overwrites) · separate settings file · light / dark / system theme |
 
 ## Files

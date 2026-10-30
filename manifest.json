@@ -41,7 +41,8 @@
     },
     "open-dashboard": {
       "suggested_key": {
-        "default": "Alt+Shift+D"
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
       },
       "description": "__MSG_cmdDashboard__"
     },

@@ -52,13 +52,7 @@ function buildMenus() {
 
 chrome.runtime.onStartup.addListener(init);
 init();
-// the pinned dashboards (see pinDashboards): checked when the browser starts (after the session is
-// restored) or the extension is installed / updated, not each time this worker wakes, so a closed one
-// stays closed until then
-chrome.runtime.onStartup.addListener(() => setTimeout(pinDashboards, 1500));
-chrome.runtime.onInstalled.addListener(() => pinDashboards());
-chrome.runtime.onStartup.addListener(seedActive); // (each window's active tab: see closeIfOnlyDashboard)
-chrome.runtime.onInstalled.addListener(seedActive);
+chrome.runtime.onInstalled.addListener(retirePinnedDashboards);
 tintActionIcon();
 relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 
@@ -77,119 +71,24 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (s.autoSuspendMinutes > 0) await A.suspendTabs({ olderThanMs: s.autoSuspendMinutes * 60_000 });
 });
 
-/* ================= the pinned dashboard ================= */
+/* ================= the dashboard ================= */
 
-// Settings > "pin the dashboard": every normal window keeps the dashboard as a pinned tab, which Chrome
-// shows at the tab strip's left end as just its icon (the page tints it in the accent colour). Closing it
-// is respected until the next window or browser start; turning the setting off takes them away.
 const isDashTab = (t) => A.isDashboard(t.url || t.pendingUrl || '') && !/newtab/.test(t.url || t.pendingUrl || '');
-const pinning = new Set(); // windows being looked at (startup, a new window and the setting can overlap)
 
-async function pinDashboards() {
-  const s = await S.loadSettings();
-  if (!s.pinDashboard) return;
-  A.setDashboardUrl(s.dashboardUrl);
-  const wins = await chrome.windows.getAll({ windowTypes: ['normal'] });
-  await Promise.all(wins.filter((w) => !w.incognito).map((w) => pinIn(w.id, s)));
-}
-
-async function pinIn(windowId, s) {
-  if (pinning.has(windowId)) return;
-  pinning.add(windowId);
-  try {
-    const tabs = await chrome.tabs.query({ windowId });
-    const pinned = tabs.filter((t) => t.pinned && isDashTab(t));
-    // (a restored session can bring one back beside ours: keep one)
-    if (pinned.length > 1) await chrome.tabs.remove(pinned.slice(1).map((t) => t.id));
-    if (pinned.length) return;
-    const open = tabs.find(isDashTab); // a dashboard already open in the window becomes the pinned one
-    if (open) {
-      await chrome.tabs.update(open.id, { pinned: true });
-      await chrome.tabs.move(open.id, { index: 0 });
-    } else await chrome.tabs.create({ windowId, url: s.dashboardUrl, pinned: true, active: false, index: 0 });
-  } catch { /* the window went away meanwhile */ } finally { pinning.delete(windowId); }
-}
-
-// Setting turned off: the pinned dashboards go; one a window is showing (e.g. the one the setting was
-// turned off in) is only unpinned.
-async function unpinDashboards() {
-  const tabs = (await chrome.tabs.query({ pinned: true })).filter(isDashTab);
-  for (const t of tabs.filter((t) => t.active)) await chrome.tabs.update(t.id, { pinned: false }).catch(() => {});
-  const rest = tabs.filter((t) => !t.active).map((t) => t.id);
-  if (rest.length) await chrome.tabs.remove(rest).catch(() => {});
-}
-
-// The pinned dashboard stays pinned and first: Chrome can't lock a tab, so unpinning it, or moving it
-// (or another pinned tab ahead of it), is undone at once. Closing it still works (see pinDashboards).
-// (While a tab is being dragged Chrome refuses changes: `retry` tries again shortly.)
-async function retry(fn) {
-  for (let i = 0; i < 20; i++) {
-    try { return await fn(); } catch (e) {
-      if (/No tab/.test(e.message)) return; // closed meanwhile
-      await new Promise((r) => setTimeout(r, 150));
-    }
+// The pinned dashboard (a setting until 0.2.11) is gone: the dashboard opens as an app window or a tab
+// when wanted. Ones pinned before go once: the one a window is showing becomes a plain tab.
+async function retirePinnedDashboards() {
+  const s = (await chrome.storage.local.get(S.SETTINGS_KEY))[S.SETTINGS_KEY];
+  if (!s || !('pinDashboard' in s)) return;
+  if (s.pinDashboard) {
+    const tabs = (await chrome.tabs.query({ pinned: true })).filter(isDashTab);
+    for (const t of tabs.filter((t) => t.active)) await chrome.tabs.update(t.id, { pinned: false }).catch(() => {});
+    const rest = tabs.filter((t) => !t.active).map((t) => t.id);
+    if (rest.length) await chrome.tabs.remove(rest).catch(() => {});
   }
+  const { pinDashboard, ...kept } = s;
+  await chrome.storage.local.set({ [S.SETTINGS_KEY]: kept });
 }
-chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
-  if (change.pinned !== false || !isDashTab(tab) || !(await S.loadSettings()).pinDashboard) return;
-  // (not when the window still has another pinned dashboard: this was an extra one)
-  if ((await chrome.tabs.query({ windowId: tab.windowId, pinned: true })).some(isDashTab)) return;
-  retry(async () => {
-    await chrome.tabs.update(tabId, { pinned: true });
-    await chrome.tabs.move(tabId, { index: 0 });
-  });
-});
-chrome.tabs.onMoved.addListener(async (tabId, { windowId }) => {
-  if (!(await S.loadSettings()).pinDashboard) return;
-  retry(async () => {
-    const dash = (await chrome.tabs.query({ windowId, pinned: true })).find(isDashTab);
-    if (dash && dash.index !== 0) await chrome.tabs.move(dash.id, { index: 0 });
-  });
-});
-
-// A window left with only its pinned dashboard closes, as an emptied window would: the dashboard sits
-// beside your tabs, it isn't one to keep a window open for. That is when the tab you were looking at
-// closes or is dragged away; closing the last tab from the dashboard (looking at it) keeps the window.
-// So each window's active tab is kept (in memory and in session storage, for a worker woken by the
-// close): Chrome reports the close first, then the dashboard taking over.
-const ACTIVE_KEY = 'tabcat:activeTabs';
-let activeMap = null; // window id -> active tab id
-let activeChain = Promise.resolve();
-function withActive(fn) { // in event order
-  const run = activeChain.then(async () => {
-    activeMap ??= (await chrome.storage.session.get(ACTIVE_KEY))[ACTIVE_KEY] || {};
-    return fn(activeMap);
-  });
-  activeChain = run.catch(() => {});
-  return run;
-}
-const setActive = (windowId, tabId) => withActive((m) => {
-  m[windowId] = tabId;
-  return chrome.storage.session.set({ [ACTIVE_KEY]: m });
-});
-chrome.tabs.onActivated.addListener(({ tabId, windowId }) => setActive(windowId, tabId));
-async function seedActive() {
-  for (const t of await chrome.tabs.query({ active: true })) await setActive(t.windowId, t.id);
-}
-async function closeIfOnlyDashboard(windowId, tabId) {
-  const wasActive = withActive((m) => m[windowId] === tabId); // (read before the activation that follows)
-  if (!(await wasActive) || !(await S.loadSettings()).pinDashboard) return;
-  const tabs = await chrome.tabs.query({ windowId });
-  if (tabs.length && tabs.every((t) => t.pinned && isDashTab(t))) chrome.windows.remove(windowId).catch(() => {});
-}
-chrome.tabs.onRemoved.addListener((tabId, { windowId, isWindowClosing }) => {
-  if (!isWindowClosing) closeIfOnlyDashboard(windowId, tabId);
-});
-chrome.tabs.onDetached.addListener((tabId, { oldWindowId }) => closeIfOnlyDashboard(oldWindowId, tabId));
-
-chrome.windows.onCreated.addListener((w) => {
-  if (w.type !== 'normal' || w.incognito) return;
-  // (after a moment: a window restored by the session brings its own tabs, maybe its pinned dashboard)
-  setTimeout(async () => {
-    const s = await S.loadSettings();
-    if (s.pinDashboard) pinIn(w.id, s);
-  }, 1000);
-});
 
 // Focuses an open dashboard tab, or opens one; newTab always opens a fresh tab.
 async function openDashboard({ newTab = false } = {}) {
@@ -588,7 +487,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const n = { ...S.DEFAULT_SETTINGS, ...(changes[S.SETTINGS_KEY].newValue || {}) };
     if (o.autoSuspendMinutes !== n.autoSuspendMinutes || o.dashboardUrl !== n.dashboardUrl || o.language !== n.language) init();
     if (o.accent !== n.accent) tintActionIcon();
-    if (!!o.pinDashboard !== n.pinDashboard) n.pinDashboard ? pinDashboards() : unpinDashboards();
     broadcast('settings', n);
   }
 });
