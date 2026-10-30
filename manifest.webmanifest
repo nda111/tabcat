@@ -2,7 +2,7 @@
   "id": "/",
   "name": "tabcat",
   "short_name": "tabcat",
-  "description": "Save, group and reopen your tabs.",
+  "description": "Save tabs into groups and open them again whenever you need. Tabs you're not using sleep, keeping things light.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
