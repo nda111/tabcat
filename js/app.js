@@ -3684,10 +3684,31 @@ const store = {
 };
 let installPrompt = window.installPrompt || null; // (kept by the script in index.html if it came early)
 let installKnown = !matchMedia('(display-mode: standalone)').matches && store.get(INSTALLABLE) === '1';
-function showInstall() {
+// (it folds open and shut, rather than popping; `animate` false: just set, as on loading)
+function showInstall(animate = true) {
   const offered = !!installPrompt || installKnown;
-  $('#btn-install').hidden = !offered || store.get(INSTALL_HIDDEN) === '1';
-  $('#install-row').hidden = !offered;
+  fold($('#btn-install'), offered && store.get(INSTALL_HIDDEN) !== '1', animate);
+  fold($('#install-row'), offered, animate);
+}
+function fold(el, show, animate) {
+  const shown = !el.hidden && el.dataset.folding !== 'shut';
+  if (shown === show) return;
+  el.getAnimations().forEach((a) => a.cancel());
+  if (!animate) {
+    delete el.dataset.folding;
+    el.hidden = !show;
+    return;
+  }
+  el.hidden = false;
+  el.dataset.folding = show ? 'open' : 'shut';
+  const open = { height: `${el.scrollHeight}px`, opacity: 1 };
+  const shut = { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: '0px' };
+  el.style.overflow = 'hidden';
+  el.animate(show ? [shut, open] : [open, shut], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.then(() => {
+    el.style.overflow = '';
+    el.hidden = !show;
+    delete el.dataset.folding;
+  }, () => {});
 }
 addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -3722,7 +3743,7 @@ $('#btn-install').addEventListener('click', (e) => {
   showInstall();
 });
 $('#settings-install').addEventListener('click', install);
-showInstall();
+showInstall(false);
 
 /* ---------- tour ---------- */
 
@@ -3792,7 +3813,12 @@ function showTourStep(i) {
   }
   tourStep = i;
   const { key } = tour[i];
-  $('#tour-count').textContent = t('tour.count', { i: i + 1, n: tour.length });
+  // (how far along: the bar fills; its label says it in words)
+  const bar = $('#tour .tour-progress');
+  bar.setAttribute('aria-valuenow', i + 1);
+  bar.setAttribute('aria-valuemax', tour.length);
+  bar.setAttribute('aria-label', t('tour.count', { i: i + 1, n: tour.length }));
+  bar.firstElementChild.style.width = `${((i + 1) / tour.length) * 100}%`;
   $('#tour-title').textContent = t(`tour.${key}.title`);
   // (a {icon:name} in the text: that control's own icon, as the page shows it)
   // (and at its end, the key that steps on)

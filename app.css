@@ -165,7 +165,10 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
    card glide from step to step */
 #tour { position: fixed; inset: 0; z-index: 320; animation: tour-in .2s ease; }
 @keyframes tour-in { from { opacity: 0; } }
-#tour.placing :is(.tour-spot, .tour-card) { transition: none; }
+#tour.placing :is(.tour-spot, .tour-card, .tour-progress span) { transition: none; }
+/* how far along: a thin bar along the card's bottom edge, filling as the steps go */
+.tour-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tour-progress span { display: block; height: 100%; background: var(--accent); transition: width .38s cubic-bezier(.22, 1, .36, 1); }
 .tour-spot {
   position: fixed; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 200vmax rgba(10, 9, 12, .55);
   transition: left .38s cubic-bezier(.22, 1, .36, 1), top .38s cubic-bezier(.22, 1, .36, 1), width .38s cubic-bezier(.22, 1, .36, 1), height .38s cubic-bezier(.22, 1, .36, 1);
@@ -176,7 +179,7 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
   background: var(--panel); box-shadow: var(--shadow);
   transition: left .38s cubic-bezier(.22, 1, .36, 1), top .38s cubic-bezier(.22, 1, .36, 1);
 }
-.tour-card h4 { margin: 4px 0 6px; font-size: 16px; }
+.tour-card h4 { margin: 0 0 6px; font-size: 16px; }
 .tour-card p { margin: 0 0 14px; line-height: 1.55; }
 .tour-card p { white-space: normal; }
 .tour-icon { display: inline-grid; place-items: center; vertical-align: -.2em; margin: 0 1px; color: var(--icon); }
