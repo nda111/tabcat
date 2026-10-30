@@ -386,6 +386,8 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
   display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; /* buttons stay at the top when the name wraps */
   color: var(--muted); cursor: grab; user-select: none;
 }
+/* its buttons spaced like a tab row's (8px), so save / close line up with the rows' */
+.win-head .icon-btn:not(.win-twisty) + .icon-btn { margin-left: 2px; }
 .win-head .grow { flex: 1; min-width: 0; line-height: 16px; padding-top: 4px; } /* one line sits level with the 24px buttons */
 .win-head { cursor: pointer; } /* a click (not on a button) collapses / expands the window; it still drags */
 .win-twisty .ico { transition: transform .15s ease-out; }

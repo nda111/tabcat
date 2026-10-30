@@ -89,7 +89,7 @@ export default {
   'toast.removedDupes': { one: '{n} lien en double supprimé', other: '{n} liens en double supprimés' },
   'toast.copiedUrls': { one: '{n} URL copiée', other: '{n} URL copiées' },
   'toast.imported': { one: '{n} espace de travail importé', other: '{n} espaces de travail importés' },
-  'toast.needCategory': 'Créez d’abord une catégorie', 'toast.urlCopied': 'URL copiée',
+  'toast.needCategory': 'Créez d’abord une catégorie.', 'toast.urlCopied': 'URL copiée',
   'toast.windowSaved': 'Fenêtre enregistrée dans un nouveau groupe', 'toast.nothingToSave': 'Rien à enregistrer',
   'toast.merged': 'Fusionné dans « {name} »', 'toast.dropFailed': 'Échec du dépôt : {error}',
   'toast.importFailed': 'Échec de l’import : {error}', 'toast.settingsImported': 'Paramètres importés',

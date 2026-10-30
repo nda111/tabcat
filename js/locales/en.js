@@ -95,7 +95,7 @@ export default {
   'toast.removedDupes': { one: 'Removed {n} duplicate link', other: 'Removed {n} duplicate links' },
   'toast.copiedUrls': { one: 'Copied {n} URL', other: 'Copied {n} URLs' },
   'toast.imported': { one: 'Imported {n} workspace', other: 'Imported {n} workspaces' },
-  'toast.needCategory': 'Create a category first', 'toast.urlCopied': 'URL copied',
+  'toast.needCategory': 'Create a category first.', 'toast.urlCopied': 'URL copied',
   'toast.windowSaved': 'Window saved as a new group', 'toast.nothingToSave': 'Nothing to save',
   'toast.merged': 'Merged into “{name}”', 'toast.dropFailed': 'Drop failed: {error}',
   'toast.importFailed': 'Import failed: {error}', 'toast.settingsImported': 'Settings imported',

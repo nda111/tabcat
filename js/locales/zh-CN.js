@@ -87,7 +87,7 @@ export default {
   'toast.removedDupes': '已移除 {n} 个重复链接',
   'toast.copiedUrls': '已复制 {n} 个网址',
   'toast.imported': '已导入 {n} 个工作区',
-  'toast.needCategory': '请先创建类别', 'toast.urlCopied': '已复制网址',
+  'toast.needCategory': '请先创建类别。', 'toast.urlCopied': '已复制网址',
   'toast.windowSaved': '已将窗口保存为新分组', 'toast.nothingToSave': '没有可保存的内容',
   'toast.merged': '已合并到“{name}”', 'toast.dropFailed': '放置失败：{error}',
   'toast.importFailed': '导入失败：{error}', 'toast.settingsImported': '已导入设置',

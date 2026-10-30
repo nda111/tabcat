@@ -943,8 +943,9 @@ async function renderTabs() {
         Object.assign(btn(icon('chevron', 14), t(collapsed ? 'act.expand' : 'act.collapse'), () => toggleWin(w.id)), { className: 'icon-btn win-twisty' }),
         h('span', { class: 'grow' }, chunks(label.split(' · '))),
         h('span', { class: 'win-count' }, w.tabs.length),
-        w.tabs.length > 0 && btn(icon('save'), t(w.id === currentWindowId ? 'win.saveThis' : 'win.save'), () => saveWindow(w.id)),
+        // (sleep, save, close: the same slots as a tab row's wake, save, close below)
         w.tabs.some(canSuspend) && btn(icon('suspend'), t('win.suspend'), () => suspend({ windowId: w.id })),
+        w.tabs.length > 0 && btn(icon('save'), t(w.id === currentWindowId ? 'win.saveThis' : 'win.save'), () => saveWindow(w.id)),
         noTip(btn(icon('close'), t('win.close'), () => closeWindow(w, others)))),
       !collapsed && h('div', { class: 'win-tabs' }, w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),

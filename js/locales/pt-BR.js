@@ -89,7 +89,7 @@ export default {
   'toast.removedDupes': { one: '{n} link duplicado removido', other: '{n} links duplicados removidos' },
   'toast.copiedUrls': { one: '{n} URL copiada', other: '{n} URLs copiadas' },
   'toast.imported': { one: '{n} espaço de trabalho importado', other: '{n} espaços de trabalho importados' },
-  'toast.needCategory': 'Crie uma categoria primeiro', 'toast.urlCopied': 'URL copiada',
+  'toast.needCategory': 'Crie uma categoria primeiro.', 'toast.urlCopied': 'URL copiada',
   'toast.windowSaved': 'Janela salva como novo grupo', 'toast.nothingToSave': 'Nada para salvar',
   'toast.merged': 'Mesclado em “{name}”', 'toast.dropFailed': 'Falha ao soltar: {error}',
   'toast.importFailed': 'Falha na importação: {error}', 'toast.settingsImported': 'Configurações importadas',
