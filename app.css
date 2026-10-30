@@ -745,8 +745,9 @@ body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; 
 /* Settings > Color: one round swatch per accent */
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px; }
 .swatch { position: relative; display: block; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
-  background: oklch(.66 .16 var(--hue)); transition: transform .15s var(--spring-soft); }
-.swatch[data-accent="orange"] { background: #e8822f; }
+  background: oklch(.8 .12 var(--hue)); transition: transform .15s var(--spring-soft); } /* pastel, like the group colours */
+.swatch[data-accent="orange"] { background: oklch(.8 .12 62); }
+.swatch[data-accent="yellow"] { background: oklch(.87 .13 92); } /* (yellow reads muddy at the others' lightness) */
 .swatch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .swatch:hover { transform: scale(1.12); }
 .swatch:has(input:checked) { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
