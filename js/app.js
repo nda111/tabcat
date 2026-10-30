@@ -3138,7 +3138,7 @@ function applyRailTitles() {
   }
 }
 
-const PANEL_FLIP = '.brand-logo, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
+const PANEL_FLIP = '.brand-logo, #ws-toggle, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
 const panelAnimTimer = {};
 
 // The logo collapses the workspaces panel like its button does (collapsed, the expand button sits on it).
@@ -3189,8 +3189,9 @@ function flipFrom(before) {
     const b = el.getBoundingClientRect();
     if (!a.width || !b.width) continue;
     const dx = a.left - b.left, dy = a.top - b.top;
-    // (no overshoot: rail <-> full moves are long, a spring would swing them well past their place)
-    if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 380, easing: GLIDE });
+    // (no overshoot: rail <-> full moves are long, a spring would swing them well past their place;
+    // `translate`, not `transform`, so it adds to an element's own transform, e.g. the centred toggle)
+    if (Math.abs(dx) + Math.abs(dy) > 1) el.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0 0' }], { duration: 380, easing: GLIDE });
   }
 }
 

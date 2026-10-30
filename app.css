@@ -707,6 +707,9 @@ body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in 
    there, and "tabcat" (one line, never faded) is uncovered by the widening panel */
 body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; }
 #ws-toggle { transition: opacity .15s; }
+/* closing: the collapse button fades as it glides onto the logo (where it waits, unseen, as the expand
+   button), so it never shows sliding under the logo */
+#sidebar.fading #ws-toggle { opacity: 0; transition: opacity .25s ease-out; }
 
 /* collapsing: labels fade out first (the panel already narrows), then the rail layout takes over */
 .side-panel.fading :is(.brand-name, .side-title, .ws-item .name, .ws-item .count, .side-btn .label, .panel-title,
