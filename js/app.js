@@ -538,7 +538,7 @@ function renderBoard() {
           class: 'gap-slot', dataset: { before: g.id },
           onclick: () => addGroup(cat, columnOf(cat, ...groupAt(cat, g.id)), { beforeId: g.id }),
         }),
-        renderGroup(g),
+        cachedGroup(g),
       ]),
       h('div', { class: 'col-tail' },
         h('div', {
@@ -547,6 +547,7 @@ function renderBoard() {
         }, icon('plus', 28))));
   })));
   sizeAddCards(board);
+  for (const id of groupCache.keys()) if (!cat.groups.some((g) => g.id === id)) groupCache.delete(id);
   // keep the selection to groups still on this board
   for (const id of selected) if (!cat.groups.some((g) => g.id === id)) selected.delete(id);
   document.body.classList.toggle('select-mode', selected.size > 0);
@@ -556,11 +557,30 @@ function renderBoard() {
   typesetMath(board);
 }
 
+// A group's element is reused while nothing it shows has changed: on a big board rebuilding every
+// card on each change was most of a render. Not while an animation is on it (or held by fill), so a
+// card that was animated out never comes back half-faded.
+const groupCache = new Map(); // id -> { key, el }
+function cachedGroup(g) {
+  const key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}`;
+  const c = groupCache.get(g.id);
+  if (c && c.key === key && !c.el.getAnimations({ subtree: true }).length) return c.el;
+  const el = renderGroup(g);
+  groupCache.set(g.id, { key, el });
+  return el;
+}
+
 // The New group card is as tall as a new empty group, and as tall as a group with one link while
 // tabs are dragged onto it (that is what it will become). Both are measured on hidden samples.
+// The samples only change with the column width and the language, so they are measured again only then
+// (measuring lays out the whole board a second time).
+let addCardsKey = '';
 function sizeAddCards(board) {
   const col = board.querySelector('.col');
   if (!col) return;
+  const key = `${col.getBoundingClientRect().width}|${getLang()}`;
+  if (key === addCardsKey && board.style.getPropertyValue('--empty-group-h')) return;
+  addCardsKey = key;
   const sample = (items) => renderGroup({ id: '', type: 'group', name: 'Sample', symbol: '', note: '', collapsed: false, items });
   const link = { id: '', type: 'link', url: 'https://example.com', name: 'Sample', icon: '', description: '' };
   const probes = [sample([]), sample([link])];
@@ -807,7 +827,13 @@ function reveal(node, anc) {
   const target = anc[2] || node;
   requestAnimationFrame(() => {
     const el = document.querySelector(`[data-id="${CSS.escape(target.id)}"]`);
-    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); }
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.remove('flash'); // (a reused card may still have it)
+    void el.offsetWidth; // restart the animation
+    el.classList.add('flash');
+    const done = (e) => { if (e.target === el) { el.classList.remove('flash'); el.removeEventListener('animationend', done); } };
+    el.addEventListener('animationend', done);
   });
 }
 

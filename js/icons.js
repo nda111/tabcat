@@ -41,11 +41,18 @@ export function iconSvg(name, size = 15) {
     + ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
 }
 
+// Each icon is parsed once, then cloned: a board draws thousands of them on every render.
+const parsed = new Map();
 export function icon(name, size) {
-  const span = document.createElement('span');
-  span.className = 'ico';
-  span.innerHTML = iconSvg(name, size);
-  return span;
+  const key = `${name}/${size}`;
+  let span = parsed.get(key);
+  if (!span) {
+    span = document.createElement('span');
+    span.className = 'ico';
+    span.innerHTML = iconSvg(name, size);
+    parsed.set(key, span);
+  }
+  return span.cloneNode(true);
 }
 
 // Static markup marks icon slots with data-icon="name".
