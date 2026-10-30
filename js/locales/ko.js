@@ -40,7 +40,7 @@ export default {
   'board.noCats': '이 워크스페이스에는 카테고리가 없습니다.', 'board.createCat': '카테고리 만들기',
   'note.placeholder': '마크다운 노트…  (Ctrl+Enter로 저장)', 'note.clickTip': '클릭해서 노트 수정',
   'act.expand': '펼치기', 'act.collapse': '접기', 'act.addLink': '링크 추가', 'act.addFolder': '폴더 추가',
-  'act.addSubfolder': '하위 폴더 추가', 'act.editNote': '노트 수정', 'act.openAll': '모든 링크 열기', 'act.more': '더 보기',
+  'act.addSubfolder': '하위 폴더 추가', 'act.editNote': '노트 수정', 'act.openAll': '모두 열기', 'act.more': '더 보기',
   'act.edit': '수정', 'act.editFolder': '폴더 수정',
 
   'menu.openAll': '모두 열기 ({n})', 'menu.openAllWindow': '모두 새 창에서 열기', 'menu.delete': '삭제', 'menu.edit': '수정…',

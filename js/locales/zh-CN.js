@@ -40,7 +40,7 @@ export default {
   'board.noCats': '此工作区没有类别。', 'board.createCat': '创建类别',
   'note.placeholder': 'Markdown 笔记…  (Ctrl+Enter 保存)', 'note.clickTip': '点击编辑笔记',
   'act.expand': '展开', 'act.collapse': '收起', 'act.addLink': '添加链接', 'act.addFolder': '添加文件夹',
-  'act.addSubfolder': '添加子文件夹', 'act.editNote': '编辑笔记', 'act.openAll': '打开所有链接', 'act.more': '更多',
+  'act.addSubfolder': '添加子文件夹', 'act.editNote': '编辑笔记', 'act.openAll': '全部打开', 'act.more': '更多',
   'act.edit': '编辑', 'act.editFolder': '编辑文件夹',
 
   'menu.openAll': '全部打开 ({n})', 'menu.openAllWindow': '在新窗口中全部打开', 'menu.delete': '删除', 'menu.edit': '编辑…',

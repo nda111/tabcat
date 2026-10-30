@@ -42,7 +42,7 @@ export default {
   'board.noCats': 'Dieser Arbeitsbereich hat keine Kategorien.', 'board.createCat': 'Kategorie erstellen',
   'note.placeholder': 'Markdown-Notiz…  (Strg+Enter zum Speichern)', 'note.clickTip': 'Klicken, um die Notiz zu bearbeiten',
   'act.expand': 'Ausklappen', 'act.collapse': 'Einklappen', 'act.addLink': 'Link hinzufügen', 'act.addFolder': 'Ordner hinzufügen',
-  'act.addSubfolder': 'Unterordner hinzufügen', 'act.editNote': 'Notiz bearbeiten', 'act.openAll': 'Alle Links öffnen', 'act.more': 'Mehr',
+  'act.addSubfolder': 'Unterordner hinzufügen', 'act.editNote': 'Notiz bearbeiten', 'act.openAll': 'Alle öffnen', 'act.more': 'Mehr',
   'act.edit': 'Bearbeiten', 'act.editFolder': 'Ordner bearbeiten',
 
   'menu.openAll': 'Alle öffnen ({n})', 'menu.openAllWindow': 'Alle in neuem Fenster öffnen', 'menu.delete': 'Löschen', 'menu.edit': 'Bearbeiten…',

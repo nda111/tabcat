@@ -42,7 +42,7 @@ export default {
   'board.noCats': 'Este espacio de trabajo no tiene categorías.', 'board.createCat': 'Crear categoría',
   'note.placeholder': 'Nota en Markdown…  (Ctrl+Enter para guardar)', 'note.clickTip': 'Haz clic para editar la nota',
   'act.expand': 'Expandir', 'act.collapse': 'Contraer', 'act.addLink': 'Añadir enlace', 'act.addFolder': 'Añadir carpeta',
-  'act.addSubfolder': 'Añadir subcarpeta', 'act.editNote': 'Editar nota', 'act.openAll': 'Abrir todos los enlaces', 'act.more': 'Más',
+  'act.addSubfolder': 'Añadir subcarpeta', 'act.editNote': 'Editar nota', 'act.openAll': 'Abrir todo', 'act.more': 'Más',
   'act.edit': 'Editar', 'act.editFolder': 'Editar carpeta',
 
   'menu.openAll': 'Abrir todo ({n})', 'menu.openAllWindow': 'Abrir todo en una ventana nueva', 'menu.delete': 'Eliminar', 'menu.edit': 'Editar…',

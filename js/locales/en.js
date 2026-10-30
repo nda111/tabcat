@@ -44,7 +44,7 @@ export default {
   'board.noCats': 'This workspace has no categories.', 'board.createCat': 'Create category',
   'note.placeholder': 'Markdown note…  (Ctrl+Enter to save)', 'note.clickTip': 'Click to edit note',
   'act.expand': 'Expand', 'act.collapse': 'Collapse', 'act.addLink': 'Add link', 'act.addFolder': 'Add folder',
-  'act.addSubfolder': 'Add subfolder', 'act.editNote': 'Edit note', 'act.openAll': 'Open all links', 'act.more': 'More',
+  'act.addSubfolder': 'Add subfolder', 'act.editNote': 'Edit note', 'act.openAll': 'Open all', 'act.more': 'More',
   'act.edit': 'Edit', 'act.editFolder': 'Edit folder',
 
   // menus

@@ -40,7 +40,7 @@ export default {
   'board.noCats': 'このワークスペースにはカテゴリがありません。', 'board.createCat': 'カテゴリを作成',
   'note.placeholder': 'Markdown メモ…  (Ctrl+Enter で保存)', 'note.clickTip': 'クリックしてメモを編集',
   'act.expand': '展開', 'act.collapse': '折りたたむ', 'act.addLink': 'リンクを追加', 'act.addFolder': 'フォルダを追加',
-  'act.addSubfolder': 'サブフォルダを追加', 'act.editNote': 'メモを編集', 'act.openAll': 'すべてのリンクを開く', 'act.more': 'その他',
+  'act.addSubfolder': 'サブフォルダを追加', 'act.editNote': 'メモを編集', 'act.openAll': 'すべて開く', 'act.more': 'その他',
   'act.edit': '編集', 'act.editFolder': 'フォルダを編集',
 
   'menu.openAll': 'すべて開く ({n})', 'menu.openAllWindow': 'すべて新しいウィンドウで開く', 'menu.delete': '削除', 'menu.edit': '編集…',
