@@ -212,7 +212,9 @@ body.ws-collapsed .ws-add { display: flex; }
 .info-list dt { color: var(--muted); }
 .info-list dd { margin: 0; overflow-wrap: anywhere; }
 .guide { font-size: 13px; }
-.help-tour { margin: -6px 0 16px; } /* (the tour, from the top of Help) */
+/* Help's title row: the title, and at its end the tour (an action on the whole of it, not part of the text) */
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.help-head .logo-title { margin-bottom: 0; }
 .guide section + section { margin-top: 14px; }
 .guide h4 { margin: 0 0 4px; font-size: 13px; }
 .guide p, .guide ul { margin: 0; color: var(--text); }
