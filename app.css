@@ -157,7 +157,18 @@ body.ws-collapsed .ws-add { display: flex; }
 .keys { border-collapse: collapse; }
 .keys td { padding: 3px 14px 3px 0; vertical-align: top; }
 .keys td:first-child { white-space: nowrap; }
-.side-btn { display: flex; gap: 6px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 6px 8px 6px 12px; border-radius: 7px; cursor: pointer; color: var(--muted); }
+.side-btn {
+  display: flex; gap: 6px; align-items: center; width: 100%; height: 30px; text-align: left; border: 0; background: transparent;
+  padding: 0 8px 0 12px; border-radius: 7px; cursor: pointer; color: var(--muted);
+}
+/* fixed heights (not auto) so the rail's square buttons and the full ones ease into each other (#sidebar:
+   the shared hover-tint rule above outranks a lone class, through its ".ctx-menu button") */
+#sidebar .side-btn {
+  transition: background-color .16s ease, color .16s ease, width .35s cubic-bezier(.22, 1, .36, 1), height .35s cubic-bezier(.22, 1, .36, 1),
+    padding .35s cubic-bezier(.22, 1, .36, 1), margin .35s cubic-bezier(.22, 1, .36, 1);
+}
+/* their icons a little larger and bolder than the 15px default (they read thin), larger still in the rail */
+.side-btn .sym svg { width: 17px; height: 17px; stroke-width: 2.2; transition: width .35s cubic-bezier(.22, 1, .36, 1), height .35s cubic-bezier(.22, 1, .36, 1); }
 .side-btn:hover, .side-btn.hover { background: var(--hover); color: var(--text); }
 
 /* ---------- main ---------- */
@@ -432,7 +443,8 @@ body.ws-collapsed .side-title { display: none; }
 /* square, like the buttons below; the symbol sits in the middle (x = 28px, where it is when expanded) */
 body.ws-collapsed :is(.ws-item, .ws-add) { width: 36px; height: 36px; padding: 0; margin: 0 0 2px 2px; justify-content: center; }
 body.ws-collapsed .ws-item .sym { font-size: 17px; width: auto; }
-body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 10px; margin-left: 2px; } /* square, icon size unchanged */
+body.ws-collapsed .side-btn { width: 36px; height: 36px; padding: 0 0 0 8px; margin-left: 2px; } /* square, the icon centred in it */
+body.ws-collapsed .side-btn .sym svg { width: 20px; height: 20px; } /* as large as the workspaces' icons */
 body.ws-collapsed #sidebar .resizer { display: none; }
 
 body.tabs-collapsed #tabs-panel { width: 56px; }
