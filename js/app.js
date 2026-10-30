@@ -2315,11 +2315,21 @@ function newColumnTarget(e, d) {
   const lr = last.getBoundingClientRect(), br = board.getBoundingClientRect();
   const edge = Math.min(lr.right, br.right - board.offsetWidth + board.clientWidth); // (a scrolled-away last column has no edge in view)
   if (lr.right > edge + 1 || e.clientX < edge - 16 || e.clientX > br.right || e.clientY < br.top || e.clientY > br.bottom) return null;
-  const line = { x: Math.min(edge + 6, br.right - (board.offsetWidth - board.clientWidth) - 5), y: lr.top, w: 3, h: Math.max(40, br.bottom - lr.top - 12) };
+  const line = { x: Math.min(edge + 6, br.right - (board.offsetWidth - board.clientWidth) - 5), y: lr.top, w: 3, h: columnLineHeight([last], lr.top, br) };
   const cat = T.locate(state, board.dataset.parent).node;
   return type === 'group'
     ? { action: 'column', categoryId: cat.id, column: n, line, newColumn: true }
     : { mode: 'newGroup', categoryId: cat.id, column: n, line, newColumn: true };
+}
+
+// An upright drop line runs as far down as the taller of the columns beside it reaches (its last group's
+// bottom; an empty column counts as one new group's height), not down the whole board.
+function columnLineHeight(cols, top, boardRect) {
+  const bottom = Math.max(...cols.map((c) => {
+    const last = [...c.querySelectorAll(':scope > .group')].at(-1);
+    return last ? last.getBoundingClientRect().bottom : top + (parseFloat(getComputedStyle($('#board')).getPropertyValue('--empty-group-h')) || 66);
+  }));
+  return Math.max(40, Math.min(bottom, boardRect.bottom - 12) - top);
 }
 
 // A group dragged into the gap between two columns goes in between, as a column of its own: the columns
@@ -2336,7 +2346,7 @@ function columnGapTarget(e, d) {
     const plan = insertPlan(i + 1, d.ids || [d.id]);
     if (!plan) return null;
     const br = board.getBoundingClientRect();
-    return { action: 'insertColumn', plan, line: { x: (a.right + b.left) / 2 - 1.5, y: a.top, w: 3, h: Math.max(40, br.bottom - a.top - 12) } };
+    return { action: 'insertColumn', plan, line: { x: (a.right + b.left) / 2 - 1.5, y: a.top, w: 3, h: columnLineHeight([cols[i], cols[i + 1]], a.top, br) } };
   }
   return null;
 }
