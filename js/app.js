@@ -299,7 +299,8 @@ function animateLayout(before) {
   if (!before) return;
   const wsChanged = before.ws !== currentWs()?.id; // (switchCats() handles the category bar itself)
   const held = holdNote();
-  try { animateMoves(before, wsChanged); } finally { openExpanded(); growNote(held); }
+  const card = holdCard();
+  try { animateMoves(before, wsChanged); } finally { openExpanded(); growNote(held); growCard(card); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -606,6 +607,7 @@ function renderBoard() {
 // card that was animated out never comes back half-faded.
 const groupCache = new Map(); // id -> { key, el }
 function cachedGroup(g) {
+  if (preview?.id === g.id) g = { ...g, ...preview.fields };
   const key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}`;
   const c = groupCache.get(g.id);
   if (c && c.key === key && !c.el.getAnimations({ subtree: true }).length) return c.el;
@@ -1361,7 +1363,7 @@ function symbolField(label, input, err) {
   function set(em) {
     input.value = em;
     err.textContent = '';
-    sync();
+    input.dispatchEvent(new Event('input', { bubbles: true })); // (syncs the grid; a live preview hears it too)
     if (em) recordEmoji(em);
   }
   function sync() {
@@ -1461,13 +1463,14 @@ function colorField(label, input) {
   const swatch = (name) => {
     const tip = t(name ? `accent.${name}` : 'color.none');
     return h('label', { class: 'swatch' + (name ? '' : ' plain'), dataset: { accent: name || 'none' }, title: tip, style: name ? `--hue: ${ACCENTS[name]}` : null },
-      h('input', { type: 'radio', name: 'group-color', value: name, 'aria-label': tip, checked: input.value === name, onchange: () => { input.value = name; } }));
+      h('input', { type: 'radio', name: 'group-color', value: name, 'aria-label': tip, checked: input.value === name, onchange: () => { input.value = name; input.dispatchEvent(new Event('input', { bubbles: true })); } }));
   };
   return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label),
     h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, swatch(''), ...Object.keys(ACCENTS).map(swatch)), input);
 }
 
-function openEditor(type, data = {}, title) {
+// `onPreview(values)` (optional) hears the fields as they are edited, before any check.
+function openEditor(type, data = {}, title, onPreview = null) {
   const dlg = $('#editor');
   const form = $('#editor-form');
   const fields = $('#editor-fields');
@@ -1526,12 +1529,20 @@ function openEditor(type, data = {}, title) {
       if (done) return;
       done = true;
       form.removeEventListener('submit', onSubmit);
+      form.removeEventListener('input', onInput);
       $('#editor-cancel').removeEventListener('click', onCancel);
       dlg.removeEventListener('close', onCancel);
       if (dlg.open) dlg.close();
       resolve(v);
     };
     const onCancel = () => finish(null);
+    const onInput = () => {
+      const v = {};
+      for (const [k, el] of Object.entries(inputs)) v[k] = k === 'note' || k === 'description' ? el.value : el.value.trim();
+      if (!v.name) v.name = data.name || suggestion; // (a cleared name shows the one it would keep)
+      if ('symbol' in v) { v.symbol = T.normalizeSymbol(v.symbol); if (!T.isValidSymbol(v.symbol)) v.symbol = data.symbol || ''; }
+      onPreview(v);
+    };
     const onSubmit = (e) => {
       e.preventDefault();
       const v = {};
@@ -1549,6 +1560,7 @@ function openEditor(type, data = {}, title) {
       finish(v);
     };
     form.addEventListener('submit', onSubmit);
+    if (onPreview) form.addEventListener('input', onInput);
     $('#editor-cancel').addEventListener('click', onCancel);
     dlg.addEventListener('close', onCancel);
     dlg.showModal();
@@ -1557,8 +1569,77 @@ function openEditor(type, data = {}, title) {
 }
 
 async function editNode(node) {
-  const v = await openEditor(node.type, node);
-  if (v) apply({ op: 'patch', id: node.id, fields: v });
+  if (node.type !== 'group') {
+    const v = await openEditor(node.type, node);
+    if (v) apply({ op: 'patch', id: node.id, fields: v });
+    return;
+  }
+  // a group shows its edits on the board while the editor is open: Save keeps them, Cancel / Esc
+  // puts the group back as it was
+  const v = await openEditor(node.type, node, undefined, (fields) => showPreview(node.id, fields));
+  if (!v) return showPreview(node.id, null);
+  showPreview(node.id, v);
+  const seq = stateSeq;
+  const ok = await apply({ op: 'patch', id: node.id, fields: v });
+  // the saved state comes as its own message, maybe after the reply: hold the preview (which shows
+  // the same) until it is here, so the card never flicks back to the old values in between
+  if (ok && stateSeq === seq) await Promise.race([nextState(), new Promise((r) => setTimeout(r, 1500))]);
+  showPreview(node.id, null);
+}
+
+// The group being edited: its edited fields, laid over the stored group when it is drawn.
+let preview = null; // { id, fields }
+let previewFrame = 0;
+function showPreview(id, fields) {
+  preview = fields ? { id, fields } : null;
+  cancelAnimationFrame(previewFrame); // (typing: one redraw per frame)
+  previewFrame = requestAnimationFrame(() => {
+    const was = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
+    cardMorph = was && { id, was, look: cardLook(was) };
+    render();
+    cardMorph = null;
+  });
+}
+
+// A redrawn card eases from how it looked (see showPreview). Like a note (holdNote), it is held at
+// its old height while the layout is measured, so the cards below get no slide of their own: they
+// just follow it as it grows or shrinks.
+let cardMorph = null; // { id, was, look }
+function holdCard() {
+  if (!cardMorph) return null;
+  const { id, was, look } = cardMorph;
+  cardMorph = null;
+  const el = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
+  if (!el || el === was) return null; // not redrawn: nothing changed
+  const to = el.getBoundingClientRect().height;
+  if (Math.abs(to - look.height) >= 0.5) Object.assign(el.style, { height: `${look.height}px`, overflow: 'hidden' });
+  return { el, look, to };
+}
+
+// What a card looked like (its height and the colours its group colour sets), so a redrawn card can
+// ease from there: the height with the same glide as the cards below it, the colours with a fade.
+const LOOK_PARTS = [[null, ['backgroundColor', 'borderColor']], ['.group-head', ['borderBottomColor']], ['.note', ['backgroundColor', 'borderBottomColor']]];
+function cardLook(el) {
+  return {
+    height: el.getBoundingClientRect().height,
+    parts: LOOK_PARTS.map(([sel, props]) => {
+      const part = sel ? el.querySelector(sel) : el;
+      const cs = part && getComputedStyle(part);
+      return cs && Object.fromEntries(props.map((p) => [p, cs[p]]));
+    }),
+  };
+}
+function growCard(held) {
+  if (!held) return;
+  const { el, look, to } = held;
+  LOOK_PARTS.forEach(([sel], i) => {
+    const part = sel ? el.querySelector(sel) : el;
+    if (part && look.parts[i]) part.animate([look.parts[i], {}], { duration: 240, easing: 'ease' });
+  });
+  if (Math.abs(to - look.height) < 0.5) return;
+  el.style.height = '';
+  el.animate([{ height: `${look.height}px` }, { height: `${to}px` }], { duration: 420, easing: GLIDE })
+    .finished.catch(() => {}).then(() => { el.style.overflow = ''; });
 }
 
 async function addWorkspace() {
@@ -2927,7 +3008,10 @@ document.addEventListener('scroll', hideMenu, true);
 window.addEventListener('blur', hideMenu);
 
 // push events from the extension
-B.on('state', (s) => { state = s; render(); });
+let stateSeq = 0;
+const stateWaiters = [];
+const nextState = () => new Promise((r) => stateWaiters.push(r));
+B.on('state', (s) => { state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); });
 B.on('settings', (s) => {
   const relayout = s.columns !== settings?.columns;
   switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
