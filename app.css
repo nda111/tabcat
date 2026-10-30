@@ -72,7 +72,7 @@ html.booting #boot {
 .boot-ring .arc { stroke-width: 6; } /* (thick enough for its round ends to read as round) */
 .boot-ring .track { stroke: color-mix(in srgb, var(--accent) 16%, transparent); }
 .boot-ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 1 289; transform-origin: center; animation: boot-arc 1.5s ease-in-out infinite; }
-.boot-ring img { animation: boot-bob 1.5s ease-in-out infinite; } /* a gentle nod in time with the arc */
+.boot-ring .logo { width: 72px; height: 72px; animation: boot-bob 1.5s ease-in-out infinite; } /* a gentle nod in time with the arc */
 @keyframes boot-in { to { opacity: 1; } }
 @keyframes boot-turn { to { transform: rotate(1turn); } }
 @keyframes boot-arc {
@@ -133,7 +133,6 @@ body.resizing { cursor: col-resize; user-select: none; }
 .panel-toggle:hover, .panel-toggle.hover { background: var(--hover); color: var(--text); }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; padding: 0 0 8px 9px; min-height: 36px; }
 .brand-logo { display: grid; place-items: center; width: 22px; height: 22px; flex: none; }
-.brand-logo img { width: 22px; height: 22px; }
 body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the panel, like the button */
 .brand-name { flex: 1; }
 .side-title {
@@ -168,9 +167,15 @@ body.ws-collapsed .ws-add { display: flex; }
 
 /* guide */
 #help { width: 620px; }
+/* the logo in the accent colour: the drawing's lightness in the accent's hue (its white eyes and nose stay
+   white, so the face reads on a light or a dark page alike), cut to the drawing's shape */
+.logo {
+  display: inline-block; flex: none; width: 22px; height: 22px;
+  background: url(icons/logo.svg) center / contain no-repeat, var(--accent); background-blend-mode: luminosity;
+  -webkit-mask: url(icons/logo.svg) center / contain no-repeat; mask: url(icons/logo.svg) center / contain no-repeat;
+}
 /* Help / About titles: the logo in place of the word tabcat */
 .logo-title { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
-.logo-title img { flex: none; }
 #info { width: 420px; }
 .info-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
 .info-list dt { color: var(--muted); }
@@ -691,7 +696,7 @@ dialog .field-label { display: block; font-weight: 600; }
 
 /* ---------- extension missing ---------- */
 :is(#no-ext, #no-browser) { position: fixed; inset: 0; z-index: 300; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 16px; }
-.no-ext-logo { display: block; flex: none; } /* centred above the card: whose page this is; the card says what's wrong */
+.no-ext-logo { display: block; width: 56px; height: 56px; } /* centred above the card: whose page this is; the card says what's wrong */
 :is(#no-ext, #no-browser)[hidden] { display: none; }
 .no-ext-card { max-width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: var(--shadow); }
 .no-ext-card h2 { margin: 0 0 6px; }

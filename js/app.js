@@ -213,9 +213,9 @@ function applyTheme() {
   try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
 }
 
-// The tab's icon: the logo in the accent colour (a pinned dashboard tab shows nothing else). The logo
-// keeps its shading (its eyes, its ears' insides): only its colour turns to the accent.
-const logo = Object.assign(new Image(), { src: 'icons/icon128.png' });
+// The tab's icon: the logo in the accent colour (a pinned dashboard tab shows nothing else), as .logo
+// draws it on the page: the stripes keep their shading and the eyes and nose stay white.
+const logo = Object.assign(new Image(), { src: 'icons/logo.svg' });
 function tintFavicon() {
   if (!logo.complete) return void logo.addEventListener('load', tintFavicon, { once: true });
   const c = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
