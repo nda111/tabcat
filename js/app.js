@@ -1067,18 +1067,21 @@ async function closeWindow(w, others) {
 
 // Labelled action buttons, or icons only as soon as the labelled row would not fit (measured on an
 // invisible copy, so the label slide animation never confuses the check).
-function fitActions() {
+// `width`: decide for this row width instead of the current one (opening the panel: its final width,
+// so the labels unfold along with the opening rather than once it is nearly done)
+function fitActions(width) {
   const row = $('.panel-actions');
   const probe = row.cloneNode(true);
   probe.classList.remove('icons-only');
   Object.assign(probe.style, { position: 'absolute', visibility: 'hidden', left: '0', top: '0', width: 'max-content' });
   probe.querySelectorAll('.label').forEach((l) => { l.style.transition = 'none'; });
   row.parentElement.append(probe);
-  const fits = probe.getBoundingClientRect().width <= row.getBoundingClientRect().width + 0.5;
+  const fits = probe.getBoundingClientRect().width <= (width ?? row.getBoundingClientRect().width) + 0.5;
   probe.remove();
   row.classList.toggle('icons-only', !fits);
 }
-new ResizeObserver(fitActions).observe($('.panel-actions'));
+// (not while the panel opens / closes: the in-between widths would flip it midway; settled after)
+new ResizeObserver(() => { if (!$('#tabs-panel').classList.contains('panel-anim')) fitActions(); }).observe($('.panel-actions'));
 
 /* ---------- open-tab selection ---------- */
 
@@ -3148,7 +3151,8 @@ for (const p of Object.values(PANELS)) {
       panel.style.width = '56px';
       // switch while the faded, one-line state is still in place (measuring after removing it would
       // catch a re-wrapped header and make the rows jump), then drop it
-      setTimeout(() => { switchPanel(p); panel.classList.remove('fading'); panel.style.width = ''; }, 150);
+      // (briefly: the rail rearranges while the panel is still narrowing, not after it has closed)
+      setTimeout(() => { switchPanel(p); panel.classList.remove('fading'); panel.style.width = ''; }, 60);
     } else switchPanel(p);
   });
 }
@@ -3161,9 +3165,12 @@ function switchPanel(p) {
   const panel = $(p.el);
   panel.classList.add('panel-anim'); // only this panel: the other one must not replay its fade-ins
   clearTimeout(panelAnimTimer[p.el]);
-  panelAnimTimer[p.el] = setTimeout(() => panel.classList.remove('panel-anim'), 450);
+  panelAnimTimer[p.el] = setTimeout(() => { panel.classList.remove('panel-anim'); if (p === PANELS.tabs) fitActions(); }, 450);
   ui[p.collapsed] = !ui[p.collapsed];
   applyPanels();
+  // the open-tabs panel opening: its action labels are shown or not for its final width (its row is the
+  // panel's width less its 1px border) from the start
+  if (p === PANELS.tabs && !ui[p.collapsed]) fitActions((ui[p.width] || 290) - 1);
   flipFrom(before);
   // if the pointer is still on the button, show its new label right away
   const under = pointer && document.elementFromPoint(...pointer);
