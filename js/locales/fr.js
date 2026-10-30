@@ -100,7 +100,7 @@ export default {
   'err.notSettings': 'ce n’est pas un fichier de paramètres tabcat', 'err.noSettings': 'aucun paramètre valide trouvé',
 
   'settings.title': 'Paramètres', 'settings.general': 'Général', 'settings.closeOnSave': 'Fermer les onglets après leur enregistrement', 'settings.groupTabs': 'Grouper les onglets en ouvrant tout',
-  'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes)', 'settings.off': 'Désactivé', 'settings.columns': 'Colonnes du tableau (1–7)',
+  'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes)', 'settings.off': 'Désactivé', 'settings.columns': 'Colonnes du tableau (1–8)',
   'settings.language': 'Langue', 'settings.langAuto': 'Langue du navigateur',
   'settings.appearance': 'Apparence', 'settings.theme': 'Thème', 'settings.color': 'Couleur',
   'theme.auto': 'Système', 'theme.light': 'Clair', 'theme.dark': 'Sombre',

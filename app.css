@@ -5,6 +5,7 @@
   --border: #e4e0da;
   --text: #24211e;
   --muted: #7d766e;
+  --icon: var(--muted); /* the grey of the icons on cards (lighter than --muted in dark mode) */
   --accent: #e8822f;
   --accent-soft: #fde9d7;
   --hover: #e8e2da;
@@ -18,12 +19,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; color-scheme: dark;
+    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; color-scheme: dark;
+  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; color-scheme: dark;
 }
 
 /* accent colour picked in Settings (orange, the default, keeps the values above): one hue, with
@@ -206,6 +207,10 @@ body.ws-collapsed .ws-add { display: flex; }
 .col-tail .add-group:hover, .col-tail .add-group.hover, .col-tail .add-group.drop-new { opacity: 1; }
 /* an empty category shows its New group card (grey) in the first column */
 #board.empty-cat .col:first-child .add-group { opacity: 1; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
+}
+:root[data-theme="dark"] :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
 .bar-split { width: 1px; height: 16px; margin: 0 8px; background: var(--border); flex: none; }
 .col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); cursor: none; } /* the wheel works it */
@@ -263,6 +268,9 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 }
 .sym-glyph { display: block; text-box: trim-both cap alphabetic; } /* centre the capital itself, whatever the font metrics */
 .node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
+/* on a card: 90% of the two lines beside it (the name's top to the tools' bottom) */
+.group-head .node-sym { width: 36px; height: 36px; margin-block: -3px 0; font-size: 29.5px; } /* (centred on the two lines) */
+.group-head .node-sym .sym-letter { font-size: 20px; width: 33px; height: 33px; border-radius: 8px; }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
 /* the collapse button takes no more height than the name, so the header keeps its height when a group
@@ -271,12 +279,13 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .node-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .node-line .count { color: var(--muted); font-size: 11px; }
 .node-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
-.collapse-btn { color: var(--muted); align-self: center; }
+.collapse-btn { color: var(--icon); align-self: center; }
 .collapse-btn .ico { transition: transform .12s; }
 .group.collapsed > .group-head .collapse-btn .ico { transform: rotate(-90deg); }
 .node-tools { display: flex; align-items: center; gap: 2px; margin-left: -6px; }
+.group-head .node-tools { margin-top: -6px; } /* (half the room the name and the tools had between them) */
 .tools-split { width: 1px; height: 14px; margin: 0 4px; background: var(--border); }
-.node-tools .icon-btn { color: var(--muted); }
+.node-tools .icon-btn { color: var(--icon); }
 .node-tools .icon-btn:hover, .node-tools .icon-btn.hover { color: var(--accent); }
 /* hover-only actions take no space until shown, so names truncate as late as possible */
 .head-actions { display: none; }
@@ -332,14 +341,14 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .folder-head { user-select: none; }
 .folder.collapsed > .items { display: none; }
 .folder-head { gap: 6px; }
-.folder-head .twisty { display: inline-flex; color: var(--muted); transition: transform .12s; }
+.folder-head .twisty { display: inline-flex; color: var(--icon); transition: transform .12s; }
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
 .folder-head > .sym { font-size: 15px; }
-.sym.sym-icon { display: inline-grid; place-items: center; color: var(--muted); } /* a default line icon in place of a symbol */
+.sym.sym-icon { display: inline-grid; place-items: center; color: var(--icon); } /* a default line icon in place of a symbol */
 .folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
 .folder-head .node-line .name { font-size: 13px; font-weight: 400; }
 .folder-head .head-actions { align-items: center; gap: 0; }
-.folder-head .head-actions .icon-btn { color: var(--muted); }
+.folder-head .head-actions .icon-btn { color: var(--icon); }
 .folder-head .head-actions .icon-btn:hover, .folder-head .head-actions .icon-btn.hover { color: var(--accent); }
 .items:empty::after { content: 'Drop tabs here'; display: block; color: var(--muted); font-size: 11.5px; font-style: italic; padding: 6px 8px; }
 .items .items:empty::after { content: 'Empty folder'; padding: 2px 8px; }

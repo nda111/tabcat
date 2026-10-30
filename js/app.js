@@ -668,7 +668,7 @@ function sizeAddCards(board) {
 
 /* ---------- board columns ---------- */
 
-const MAX_COLUMNS = 7;
+const MAX_COLUMNS = 8;
 
 // The board always shows the set number of columns; a narrow window scrolls sideways instead.
 const visibleColumns = () => boardColumns();
