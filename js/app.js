@@ -1546,7 +1546,7 @@ async function redo() {
 const whatOf = (verb, nodes) => ({ verb, n: nodes.length, type: nodes.every((x) => x.type === nodes[0].type) ? nodes[0].type : 'item' });
 function undoText(dir, what) {
   if (!what) return t(dir === 'undo' ? 'toast.undone' : 'toast.redone');
-  if (!what.type) return t(`${dir}.${what.verb}`); // (merge, closeDupes, dedupe: one sentence each)
+  if (!what.type) return t(`${dir}.${what.verb}`, { n: what.n }); // (merge, closeDupes, dedupe, save: one sentence each)
   const noun = what.n > 1 ? t(`noun.${what.type}N`, { n: what.n }) : t(`noun.${what.type}`);
   return t(`${dir}.${what.verb}`, { what: noun });
 }
@@ -1585,19 +1585,22 @@ async function saveTabsTo(tabIds, parentId, index) {
 
 async function saveWindow(windowId) {
   const id = await run(B.call('saveWindow', { windowId, newGroup: { categoryId: currentCat()?.id }, close: settings.closeOnSave }));
-  toast(t(id ? 'toast.windowSaved' : 'toast.nothingToSave'));
+  // (the extension remembers it in the shared history: undo takes the group out and opens the tabs again)
+  if (id && extFeatures.has('sharedHistory')) toast(t('toast.windowSaved'), t('common.undo'), () => undo(null, true));
+  else toast(t(id ? 'toast.windowSaved' : 'toast.nothingToSave'));
 }
 
 /* ---------- confirm dialog ---------- */
 
 // Styled replacement for window.confirm(). Resolves true only when the action button is used.
-function confirmDialog({ title, text = '', ok = t('common.ok'), danger = false }) {
+function confirmDialog({ title, text = '', ok = t('common.ok'), cancel = t('common.cancel'), danger = false }) {
   const dlg = $('#confirm');
   $('#confirm-title').textContent = title;
   $('#confirm-text').textContent = text;
   $('#confirm-text').hidden = !text;
   const okBtn = $('#confirm-ok');
   okBtn.textContent = ok;
+  $('#confirm-cancel').textContent = cancel;
   okBtn.classList.toggle('danger', danger);
   return new Promise((resolve) => {
     let done = false;
@@ -3651,6 +3654,7 @@ async function init() {
 }
 
 async function start(ext) {
+  setTimeout(offerTour, 800); // (once the board is up: see "tour")
   setExtension(ext);
   $('#no-ext').hidden = true;
   if (olderThan(ext.version, MIN_EXTENSION)) {
@@ -3690,6 +3694,106 @@ $('#btn-install').addEventListener('click', (e) => {
 });
 $('#settings-install').addEventListener('click', install);
 showInstall();
+
+/* ---------- tour ---------- */
+
+// A walk round the page, a step at a time: the part a step is about stays lit, the rest dimmed, with a
+// card beside it. Offered once, the first time the dashboard opens (see start); then from the sidebar.
+const TOUR = [
+  { key: 'welcome' },
+  { key: 'workspaces', at: '#sidebar' },
+  { key: 'categories', at: '#cat-bar' },
+  { key: 'groups', at: '#board .group' },
+  { key: 'tabs', at: '#tabs-panel' },
+  { key: 'search', at: '#search-box .search-field' },
+  { key: 'shortcut' },
+  { key: 'more', at: '#sidebar .side-bottom' },
+];
+const TOUR_OFFERED = 'tabcat:tourOffered';
+let tourStep = -1;
+
+async function offerTour() {
+  try {
+    if (localStorage.getItem(TOUR_OFFERED)) return;
+    localStorage.setItem(TOUR_OFFERED, '1');
+  } catch { return; } // (storage unavailable: it would be offered every time)
+  if (await confirmDialog({ title: t('tour.offer.title'), text: t('tour.offer.text'), ok: t('tour.offer.ok'), cancel: t('tour.offer.later') })) startTour();
+}
+function startTour() {
+  const tour = $('#tour');
+  tour.getAnimations().forEach((a) => a.cancel()); // (started again while fading out: just stays)
+  tour.hidden = false;
+  // the first step is simply there: the spot and card don't glide in from where they were last time
+  tour.classList.add('placing');
+  showTourStep(0);
+  void tour.offsetWidth;
+  tour.classList.remove('placing');
+  $('#tour-next').focus();
+}
+function endTour() {
+  tourStep = -1;
+  const tour = $('#tour');
+  tour.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out' })
+    .finished.then(() => { if (tourStep < 0) tour.hidden = true; }, () => {});
+}
+function showTourStep(i) {
+  tourStep = i;
+  const { key } = TOUR[i];
+  $('#tour-count').textContent = t('tour.count', { i: i + 1, n: TOUR.length });
+  $('#tour-title').textContent = t(`tour.${key}.title`);
+  // (a {icon:name} in the text: that control's own icon, as the page shows it)
+  $('#tour-text').replaceChildren(...t(`tour.${key}.text`).split(/\{icon:(\w+)\}/)
+    .map((part, j) => (j % 2 ? h('span', { class: 'tour-icon' }, icon(part, 15)) : part)));
+  $('#tour-keys').innerHTML = t('tour.keys.html');
+  $('#tour-prev').hidden = i === 0;
+  $('#tour-next').textContent = t(i === TOUR.length - 1 ? 'tour.done' : 'tour.next');
+  placeTour();
+}
+// The lit part (a step's element, if shown; else none: the card alone, centred) and the card beside it:
+// right of it, left, below or above, whichever fits first
+function placeTour() {
+  if (tourStep < 0) return;
+  const el = TOUR[tourStep].at && document.querySelector(TOUR[tourStep].at);
+  const box = el?.getBoundingClientRect();
+  const r = box && box.width > 0 && box.height > 0 ? box : null;
+  const spot = $('#tour .tour-spot');
+  const card = $('#tour .tour-card');
+  const pad = 6;
+  const gap = 14;
+  const m = 16;
+  Object.assign(spot.style, r
+    ? { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + 2 * pad}px`, height: `${r.height + 2 * pad}px` }
+    : { left: `${innerWidth / 2}px`, top: `${innerHeight / 2}px`, width: '0px', height: '0px' });
+  const w = card.offsetWidth;
+  const h = card.offsetHeight;
+  const clampY = (y) => Math.min(Math.max(y, m), innerHeight - h - m);
+  const clampX = (x) => Math.min(Math.max(x, m), innerWidth - w - m);
+  let at = [(innerWidth - w) / 2, (innerHeight - h) / 2];
+  if (r) {
+    at = [
+      [r.right + pad + gap, clampY(r.top), r.right + pad + gap + w <= innerWidth - m],
+      [r.left - pad - gap - w, clampY(r.top), r.left - pad - gap - w >= m],
+      [clampX(r.left), r.bottom + pad + gap, r.bottom + pad + gap + h <= innerHeight - m],
+      [clampX(r.left), r.top - pad - gap - h, r.top - pad - gap - h >= m],
+    ].find(([, , fits]) => fits) || at;
+  }
+  card.style.left = `${at[0]}px`;
+  card.style.top = `${at[1]}px`;
+}
+$('#btn-tour').addEventListener('click', startTour);
+$('#tour-skip').addEventListener('click', endTour);
+$('#tour-prev').addEventListener('click', () => showTourStep(Math.max(0, tourStep - 1)));
+$('#tour-next').addEventListener('click', () => (tourStep === TOUR.length - 1 ? endTour() : showTourStep(tourStep + 1)));
+// while it is up: Space or → steps on, ← back, Esc ends; no other key reaches the page beneath (the
+// card's buttons still take Tab and Enter)
+document.addEventListener('keydown', (e) => {
+  if (tourStep < 0) return;
+  const next = () => $('#tour-next').click();
+  const act = { ' ': next, ArrowRight: next, ArrowLeft: () => tourStep > 0 && $('#tour-prev').click(), Escape: endTour }[e.key];
+  if (act) { e.preventDefault(); act(); }
+  if (!['Tab', 'Enter'].includes(e.key)) e.stopPropagation();
+}, true);
+addEventListener('resize', placeTour);
 // a page can't open chrome:// addresses (and without the extension nothing can open them for it): such a
 // link copies its address instead, to paste into a new tab
 document.addEventListener('click', (e) => {

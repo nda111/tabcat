@@ -22,6 +22,26 @@ export default {
   'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
 
   'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
+
+  'side.tour': 'Visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}', 'tour.keys.html': '<kbd>Espace</kbd> ou <kbd>→</kbd> pour continuer · <kbd>Échap</kbd> pour fermer',
+
+  'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis Visite dans la barre latérale.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
+
+  'tour.welcome.title': 'Bienvenue dans tabcat', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes, fermez-les et rouvrez-les quand vous en avez besoin.',
+
+  'tour.workspaces.title': 'Espaces de travail', 'tour.workspaces.text': 'Les plus grands ensembles : un pour le travail, un pour les études… Choisissez-en un ici ; faites glisser pour réordonner.',
+
+  'tour.categories.title': 'Catégories', 'tour.categories.text': 'Des thèmes dans un espace de travail. Chacune a son propre tableau de groupes.',
+
+  'tour.groups.title': 'Groupes', 'tour.groups.text': 'Des cartes contenant liens et dossiers. Faites-les glisser entre les colonnes, double-cliquez sur un nom pour le modifier et ouvrez un groupe entier comme groupe d’onglets avec {icon:open} Tout ouvrir.',
+
+  'tour.tabs.title': 'Onglets ouverts', 'tour.tabs.text': 'Faites glisser un onglet sur un groupe pour l’enregistrer (Maj en sélectionne plusieurs). Ici aussi : {icon:save} enregistrer une fenêtre, {icon:suspend} suspendre des onglets ou {icon:dedupe} fermer les doublons.',
+
+  'tour.search.title': 'Recherche', 'tour.search.text': 'Trouvez n’importe quel lien, dossier ou groupe. Aussi avec Ctrl+F.',
+
+  'tour.shortcut.title': 'Toujours à portée', 'tour.shortcut.text': 'Ctrl+Maj+X amène le tableau de bord dans la fenêtre où vous êtes, et vous ramène ensuite. Le bouton de la barre d’outils enregistre l’onglet en cours.',
+
+  'tour.more.title': 'Paramètres et aide', 'tour.more.text': 'Langue, thème et couleurs dans les {icon:settings} paramètres ; tous les raccourcis dans l’{icon:help} aide. {icon:compass} Visite relance ce guide.',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',
@@ -115,6 +135,7 @@ export default {
   'noun.group': 'groupe', 'noun.groupN': '{n} groupes', 'noun.link': 'lien', 'noun.linkN': '{n} liens', 'noun.folder': 'dossier', 'noun.folderN': '{n} dossiers', 'noun.item': 'élément', 'noun.itemN': '{n} éléments', 'noun.workspace': 'espace de travail', 'noun.workspaceN': '{n} espaces de travail', 'noun.category': 'catégorie', 'noun.categoryN': '{n} catégories',
   'undo.delete': 'Suppression annulée : {what}', 'redo.delete': 'Suppression rétablie : {what}', 'undo.move': 'Déplacement annulé : {what}', 'redo.move': 'Déplacement rétabli : {what}', 'undo.merge': 'Fusion des groupes annulée', 'redo.merge': 'Fusion des groupes rétablie',
   'undo.closeDupes': 'Fermeture des onglets en double annulée', 'redo.closeDupes': 'Fermeture des onglets en double rétablie', 'undo.dedupe': 'Suppression des liens en double annulée', 'redo.dedupe': 'Suppression des liens en double rétablie',
+  'undo.save': { one: 'Enregistrement de {n} onglet annulé', other: 'Enregistrement de {n} onglets annulé' }, 'redo.save': { one: 'Enregistrement de {n} onglet rétabli', other: 'Enregistrement de {n} onglets rétabli' },
   'data.note': 'L’import ajoute les éléments choisis comme nouveaux espaces de travail ; rien n’est écrasé. Les fichiers de paramètres contiennent les options ci-dessus.',
   'settings.shortcuts': 'Raccourcis',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Ctrl+Shift+X</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

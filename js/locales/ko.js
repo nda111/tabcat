@@ -20,6 +20,26 @@ export default {
   'side.workspaces': '워크스페이스', 'side.info': '정보', 'side.help': '도움말', 'side.settings': '설정',
 
   'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
+
+  'side.tour': '둘러보기', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}', 'tour.keys.html': '<kbd>Space</kbd> 또는 <kbd>→</kbd>로 넘기고, <kbd>Esc</kbd>로 닫습니다',
+
+  'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드립니다. 나중에 사이드바의 둘러보기에서도 볼 수 있습니다.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
+
+  'tour.welcome.title': 'tabcat에 오신 것을 환영합니다', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 닫았다가 필요할 때 다시 열 수 있습니다.',
+
+  'tour.workspaces.title': '워크스페이스', 'tour.workspaces.text': '가장 큰 묶음입니다. 업무, 공부처럼 나눠 두고 여기서 고릅니다. 끌어서 순서를 바꿀 수 있습니다.',
+
+  'tour.categories.title': '카테고리', 'tour.categories.text': '워크스페이스 안의 주제입니다. 카테고리마다 그룹 보드가 따로 있습니다.',
+
+  'tour.groups.title': '그룹', 'tour.groups.text': '링크와 폴더를 담는 카드입니다. 끌어서 다른 칸으로 옮기고, 이름을 더블클릭해 고치고, {icon:open} 모두 열기로 한 번에 탭 그룹으로 엽니다.',
+
+  'tour.tabs.title': '열린 탭', 'tour.tabs.text': '탭을 그룹으로 끌어다 놓으면 저장됩니다. Shift로 여러 개를 고를 수 있고, {icon:save} 창 저장, {icon:suspend} 탭 재우기, {icon:dedupe} 중복 닫기도 여기서 합니다.',
+
+  'tour.search.title': '검색', 'tour.search.text': '링크, 폴더, 그룹을 어디서든 찾습니다. Ctrl+F로도 열 수 있습니다.',
+
+  'tour.shortcut.title': '언제든 가까이', 'tour.shortcut.text': 'Ctrl+Shift+X를 누르면 지금 창으로 대시보드를 불러오고, 다시 누르면 보던 탭으로 돌아갑니다. 툴바 버튼으로는 보던 탭을 바로 저장합니다.',
+
+  'tour.more.title': '설정과 도움말', 'tour.more.text': '{icon:settings} 설정에서 언어, 테마, 색을, {icon:help} 도움말에서 모든 단축키를 볼 수 있습니다. {icon:compass} 둘러보기로 이 안내를 다시 볼 수 있습니다.',
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
@@ -113,6 +133,7 @@ export default {
   'noun.group': '그룹', 'noun.groupN': '그룹 {n}개', 'noun.link': '링크', 'noun.linkN': '링크 {n}개', 'noun.folder': '폴더', 'noun.folderN': '폴더 {n}개', 'noun.item': '항목', 'noun.itemN': '항목 {n}개', 'noun.workspace': '워크스페이스', 'noun.workspaceN': '워크스페이스 {n}개', 'noun.category': '카테고리', 'noun.categoryN': '카테고리 {n}개',
   'undo.delete': '{what} 삭제를 취소했습니다.', 'redo.delete': '{what} 삭제를 다시 실행했습니다.', 'undo.move': '{what} 이동을 취소했습니다.', 'redo.move': '{what} 이동을 다시 실행했습니다.', 'undo.merge': '그룹 합치기를 취소했습니다.', 'redo.merge': '그룹 합치기를 다시 실행했습니다.',
   'undo.closeDupes': '중복 탭 닫기를 취소했습니다.', 'redo.closeDupes': '중복 탭 닫기를 다시 실행했습니다.', 'undo.dedupe': '중복 링크 제거를 취소했습니다.', 'redo.dedupe': '중복 링크 제거를 다시 실행했습니다.',
+  'undo.save': '탭 {n}개 저장을 취소했습니다.', 'redo.save': '탭 {n}개 저장을 다시 실행했습니다.',
   'data.note': '가져온 항목은 새 워크스페이스로 추가되며 기존 데이터를 덮어쓰지 않습니다. 설정 파일에는 위의 옵션이 담깁니다.',
   'settings.shortcuts': '단축키',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Ctrl+Shift+X</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

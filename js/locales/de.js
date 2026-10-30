@@ -22,6 +22,26 @@ export default {
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
 
   'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
+
+  'side.tour': 'Tour', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}', 'tour.keys.html': '<kbd>Leertaste</kbd> oder <kbd>→</kbd> für weiter · <kbd>Esc</kbd> zum Schließen',
+
+  'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über „Tour“ in der Seitenleiste starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
+
+  'tour.welcome.title': 'Willkommen bei tabcat', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen, schließe sie und öffne sie wieder, wann immer du sie brauchst.',
+
+  'tour.workspaces.title': 'Arbeitsbereiche', 'tour.workspaces.text': 'Die größten Einheiten: einer für die Arbeit, einer fürs Lernen … Hier auswählen, zum Sortieren ziehen.',
+
+  'tour.categories.title': 'Kategorien', 'tour.categories.text': 'Themen innerhalb eines Arbeitsbereichs. Jede hat ihr eigenes Board mit Gruppen.',
+
+  'tour.groups.title': 'Gruppen', 'tour.groups.text': 'Karten mit Links und Ordnern. Zwischen Spalten ziehen, Namen per Doppelklick bearbeiten und eine ganze Gruppe mit {icon:open} Alle öffnen als Tabgruppe öffnen.',
+
+  'tour.tabs.title': 'Offene Tabs', 'tour.tabs.text': 'Zieh einen Tab auf eine Gruppe, um ihn zu speichern (mit Umschalt mehrere). Hier kannst du auch {icon:save} ein Fenster speichern, {icon:suspend} Tabs pausieren oder {icon:dedupe} Duplikate schließen.',
+
+  'tour.search.title': 'Suche', 'tour.search.text': 'Finde jeden Link, Ordner und jede Gruppe. Auch mit Strg+F.',
+
+  'tour.shortcut.title': 'Immer zur Hand', 'tour.shortcut.text': 'Strg+Umschalt+X holt das Dashboard in das Fenster, in dem du bist, und bringt dich wieder zurück. Die Schaltfläche in der Symbolleiste speichert den aktuellen Tab.',
+
+  'tour.more.title': 'Einstellungen und Hilfe', 'tour.more.text': 'Sprache, Design und Farben in den {icon:settings} Einstellungen, alle Tastenkürzel in der {icon:help} Hilfe. Mit {icon:compass} Tour siehst du das hier wieder.',
   'panel.expandWs': 'Arbeitsbereiche ausklappen', 'panel.collapseWs': 'Arbeitsbereiche einklappen',
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',
@@ -115,6 +135,7 @@ export default {
   'noun.group': 'Gruppe', 'noun.groupN': '{n} Gruppen', 'noun.link': 'Link', 'noun.linkN': '{n} Links', 'noun.folder': 'Ordner', 'noun.folderN': '{n} Ordner', 'noun.item': 'Element', 'noun.itemN': '{n} Elemente', 'noun.workspace': 'Arbeitsbereich', 'noun.workspaceN': '{n} Arbeitsbereiche', 'noun.category': 'Kategorie', 'noun.categoryN': '{n} Kategorien',
   'undo.delete': 'Löschen rückgängig gemacht: {what}', 'redo.delete': 'Erneut gelöscht: {what}', 'undo.move': 'Verschieben rückgängig gemacht: {what}', 'redo.move': 'Erneut verschoben: {what}', 'undo.merge': 'Zusammenführen rückgängig gemacht', 'redo.merge': 'Erneut zusammengeführt',
   'undo.closeDupes': 'Schließen doppelter Tabs rückgängig gemacht', 'redo.closeDupes': 'Doppelte Tabs erneut geschlossen', 'undo.dedupe': 'Entfernen doppelter Links rückgängig gemacht', 'redo.dedupe': 'Doppelte Links erneut entfernt',
+  'undo.save': { one: 'Speichern von {n} Tab rückgängig gemacht', other: 'Speichern von {n} Tabs rückgängig gemacht' }, 'redo.save': { one: '{n} Tab erneut gespeichert', other: '{n} Tabs erneut gespeichert' },
   'data.note': 'Beim Import kommen die gewählten Elemente als neue Arbeitsbereiche hinzu; nichts wird überschrieben. Einstellungsdateien enthalten die Optionen oben.',
   'settings.shortcuts': 'Tastenkürzel',
   'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Ctrl+Shift+X</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

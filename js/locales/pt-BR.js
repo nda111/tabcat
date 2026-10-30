@@ -22,6 +22,26 @@ export default {
   'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
 
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (ainda dá para instalar nas Configurações)', 'settings.app': 'App', 'toast.installed': 'tabcat instalado como app',
+
+  'side.tour': 'Tour', 'tour.skip': 'Pular', 'tour.prev': 'Voltar', 'tour.next': 'Próximo', 'tour.done': 'Concluir', 'tour.count': '{i} de {n}', 'tour.keys.html': '<kbd>Espaço</kbd> ou <kbd>→</kbd> para avançar · <kbd>Esc</kbd> para fechar',
+
+  'tour.offer.title': 'Quer fazer um tour rápido pelo tabcat?', 'tour.offer.text': 'Um minuto, passo a passo, pelas partes principais. Você também pode começar depois pelo Tour na barra lateral.', 'tour.offer.ok': 'Fazer o tour', 'tour.offer.later': 'Depois',
+
+  'tour.welcome.title': 'Boas-vindas ao tabcat', 'tour.welcome.text': 'Salve abas como links em grupos, feche-as e abra de novo quando precisar.',
+
+  'tour.workspaces.title': 'Espaços de trabalho', 'tour.workspaces.text': 'As maiores divisões: um para o trabalho, outro para os estudos… Escolha um aqui; arraste para reordenar.',
+
+  'tour.categories.title': 'Categorias', 'tour.categories.text': 'Temas dentro de um espaço de trabalho. Cada uma tem seu próprio painel de grupos.',
+
+  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Cartões com links e pastas. Arraste entre colunas, clique duas vezes no nome para editar e abra um grupo inteiro como grupo de abas com {icon:open} Abrir tudo.',
+
+  'tour.tabs.title': 'Abas abertas', 'tour.tabs.text': 'Arraste uma aba para um grupo para salvá-la (Shift escolhe várias). Daqui você também pode {icon:save} salvar uma janela, {icon:suspend} suspender abas ou {icon:dedupe} fechar duplicadas.',
+
+  'tour.search.title': 'Busca', 'tour.search.text': 'Encontre qualquer link, pasta ou grupo. Também abre com Ctrl+F.',
+
+  'tour.shortcut.title': 'Sempre à mão', 'tour.shortcut.text': 'Ctrl+Shift+X traz o painel para a janela em que você está e leva você de volta. O botão da barra de ferramentas salva a aba atual.',
+
+  'tour.more.title': 'Configurações e ajuda', 'tour.more.text': 'Idioma, tema e cores nas {icon:settings} Configurações; todos os atalhos na {icon:help} Ajuda. {icon:compass} Tour mostra isto de novo.',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
@@ -115,6 +135,7 @@ export default {
   'noun.group': 'grupo', 'noun.groupN': '{n} grupos', 'noun.link': 'link', 'noun.linkN': '{n} links', 'noun.folder': 'pasta', 'noun.folderN': '{n} pastas', 'noun.item': 'item', 'noun.itemN': '{n} itens', 'noun.workspace': 'espaço de trabalho', 'noun.workspaceN': '{n} espaços de trabalho', 'noun.category': 'categoria', 'noun.categoryN': '{n} categorias',
   'undo.delete': 'Exclusão desfeita: {what}', 'redo.delete': 'Exclusão refeita: {what}', 'undo.move': 'Movimentação desfeita: {what}', 'redo.move': 'Movimentação refeita: {what}', 'undo.merge': 'Mesclagem de grupos desfeita', 'redo.merge': 'Mesclagem de grupos refeita',
   'undo.closeDupes': 'Fechamento de abas duplicadas desfeito', 'redo.closeDupes': 'Fechamento de abas duplicadas refeito', 'undo.dedupe': 'Remoção de links duplicados desfeita', 'redo.dedupe': 'Remoção de links duplicados refeita',
+  'undo.save': { one: 'Salvamento de {n} aba desfeito', other: 'Salvamento de {n} abas desfeito' }, 'redo.save': { one: 'Salvamento de {n} aba refeito', other: 'Salvamento de {n} abas refeito' },
   'data.note': 'A importação adiciona os itens escolhidos como novos espaços de trabalho; nada é sobrescrito. Os arquivos de configurações guardam as opções acima.',
   'settings.shortcuts': 'Atalhos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

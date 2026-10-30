@@ -20,6 +20,26 @@ export default {
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
 
   'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
+
+  'side.tour': 'ツアー', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}', 'tour.keys.html': '<kbd>Space</kbd> か <kbd>→</kbd> で次へ・<kbd>Esc</kbd> で閉じる',
+
+  'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからサイドバーの「ツアー」でも見られます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
+
+  'tour.welcome.title': 'tabcat へようこそ', 'tour.welcome.text': 'タブをグループの中のリンクとして保存し、閉じても必要なときにまた開けます。',
+
+  'tour.workspaces.title': 'ワークスペース', 'tour.workspaces.text': 'いちばん大きなまとまりです。仕事、勉強などに分けてここで選びます。ドラッグで並べ替えられます。',
+
+  'tour.categories.title': 'カテゴリ', 'tour.categories.text': 'ワークスペースの中のテーマです。カテゴリごとにグループのボードがあります。',
+
+  'tour.groups.title': 'グループ', 'tour.groups.text': 'リンクとフォルダを入れるカードです。ドラッグで列を移し、名前をダブルクリックで編集し、{icon:open} すべて開くでタブグループとして開けます。',
+
+  'tour.tabs.title': '開いているタブ', 'tour.tabs.text': 'タブをグループにドラッグすると保存されます。Shift で複数選べます。{icon:save} ウィンドウの保存、{icon:suspend} タブの休止、{icon:dedupe} 重複を閉じる操作もここでできます。',
+
+  'tour.search.title': '検索', 'tour.search.text': 'リンク、フォルダ、グループをどこからでも探せます。Ctrl+F でも開けます。',
+
+  'tour.shortcut.title': 'いつでも手もとに', 'tour.shortcut.text': 'Ctrl+Shift+X で今のウィンドウにダッシュボードを呼び出し、もう一度押すと元のタブに戻ります。ツールバーのボタンで今のタブをすぐ保存できます。',
+
+  'tour.more.title': '設定とヘルプ', 'tour.more.text': '言語、テーマ、色は {icon:settings} 設定で、すべてのショートカットは {icon:help} ヘルプで確認できます。{icon:compass} ツアーでこの案内をもう一度見られます。',
   'panel.expandWs': 'ワークスペースを展開', 'panel.collapseWs': 'ワークスペースを折りたたむ',
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
@@ -113,6 +133,7 @@ export default {
   'noun.group': 'グループ', 'noun.groupN': 'グループ {n} 個', 'noun.link': 'リンク', 'noun.linkN': 'リンク {n} 個', 'noun.folder': 'フォルダ', 'noun.folderN': 'フォルダ {n} 個', 'noun.item': '項目', 'noun.itemN': '項目 {n} 個', 'noun.workspace': 'ワークスペース', 'noun.workspaceN': 'ワークスペース {n} 個', 'noun.category': 'カテゴリ', 'noun.categoryN': 'カテゴリ {n} 個',
   'undo.delete': '{what}の削除を取り消しました。', 'redo.delete': '{what}の削除をやり直しました。', 'undo.move': '{what}の移動を取り消しました。', 'redo.move': '{what}の移動をやり直しました。', 'undo.merge': 'グループの統合を取り消しました。', 'redo.merge': 'グループの統合をやり直しました。',
   'undo.closeDupes': '重複したタブを閉じる操作を取り消しました。', 'redo.closeDupes': '重複したタブを閉じる操作をやり直しました。', 'undo.dedupe': '重複したリンクの削除を取り消しました。', 'redo.dedupe': '重複したリンクの削除をやり直しました。',
+  'undo.save': 'タブ {n} 個の保存を取り消しました。', 'redo.save': 'タブ {n} 個の保存をやり直しました。',
   'data.note': 'インポートした項目は新しいワークスペースとして追加され、既存のデータは上書きされません。設定ファイルには上のオプションが含まれます。',
   'settings.shortcuts': 'ショートカット',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Ctrl+Shift+X</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

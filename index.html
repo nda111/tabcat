@@ -74,6 +74,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     <div class="side-title"><span class="label" data-i18n="side.workspaces">Workspaces</span> <button class="icon-btn" id="add-ws" title="New workspace" data-i18n-attr="title:new.workspace"><span data-icon="plus"></span></button></div>
     <ul id="ws-list"></ul>
     <div class="side-bottom">
+      <button class="side-btn" id="btn-tour" data-rail-title="Tour" data-i18n-attr="data-rail-title:side.tour"><span class="sym" data-icon="compass"></span><span class="label" data-i18n="side.tour">Tour</span></button>
       <button class="side-btn" id="btn-install" hidden data-rail-title="Install app" data-i18n-attr="data-rail-title:side.install"><span class="sym" data-icon="download"></span><span class="label" data-i18n="side.install">Install app</span><span class="side-dismiss" id="install-dismiss" role="button" title="Hide" data-i18n-attr="title:install.hide"><span data-icon="close" data-size="12"></span></span></button>
       <button class="side-btn" id="btn-info" data-rail-title="About" data-i18n-attr="data-rail-title:side.info"><span class="sym" data-icon="info"></span><span class="label" data-i18n="side.info">About</span></button>
       <button class="side-btn" id="btn-help" data-rail-title="Help" data-i18n-attr="data-rail-title:side.help"><span class="sym" data-icon="help"></span><span class="label" data-i18n="side.help">Help</span></button>
@@ -304,6 +305,22 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     </form>
   </dialog>
 
+  <!-- the tour (see "tour" in app.js): the page dimmed but for the part it is about, and a card beside it -->
+  <div id="tour" hidden>
+    <div class="tour-spot"></div>
+    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <div class="tour-count muted small" id="tour-count"></div>
+      <h4 id="tour-title"></h4>
+      <p id="tour-text"></p>
+      <div class="tour-keys muted small" id="tour-keys"></div>
+      <div class="tour-actions">
+        <button type="button" class="btn" id="tour-skip" data-i18n="tour.skip">Skip</button>
+        <span class="grow"></span>
+        <button type="button" class="btn" id="tour-prev" data-i18n="tour.prev">Back</button>
+        <button type="button" class="btn primary" id="tour-next" data-i18n="tour.next">Next</button>
+      </div>
+    </div>
+  </div>
   <div id="menu" class="ctx-menu" hidden></div>
   <div id="toast" hidden></div>
 </body>

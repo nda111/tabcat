@@ -20,6 +20,26 @@ export default {
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
 
   'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
+
+  'side.tour': '导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}', 'tour.keys.html': '按 <kbd>Space</kbd> 或 <kbd>→</kbd> 下一步 · <kbd>Esc</kbd> 关闭',
+
+  'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从侧边栏的“导览”开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
+
+  'tour.welcome.title': '欢迎使用 tabcat', 'tour.welcome.text': '把标签页作为链接保存在分组里，关掉后随时可以再打开。',
+
+  'tour.workspaces.title': '工作区', 'tour.workspaces.text': '最大的分类，比如工作、学习……在这里选择，拖动可调整顺序。',
+
+  'tour.categories.title': '类别', 'tour.categories.text': '工作区里的主题。每个类别都有自己的分组看板。',
+
+  'tour.groups.title': '分组', 'tour.groups.text': '装着链接和文件夹的卡片。可拖到其他列，双击名称编辑，也可以用 {icon:open} 全部打开一次以标签组打开。',
+
+  'tour.tabs.title': '打开的标签页', 'tour.tabs.text': '把标签页拖到分组上即可保存（按住 Shift 可多选）。{icon:save} 保存窗口、{icon:suspend} 休眠标签页、{icon:dedupe} 关闭重复项也都在这里。',
+
+  'tour.search.title': '搜索', 'tour.search.text': '随时查找链接、文件夹和分组。也可以按 Ctrl+F 打开。',
+
+  'tour.shortcut.title': '随时在手边', 'tour.shortcut.text': '按 Ctrl+Shift+X 把仪表板调到当前窗口，再按一次回到原来的标签页。工具栏按钮可以直接保存当前标签页。',
+
+  'tour.more.title': '设置和帮助', 'tour.more.text': '语言、主题和颜色在 {icon:settings} 设置里，所有快捷键在 {icon:help} 帮助里。点 {icon:compass} 导览可以再看一次。',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',
@@ -113,6 +133,7 @@ export default {
   'noun.group': '分组', 'noun.groupN': '{n} 个分组', 'noun.link': '链接', 'noun.linkN': '{n} 个链接', 'noun.folder': '文件夹', 'noun.folderN': '{n} 个文件夹', 'noun.item': '项目', 'noun.itemN': '{n} 个项目', 'noun.workspace': '工作区', 'noun.workspaceN': '{n} 个工作区', 'noun.category': '类别', 'noun.categoryN': '{n} 个类别',
   'undo.delete': '已撤销删除{what}', 'redo.delete': '已重做删除{what}', 'undo.move': '已撤销移动{what}', 'redo.move': '已重做移动{what}', 'undo.merge': '已撤销合并分组', 'redo.merge': '已重做合并分组',
   'undo.closeDupes': '已撤销关闭重复标签页', 'redo.closeDupes': '已重做关闭重复标签页', 'undo.dedupe': '已撤销移除重复链接', 'redo.dedupe': '已重做移除重复链接',
+  'undo.save': '已撤销保存 {n} 个标签页', 'redo.save': '已重做保存 {n} 个标签页',
   'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项。',
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',

@@ -160,6 +160,29 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
 .ws-item .count { flex: none; display: inline-flex; justify-content: center; width: 20px; }
 .side-title #add-ws { margin-right: -2px; }
 .side-bottom { border-top: 1px solid var(--border); padding-top: 8px; }
+
+/* the tour: the page dimmed (the spot's huge shadow) but for the part a step is about; the spot and the
+   card glide from step to step */
+#tour { position: fixed; inset: 0; z-index: 320; animation: tour-in .2s ease; }
+@keyframes tour-in { from { opacity: 0; } }
+#tour.placing :is(.tour-spot, .tour-card) { transition: none; }
+.tour-spot {
+  position: fixed; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 200vmax rgba(10, 9, 12, .55);
+  transition: left .38s cubic-bezier(.22, 1, .36, 1), top .38s cubic-bezier(.22, 1, .36, 1), width .38s cubic-bezier(.22, 1, .36, 1), height .38s cubic-bezier(.22, 1, .36, 1);
+}
+.tour-card {
+  position: fixed; width: min(340px, calc(100vw - 32px)); padding: 18px 18px 14px; border: 1px solid var(--border); border-radius: 14px;
+  background: var(--panel); box-shadow: var(--shadow);
+  transition: left .38s cubic-bezier(.22, 1, .36, 1), top .38s cubic-bezier(.22, 1, .36, 1);
+}
+.tour-card h4 { margin: 4px 0 6px; font-size: 16px; }
+.tour-card p { margin: 0 0 14px; line-height: 1.55; }
+.tour-card p { white-space: normal; }
+.tour-icon { display: inline-grid; place-items: center; vertical-align: -.2em; margin: 0 1px; color: var(--icon); }
+.tour-keys { margin: -4px 0 12px; }
+.tour-keys kbd { padding: 0 5px; border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 11px; }
+.tour-actions { display: flex; align-items: center; gap: 6px; }
+.tour-actions .grow { flex: 1; }
 /* "Install app": its × (hide it for good; Settings still offers it) shows on hover, at the row's end */
 #btn-install .side-dismiss {
   margin-left: auto; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 5px;

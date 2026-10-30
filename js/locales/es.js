@@ -22,6 +22,26 @@ export default {
   'side.workspaces': 'Espacios de trabajo', 'side.info': 'Información', 'side.help': 'Ayuda', 'side.settings': 'Ajustes',
 
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
+
+  'side.tour': 'Recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}', 'tour.keys.html': '<kbd>Espacio</kbd> o <kbd>→</kbd> para seguir · <kbd>Esc</kbd> para cerrar',
+
+  'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Recorrido en la barra lateral.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
+
+  'tour.welcome.title': 'Te damos la bienvenida a tabcat', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos, ciérralas y vuelve a abrirlas cuando las necesites.',
+
+  'tour.workspaces.title': 'Espacios de trabajo', 'tour.workspaces.text': 'Las cajas más grandes: uno para el trabajo, otro para estudiar… Elige uno aquí; arrastra para reordenar.',
+
+  'tour.categories.title': 'Categorías', 'tour.categories.text': 'Temas dentro de un espacio de trabajo. Cada una tiene su propio panel de grupos.',
+
+  'tour.groups.title': 'Grupos', 'tour.groups.text': 'Tarjetas con enlaces y carpetas. Arrástralas entre columnas, haz doble clic en un nombre para editarlo y abre un grupo entero como grupo de pestañas con {icon:open} Abrir todo.',
+
+  'tour.tabs.title': 'Pestañas abiertas', 'tour.tabs.text': 'Arrastra una pestaña a un grupo para guardarla (Mayús elige varias). Desde aquí también puedes {icon:save} guardar una ventana, {icon:suspend} suspender pestañas o {icon:dedupe} cerrar duplicadas.',
+
+  'tour.search.title': 'Buscar', 'tour.search.text': 'Encuentra cualquier enlace, carpeta o grupo. También se abre con Ctrl+F.',
+
+  'tour.shortcut.title': 'Siempre a mano', 'tour.shortcut.text': 'Ctrl+Shift+X trae el panel a la ventana en la que estás y te devuelve a donde estabas. El botón de la barra de herramientas guarda la pestaña actual.',
+
+  'tour.more.title': 'Ajustes y ayuda', 'tour.more.text': 'Idioma, tema y colores en {icon:settings} Ajustes; todos los atajos en {icon:help} Ayuda. {icon:compass} Recorrido lo repite.',
   'panel.expandWs': 'Expandir espacios de trabajo', 'panel.collapseWs': 'Contraer espacios de trabajo',
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',
@@ -115,6 +135,7 @@ export default {
   'noun.group': 'grupo', 'noun.groupN': '{n} grupos', 'noun.link': 'enlace', 'noun.linkN': '{n} enlaces', 'noun.folder': 'carpeta', 'noun.folderN': '{n} carpetas', 'noun.item': 'elemento', 'noun.itemN': '{n} elementos', 'noun.workspace': 'espacio de trabajo', 'noun.workspaceN': '{n} espacios de trabajo', 'noun.category': 'categoría', 'noun.categoryN': '{n} categorías',
   'undo.delete': 'Eliminación deshecha: {what}', 'redo.delete': 'Eliminación rehecha: {what}', 'undo.move': 'Movimiento deshecho: {what}', 'redo.move': 'Movimiento rehecho: {what}', 'undo.merge': 'Combinación de grupos deshecha', 'redo.merge': 'Combinación de grupos rehecha',
   'undo.closeDupes': 'Cierre de pestañas duplicadas deshecho', 'redo.closeDupes': 'Cierre de pestañas duplicadas rehecho', 'undo.dedupe': 'Eliminación de enlaces duplicados deshecha', 'redo.dedupe': 'Eliminación de enlaces duplicados rehecha',
+  'undo.save': { one: 'Guardado de {n} pestaña deshecho', other: 'Guardado de {n} pestañas deshecho' }, 'redo.save': { one: 'Guardado de {n} pestaña rehecho', other: 'Guardado de {n} pestañas rehecho' },
   'data.note': 'Al importar, los elementos elegidos se añaden como espacios de trabajo nuevos; no se sobrescribe nada. Los archivos de ajustes contienen las opciones de arriba.',
   'settings.shortcuts': 'Atajos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Ctrl+Shift+X</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
