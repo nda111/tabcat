@@ -108,7 +108,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 /* ...and the list's scroll box would clip them where they start, up in the heading's place: while
    the panel toggles, its box reaches 48px higher (same layout: the padding makes up for the margin) */
 #sidebar.panel-anim #ws-list { margin-top: -48px; padding-top: 48px; }
-#ws-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+#ws-list { list-style: none; margin: 0; padding: 0; overflow-x: hidden; overflow-y: auto; flex: 1; }
 .ws-item {
   display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 11px; border-radius: 7px; cursor: pointer;
   user-select: none;
@@ -332,7 +332,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 .panel-actions .btn:disabled { opacity: .45; cursor: default; }
 .panel-actions .btn:disabled:hover { background: var(--panel); }
 .side-btn .sym { display: inline-flex; }
-#windows { overflow-y: auto; flex: 1; padding: 0 6px 20px; }
+#windows { overflow-x: hidden; overflow-y: auto; flex: 1; padding: 0 6px 20px; }
 .win { margin-bottom: 10px; border-radius: 8px; }
 .win-head {
   display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; /* buttons stay at the top when the name wraps */
