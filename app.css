@@ -173,6 +173,7 @@ body.ws-collapsed .ws-add { display: flex; }
   display: inline-block; flex: none; width: 22px; height: 22px;
   background: url(icons/logo.svg) center / contain no-repeat, var(--accent); background-blend-mode: luminosity;
   -webkit-mask: url(icons/logo.svg) center / contain no-repeat; mask: url(icons/logo.svg) center / contain no-repeat;
+  transition: background-color .16s ease; /* a new accent fades in, as on the controls around it */
 }
 /* Help / About titles: the logo in place of the word tabcat */
 .logo-title { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
@@ -306,6 +307,11 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 /* on a card: as tall as the two lines beside it (the name's top to the tools' bottom) */
 .group-head .node-sym { width: 39px; height: 39px; margin-block: -3px 0; font-size: 35px; } /* (centred on the two lines) */
 .group-head .node-sym .sym-letter { font-size: 23px; width: 38.5px; height: 38.5px; border-radius: 9px; }
+/* the logo as a symbol: about an emoji's size where it sits in text, a letter badge's on a card */
+.sym-logo { display: inline-grid; place-items: center; vertical-align: -.2em; }
+.sym-logo .logo { width: 1.15em; height: 1.15em; }
+.node-sym .sym-logo .logo { width: 40px; height: 40px; }
+.group-head .node-sym .sym-logo .logo { width: 38.5px; height: 38.5px; }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
 /* the collapse button takes no more height than the name, so the header keeps its height when a group
@@ -624,6 +630,12 @@ dialog legend { font-size: 11px; color: var(--muted); }
 dialog input.sym-copy { position: absolute; margin: 0; border-color: transparent; background: transparent; box-shadow: none; outline: none; pointer-events: none; }
 dialog input.sym-box { width: 40px; height: 40px; padding: 0; text-align: center; font-size: 22px; }
 dialog input.sym-box.letter { font-weight: 600; color: var(--accent); }
+/* the logo: the box holds its code unseen and shows the logo over it (hidden while a copy grows in) */
+.sym-wrap.is-logo input.sym-box { color: transparent; caret-color: var(--text); }
+.sym-logo-view, .sym-logo-copy { position: absolute; width: 40px; height: 40px; display: grid; place-items: center; pointer-events: none; }
+.sym-logo-view { left: 0; top: 4px; visibility: hidden; }
+.sym-wrap.is-logo:not(.popping) .sym-logo-view { visibility: visible; }
+:is(.sym-logo-view, .sym-logo-copy) .logo { width: 26px; height: 26px; }
 /* letter / digit symbols: a square badge about the size of an emoji */
 .sym-letter {
   display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: .35em; flex: none;

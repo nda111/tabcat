@@ -83,7 +83,12 @@ export const normalizeSymbol = (s) => {
   s = String(s ?? '').trim();
   return /^[a-z]$/.test(s) ? s.toUpperCase() : s;
 };
-export const isValidSymbol = (s) => !s || isLetterSymbol(s) || isSingleEmoji(s);
+// the tabcat logo as a symbol (drawn in the accent colour; text that shows symbols leaves it out)
+export const LOGO_SYMBOL = ':tabcat:';
+export const isLogoSymbol = (s) => s === LOGO_SYMBOL;
+export const isValidSymbol = (s) => !s || isLetterSymbol(s) || isLogoSymbol(s) || isSingleEmoji(s);
+// a symbol as text (a tab group's title, a sentence): emoji only
+export const textSymbol = (s) => (s && !isLetterSymbol(s) && !isLogoSymbol(s) ? s : '');
 
 export function normalizeUrl(u) {
   u = (u || '').trim();

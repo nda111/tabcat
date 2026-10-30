@@ -92,11 +92,12 @@ function chunks(parts) {
     .filter(Boolean);
 }
 
-// A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge.
-// `fallback` may be an icon element: shown (muted, as a line icon) when there is no symbol.
+// A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge, the logo in the
+// accent colour. `fallback` may be an icon element: shown (muted, as a line icon) when there is no symbol.
 function symbolEl(symbol, fallback = '') {
   if (!symbol && fallback instanceof Node) return h('span', { class: 'sym sym-icon' }, fallback);
   const s = symbol || fallback;
+  if (T.isLogoSymbol(s)) return h('span', { class: 'sym sym-logo', role: 'img', 'aria-label': 'tabcat' }, h('span', { class: 'logo' }));
   return T.isLetterSymbol(s)
     ? h('span', { class: 'sym sym-letter' }, h('span', { class: 'sym-glyph' }, s))
     : h('span', { class: 'sym' }, s);
@@ -216,17 +217,44 @@ function applyTheme() {
 // The tab's icon: the logo in the accent colour (a pinned dashboard tab shows nothing else), as .logo
 // draws it on the page: the stripes keep their shading and the eyes and nose stay white.
 const logo = Object.assign(new Image(), { src: 'icons/logo.svg' });
-function tintFavicon() {
-  if (!logo.complete) return void logo.addEventListener('load', tintFavicon, { once: true });
-  const c = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
-  const g = c.getContext('2d');
+const favCanvas = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
+// A CSS colour as [r, g, b] (the canvas resolves oklch and the rest)
+function rgbOf(color) {
+  const g = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  g.fillStyle = color;
+  g.fillRect(0, 0, 1, 1);
+  return [...g.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+}
+function drawFavicon(rgb) {
+  const g = favCanvas.getContext('2d');
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, 64, 64);
   g.drawImage(logo, 0, 0, 64, 64);
   g.globalCompositeOperation = 'color'; // the accent's hue and saturation over the logo's lightness
-  g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  g.fillStyle = `rgb(${rgb.join(' ')})`;
   g.fillRect(0, 0, 64, 64);
   g.globalCompositeOperation = 'destination-in'; // back to the logo's shape
   g.drawImage(logo, 0, 0, 64, 64);
-  $('#favicon').href = c.toDataURL();
+  $('#favicon').href = favCanvas.toDataURL();
+}
+// A new accent fades in over .16s, as on the page (redrawn each frame; a hidden tab just takes it)
+let favRgb = null;
+let favRun = 0;
+function tintFavicon() {
+  if (!logo.complete) return void logo.addEventListener('load', tintFavicon, { once: true });
+  const to = rgbOf(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+  const from = favRgb;
+  const run = ++favRun;
+  if (!from || document.hidden || from.every((v, i) => v === to[i])) return void drawFavicon(favRgb = to);
+  const t0 = performance.now();
+  const step = (now) => {
+    if (run !== favRun) return; // a newer accent took over
+    const k = Math.min(1, (now - t0) / 160);
+    const e = k * k * (3 - 2 * k);
+    drawFavicon(favRgb = from.map((v, i) => Math.round(v + (to[i] - v) * e)));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 // (the accent differs between light and dark)
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', tintFavicon);
@@ -1198,6 +1226,8 @@ document.addEventListener('pointerdown', (e) => {
 
 // Waking suspended tabs (loading them again in the background) needs extension 0.2.7.
 const canWake = () => !!extVersion && !olderThan(extVersion, '0.2.7');
+// the logo as a symbol: an older extension refuses to store it
+const canLogoSymbol = () => !!extVersion && !olderThan(extVersion, '0.2.10');
 async function wakeTabs(ids) {
   const n = await run(B.call('wakeTabs', { tabIds: ids }));
   if (n) toast(t('toast.woken', { n }));
@@ -1271,7 +1301,7 @@ async function openAll(node, newWindow = false) {
 // and renames / recolours it when that changes.)
 function tabGroupsFor(node) {
   const set = (n, color) => ({
-    id: n.id, title: n.symbol && !T.isLetterSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name,
+    id: n.id, title: T.textSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name,
     color: color || '', urls: T.collectLinks(n).map((l) => l.url),
   });
   if (node.type === 'group') return [set(node, node.color)];
@@ -1578,7 +1608,8 @@ function symbolField(label, input, err, blankIcon = null) {
   const status = h('div', { class: 'emoji-status muted small' });
   const search = h('input', { type: 'search', class: 'emoji-search', placeholder: t('emoji.search'), autocomplete: 'off' });
   const clear = h('button', { type: 'button', class: 'sym-clear', title: t('emoji.remove'), onclick: () => set('') }, icon('close', 11));
-  const wrap = h('div', { class: 'sym-wrap' }, input, blankIcon && h('span', { class: 'sym-default', 'aria-hidden': 'true' }, blankIcon), clear);
+  const logoView = h('span', { class: 'sym-logo-view', 'aria-hidden': 'true' }, h('span', { class: 'logo' })); // (the box holds its code)
+  const wrap = h('div', { class: 'sym-wrap' }, input, logoView, blankIcon && h('span', { class: 'sym-default', 'aria-hidden': 'true' }, blankIcon), clear);
 
   function set(em) {
     const old = input.value;
@@ -1587,7 +1618,7 @@ function symbolField(label, input, err, blankIcon = null) {
     err.textContent = '';
     input.dispatchEvent(new Event('input', { bubbles: true })); // (syncs the grid; a live preview hears it too)
     if (em !== old) popSymbol(old, { fontSize, fontWeight, color });
-    if (em) recordEmoji(em);
+    if (em && !T.isLogoSymbol(em)) recordEmoji(em);
   }
   // Picked or cleared (not typed): the old symbol shrinks away over the box while the new one springs
   // in, the box itself staying put. Both are copies laid over the box (inside the dialog, which sits
@@ -1596,6 +1627,11 @@ function symbolField(label, input, err, blankIcon = null) {
   // glyph sits exactly where the box draws it. The box's own text is hidden while the new copy grows.
   let popping = null; // { anim, copy }
   const overBox = (text, look) => {
+    if (T.isLogoSymbol(text)) { // the logo: drawn, not typed
+      const copy = h('span', { class: 'sym-copy sym-logo-copy', 'aria-hidden': 'true', style: `left: ${input.offsetLeft}px; top: ${input.offsetTop}px` }, h('span', { class: 'logo' }));
+      wrap.append(copy);
+      return copy;
+    }
     const copy = input.cloneNode();
     copy.removeAttribute('name');
     Object.assign(copy, { value: text, readOnly: true, tabIndex: -1 });
@@ -1606,10 +1642,11 @@ function symbolField(label, input, err, blankIcon = null) {
     return copy;
   };
   function popSymbol(old, was) {
-    if (popping) { popping.anim.cancel(); popping.copy.remove(); popping = null; input.style.fontSize = ''; }
+    if (popping) { popping.anim.cancel(); popping.copy.remove(); popping = null; input.style.fontSize = ''; wrap.classList.remove('popping'); }
     if (input.value) {
       const copy = overBox(input.value, getComputedStyle(input));
       input.style.fontSize = '0px';
+      wrap.classList.add('popping'); // (the box's own logo hides too)
       const anim = copy.animate([{ opacity: 0, transform: 'scale(.55)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
       const mine = popping = { anim, copy };
       anim.finished.catch(() => {}).then(() => {
@@ -1617,6 +1654,7 @@ function symbolField(label, input, err, blankIcon = null) {
         popping = null;
         copy.remove();
         input.style.fontSize = '';
+        wrap.classList.remove('popping');
       });
     }
     if (!old) return;
@@ -1626,25 +1664,28 @@ function symbolField(label, input, err, blankIcon = null) {
   }
   function sync() {
     wrap.classList.toggle('blank', !input.value);
+    wrap.classList.toggle('is-logo', T.isLogoSymbol(input.value));
     input.classList.toggle('letter', T.isLetterSymbol(input.value));
     for (const b of grid.children) b.classList.toggle('selected', b.dataset.emoji === input.value);
   }
   function show(list, note = '') {
     grid.replaceChildren(...list.map((e) => h('button', {
       type: 'button', title: e.name || e.unicode, dataset: { emoji: e.unicode }, onclick: () => set(e.unicode),
-    }, T.isLetterSymbol(e.unicode) ? symbolEl(e.unicode) : e.unicode)));
+    }, T.isLetterSymbol(e.unicode) || T.isLogoSymbol(e.unicode) ? symbolEl(e.unicode) : e.unicode)));
     status.textContent = note;
     sync();
   }
 
-  const defaults = () => EMOJIS.map((unicode) => ({ unicode }));
+  // the logo first, in the accent colour (one: it follows the theme like the rest of the page)
+  const defaults = () => [...(canLogoSymbol() ? [{ unicode: T.LOGO_SYMBOL, name: 'tabcat' }] : []), ...EMOJIS.map((unicode) => ({ unicode }))];
   async function showDefaults() {
     show(defaults());
     try {
       const recent = await favoriteEmoji(16);
       if (search.value.trim()) return;
       const seen = new Set();
-      show([...recent, ...defaults()].filter((e) => !seen.has(e.unicode) && seen.add(e.unicode)).slice(0, 40));
+      const all = defaults(), logo = all.filter((e) => T.isLogoSymbol(e.unicode)), rest = all.filter((e) => !T.isLogoSymbol(e.unicode));
+      show([...logo, ...recent, ...rest].filter((e) => !seen.has(e.unicode) && seen.add(e.unicode)).slice(0, 40));
     } catch { /* offline: keep the built-in list */ }
   }
 
@@ -2704,7 +2745,7 @@ async function mergeGroups(fromId, intoId) {
   const from = T.locate(state, fromId)?.node;
   const into = T.locate(state, intoId)?.node;
   if (!from || !into) return;
-  const label = (g) => `${g.symbol ? g.symbol + ' ' : ''}${g.name}`;
+  const label = (g) => `${g.symbol && !T.isLogoSymbol(g.symbol) ? g.symbol + ' ' : ''}${g.name}`;
   const n = T.countLinks(from);
   if (!(await confirmDialog({
     title: t('merge.title', { from: label(from), into: label(into) }),
