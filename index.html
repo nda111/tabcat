@@ -167,8 +167,8 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
       <fieldset>
         <legend data-i18n="settings.data">Data</legend>
         <div class="data-row">
-          <button type="button" class="btn" id="btn-export"><span data-icon="download"></span><span data-i18n="data.export">Export data…</span></button>
-          <label class="btn file-btn"><span data-icon="upload"></span><span data-i18n="data.import">Import data…</span><input type="file" id="import-file" accept=".json,application/json" hidden></label>
+          <button type="button" class="btn" id="btn-export"><span data-icon="download"></span><span data-i18n="data.export">Export data</span></button>
+          <label class="btn file-btn"><span data-icon="upload"></span><span data-i18n="data.import">Import data</span><input type="file" id="import-file" accept=".json,application/json" hidden></label>
         </div>
         <div class="data-row">
           <button type="button" class="btn" id="btn-export-settings"><span data-icon="download"></span><span data-i18n="data.exportSettings">Export settings</span></button>
@@ -311,9 +311,11 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
   <div id="tour" hidden>
     <div class="tour-spot"></div>
     <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
-      <div class="tour-count muted small" id="tour-count"></div>
-      <h4 id="tour-title"></h4>
-      <p id="tour-text"></p>
+      <div class="tour-body">
+        <div class="tour-count muted small" id="tour-count"></div>
+        <h4 id="tour-title"></h4>
+        <p id="tour-text"></p>
+      </div>
       <div class="tour-actions">
         <button type="button" class="btn" id="tour-skip" data-i18n="tour.skip">Skip</button>
         <span class="grow"></span>

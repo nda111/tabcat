@@ -172,6 +172,7 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
 }
 .tour-card {
   position: fixed; width: min(340px, calc(100vw - 32px)); padding: 18px 18px 14px; border: 1px solid var(--border); border-radius: 14px;
+  overflow: hidden; box-sizing: border-box; /* (its height glides from step to step: see showTourStep) */
   background: var(--panel); box-shadow: var(--shadow);
   transition: left .38s cubic-bezier(.22, 1, .36, 1), top .38s cubic-bezier(.22, 1, .36, 1);
 }

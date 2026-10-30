@@ -3741,7 +3741,24 @@ function endTour() {
   tour.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out' })
     .finished.then(() => { if (tourStep < 0) tour.hidden = true; }, () => {});
 }
+// From one step to the next, the old text fades out over the new one fading in, and the card's height
+// glides like its place does
+let tourFade = [];
 function showTourStep(i) {
+  const card = $('#tour .tour-card');
+  const body = card.querySelector('.tour-body');
+  const moving = tourStep >= 0;
+  tourFade.forEach((a) => a.finish());
+  let old = null;
+  let from = 0;
+  if (moving) {
+    from = card.offsetHeight;
+    old = body.cloneNode(true);
+    old.removeAttribute('id');
+    old.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    Object.assign(old.style, { position: 'absolute', left: `${body.offsetLeft}px`, top: `${body.offsetTop}px`, width: `${body.offsetWidth}px`, pointerEvents: 'none' });
+    old.setAttribute('aria-hidden', 'true');
+  }
   tourStep = i;
   const { key } = TOUR[i];
   $('#tour-count').textContent = t('tour.count', { i: i + 1, n: TOUR.length });
@@ -3753,6 +3770,15 @@ function showTourStep(i) {
   $('#tour-prev').hidden = i === 0;
   $('#tour-next').textContent = t(i === TOUR.length - 1 ? 'tour.done' : 'tour.next');
   placeTour();
+  if (!old) return;
+  card.append(old);
+  const glide = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  tourFade = [
+    card.animate([{ height: `${from}px` }, { height: `${card.offsetHeight}px` }], glide),
+    old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }),
+    body.animate([{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' }),
+  ];
+  tourFade[1].finished.then(() => old.remove(), () => old.remove());
 }
 // The lit part (a step's element, if shown; else none: the card alone, centred) and the card beside it:
 // right of it, left, below or above, whichever fits first
