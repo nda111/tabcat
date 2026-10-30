@@ -799,8 +799,10 @@ body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; 
 .swatch:hover { transform: scale(1.12); }
 .swatch:has(input:checked) { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
 /* mono: split by a line through the centre at 60°, light theme's background on the left, dark theme's on the right */
-.swatch[data-accent="mono"] { background: linear-gradient(120deg, #f4f2ef 50%, #18171a 50%); box-shadow: inset 0 0 0 1px var(--border); }
-.swatch[data-accent="mono"]:has(input:checked) { box-shadow: inset 0 0 0 1px var(--border), 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+.swatch[data-accent="mono"] { /* each half rimmed in the other's colour */
+  border: 1.5px solid transparent;
+  background: linear-gradient(120deg, #f4f2ef 50%, #18171a 50%) padding-box, linear-gradient(120deg, #18171a 50%, #f4f2ef 50%) border-box;
+}
 .swatch:has(input:focus-visible) { outline: 1px solid var(--accent); outline-offset: 4px; }
 
 /* the group editor's colour row: a plain swatch (the default card) before the colours */
