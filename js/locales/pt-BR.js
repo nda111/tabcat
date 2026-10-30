@@ -105,12 +105,12 @@ export default {
   'accent.teal': 'Verde-azulado', 'accent.sky': 'Azul-celeste', 'accent.blue': 'Azul', 'accent.purple': 'Roxo', 'accent.pink': 'Rosa',
   'settings.data': 'Dados', 'data.export': 'Exportar dados…', 'data.import': 'Importar dados…',
   'data.exportSettings': 'Exportar configurações', 'data.importSettings': 'Importar configurações', 'data.resetSettings': 'Redefinir configurações', 'reset.title': 'Redefinir todas as configurações?', 'reset.text': 'Idioma, tema, cor, colunas e as demais opções voltam ao padrão. Espaços de trabalho, grupos e links não são redefinidos.', 'reset.ok': 'Redefinir', 'toast.settingsReset': 'Configurações redefinidas',
-  'data.note': 'A importação adiciona os itens escolhidos como novos espaços de trabalho; nada é sobrescrito. Os arquivos de configurações guardam as opções acima (não o endereço do painel).',
+  'data.note': 'A importação adiciona os itens escolhidos como novos espaços de trabalho; nada é sobrescrito. Os arquivos de configurações guardam as opções acima.',
   'settings.shortcuts': 'Atalhos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Alt+Shift+D</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
 
-  'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.dashboard': 'Painel', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
+  'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.
 Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do quadro; os grupos são os cartões do quadro.</p>`,

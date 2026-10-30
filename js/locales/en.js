@@ -112,13 +112,13 @@ export default {
   'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink',
   'settings.data': 'Data', 'data.export': 'Export data…', 'data.import': 'Import data…',
   'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Workspaces, groups and links are not reset.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults',
-  'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above (not the dashboard address).',
+  'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above.',
   'settings.shortcuts': 'Shortcuts',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Done',
 
   // help
-  'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.dashboard': 'Dashboard', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
+  'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
   'help.org.html': `<h4>How things are organized</h4>
 <p><b>Workspace</b> › <b>Category</b> › <b>Group</b> › <b>Folder</b> (up to 4 levels) and <b>Link</b>.
 Pick a workspace on the left and a category in the bar above the board; groups are the cards on the board.</p>`,

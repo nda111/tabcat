@@ -103,12 +103,12 @@ export default {
   'accent.teal': '青', 'accent.sky': '天蓝', 'accent.blue': '蓝', 'accent.purple': '紫', 'accent.pink': '粉',
   'settings.data': '数据', 'data.export': '导出数据…', 'data.import': '导入数据…',
   'data.exportSettings': '导出设置', 'data.importSettings': '导入设置', 'data.resetSettings': '重置设置', 'reset.title': '要重置所有设置吗？', 'reset.text': '语言、主题、颜色、列数等选项将恢复为默认值。工作区、分组和链接不会被重置。', 'reset.ok': '重置', 'toast.settingsReset': '设置已恢复为默认值',
-  'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项 (不含仪表板地址)。',
+  'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项。',
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Alt+Shift+D</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
 
-  'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.dashboard': '仪表板', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
+  'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。
 在左侧选择工作区，在面板上方的栏中选择类别；面板上的卡片就是分组。</p>`,

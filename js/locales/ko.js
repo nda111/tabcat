@@ -103,12 +103,12 @@ export default {
   'accent.teal': '청록', 'accent.sky': '하늘', 'accent.blue': '파랑', 'accent.purple': '보라', 'accent.pink': '분홍',
   'settings.data': '데이터', 'data.export': '데이터 내보내기…', 'data.import': '데이터 가져오기…',
   'data.exportSettings': '설정 내보내기', 'data.importSettings': '설정 가져오기', 'data.resetSettings': '설정 초기화', 'reset.title': '설정을 모두 초기화할까요?', 'reset.text': '언어, 테마, 색상, 열 개수 등 모든 옵션이 기본값으로 돌아갑니다. 워크스페이스, 그룹, 링크는 초기화되지 않습니다.', 'reset.ok': '초기화', 'toast.settingsReset': '설정을 기본값으로 되돌렸습니다',
-  'data.note': '가져온 항목은 새 워크스페이스로 추가되며 기존 데이터를 덮어쓰지 않습니다. 설정 파일에는 위의 옵션이 담깁니다 (대시보드 주소는 제외).',
+  'data.note': '가져온 항목은 새 워크스페이스로 추가되며 기존 데이터를 덮어쓰지 않습니다. 설정 파일에는 위의 옵션이 담깁니다.',
   'settings.shortcuts': '단축키',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Alt+Shift+D</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
 
-  'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.dashboard': '대시보드', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
+  'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
   'help.org.html': `<h4>구성</h4>
 <p><b>워크스페이스</b> › <b>카테고리</b> › <b>그룹</b> › <b>폴더</b> (최대 4단계)와 <b>링크</b>.
 왼쪽에서 워크스페이스를, 보드 위 막대에서 카테고리를 고르세요. 보드의 카드가 그룹입니다.</p>`,

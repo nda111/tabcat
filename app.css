@@ -664,6 +664,8 @@ dialog .field-label { display: block; font-weight: 600; }
 /* ---------- motion: springy pop-ups and panel toggles ---------- */
 :root { --spring-soft: cubic-bezier(.34, 1.25, .64, 1); }
 .side-panel { transition: width .4s var(--spring-soft); }
+/* closing: no overshoot (a rail that dips below its width and back reads as a bounce) */
+body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel, .side-panel.fading { transition-timing-function: cubic-bezier(.22, 1, .36, 1); } /* (.fading: it starts narrowing before the rail class is set) */
 body.resizing .side-panel { transition: none; } /* follow the pointer exactly while resizing */
 dialog[open] { animation: pop-in .24s var(--spring-soft); }
 dialog[open]::backdrop { animation: fade-in .16s ease-out; }
@@ -700,6 +702,8 @@ body:not(.ws-collapsed) #sidebar.panel-anim .side-title { animation: surface-in 
   display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 #tabs-panel #tab-stats { display: block; min-width: 0; white-space: normal; } /* (the title above doesn't wrap) */
+/* ...but not while the panel opens / closes (this outranks the rule above; see .panel-anim) */
+#tabs-panel:is(.panel-anim, .fading) #tab-stats { white-space: nowrap; }
 #tabs-panel .panel-actions { flex-wrap: nowrap; }
 
 /* links / folders picked inside a group */

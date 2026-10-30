@@ -105,12 +105,12 @@ export default {
   'accent.teal': 'Sarcelle', 'accent.sky': 'Bleu ciel', 'accent.blue': 'Bleu', 'accent.purple': 'Violet', 'accent.pink': 'Rose',
   'settings.data': 'Données', 'data.export': 'Exporter les données…', 'data.import': 'Importer des données…',
   'data.exportSettings': 'Exporter les paramètres', 'data.importSettings': 'Importer des paramètres', 'data.resetSettings': 'Réinitialiser les réglages', 'reset.title': 'Réinitialiser tous les réglages ?', 'reset.text': 'La langue, le thème, la couleur, les colonnes et les autres options reviennent à leurs valeurs par défaut. Les espaces de travail, groupes et liens ne sont pas réinitialisés.', 'reset.ok': 'Réinitialiser', 'toast.settingsReset': 'Réglages réinitialisés',
-  'data.note': 'L’import ajoute les éléments choisis comme nouveaux espaces de travail ; rien n’est écrasé. Les fichiers de paramètres contiennent les options ci-dessus (pas l’adresse du tableau de bord).',
+  'data.note': 'L’import ajoute les éléments choisis comme nouveaux espaces de travail ; rien n’est écrasé. Les fichiers de paramètres contiennent les options ci-dessus.',
   'settings.shortcuts': 'Raccourcis',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Alt+Shift+D</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Terminé',
 
-  'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.dashboard': 'Tableau de bord', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
+  'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
   'help.org.html': `<h4>Organisation</h4>
 <p><b>Espace de travail</b> › <b>Catégorie</b> › <b>Groupe</b> › <b>Dossier</b> (jusqu’à 4 niveaux) et <b>Lien</b>.
 Choisissez un espace de travail à gauche et une catégorie dans la barre au-dessus du tableau ; les groupes sont les cartes du tableau.</p>`,

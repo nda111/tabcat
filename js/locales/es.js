@@ -105,12 +105,12 @@ export default {
   'accent.teal': 'Verde azulado', 'accent.sky': 'Celeste', 'accent.blue': 'Azul', 'accent.purple': 'Morado', 'accent.pink': 'Rosa',
   'settings.data': 'Datos', 'data.export': 'Exportar datos…', 'data.import': 'Importar datos…',
   'data.exportSettings': 'Exportar ajustes', 'data.importSettings': 'Importar ajustes', 'data.resetSettings': 'Restablecer ajustes', 'reset.title': '¿Restablecer todos los ajustes?', 'reset.text': 'El idioma, el tema, el color, las columnas y las demás opciones vuelven a sus valores predeterminados. Los espacios de trabajo, grupos y enlaces no se restablecen.', 'reset.ok': 'Restablecer', 'toast.settingsReset': 'Ajustes restablecidos',
-  'data.note': 'Al importar, los elementos elegidos se añaden como espacios de trabajo nuevos; no se sobrescribe nada. Los archivos de ajustes contienen las opciones de arriba (no la dirección del panel).',
+  'data.note': 'Al importar, los elementos elegidos se añaden como espacios de trabajo nuevos; no se sobrescribe nada. Los archivos de ajustes contienen las opciones de arriba.',
   'settings.shortcuts': 'Atajos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Alt+Shift+D</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Listo',
 
-  'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.dashboard': 'Panel', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',
+  'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',
   'help.org.html': `<h4>Cómo se organiza todo</h4>
 <p><b>Espacio de trabajo</b> › <b>Categoría</b> › <b>Grupo</b> › <b>Carpeta</b> (hasta 4 niveles) y <b>Enlace</b>.
 Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el tablero; los grupos son las tarjetas del tablero.</p>`,

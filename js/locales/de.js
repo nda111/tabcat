@@ -105,12 +105,12 @@ export default {
   'accent.teal': 'Petrol', 'accent.sky': 'Himmelblau', 'accent.blue': 'Blau', 'accent.purple': 'Lila', 'accent.pink': 'Pink',
   'settings.data': 'Daten', 'data.export': 'Daten exportieren…', 'data.import': 'Daten importieren…',
   'data.exportSettings': 'Einstellungen exportieren', 'data.importSettings': 'Einstellungen importieren', 'data.resetSettings': 'Einstellungen zurücksetzen', 'reset.title': 'Alle Einstellungen zurücksetzen?', 'reset.text': 'Sprache, Design, Farbe, Spalten und die übrigen Optionen werden auf die Standardwerte gesetzt. Arbeitsbereiche, Gruppen und Links werden nicht zurückgesetzt.', 'reset.ok': 'Zurücksetzen', 'toast.settingsReset': 'Einstellungen zurückgesetzt',
-  'data.note': 'Beim Import kommen die gewählten Elemente als neue Arbeitsbereiche hinzu; nichts wird überschrieben. Einstellungsdateien enthalten die Optionen oben (nicht die Dashboard-Adresse).',
+  'data.note': 'Beim Import kommen die gewählten Elemente als neue Arbeitsbereiche hinzu; nichts wird überschrieben. Einstellungsdateien enthalten die Optionen oben.',
   'settings.shortcuts': 'Tastenkürzel',
   'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Alt+Shift+D</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Fertig',
 
-  'help.title': 'Hilfe', 'info.title': 'Info', 'info.extension': 'Erweiterung', 'info.minimum': 'Benötigte Erweiterung', 'info.dashboard': 'Dashboard', 'info.source': 'Quellcode', 'info.issues': 'Problem melden', 'info.notConnected': 'nicht verbunden',
+  'help.title': 'Hilfe', 'info.title': 'Info', 'info.extension': 'Erweiterung', 'info.minimum': 'Benötigte Erweiterung', 'info.source': 'Quellcode', 'info.issues': 'Problem melden', 'info.notConnected': 'nicht verbunden',
   'help.org.html': `<h4>Wie alles geordnet ist</h4>
 <p><b>Arbeitsbereich</b> › <b>Kategorie</b> › <b>Gruppe</b> › <b>Ordner</b> (bis zu 4 Ebenen) und <b>Link</b>.
 Wähle links einen Arbeitsbereich und in der Leiste über dem Board eine Kategorie; die Karten auf dem Board sind die Gruppen.</p>`,
