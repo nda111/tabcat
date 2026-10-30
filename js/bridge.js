@@ -39,12 +39,15 @@ export function call(cmd, args = {}) {
 // Shorthand for data mutations; see applyOp in extension/lib/store.js for the op format.
 export const apply = (...ops) => call('apply', ops);
 
+// Asks the extension to say it's there (it answers with a 'ready' event).
+export const hello = () => window.postMessage({ source: PAGE, cmd: 'hello' }, location.origin);
+
 // Resolves with extension info, or null if the extension does not answer in time.
 export function connect(timeout = 1500) {
   return new Promise((resolve) => {
     if (info) return resolve(info);
     const t = setTimeout(() => resolve(null), timeout);
     on('ready', (d) => { clearTimeout(t); resolve(d); });
-    window.postMessage({ source: PAGE, cmd: 'hello' }, location.origin);
+    hello();
   });
 }

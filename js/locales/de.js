@@ -13,9 +13,9 @@ export default {
   'noext.step2.html': 'Prüfe, dass der Ursprung dieser Seite (<code id="no-ext-origin"></code>) in <code>content_scripts.matches</code> und <code>web_accessible_resources.matches</code> der <code>manifest.json</code> der Erweiterung steht.',
   'noext.step3': 'Lade diese Seite neu.',
   'noext.retry': 'Erneut versuchen',
-  'browser.title': 'tabcat braucht einen Chromium-basierten Browser',
-  'browser.need': 'tabcat läuft als Erweiterung für Chromium-basierte Browser wie Chrome, Edge, Brave, Whale, Opera und Vivaldi und funktioniert daher in diesem Browser nicht.',
-  'browser.open': 'Öffne diese Adresse in einem Chromium-basierten Browser:',
+  'browser.title': 'Dieser Browser wird nicht unterstützt',
+  'browser.need': 'tabcat ist eine Chrome-Erweiterung und läuft daher in Chromium-Browsern für den Computer, die Chrome-Erweiterungen installieren, etwa Chrome, Edge, Brave, Whale, Opera und Vivaldi. Browser auf Handys und Tablets, Samsung Internet, Firefox und Safari können sie nicht ausführen.',
+  'browser.open': 'Öffne diese Adresse auf einem Computer in einem dieser Browser:',
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
 
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',

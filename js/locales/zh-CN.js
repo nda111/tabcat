@@ -11,9 +11,9 @@ export default {
   'noext.step2.html': '确认此页面的来源 (<code id="no-ext-origin"></code>) 已列在扩展程序 <code>manifest.json</code> 的 <code>content_scripts.matches</code> 和 <code>web_accessible_resources.matches</code> 中。',
   'noext.step3': '重新加载此页面。',
   'noext.retry': '重试',
-  'browser.title': '需要基于 Chromium 的浏览器',
-  'browser.need': 'tabcat 是 Chrome、Edge、Brave、Whale、Opera、Vivaldi 等基于 Chromium 的浏览器的扩展程序，因此无法在此浏览器中使用。',
-  'browser.open': '请在基于 Chromium 的浏览器中打开此地址：',
+  'browser.title': '不支持此浏览器',
+  'browser.need': 'tabcat 是 Chrome 扩展程序，只能在可安装 Chrome 扩展程序的电脑版 Chromium 浏览器中使用，例如 Chrome、Edge、Brave、Whale、Opera 和 Vivaldi。手机和平板浏览器、Samsung Internet、Firefox 和 Safari 都无法使用。',
+  'browser.open': '请在电脑上用这些浏览器打开此地址：',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
 
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',

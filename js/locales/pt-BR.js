@@ -13,9 +13,9 @@ export default {
   'noext.step2.html': 'Confira se a origem desta página (<code id="no-ext-origin"></code>) está em <code>content_scripts.matches</code> e <code>web_accessible_resources.matches</code> no <code>manifest.json</code> da extensão.',
   'noext.step3': 'Recarregue esta página.',
   'noext.retry': 'Tentar de novo',
-  'browser.title': 'O tabcat precisa de um navegador baseado no Chromium',
-  'browser.need': 'O tabcat funciona como extensão para navegadores baseados no Chromium, como Chrome, Edge, Brave, Whale, Opera e Vivaldi, por isso não funciona neste navegador.',
-  'browser.open': 'Abra este endereço em um navegador baseado no Chromium:',
+  'browser.title': 'Este navegador não é compatível',
+  'browser.need': 'O tabcat é uma extensão do Chrome, então funciona em navegadores Chromium para computador que instalam extensões do Chrome, como Chrome, Edge, Brave, Whale, Opera e Vivaldi. Navegadores de celular e tablet, Samsung Internet, Firefox e Safari não conseguem executá-lo.',
+  'browser.open': 'Abra este endereço em um desses navegadores em um computador:',
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
 
   'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',

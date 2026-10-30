@@ -13,9 +13,9 @@ export default {
   'noext.step2.html': 'Make sure this page\'s origin (<code id="no-ext-origin"></code>) is listed in <code>content_scripts.matches</code> and <code>web_accessible_resources.matches</code> of the extension\'s <code>manifest.json</code>.',
   'noext.step3': 'Reload this page.',
   'noext.retry': 'Retry',
-  'browser.title': 'tabcat needs a Chromium-based browser',
-  'browser.need': 'tabcat runs as an extension for Chromium-based browsers such as Chrome, Edge, Brave, Whale, Opera and Vivaldi, so it can’t work in this browser.',
-  'browser.open': 'Open this address in a Chromium-based browser:',
+  'browser.title': 'This browser isn’t supported',
+  'browser.need': 'tabcat is a Chrome extension, so it works in desktop Chromium browsers that install Chrome extensions, such as Chrome, Edge, Brave, Whale, Opera and Vivaldi. Phone and tablet browsers, Samsung Internet, Firefox and Safari can’t run it.',
+  'browser.open': 'Open this address in one of those browsers on a computer:',
   'noext.old': 'The tabcat extension ({version}) is older than this dashboard needs ({min}): reload or update it.',
 
   // side panels

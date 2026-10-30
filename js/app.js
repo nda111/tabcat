@@ -3473,11 +3473,16 @@ B.on('disconnected', () => showNoExtension());
 document.addEventListener('visibilitychange', () => { if (!document.hidden && state) renderTabs(); });
 window.addEventListener('focus', () => { if (state) scheduleTabs(); });
 
-// tabcat is a Chromium extension: elsewhere (Firefox, Safari, Chrome on iOS…) say so before looking for it.
+// tabcat is a Chrome extension, so it needs a desktop Chromium browser that installs them: elsewhere
+// (Firefox, Safari, phones and tablets, Samsung Internet…) say so before looking for it.
 // (navigator.userAgentData exists only in Chromium browsers, and every one of them lists a "Chromium" brand)
-const chromium = () => navigator.userAgentData
-  ? navigator.userAgentData.brands.some((b) => b.brand === 'Chromium')
-  : /\b(Chrome|Chromium)\//.test(navigator.userAgent) && 'chrome' in window;
+function supportedBrowser() {
+  const ua = navigator.userAgent, data = navigator.userAgentData;
+  const chromium = data ? data.brands.some((b) => b.brand === 'Chromium') : /\b(Chrome|Chromium)\//.test(ua) && 'chrome' in window;
+  const mobile = data ? data.mobile : /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  const samsung = /SamsungBrowser/i.test(ua) || !!data?.brands.some((b) => /Samsung/i.test(b.brand));
+  return chromium && !mobile && !samsung;
+}
 
 function showNoExtension() {
   $('#no-ext-origin').textContent = location.origin;
@@ -3509,17 +3514,33 @@ async function init() {
   langShown = await setLang(lang);
   applyText();
   // language, panels and look are in place: settle their styles while transitions are still off (so
-  // e.g. the saved panel width doesn't animate in from the default), then show the page
-  void document.body.offsetWidth;
-  document.documentElement.classList.remove('booting');
-  if (!chromium()) {
+  // e.g. the saved panel width doesn't animate in from the default), then show the page. The page stays
+  // hidden until we know what to show: the board, or a notice (no supported browser, no extension) in
+  // its place, so the board is never glimpsed before a notice.
+  const show = () => { void document.body.offsetWidth; document.documentElement.classList.remove('booting'); };
+  if (!supportedBrowser()) {
     $('#browser-url').textContent = location.href;
     $('#no-browser').hidden = false;
+    return show();
+  }
+  // (the extension's content script is in the page before this runs and answers at once: no answer
+  // within half a second means it isn't there)
+  const ext = await B.connect(500);
+  if (!ext) {
+    showNoExtension();
+    show();
+    // the extension may still answer (late, or loaded since): keep asking, and open the board when it does
+    let started = false;
+    const ask = setInterval(B.hello, 1000);
+    B.on('ready', (late) => { if (started) return; started = true; clearInterval(ask); start(late); });
     return;
   }
-  const ext = await B.connect();
-  extVersion = ext?.version || null;
-  if (!ext) return showNoExtension();
+  show();
+  await start(ext);
+}
+
+async function start(ext) {
+  extVersion = ext.version || null;
   $('#no-ext').hidden = true;
   if (olderThan(ext.version, MIN_EXTENSION)) {
     toast(t('noext.old', { version: ext.version, min: MIN_EXTENSION }));
