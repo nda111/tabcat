@@ -19,6 +19,13 @@
   :root[data-accent]:not([data-theme="light"]) { --accent: oklch(.75 .13 var(--hue)); --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
 }
 :root[data-accent][data-theme="dark"] { --accent: oklch(.75 .13 var(--hue)); --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
+/* "mono": the other theme's background as the accent (dark on light, light on dark); text on it takes
+   this theme's background */
+:root[data-accent="mono"] { --accent: #18171a; --on-accent: #f4f2ef; --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+@media (prefers-color-scheme: dark) {
+  :root[data-accent="mono"]:not([data-theme="light"]) { --accent: #f4f2ef; --on-accent: #18171a; --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
+}
+:root[data-accent="mono"][data-theme="dark"] { --accent: #f4f2ef; --on-accent: #18171a; --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body {
@@ -43,7 +50,7 @@ button, input, select { font: inherit; color: inherit; }
 .btn svg { flex: none; }
 .btn:hover { background: var(--hover); }
 .btn:disabled { opacity: .5; cursor: default; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 body.popup { display: block; width: 340px; padding: 12px; overflow: auto; }
 .popup .brand { padding: 0 0 10px; font-size: 15px; }
 .popup .brand .small { font-weight: 400; margin-left: auto; }

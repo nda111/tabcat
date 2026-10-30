@@ -29,7 +29,8 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
   for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
   if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
   const hue = ACCENT_HUES[settings.accent];
-  if (hue != null && settings.accent !== 'orange') {
+  if (settings.accent === 'mono') document.documentElement.dataset.accent = 'mono'; // (no hue: see popup.css)
+  else if (hue != null && settings.accent !== 'orange') {
     document.documentElement.dataset.accent = settings.accent;
     document.documentElement.style.setProperty('--hue', hue);
   }
