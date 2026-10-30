@@ -57,6 +57,8 @@ init();
 // stays closed until then
 chrome.runtime.onStartup.addListener(() => setTimeout(pinDashboards, 1500));
 chrome.runtime.onInstalled.addListener(() => pinDashboards());
+chrome.runtime.onStartup.addListener(seedActive); // (each window's active tab: see closeIfOnlyDashboard)
+chrome.runtime.onInstalled.addListener(seedActive);
 tintActionIcon();
 relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 
@@ -145,6 +147,41 @@ chrome.tabs.onMoved.addListener(async (tabId, { windowId }) => {
   });
 });
 
+// A window left with only its pinned dashboard closes, as an emptied window would: the dashboard sits
+// beside your tabs, it isn't one to keep a window open for. That is when the tab you were looking at
+// closes or is dragged away; closing the last tab from the dashboard (looking at it) keeps the window.
+// So each window's active tab is kept (in memory and in session storage, for a worker woken by the
+// close): Chrome reports the close first, then the dashboard taking over.
+const ACTIVE_KEY = 'tabcat:activeTabs';
+let activeMap = null; // window id -> active tab id
+let activeChain = Promise.resolve();
+function withActive(fn) { // in event order
+  const run = activeChain.then(async () => {
+    activeMap ??= (await chrome.storage.session.get(ACTIVE_KEY))[ACTIVE_KEY] || {};
+    return fn(activeMap);
+  });
+  activeChain = run.catch(() => {});
+  return run;
+}
+const setActive = (windowId, tabId) => withActive((m) => {
+  m[windowId] = tabId;
+  return chrome.storage.session.set({ [ACTIVE_KEY]: m });
+});
+chrome.tabs.onActivated.addListener(({ tabId, windowId }) => setActive(windowId, tabId));
+async function seedActive() {
+  for (const t of await chrome.tabs.query({ active: true })) await setActive(t.windowId, t.id);
+}
+async function closeIfOnlyDashboard(windowId, tabId) {
+  const wasActive = withActive((m) => m[windowId] === tabId); // (read before the activation that follows)
+  if (!(await wasActive) || !(await S.loadSettings()).pinDashboard) return;
+  const tabs = await chrome.tabs.query({ windowId });
+  if (tabs.length && tabs.every((t) => t.pinned && isDashTab(t))) chrome.windows.remove(windowId).catch(() => {});
+}
+chrome.tabs.onRemoved.addListener((tabId, { windowId, isWindowClosing }) => {
+  if (!isWindowClosing) closeIfOnlyDashboard(windowId, tabId);
+});
+chrome.tabs.onDetached.addListener((tabId, { oldWindowId }) => closeIfOnlyDashboard(oldWindowId, tabId));
+
 chrome.windows.onCreated.addListener((w) => {
   if (w.type !== 'normal' || w.incognito) return;
   // (after a moment: a window restored by the session brings its own tabs, maybe its pinned dashboard)
@@ -193,7 +230,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await A.suspendTabs({ windowId: tab?.windowId });
       break;
     case 'dedupe':
-      await A.closeDuplicates();
+      await closeDuplicates();
       break;
   }
 });
@@ -298,7 +335,8 @@ chrome.tabGroups?.onRemoved.addListener(async (g) => {
 // any. An entry is the whole state from before a change (the last 50 kept); undoing puts it back and
 // keeps the state it replaces for redo. Undoing an older one (from its toast) undoes what came after it.
 // Each state is stored under its own key (they can be large); their order in HISTORY_KEY. Cleared when
-// the browser starts.
+// the browser starts. Closing tabs (duplicates) is in it too: such an entry keeps the tabs instead
+// (`closed`: opened again on undo; `opened`: closed again on redo).
 const HISTORY_KEY = 'tabcat:history';
 const SNAP = 'tabcat:snap:';
 const HISTORY_MAX = 50;
@@ -321,6 +359,11 @@ async function snap(state) {
 }
 // Puts back the state `entry` kept, returning a new entry that keeps the one it replaced
 async function restore(entry) {
+  if (entry.closed) return { id: S.uid(), what: entry.what, opened: await A.reopenTabs(entry.closed) };
+  if (entry.opened) {
+    await chrome.tabs.remove(entry.opened.map((t) => t.id)).catch(() => {});
+    return { id: S.uid(), what: entry.what, closed: entry.opened };
+  }
   const before = (await chrome.storage.local.get(SNAP + entry.id))[SNAP + entry.id];
   if (!before) return null;
   let id;
@@ -330,13 +373,18 @@ async function restore(entry) {
   });
   return { id, what: entry.what };
 }
+// A new change: on top of the undo list (the oldest falls off past HISTORY_MAX); nothing left to redo
+function pushChange(h, entry) {
+  h.undo.push(entry);
+  const dropped = [...h.redo, ...h.undo.splice(0, Math.max(0, h.undo.length - HISTORY_MAX))];
+  h.redo = [];
+  return dropSnaps(dropped);
+}
 const historyHandlers = {
   // `before`: the state from before a change just made; `what` names it for the toasts. Returns its id.
   remember: ({ before, what }) => withHistory(async (h) => {
     const id = await snap(S.normalize(before));
-    h.undo.push({ id, what: what ?? null });
-    await dropSnaps([...h.redo, ...h.undo.splice(0, Math.max(0, h.undo.length - HISTORY_MAX))]);
-    h.redo = [];
+    await pushChange(h, { id, what: what ?? null });
     return id;
   }),
   // the last change, or the one with `id` (and everything after it); returns { what } or null
@@ -346,6 +394,8 @@ const historyHandlers = {
     const gone = h.undo.splice(i);
     const back = await restore(gone[0]);
     await dropSnaps(gone);
+    // (an older data change put back takes the later ones with it; closed tabs stay undoable)
+    if (gone.length > 1 && !gone[0].closed) h.undo.push(...gone.slice(1).filter((e) => e.closed));
     if (!back) return null;
     h.redo.push(back);
     return { what: back.what };
@@ -360,6 +410,12 @@ const historyHandlers = {
     return { what: back.what };
   }),
 };
+// Closes duplicate tabs, remembered for undo; returns how many
+async function closeDuplicates() {
+  const closed = await A.closeDuplicates();
+  if (closed.length) await withHistory((h) => pushChange(h, { id: S.uid(), what: { verb: 'closeDupes' }, closed }));
+  return closed.length;
+}
 chrome.runtime.onStartup.addListener(() => withHistory(async (h) => {
   await dropSnaps([...h.undo, ...h.redo]);
   h.undo = []; h.redo = [];
@@ -394,7 +450,7 @@ const handlers = {
     return A.saveTabs(tabs || [], opts);
   },
   saveWindow: ({ windowId, ...opts }) => A.saveWindow(windowId, opts),
-  closeDuplicates: () => A.closeDuplicates(),
+  closeDuplicates: () => closeDuplicates(),
   suspendTabs: (args) => A.suspendTabs(args || {}),
   // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group
   // named after it (older dashboards send only `urls`)

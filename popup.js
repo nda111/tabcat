@@ -67,7 +67,10 @@ const msg = (t) => { $('#msg').textContent = t; $('#msg').hidden = !t; };
     msg(t(result ? 'windowSaved' : 'nothingToSave'));
   });
   $('#suspend').addEventListener('click', async () => msg(t('suspended', { n: await A.suspendTabs({}) })));
-  $('#dedupe').addEventListener('click', async () => msg(t('closedDupes', { n: await A.closeDuplicates() })));
+  $('#dedupe').addEventListener('click', async () => { // (through the background, which remembers it for undo)
+  const { result } = await chrome.runtime.sendMessage({ cmd: 'closeDuplicates' });
+  msg(t('closedDupes', { n: result }));
+});
   $('#open').addEventListener('click', async () => {
     await chrome.runtime.sendMessage({ cmd: 'openDashboard' });
     closePopup();
