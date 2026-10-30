@@ -3168,11 +3168,13 @@ function hideTip() {
     ghost.removeAttribute('id');
     ghost.className = 'tip tip-out';
     tip.after(ghost);
+    ghost.showPopover?.(); // (over an open dialog too, like the tip)
     ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 110, easing: 'ease-in', fill: 'forwards' })
       .finished.catch(() => {}).then(() => ghost.remove());
   }
   tipEl = null;
   tip.hidden = true;
+  if (tip.matches(':popover-open')) tip.hidePopover();
 }
 
 function showTip(el) {
@@ -3188,6 +3190,9 @@ function showTip(el) {
     h('div', { class: 'tip-head' }, fav && h('span', { class: 'tip-icon' }, fav), h('span', {}, head)),
     ...rest.map((line) => h('div', { class: 'tip-sub' }, line)));
   tip.hidden = false;
+  // a popover, so it shows above an open (top-layer) dialog too: shown again each time to come out on top
+  if (tip.matches(':popover-open')) tip.hidePopover();
+  tip.showPopover();
   const r = el.getBoundingClientRect();
   const side = el.closest(RAILS) || (el.matches(BESIDE) && el.closest('.side-panel'));
   let left, top;
@@ -3217,7 +3222,7 @@ document.addEventListener('mouseover', (e) => {
   if (el === tipEl) return;
   hideTip();
   if (el?.matches('[data-no-tip]')) return;
-  if (!el || drag || el.closest('dialog, #menu')) return;
+  if (!el || drag || el.closest('#menu')) return;
   tipEl = el;
   el.dataset.tip = el.title; // park now so the native tooltip never appears
   el.removeAttribute('title');

@@ -409,6 +409,7 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip, .tip-out {
+  inset: auto; margin: 0; overflow: visible; /* (popovers: undo the UA's centring) */
   position: fixed; z-index: 60; max-width: 300px; padding: 6px 9px; border-radius: 7px; pointer-events: none;
   background: var(--panel); color: var(--text); border: 1px solid var(--border); /* follows the light / dark theme */
   font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.14);
