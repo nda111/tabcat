@@ -1301,7 +1301,7 @@ async function openAll(node, newWindow = false) {
 // and renames / recolours it when that changes.)
 function tabGroupsFor(node) {
   const set = (n, color) => ({
-    id: n.id, title: T.textSymbol(n.symbol) ? `${n.symbol} ${n.name}` : n.name,
+    id: n.id, title: T.textSymbol(n.symbol) ? `${T.textSymbol(n.symbol)} ${n.name}` : n.name,
     color: color || '', urls: T.collectLinks(n).map((l) => l.url),
   });
   if (node.type === 'group') return [set(node, node.color)];
