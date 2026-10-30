@@ -2295,6 +2295,48 @@ $('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
 $('#language').append(h('option', { value: 'auto', dataset: { i18n: 'settings.langAuto' } }),
   ...Object.entries(LANGS).map(([code, name]) => h('option', { value: code, lang: code }, name)));
 
+// Number fields: − / + beside the value instead of the browser's spinners. A step slides the new
+// value in from the side it moved to; held down, a button repeats and saves once on release.
+// (The buttons stay out of the tab order: the field itself steps with the arrow keys.)
+function syncSteppers() {
+  for (const input of document.querySelectorAll('.stepper input')) {
+    const [down, up] = input.parentElement.querySelectorAll('.step-btn');
+    const v = +input.value;
+    down.disabled = input.min !== '' && v <= +input.min;
+    up.disabled = input.max !== '' && v >= +input.max;
+  }
+}
+for (const input of document.querySelectorAll('#settings-form input[type=number]')) {
+  const wrap = h('div', { class: 'stepper' });
+  input.replaceWith(wrap);
+  const step = (dir) => {
+    const before = input.value;
+    if (dir > 0) input.stepUp(); else input.stepDown();
+    if (input.value === before) return false;
+    input.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: SPRING });
+    syncSteppers();
+    return true;
+  };
+  const save = () => input.dispatchEvent(new Event('change', { bubbles: true }));
+  const button = (dir) => {
+    const b = h('button', { type: 'button', class: 'step-btn', tabindex: '-1', 'aria-hidden': 'true' }, icon(dir > 0 ? 'plus' : 'minus', 14));
+    let timer = null, held = false;
+    const stop = () => { clearTimeout(timer); timer = null; if (held) save(); held = false; };
+    b.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || b.disabled) return;
+      e.preventDefault(); // keep the focus where it is
+      if (!step(dir)) return;
+      held = true;
+      const repeat = (delay) => { timer = setTimeout(() => { if (step(dir)) repeat(Math.max(40, delay * .75)); else stop(); }, delay); };
+      repeat(350);
+    });
+    for (const type of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(type, stop);
+    return b;
+  };
+  wrap.append(input, button(-1), button(1));
+  input.addEventListener('input', syncSteppers);
+}
+
 function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
@@ -2303,6 +2345,7 @@ function fillSettings() {
   f.theme.value = settings.theme;
   f.accent.value = ACCENTS[settings.accent] != null ? settings.accent : 'orange';
   f.columns.value = boardColumns();
+  syncSteppers();
 }
 
 function openSettings() {

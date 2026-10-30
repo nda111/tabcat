@@ -412,6 +412,58 @@ dialog input:not([type=checkbox]), dialog textarea, dialog select {
   display: block; width: 100%; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--border);
   border-radius: 7px; background: var(--panel-2); font-weight: 400;
 }
+/* number field with − / + (see syncSteppers): one box, the buttons are segments at its end */
+.stepper {
+  display: flex; align-items: stretch; margin-top: 4px; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--panel-2); overflow: hidden; transition: border-color .16s ease;
+}
+.stepper:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%); }
+.stepper:focus-within { border-color: var(--accent); }
+dialog .stepper input {
+  flex: 1; min-width: 0; margin: 0; border: 0; border-radius: 0; background: transparent; outline: none;
+  font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield;
+}
+.stepper input::-webkit-inner-spin-button, .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.step-btn {
+  flex: none; display: grid; place-items: center; width: 32px; padding: 0; border: 0; border-left: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer; transition: background-color .16s ease, color .16s ease;
+}
+.step-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.step-btn .ico { transition: transform .18s cubic-bezier(.34, 1.32, .64, 1); }
+.step-btn:active:not(:disabled) .ico { transform: scale(.78); transition-duration: .06s; }
+.step-btn:disabled { opacity: .35; cursor: default; }
+
+/* drop-downs: a chevron instead of the native arrow; where the browser lets the list itself be
+   styled (appearance: base-select), it drops in from the field and the chevron flips */
+dialog select {
+  appearance: none; padding-right: 30px; cursor: pointer; transition: border-color .16s ease;
+  background: var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;
+}
+dialog select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%); }
+dialog select:focus-visible { outline: none; border-color: var(--accent); }
+@supports (appearance: base-select) {
+  dialog select, dialog select::picker(select) { appearance: base-select; }
+  dialog select { display: flex; align-items: center; background-image: none; padding-right: 8px; }
+  dialog select:open { border-color: var(--accent); }
+  dialog select::picker-icon {
+    content: ''; width: 16px; height: 16px; margin-left: auto; background: currentColor; color: var(--muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate .26s cubic-bezier(.34, 1.32, .64, 1);
+  }
+  dialog select:open::picker-icon { rotate: 180deg; }
+  dialog select::picker(select) {
+    margin-top: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); color: var(--text);
+    box-shadow: 0 8px 28px rgba(0,0,0,.16); max-height: min(320px, 60vh);
+    opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top center;
+    transition: opacity .16s ease, transform .26s cubic-bezier(.34, 1.32, .64, 1), overlay .26s allow-discrete, display .26s allow-discrete;
+  }
+  dialog select:open::picker(select) { opacity: 1; transform: none; }
+  @starting-style { dialog select:open::picker(select) { opacity: 0; transform: translateY(-6px) scale(.97); } }
+  dialog select option { padding: 6px 8px; border-radius: 6px; font-weight: 400; transition: background-color .12s ease; }
+  dialog select option:is(:hover, :focus-visible) { background: var(--hover); outline: none; }
+  dialog select option:checked { color: var(--accent); font-weight: 600; }
+  dialog select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
+}
 dialog textarea { min-height: 120px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
 dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 14px 0 0; }
 dialog fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; padding: 8px 10px; }
