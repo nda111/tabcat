@@ -263,6 +263,14 @@ const handlers = {
     await syncTabGroups(state, !fields);
     return true;
   },
+  // wake suspended tabs without switching to them (reloading a discarded tab loads it in the background)
+  async wakeTabs({ tabIds }) {
+    let n = 0;
+    for (const id of tabIds) {
+      try { await chrome.tabs.reload(id); n++; } catch { /* closed meanwhile */ }
+    }
+    return n;
+  },
   async activateTab({ tabId }) {
     const t = await chrome.tabs.update(tabId, { active: true });
     await chrome.windows.update(t.windowId, { focused: true });
