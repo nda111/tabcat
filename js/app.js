@@ -2144,23 +2144,21 @@ function itemClick(e, node) {
   return false;
 }
 
-// Shift-drag anywhere on the board: a box that works out what you mean as it grows. Started among a
-// group's links / folders, it picks those (the rows its height spans, whatever its width) until the
-// pointer leaves the group: below the card going down, above the line under its header going up; then
-// it selects groups. Started anywhere else, covering two or more groups, a group's whole header, or most
-// of a group selects groups. Shift inverts what the box covers, as with clicks; `add` (a plain drag in
-// the group of the current pick) adds it instead.
+// Shift-drag anywhere on the board: a box that works out what you mean as it grows. Its group is the one
+// it starts in (or, started outside any, the first one the pointer enters). While the pointer is level
+// with that group's links / folders (below the line under its header, above the card's bottom; how far
+// sideways doesn't matter), the box picks those: the rows its height spans. Once the pointer leaves
+// that band (down past the card, up past the header line) it selects the groups it covers. Shift inverts
+// what the box covers, as with clicks; `add` (a plain drag in the group of the current pick) adds it.
 function smartBox(e, add = false) {
   e.preventDefault(); // no native drag of what is under the pointer
   e.stopImmediatePropagation();
   const baseGroups = new Set(selected), baseItems = new Set(pickedItems), baseItemGroup = pickedGroup;
   const x0 = e.clientX, y0 = e.clientY;
-  const start = e.target instanceof Element && e.target.closest('#board .group-body') ? e.target.closest('.group') : null;
+  let start = e.target instanceof Element ? e.target.closest('#board .group') : null;
   const box = h('div', { id: 'marquee' });
   let moved = false;
   const meets = (a, r) => a.left < r.right && a.right > r.left && a.top < r.bottom && a.bottom > r.top;
-  const covers = (r, a) => r.left <= a.left && r.right >= a.right && r.top <= a.top && r.bottom >= a.bottom;
-  const overlap = (a, r) => Math.max(0, Math.min(a.right, r.right) - Math.max(a.left, r.left)) * Math.max(0, Math.min(a.bottom, r.bottom) - Math.max(a.top, r.top));
   const invert = (set, base, ids) => { set.clear(); base.forEach((id) => set.add(id)); ids.forEach((id) => (base.has(id) && !add ? set.delete(id) : set.add(id))); };
   const onMove = (ev) => {
     if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
@@ -2169,28 +2167,23 @@ function smartBox(e, add = false) {
     Object.assign(box.style, { left: r.left + 'px', top: r.top + 'px', width: r.right - r.left + 'px', height: r.bottom - r.top + 'px' });
     const hit = [...document.querySelectorAll('#board .group')].filter((c) => meets(c.getBoundingClientRect(), r));
     let mode = 'none';
-    let inGroup = hit[0];
+    // (by position: while the box is drawn nothing on the board takes the pointer)
+    if (!start) start = [...document.querySelectorAll('#board .group')].find((c) => { const b = c.getBoundingClientRect(); return ev.clientX >= b.left && ev.clientX <= b.right && ev.clientY >= b.top && ev.clientY <= b.bottom; }) || null;
+    const inGroup = start;
     if (start) {
       const c = start.getBoundingClientRect();
       const line = start.querySelector(':scope > .group-head').getBoundingClientRect().bottom;
-      mode = (ev.clientY >= y0 ? ev.clientY > c.bottom : ev.clientY < line) ? 'groups' : 'items';
-      inGroup = start;
+      mode = ev.clientY > line && ev.clientY < c.bottom ? 'items' : 'groups';
       if (mode === 'groups' && !hit.includes(start)) hit.push(start);
-    } else if (hit.length >= 2) mode = 'groups';
-    else if (hit.length === 1) {
-      const c = hit[0].getBoundingClientRect();
-      const head = hit[0].querySelector(':scope > .group-head').getBoundingClientRect();
-      mode = covers(r, head) || overlap(c, r) > 0.6 * c.width * c.height ? 'groups' : 'items';
-    }
+    } else if (hit.length) mode = 'groups';
     if (mode === 'groups') {
       pickedItems.clear(); pickedGroup = null;
       invert(selected, baseGroups, hit.map((c) => c.dataset.id));
     } else if (mode === 'items') {
       selected.clear();
       const gid = inGroup.dataset.id;
-      // (a box started among the rows picks by its height alone)
-      const spans = (row) => start ? row.top < r.bottom && row.bottom > r.top : meets(row, r);
-      const rows = [...inGroup.querySelectorAll('.link-row, .folder-head')].filter((row) => spans(row.getBoundingClientRect()));
+      // (by the box's height alone: how far it reaches sideways doesn't matter)
+      const rows = [...inGroup.querySelectorAll('.link-row, .folder-head')].filter((row) => { const c = row.getBoundingClientRect(); return c.top < r.bottom && c.bottom > r.top; });
       invert(pickedItems, baseItemGroup === gid ? baseItems : new Set(), rows.map((row) => row.closest('.item').dataset.id));
       pickedGroup = pickedItems.size ? gid : null;
     } else {
