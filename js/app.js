@@ -544,8 +544,10 @@ function wheelHint(e) {
   wheelBadge.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
 }
 function hideWheelHint() { wheelBadge.classList.remove('on'); }
+// (dir -1: scrolled up, adding a column: the wheel rolls and the up arrow nudges up)
 function nudgeWheelHint(dir) {
-  wheelBadge.querySelector('.wheel').animate([{ transform: `translateY(${dir * 3}px)` }, { transform: 'none' }], { duration: 260, easing: SPRING });
+  wheelBadge.querySelector('.wheel').animate([{ transform: `translateY(${dir * 2}px)` }, { transform: 'none' }], { duration: 260, easing: SPRING });
+  wheelBadge.querySelector(dir < 0 ? '.up' : '.down').animate([{ translate: `0 ${dir * 2.5}px` }, { translate: '0 0' }], { duration: 260, easing: SPRING });
 }
 for (const type of ['blur', 'dragstart']) window.addEventListener(type, hideWheelHint);
 
@@ -2263,7 +2265,7 @@ function resolveDrop(e, d) {
 }
 
 function insideDragged(el, d) {
-  return d.kind === 'node' && !!el.closest(`[data-id="${CSS.escape(d.id)}"]`);
+  return d.kind === 'node' && (d.ids || [d.id]).some((id) => el.closest(`[data-id="${CSS.escape(id)}"]`));
 }
 
 function resolveItemDrop(e, el, d) {
@@ -2445,8 +2447,8 @@ function targetOps(t, groupName) {
 
 async function performDrop(d, t, e) {
   if (t.action === 'open') {
-    const r = T.locate(state, d.id);
-    if (r) await run(B.call('openUrls', { urls: T.collectLinks(r.node).map((l) => l.url), windowId: t.windowId }));
+    const urls = (d.ids || [d.id]).flatMap((id) => { const r = T.locate(state, id); return r ? T.collectLinks(r.node).map((l) => l.url) : []; });
+    if (urls.length) await run(B.call('openUrls', { urls, windowId: t.windowId }));
     return;
   }
   if (d.kind === 'node') markMoving(d.ids || [d.id]);
@@ -2456,7 +2458,7 @@ async function performDrop(d, t, e) {
   const parentId = pre.length ? '$0' : t.parentId;
 
   if (d.kind === 'node') {
-    await apply(...pre, ...(d.ids || [d.id]).map((id) => ({ op: 'move', id, parentId, index: t.index })));
+    await apply(...pre, ...moveOps(d.ids || [d.id], parentId, pre.length ? null : t.index));
     return;
   }
   if (d.kind === 'external') {
@@ -2488,6 +2490,26 @@ async function performDrop(d, t, e) {
   let pid = t.parentId;
   if (pre.length) [pid] = (await apply(...pre)) || [];
   if (pid) await saveTabsTo(tabIds, pid, t.index);
+}
+
+// Move ops that put `ids` side by side, in their order, at `index` of `parentId` (null: at the end).
+// Each move's index counts positions before that move's own removal, so with several the place is
+// worked out one move at a time: right before the first item at or after `index` that isn't moving.
+function moveOps(ids, parentId, index) {
+  if (ids.length < 2 || index == null || typeof parentId !== 'string' || parentId.startsWith('$')) {
+    return ids.map((id) => ({ op: 'move', id, parentId, index }));
+  }
+  const parent = T.locate(state, parentId)?.node;
+  const list = (parent?.items || []).map((n) => n.id);
+  const moving = new Set(ids);
+  const anchor = list.slice(index).find((id) => !moving.has(id)) ?? null;
+  return ids.map((id) => {
+    const at = anchor == null ? list.length : list.indexOf(anchor);
+    const from = list.indexOf(id);
+    if (from >= 0) list.splice(from, 1);
+    list.splice(anchor == null ? list.length : list.indexOf(anchor), 0, id);
+    return { op: 'move', id, parentId, index: at };
+  });
 }
 
 // Moves every item (and the note) of group `fromId` to the end of group `intoId`, then deletes `fromId`.
@@ -2539,6 +2561,13 @@ document.addEventListener('dragstart', (e) => {
     const el = src.closest('[data-id]');
     if (!el) return;
     drag = { kind: 'node', id: el.dataset.id, type: el.dataset.type };
+    // dragging one of several picked links / folders takes them all, in board order (an item inside a
+    // picked folder goes with the folder)
+    if (el.matches('.item') && pickedItems.has(drag.id) && pickedItems.size > 1) {
+      const picked = [...document.querySelectorAll('#board .item.picked')];
+      drag.ids = picked.filter((it) => !picked.some((o) => o !== it && o.contains(it))).map((it) => it.dataset.id);
+      setTimeout(() => picked.forEach((it) => it.classList.add('dragging')), 0);
+    }
     // dragging one of several selected groups moves them all, in their current order
     if (drag.type === 'group' && selected.has(drag.id) && selected.size > 1) {
       const cat = T.locate(state, drag.id).parent;
