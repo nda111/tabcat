@@ -1070,8 +1070,10 @@ function openExpanded() {
 
 function startNoteEdit(id) {
   editingNoteId = id;
-  const note = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"] .note`);
-  noteMorph = { id, height: note ? note.getBoundingClientRect().height : 0, edit: true, ghost: noteGhost(note) };
+  const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
+  const note = group?.querySelector('.note');
+  noteMorph = { id, height: note ? note.getBoundingClientRect().height : 0, edit: true, ghost: noteGhost(note),
+    empty: group?.classList.contains('empty-group') };
   render();
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
   if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
@@ -1082,7 +1084,8 @@ function startNoteEdit(id) {
 // slide on top of the height change (which would overshoot); they just follow the note.
 // Opening the editor works the same way the other way round: the editor grows from the note.
 // The old content (a copy laid over the new element) fades out while the new content fades in.
-let noteMorph = null; // { id, height, edit, ghost }
+// In an empty group (no links, no note) the whole body opens / closes instead, as it shows or hides with the editor.
+let noteMorph = null; // { id, height, edit, ghost, empty (opening an empty group), body (its height, closing) }
 
 // A copy of the note / editor to fade out over its replacement (text only: no background or border).
 function noteGhost(el) {
@@ -1100,6 +1103,20 @@ function holdNote() {
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
   if (!group || !group.querySelector('.note-edit') !== !edit) return null; // not drawn yet
   noteMorph = null;
+  const shut = !edit && group.classList.contains('empty-group');
+  if (shut || (edit && held0.empty)) {
+    const body = group.querySelector('.group-body');
+    group.classList.remove('empty-group'); // keeps the body drawn while it closes (put back after)
+    const from = shut ? held0.body : 0;
+    Object.assign(body.style, { height: `${from}px`, overflow: 'hidden' });
+    const ghost = shut ? held0.ghost : null;
+    if (ghost) {
+      const r = body.getBoundingClientRect();
+      Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${height}px` });
+      document.body.append(ghost);
+    }
+    return { body, group, shut, from, ghost, note: group.querySelector('.note-edit') };
+  }
   let note = group.querySelector(edit ? '.note-edit' : '.note');
   if (!note && !edit) {
     // the note was emptied: a blank stand-in closes up in its place, so nothing below jumps
@@ -1120,13 +1137,19 @@ function holdNote() {
 }
 function growNote(held) {
   if (!held) return;
+  if (held.body) return growBody(held);
   const { note, height, ghost } = held;
   const grow = () => {
     note.style.height = '';
     note.style.minHeight = '';
     const to = note.getBoundingClientRect().height;
     note.style.minHeight = '0'; // the editor's min-height would cut the start of the morph
-    note.animate([{ height: `${height}px` }, { height: `${to}px` }], { duration: 340, easing: SPRING })
+    // from / to nothing (an empty note): padding and border go too, or the box would pop in at
+    // their size; and no spring when closing up, as its dip below zero would just stall at zero
+    const none = { height: '0px', paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' };
+    const gone = note.matches('.note-spacer');
+    note.animate([height ? { height: `${height}px` } : none, gone ? none : { height: `${to}px` }],
+      { duration: gone ? 280 : 340, easing: gone ? 'cubic-bezier(.22, 1, .36, 1)' : SPRING })
       .finished.catch(() => {}).then(() => {
         if (note.matches('.note-spacer')) note.remove();
         else { note.style.overflow = ''; note.style.minHeight = ''; }
@@ -1147,10 +1170,27 @@ function growNote(held) {
   });
 }
 
+function growBody({ body, group, shut, from, ghost, note }) {
+  body.style.height = '';
+  const to = shut ? 0 : body.getBoundingClientRect().height;
+  const opts = shut ? { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' } : { duration: 340, easing: SPRING };
+  const line = [{ borderBottomWidth: '1px' }, { borderBottomWidth: '0px' }]; // the header's rule over the body
+  group.querySelector('.group-head').animate(shut ? line : line.reverse(), opts);
+  body.animate([{ height: `${from}px` }, { height: `${to}px` }], opts).finished.catch(() => {}).then(() => {
+    body.style.overflow = '';
+    if (shut) group.classList.add('empty-group');
+  });
+  const fade = { duration: 240, easing: 'ease-out' };
+  if (note) note.animate([{ color: 'transparent' }, { color: getComputedStyle(note).color }], fade);
+  ghost?.animate([{ opacity: 1 }, { opacity: 0 }], { ...fade, duration: 200, fill: 'forwards' })
+    .finished.catch(() => {}).then(() => ghost.remove());
+}
+
 function saveNote(id, before, after) {
   editingNoteId = null;
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
-  noteMorph = ta ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta) } : null;
+  noteMorph = ta ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta),
+    body: ta.closest('.group-body').getBoundingClientRect().height } : null;
   if (after !== (before || '')) apply({ op: 'patch', id, fields: { note: after } });
   else render();
 }

@@ -218,6 +218,8 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
+/* as tall as the collapse button, so the header keeps its height when a group gains or loses its contents */
+.group-head .node-line { min-height: 26px; }
 .node-line .name { font-weight: 600; font-size: 14px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .node-line .count { color: var(--muted); font-size: 11px; }
 .node-line .count { margin-right: auto; } /* pushes actions + collapse to the right */
