@@ -21,6 +21,7 @@ export default {
 
   // side panels
   'side.workspaces': 'Workspaces', 'side.info': 'About', 'side.help': 'Help', 'side.settings': 'Settings',
+  'side.install': 'Install app', 'install.hide': 'Hide (you can still install it from Settings)', 'settings.app': 'App', 'toast.installed': 'Installed tabcat as an app',
   'panel.expandWs': 'Expand workspaces', 'panel.collapseWs': 'Collapse workspaces',
   'panel.expandTabs': 'Expand open tabs', 'panel.collapseTabs': 'Collapse open tabs',
   'tabs.title': 'Open tabs',
@@ -107,7 +108,7 @@ export default {
   'err.notSettings': 'not a tabcat settings file', 'err.noSettings': 'no valid settings found',
 
   // settings
-  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all', 'settings.pinDashboard': 'Pin the dashboard at the left of every window’s tab bar',
+  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all',
   'settings.autoSuspend': 'Auto-suspend unused tabs after (minutes)', 'settings.off': 'Off', 'settings.columns': 'Board columns (1–8)',
   'settings.language': 'Language', 'settings.langAuto': 'Browser default',
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
@@ -121,7 +122,7 @@ export default {
   'undo.closeDupes': 'Undid closing duplicate tabs', 'redo.closeDupes': 'Redid closing duplicate tabs', 'undo.dedupe': 'Undid removing duplicate links', 'redo.dedupe': 'Redid removing duplicate links',
   'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above.',
   'settings.shortcuts': 'Shortcuts',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Ctrl+Shift+X</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Done',
 
   // help

@@ -18,6 +18,8 @@ export default {
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
 
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
+
+  'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
   'panel.expandWs': '展开工作区', 'panel.collapseWs': '收起工作区',
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',
@@ -98,7 +100,7 @@ export default {
   'err.notJson': '不是 JSON 文件', 'err.noWorkspaces': '未找到工作区',
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
 
-  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组', 'settings.pinDashboard': '在每个窗口标签栏的最左侧固定面板',
+  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
   'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟)', 'settings.off': '关闭', 'settings.columns': '面板列数 (1–8)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',
@@ -112,7 +114,7 @@ export default {
   'undo.closeDupes': '已撤销关闭重复标签页', 'redo.closeDupes': '已重做关闭重复标签页', 'undo.dedupe': '已撤销移除重复链接', 'redo.dedupe': '已重做移除重复链接',
   'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项。',
   'settings.shortcuts': '快捷键',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Alt+Shift+D</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
 
   'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',

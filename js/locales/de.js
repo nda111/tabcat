@@ -20,6 +20,8 @@ export default {
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
 
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
+
+  'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
   'panel.expandWs': 'Arbeitsbereiche ausklappen', 'panel.collapseWs': 'Arbeitsbereiche einklappen',
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',
@@ -100,7 +102,7 @@ export default {
   'err.notJson': 'keine JSON-Datei', 'err.noWorkspaces': 'keine Arbeitsbereiche gefunden',
   'err.notSettings': 'keine tabcat-Einstellungsdatei', 'err.noSettings': 'keine gültigen Einstellungen gefunden',
 
-  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren', 'settings.pinDashboard': 'Dashboard links in der Tableiste jedes Fensters anheften',
+  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren',
   'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten)', 'settings.off': 'Aus', 'settings.columns': 'Spalten im Board (1–8)',
   'settings.language': 'Sprache', 'settings.langAuto': 'Browsersprache',
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',
@@ -114,7 +116,7 @@ export default {
   'undo.closeDupes': 'Schließen doppelter Tabs rückgängig gemacht', 'redo.closeDupes': 'Doppelte Tabs erneut geschlossen', 'undo.dedupe': 'Entfernen doppelter Links rückgängig gemacht', 'redo.dedupe': 'Doppelte Links erneut entfernt',
   'data.note': 'Beim Import kommen die gewählten Elemente als neue Arbeitsbereiche hinzu; nichts wird überschrieben. Einstellungsdateien enthalten die Optionen oben.',
   'settings.shortcuts': 'Tastenkürzel',
-  'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Alt+Shift+D</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Ctrl+Shift+X</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Fertig',
 
   'help.title': 'Hilfe', 'info.title': 'Info', 'info.extension': 'Erweiterung', 'info.minimum': 'Benötigte Erweiterung', 'info.source': 'Quellcode', 'info.issues': 'Problem melden', 'info.notConnected': 'nicht verbunden',

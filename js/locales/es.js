@@ -20,6 +20,8 @@ export default {
   'noext.old': 'La extensión tabcat ({version}) es más antigua de lo que necesita este panel ({min}): vuelve a cargarla o actualízala.',
 
   'side.workspaces': 'Espacios de trabajo', 'side.info': 'Información', 'side.help': 'Ayuda', 'side.settings': 'Ajustes',
+
+  'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
   'panel.expandWs': 'Expandir espacios de trabajo', 'panel.collapseWs': 'Contraer espacios de trabajo',
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',
@@ -100,7 +102,7 @@ export default {
   'err.notJson': 'no es un archivo JSON', 'err.noWorkspaces': 'no se encontraron espacios de trabajo',
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
 
-  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo', 'settings.pinDashboard': 'Fijar el panel a la izquierda de la barra de pestañas de cada ventana',
+  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
   'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos)', 'settings.off': 'Desactivado', 'settings.columns': 'Columnas del tablero (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',
@@ -114,7 +116,7 @@ export default {
   'undo.closeDupes': 'Cierre de pestañas duplicadas deshecho', 'redo.closeDupes': 'Cierre de pestañas duplicadas rehecho', 'undo.dedupe': 'Eliminación de enlaces duplicados deshecha', 'redo.dedupe': 'Eliminación de enlaces duplicados rehecha',
   'data.note': 'Al importar, los elementos elegidos se añaden como espacios de trabajo nuevos; no se sobrescribe nada. Los archivos de ajustes contienen las opciones de arriba.',
   'settings.shortcuts': 'Atajos',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Alt+Shift+D</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Ctrl+Shift+X</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Listo',
 
   'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',

@@ -18,6 +18,8 @@ export default {
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
 
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
+
+  'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
   'panel.expandWs': 'ワークスペースを展開', 'panel.collapseWs': 'ワークスペースを折りたたむ',
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
@@ -98,7 +100,7 @@ export default {
   'err.notJson': 'JSON ファイルではありません', 'err.noWorkspaces': 'ワークスペースが見つかりません',
   'err.notSettings': 'tabcat の設定ファイルではありません', 'err.noSettings': '有効な設定が見つかりません',
 
-  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる', 'settings.pinDashboard': 'すべてのウィンドウのタブバー左端にダッシュボードを固定',
+  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる',
   'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分)', 'settings.off': 'オフ', 'settings.columns': 'ボードの列数 (1–8)',
   'settings.language': '言語', 'settings.langAuto': 'ブラウザの設定',
   'settings.appearance': '外観', 'settings.theme': 'テーマ', 'settings.color': '色',
@@ -112,7 +114,7 @@ export default {
   'undo.closeDupes': '重複したタブを閉じる操作を取り消しました。', 'redo.closeDupes': '重複したタブを閉じる操作をやり直しました。', 'undo.dedupe': '重複したリンクの削除を取り消しました。', 'redo.dedupe': '重複したリンクの削除をやり直しました。',
   'data.note': 'インポートした項目は新しいワークスペースとして追加され、既存のデータは上書きされません。設定ファイルには上のオプションが含まれます。',
   'settings.shortcuts': 'ショートカット',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Alt+Shift+D</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Ctrl+Shift+X</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '完了',
 
   'help.title': 'ヘルプ', 'info.title': '情報', 'info.extension': '拡張機能', 'info.minimum': '必要な拡張機能', 'info.source': 'ソースコード', 'info.issues': '問題を報告', 'info.notConnected': '未接続',

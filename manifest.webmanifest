@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "tabcat",
+  "short_name": "tabcat",
+  "description": "Save, group and reopen your tabs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f2ef",
+  "theme_color": "#f4f2ef",
+  "icons": [
+    { "src": "icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

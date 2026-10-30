@@ -11,7 +11,7 @@ const tr = t; // for code where `t` is a tab or a drop target
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, groupTabs: true, pinDashboard: false, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
+let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 // (mono has no hue: the other theme's background, see app.css)
@@ -2997,7 +2997,6 @@ function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.groupTabs.checked = settings.groupTabs !== false;
-  f.pinDashboard.checked = !!settings.pinDashboard;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
@@ -3017,7 +3016,6 @@ $('#settings-form').addEventListener('change', async (e) => {
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
     groupTabs: f.groupTabs.checked,
-    pinDashboard: f.pinDashboard.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
     language: f.language.value,
     theme: f.theme.value,
@@ -3216,7 +3214,6 @@ const SETTINGS_IO = {
   language: (v) => v === 'auto' || Object.hasOwn(LANGS, v),
   closeOnSave: (v) => typeof v === 'boolean',
   groupTabs: (v) => typeof v === 'boolean',
-  pinDashboard: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
   accent: (v) => Object.hasOwn(ACCENTS, v),
@@ -3225,7 +3222,7 @@ const SETTINGS_IO = {
 
 // Settings > Data > Reset settings: every option above back to its default (after asking; the data is
 // not touched)
-const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, pinDashboard: false, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
+const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
 $('#btn-reset-settings').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('reset.title'), text: t('reset.text'), ok: t('reset.ok'), danger: true }))) return;
   const s = await run(B.call('saveSettings', SETTINGS_DEFAULTS));
@@ -3576,6 +3573,9 @@ function showNoExtension() {
 
 async function refresh() {
   [state, settings] = await Promise.all([B.call('getState'), B.call('getSettings')]);
+  // the pinned dashboard is gone: an extension from before (0.2.10) that still pins it is told to stop
+  // (it then takes its pinned tabs away; a newer one retires the setting itself)
+  if (settings.pinDashboard) B.call('saveSettings', { pinDashboard: false });
   await switchLang(settings.language, false);
   applyTheme();
   render();
@@ -3642,6 +3642,36 @@ async function start(ext) {
 }
 
 $('#no-ext-retry').addEventListener('click', () => location.reload());
+
+/* ---------- the dashboard as an app ---------- */
+
+// Installed, the dashboard opens in its own window (no tab bar), from the taskbar / dock or Ctrl+Shift+C.
+// Chrome says when it can install it (beforeinstallprompt: not when installed, or opened as the app);
+// then the sidebar offers it (until hidden with its ×) and Settings > General does too.
+const INSTALL_HIDDEN = 'tabcat:installHidden';
+let installPrompt = window.installPrompt || null; // (kept by the script in index.html if it came early)
+function showInstall() {
+  let hidden = false;
+  try { hidden = localStorage.getItem(INSTALL_HIDDEN) === '1'; } catch { /* storage unavailable */ }
+  $('#btn-install').hidden = !installPrompt || hidden;
+  $('#install-row').hidden = !installPrompt;
+}
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; showInstall(); });
+addEventListener('appinstalled', () => { installPrompt = null; showInstall(); toast(t('toast.installed')); });
+async function install() {
+  const p = installPrompt;
+  if (!p) return;
+  installPrompt = null; // (each offer prompts once; Chrome offers again if this one is declined)
+  await p.prompt();
+  showInstall();
+}
+$('#btn-install').addEventListener('click', (e) => {
+  if (!e.target.closest('#install-dismiss')) return void install();
+  try { localStorage.setItem(INSTALL_HIDDEN, '1'); } catch { /* storage unavailable */ }
+  showInstall();
+});
+$('#settings-install').addEventListener('click', install);
+showInstall();
 // a page can't open chrome:// addresses (and without the extension nothing can open them for it): such a
 // link copies its address instead, to paste into a new tab
 document.addEventListener('click', (e) => {

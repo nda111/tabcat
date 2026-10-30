@@ -20,6 +20,8 @@ export default {
   'noext.old': 'A extensão tabcat ({version}) é mais antiga do que este painel precisa ({min}): recarregue ou atualize a extensão.',
 
   'side.workspaces': 'Espaços de trabalho', 'side.info': 'Sobre', 'side.help': 'Ajuda', 'side.settings': 'Configurações',
+
+  'side.install': 'Instalar como app', 'install.hide': 'Ocultar (ainda dá para instalar nas Configurações)', 'settings.app': 'App', 'toast.installed': 'tabcat instalado como app',
   'panel.expandWs': 'Expandir espaços de trabalho', 'panel.collapseWs': 'Recolher espaços de trabalho',
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
@@ -100,7 +102,7 @@ export default {
   'err.notJson': 'não é um arquivo JSON', 'err.noWorkspaces': 'nenhum espaço de trabalho encontrado',
   'err.notSettings': 'não é um arquivo de configurações do tabcat', 'err.noSettings': 'nenhuma configuração válida encontrada',
 
-  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo', 'settings.pinDashboard': 'Fixar o painel à esquerda da barra de abas de cada janela',
+  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo',
   'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos)', 'settings.off': 'Desativado', 'settings.columns': 'Colunas do quadro (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma do navegador',
   'settings.appearance': 'Aparência', 'settings.theme': 'Tema', 'settings.color': 'Cor',
@@ -114,7 +116,7 @@ export default {
   'undo.closeDupes': 'Fechamento de abas duplicadas desfeito', 'redo.closeDupes': 'Fechamento de abas duplicadas refeito', 'undo.dedupe': 'Remoção de links duplicados desfeita', 'redo.dedupe': 'Remoção de links duplicados refeita',
   'data.note': 'A importação adiciona os itens escolhidos como novos espaços de trabalho; nada é sobrescrito. Os arquivos de configurações guardam as opções acima.',
   'settings.shortcuts': 'Atalhos',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Alt+Shift+D</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
 
   'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',

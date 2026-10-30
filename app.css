@@ -160,6 +160,14 @@ body:not(.ws-collapsed) .brand-logo { cursor: pointer; } /* it collapses the pan
 .ws-item .count { flex: none; display: inline-flex; justify-content: center; width: 20px; }
 .side-title #add-ws { margin-right: -2px; }
 .side-bottom { border-top: 1px solid var(--border); padding-top: 8px; }
+/* "Install app": its × (hide it for good; Settings still offers it) shows on hover, at the row's end */
+#btn-install .side-dismiss {
+  margin-left: auto; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 5px;
+  color: var(--muted); opacity: 0; transition: opacity .12s ease, background-color .12s ease;
+}
+#btn-install:is(:hover, .hover) .side-dismiss { opacity: 1; }
+#btn-install .side-dismiss:hover { background: var(--border); color: var(--text); }
+body.ws-collapsed #btn-install .side-dismiss { display: none; }
 /* "new workspace" at the end of the list: only in the collapsed rail */
 .ws-add { display: none; align-items: center; justify-content: center; padding: 7px 0; border-radius: 7px; color: var(--muted); cursor: pointer; }
 .ws-add:hover, .ws-add.hover { background: var(--hover); color: var(--text); }

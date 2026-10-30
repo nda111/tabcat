@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>tabcat</title>
   <link rel="icon" href="icons/icon32.png" id="favicon">
+  <!-- installable as an app (its own window, no tab bar): see "the dashboard as an app" in app.js -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f4f2ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#18171a" media="(prefers-color-scheme: dark)">
   <script>
+    // Chrome's offer to install the page can come before app.js runs: kept for it
+    addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.installPrompt = e; });
     // Before anything is drawn: the last theme / colour seen (so the page doesn't flash the defaults), and
     // the page kept hidden until the language, panel widths and the rest are applied (app.js lifts this;
     // the timeout is a safety net).
@@ -68,6 +74,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     <div class="side-title"><span class="label" data-i18n="side.workspaces">Workspaces</span> <button class="icon-btn" id="add-ws" title="New workspace" data-i18n-attr="title:new.workspace"><span data-icon="plus"></span></button></div>
     <ul id="ws-list"></ul>
     <div class="side-bottom">
+      <button class="side-btn" id="btn-install" hidden data-rail-title="Install app" data-i18n-attr="data-rail-title:side.install"><span class="sym" data-icon="download"></span><span class="label" data-i18n="side.install">Install app</span><span class="side-dismiss" id="install-dismiss" role="button" title="Hide" data-i18n-attr="title:install.hide"><span data-icon="close" data-size="12"></span></span></button>
       <button class="side-btn" id="btn-info" data-rail-title="About" data-i18n-attr="data-rail-title:side.info"><span class="sym" data-icon="info"></span><span class="label" data-i18n="side.info">About</span></button>
       <button class="side-btn" id="btn-help" data-rail-title="Help" data-i18n-attr="data-rail-title:side.help"><span class="sym" data-icon="help"></span><span class="label" data-i18n="side.help">Help</span></button>
       <button class="side-btn" id="btn-settings" data-rail-title="Settings" data-i18n-attr="data-rail-title:side.settings"><span class="sym" data-icon="settings"></span><span class="label" data-i18n="side.settings">Settings</span></button>
@@ -131,13 +138,16 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
         </label>
         <label class="check"><input type="checkbox" name="closeOnSave"> <span data-i18n="settings.closeOnSave">Close tabs after saving them</span></label>
         <label class="check"><input type="checkbox" name="groupTabs"> <span data-i18n="settings.groupTabs">Group tabs when opening all</span></label>
-        <label class="check"><input type="checkbox" name="pinDashboard"> <span data-i18n="settings.pinDashboard">Pin the dashboard at the left of every window’s tab bar</span></label>
         <label><span data-i18n="settings.autoSuspend">Auto-suspend unused tabs after (minutes)</span>
           <input type="number" name="autoSuspendMinutes" min="0" step="1" data-zero="settings.off">
         </label>
         <label><span data-i18n="settings.columns">Board columns (1–8)</span>
           <input type="number" name="columns" min="1" max="8" step="1">
         </label>
+        <div class="setting-row" id="install-row" hidden>
+          <span class="setting-name" data-i18n="settings.app">App</span>
+          <button type="button" class="btn" id="settings-install"><span data-icon="download"></span><span data-i18n="side.install">Install app</span></button>
+        </div>
       </fieldset>
       <fieldset>
         <legend data-i18n="settings.appearance">Appearance</legend>
@@ -174,7 +184,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
         <legend data-i18n="settings.shortcuts">Shortcuts</legend>
         <p class="muted small" data-i18n-html="settings.keys.html">
           <kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window ·
-          <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>
+          <kbd>Ctrl+Shift+X</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>
         </p>
       </fieldset>
       <menu>

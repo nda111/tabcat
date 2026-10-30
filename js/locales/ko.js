@@ -18,6 +18,8 @@ export default {
   'noext.old': 'tabcat 확장 프로그램({version})이 이 대시보드에 필요한 버전({min})보다 오래되었습니다. 새로고침하거나 업데이트하세요.',
 
   'side.workspaces': '워크스페이스', 'side.info': '정보', 'side.help': '도움말', 'side.settings': '설정',
+
+  'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
   'panel.expandWs': '워크스페이스 펼치기', 'panel.collapseWs': '워크스페이스 접기',
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
@@ -98,7 +100,7 @@ export default {
   'err.notJson': 'JSON 파일이 아닙니다', 'err.noWorkspaces': '워크스페이스가 없습니다',
   'err.notSettings': 'tabcat 설정 파일이 아닙니다', 'err.noSettings': '유효한 설정이 없습니다',
 
-  'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기', 'settings.groupTabs': '모두 열기 시 탭 그룹으로 묶기', 'settings.pinDashboard': '모든 창의 탭 바 맨 왼쪽에 대시보드 고정',
+  'settings.title': '설정', 'settings.general': '일반', 'settings.closeOnSave': '저장한 탭 닫기', 'settings.groupTabs': '모두 열기 시 탭 그룹으로 묶기',
   'settings.autoSuspend': '안 쓰는 탭 자동으로 재우기 (분 단위)', 'settings.off': '사용 안 함', 'settings.columns': '보드 열 수 (1–8)',
   'settings.language': '언어', 'settings.langAuto': '브라우저 기본값',
   'settings.appearance': '모양', 'settings.theme': '테마', 'settings.color': '색상',
@@ -112,7 +114,7 @@ export default {
   'undo.closeDupes': '중복 탭 닫기를 취소했습니다.', 'redo.closeDupes': '중복 탭 닫기를 다시 실행했습니다.', 'undo.dedupe': '중복 링크 제거를 취소했습니다.', 'redo.dedupe': '중복 링크 제거를 다시 실행했습니다.',
   'data.note': '가져온 항목은 새 워크스페이스로 추가되며 기존 데이터를 덮어쓰지 않습니다. 설정 파일에는 위의 옵션이 담깁니다.',
   'settings.shortcuts': '단축키',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Alt+Shift+D</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Ctrl+Shift+X</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
 
   'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',

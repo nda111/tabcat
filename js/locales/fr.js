@@ -20,6 +20,8 @@ export default {
   'noext.old': 'L’extension tabcat ({version}) est plus ancienne que ce qu’exige ce tableau de bord ({min}) : rechargez-la ou mettez-la à jour.',
 
   'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
+
+  'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
   'panel.expandWs': 'Déplier les espaces de travail', 'panel.collapseWs': 'Replier les espaces de travail',
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',
@@ -100,7 +102,7 @@ export default {
   'err.notJson': 'ce n’est pas un fichier JSON', 'err.noWorkspaces': 'aucun espace de travail trouvé',
   'err.notSettings': 'ce n’est pas un fichier de paramètres tabcat', 'err.noSettings': 'aucun paramètre valide trouvé',
 
-  'settings.title': 'Paramètres', 'settings.general': 'Général', 'settings.closeOnSave': 'Fermer les onglets après leur enregistrement', 'settings.groupTabs': 'Grouper les onglets en ouvrant tout', 'settings.pinDashboard': 'Épingler le tableau de bord à gauche de la barre d’onglets de chaque fenêtre',
+  'settings.title': 'Paramètres', 'settings.general': 'Général', 'settings.closeOnSave': 'Fermer les onglets après leur enregistrement', 'settings.groupTabs': 'Grouper les onglets en ouvrant tout',
   'settings.autoSuspend': 'Suspendre automatiquement les onglets inactifs après (minutes)', 'settings.off': 'Désactivé', 'settings.columns': 'Colonnes du tableau (1–8)',
   'settings.language': 'Langue', 'settings.langAuto': 'Langue du navigateur',
   'settings.appearance': 'Apparence', 'settings.theme': 'Thème', 'settings.color': 'Couleur',
@@ -114,7 +116,7 @@ export default {
   'undo.closeDupes': 'Fermeture des onglets en double annulée', 'redo.closeDupes': 'Fermeture des onglets en double rétablie', 'undo.dedupe': 'Suppression des liens en double annulée', 'redo.dedupe': 'Suppression des liens en double rétablie',
   'data.note': 'L’import ajoute les éléments choisis comme nouveaux espaces de travail ; rien n’est écrasé. Les fichiers de paramètres contiennent les options ci-dessus.',
   'settings.shortcuts': 'Raccourcis',
-  'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Alt+Shift+D</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
+  'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Ctrl+Shift+X</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Terminé',
 
   'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
