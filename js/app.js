@@ -232,6 +232,8 @@ function render() {
 
 // iOS-like springs: a little overshoot, then settle.
 const SPRING = 'cubic-bezier(.34, 1.32, .64, 1)';
+// Moves settle with only a hint of overshoot: SPRING's overshoot grows with the distance travelled.
+const GLIDE = 'cubic-bezier(.22, 1.06, .36, 1)';
 const MOVABLE = '#board [data-id], #ws-list [data-id], #cat-bar [data-id]';
 
 // Switching workspace, the category bar: the column stepper stays put, the old category buttons
@@ -359,7 +361,7 @@ function animateMoves(before, wsChanged = false) {
     if (Math.abs(dx) + Math.abs(dy) < 1 && !resize) continue;
     const from = { transform: `translate(${dx}px, ${dy}px)` }, to = { transform: 'none' };
     if (resize) { from.width = `${d[2]}px`; to.width = `${d[3]}px`; }
-    play(played, el, [from, to], { duration: 420, easing: SPRING }, movingIds.has(el.dataset.id)); // what the user moved passes over the rest
+    play(played, el, [from, to], { duration: 420, easing: GLIDE }, movingIds.has(el.dataset.id)); // what the user moved passes over the rest
   }
   resumeRunning(played);
 }
@@ -1906,27 +1908,49 @@ function groupsMenu() {
 /* ================= drag & drop ================= */
 
 const line = $('#drop-line');
+let lineOn = false;
 let intoEl = null;
 
-function clearIndicator() {
-  line.hidden = true;
-  intoEl?.classList.remove('drop-into');
-  intoEl = null;
-  document.querySelector('.add-group.drop-new')?.classList.remove('drop-new');
+// The insertion line pops in where it first appears, then glides from slot to slot, and fades out.
+function setLine(l) {
+  if (!l) { line.classList.remove('on'); lineOn = false; return; }
+  const box = { left: l.x + 'px', top: l.y + 'px', width: l.w + 'px', height: l.h + 'px' };
+  if (!lineOn) {
+    line.style.transition = 'none'; // jump to the first slot, then animate from there
+    Object.assign(line.style, box);
+    void line.offsetWidth;
+    line.style.transition = '';
+    line.classList.add('on');
+    lineOn = true;
+  } else Object.assign(line.style, box);
 }
 
+// A drop target's highlight fades in and out: from what the element looked like a moment ago to
+// what the class makes it look like now (whatever its own background is).
+function setInto(el) {
+  if (el === intoEl) return;
+  const swap = (target, on) => {
+    const cs = getComputedStyle(target);
+    const ring = { outlineStyle: 'solid', outlineWidth: '2px', outlineOffset: '-2px' };
+    const from = { ...ring, backgroundColor: cs.backgroundColor, outlineColor: on ? 'transparent' : cs.outlineColor };
+    target.classList.toggle('drop-into', on);
+    target.animate([from, on ? ring : { ...ring, outlineColor: 'transparent' }],
+      { duration: on ? 120 : 110, easing: on ? 'ease-out' : 'ease-in' });
+  };
+  if (intoEl) swap(intoEl, false);
+  if (el) swap(el, true);
+  intoEl = el;
+}
+
+function clearIndicator() { showIndicator(null); }
+
 function showIndicator(t) {
-  clearIndicator();
-  if (!t) return;
-  if (t.line) {
-    Object.assign(line.style, { left: t.line.x + 'px', top: t.line.y + 'px', width: t.line.w + 'px', height: t.line.h + 'px' });
-    line.hidden = false;
-  } else if (t.mode === 'newGroup') {
-    t.el?.classList.add('drop-new'); // the column's New group card stands for "new group"
-  } else if (t.el) {
-    intoEl = t.el;
-    intoEl.classList.add('drop-into');
-  }
+  setLine(t?.line || null);
+  setInto(t && !t.line && t.mode !== 'newGroup' ? t.el || null : null);
+  // the column's New group card stands for "new group"
+  const card = t?.mode === 'newGroup' ? t.el || null : null;
+  const was = document.querySelector('.add-group.drop-new');
+  if (was !== card) { was?.classList.remove('drop-new'); card?.classList.add('drop-new'); }
 }
 
 const hLine = (r, before) => ({ x: r.left + 4, y: (before ? r.top : r.bottom) - 1, w: r.width - 8, h: 2 });

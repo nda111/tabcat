@@ -317,8 +317,15 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 
 /* ---------- drag & drop ---------- */
 .dragging { opacity: .4; }
-.drop-into { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft) !important; }
-#drop-line { position: fixed; background: var(--accent); pointer-events: none; z-index: 50; border-radius: 2px; }
+/* (no !important, which would block the fade in setInto: the ids outrank the rows' own hover / active backgrounds) */
+:is(#board, #ws-list, #cat-bar, #windows) .drop-into { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+#drop-line {
+  position: fixed; left: 0; top: 0; width: 0; height: 0; background: var(--accent); pointer-events: none; z-index: 50; border-radius: 2px;
+  opacity: 0; transform: scale(.5);
+  transition: opacity .11s ease-in, transform .11s ease-in,
+    left .16s cubic-bezier(.22, 1, .36, 1), top .16s cubic-bezier(.22, 1, .36, 1), width .16s cubic-bezier(.22, 1, .36, 1), height .16s cubic-bezier(.22, 1, .36, 1);
+}
+#drop-line.on { opacity: 1; transform: none; transition-timing-function: ease-out, cubic-bezier(.34, 1.32, .64, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1); transition-duration: .12s, .2s, .16s, .16s, .16s, .16s; }
 
 /* ---------- search ---------- */
 mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
