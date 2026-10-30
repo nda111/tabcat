@@ -103,6 +103,8 @@ export default {
   'accent.teal': '青', 'accent.sky': '天蓝', 'accent.blue': '蓝', 'accent.purple': '紫', 'accent.pink': '粉',
   'settings.data': '数据', 'data.export': '导出数据…', 'data.import': '导入数据…',
   'data.exportSettings': '导出设置', 'data.importSettings': '导入设置', 'data.resetSettings': '重置设置', 'reset.title': '要重置所有设置吗？', 'reset.text': '语言、主题、颜色、列数等选项将恢复为默认值。工作区、分组和链接不会被重置。', 'reset.ok': '重置', 'toast.settingsReset': '设置已恢复为默认值', 'toast.undone': '已撤销', 'toast.redone': '已重做',
+  'noun.group': '分组', 'noun.groupN': '{n} 个分组', 'noun.link': '链接', 'noun.linkN': '{n} 个链接', 'noun.folder': '文件夹', 'noun.folderN': '{n} 个文件夹', 'noun.item': '项目', 'noun.itemN': '{n} 个项目', 'noun.workspace': '工作区', 'noun.workspaceN': '{n} 个工作区', 'noun.category': '类别', 'noun.categoryN': '{n} 个类别',
+  'undo.delete': '已撤销删除{what}', 'redo.delete': '已重做删除{what}', 'undo.move': '已撤销移动{what}', 'redo.move': '已重做移动{what}', 'undo.merge': '已撤销合并分组', 'redo.merge': '已重做合并分组',
   'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项。',
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Alt+Shift+D</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',

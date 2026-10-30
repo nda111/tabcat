@@ -1425,10 +1425,12 @@ function saveNote(id, before, after) {
 // Undo / redo of deletes and moves (Ctrl+Z / Ctrl+Shift+Z, and a delete toast's Undo): the whole state
 // from before each one is kept (the last 50), and undoing puts it back (keeping the state it replaces for
 // redo). Undoing an older one (from its toast) also undoes what came after it.
+// `what` ({ verb: delete | move | merge, type, n }) names the change in the undo / redo toast, e.g.
+// "그룹 3개 삭제를 취소했습니다."
 const undoStack = [];
 const redoStack = [];
-function remember(before) {
-  const entry = { before };
+function remember(before, what) {
+  const entry = { before, what };
   undoStack.push(entry);
   if (undoStack.length > 50) undoStack.shift();
   redoStack.length = 0;
@@ -1440,17 +1442,25 @@ async function undo(entry = undoStack.at(-1), quiet = false) {
   undoStack.splice(i);
   const now = structuredClone(state);
   if (await apply({ op: 'replace', state: entry.before })) {
-    redoStack.push({ before: now });
-    if (!quiet) toast(t('toast.undone'));
+    redoStack.push({ before: now, what: entry.what });
+    if (!quiet) toast(undoText('undo', entry.what));
   }
+}
+// (a mix of links and folders counts as items)
+const whatOf = (verb, nodes) => ({ verb, n: nodes.length, type: nodes.every((x) => x.type === nodes[0].type) ? nodes[0].type : 'item' });
+function undoText(dir, what) {
+  if (!what) return t(dir === 'undo' ? 'toast.undone' : 'toast.redone');
+  if (what.verb === 'merge') return t(`${dir}.merge`);
+  const noun = what.n > 1 ? t(`noun.${what.type}N`, { n: what.n }) : t(`noun.${what.type}`);
+  return t(`${dir}.${what.verb}`, { what: noun });
 }
 async function redo() {
   const entry = redoStack.pop();
   if (!entry) return;
   const now = structuredClone(state);
   if (await apply({ op: 'replace', state: entry.before })) {
-    undoStack.push({ before: now });
-    toast(t('toast.redone'));
+    undoStack.push({ before: now, what: entry.what });
+    toast(undoText('redo', entry.what));
   }
 }
 
@@ -1465,7 +1475,7 @@ async function deleteNode(node) {
   const snapshot = structuredClone(state);
   await animateOut([node.id]);
   if (await apply({ op: 'remove', id: node.id })) {
-    const entry = remember(snapshot);
+    const entry = remember(snapshot, whatOf('delete', [node]));
     toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2092,7 +2102,7 @@ async function deleteSelected() {
   selected.clear();
   await animateOut(groups.map((g) => g.id));
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
-    const entry = remember(snapshot);
+    const entry = remember(snapshot, whatOf('delete', groups));
     toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2240,7 +2250,7 @@ async function deleteItems() {
   const snapshot = structuredClone(state);
   await animateOut(nodes.map((n) => n.id));
   if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
-    const entry = remember(snapshot);
+    const entry = remember(snapshot, whatOf('delete', nodes));
     toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2616,8 +2626,9 @@ function targetOps(t, groupName) {
 // (a move of saved things is remembered for undo; merging asks first and remembers itself)
 async function performDrop(d, t, e) {
   const before = d.kind === 'node' && t.action !== 'open' && t.action !== 'merge' ? structuredClone(state) : null;
+  const moved = before && (d.ids || [d.id]).map((id) => T.locate(state, id)?.node).filter(Boolean);
   const done = await dropInto(d, t, e);
-  if (before && done) remember(before);
+  if (before && done && moved.length) remember(before, whatOf('move', moved));
 }
 async function dropInto(d, t, e) {
   if (t.action === 'open') {
@@ -2704,7 +2715,7 @@ async function mergeGroups(fromId, intoId) {
     { op: 'patch', id: intoId, fields: { items: [...into.items, ...from.items], note, collapsed: false } },
     { op: 'remove', id: fromId });
   if (ok) {
-    const entry = remember(snapshot);
+    const entry = remember(snapshot, { verb: 'merge' });
     toast(t('toast.merged', { name: into.name }), t('common.undo'), () => undo(entry, true));
   }
 }

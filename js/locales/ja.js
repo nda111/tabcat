@@ -103,6 +103,8 @@ export default {
   'accent.teal': 'ティール', 'accent.sky': 'スカイ', 'accent.blue': '青', 'accent.purple': '紫', 'accent.pink': 'ピンク',
   'settings.data': 'データ', 'data.export': 'データをエクスポート…', 'data.import': 'データをインポート…',
   'data.exportSettings': '設定をエクスポート', 'data.importSettings': '設定をインポート', 'data.resetSettings': '設定をリセット', 'reset.title': 'すべての設定をリセットしますか？', 'reset.text': '言語、テーマ、色、列数などのオプションが既定値に戻ります。ワークスペース、グループ、リンクはリセットされません。', 'reset.ok': 'リセット', 'toast.settingsReset': '設定を既定値に戻しました。', 'toast.undone': '元に戻しました。', 'toast.redone': 'やり直しました。',
+  'noun.group': 'グループ', 'noun.groupN': 'グループ {n} 個', 'noun.link': 'リンク', 'noun.linkN': 'リンク {n} 個', 'noun.folder': 'フォルダ', 'noun.folderN': 'フォルダ {n} 個', 'noun.item': '項目', 'noun.itemN': '項目 {n} 個', 'noun.workspace': 'ワークスペース', 'noun.workspaceN': 'ワークスペース {n} 個', 'noun.category': 'カテゴリ', 'noun.categoryN': 'カテゴリ {n} 個',
+  'undo.delete': '{what}の削除を取り消しました。', 'redo.delete': '{what}の削除をやり直しました。', 'undo.move': '{what}の移動を取り消しました。', 'redo.move': '{what}の移動をやり直しました。', 'undo.merge': 'グループの統合を取り消しました。', 'redo.merge': 'グループの統合をやり直しました。',
   'data.note': 'インポートした項目は新しいワークスペースとして追加され、既存のデータは上書きされません。設定ファイルには上のオプションが含まれます。',
   'settings.shortcuts': 'ショートカット',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Alt+Shift+D</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',

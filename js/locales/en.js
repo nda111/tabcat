@@ -112,6 +112,8 @@ export default {
   'accent.teal': 'Teal', 'accent.sky': 'Sky', 'accent.blue': 'Blue', 'accent.purple': 'Purple', 'accent.pink': 'Pink',
   'settings.data': 'Data', 'data.export': 'Export data…', 'data.import': 'Import data…',
   'data.exportSettings': 'Export settings', 'data.importSettings': 'Import settings', 'data.resetSettings': 'Reset settings', 'reset.title': 'Reset all settings?', 'reset.text': 'Language, theme, colour, columns and the other options go back to their defaults. Workspaces, groups and links are not reset.', 'reset.ok': 'Reset', 'toast.settingsReset': 'Settings reset to their defaults', 'toast.undone': 'Undone', 'toast.redone': 'Redone',
+  'noun.group': 'the group', 'noun.groupN': '{n} groups', 'noun.link': 'the link', 'noun.linkN': '{n} links', 'noun.folder': 'the folder', 'noun.folderN': '{n} folders', 'noun.item': 'the item', 'noun.itemN': '{n} items', 'noun.workspace': 'the workspace', 'noun.workspaceN': '{n} workspaces', 'noun.category': 'the category', 'noun.categoryN': '{n} categories',
+  'undo.delete': 'Undid deleting {what}', 'redo.delete': 'Redid deleting {what}', 'undo.move': 'Undid moving {what}', 'redo.move': 'Redid moving {what}', 'undo.merge': 'Undid merging the groups', 'redo.merge': 'Redid merging the groups',
   'data.note': 'Import adds the selected items as new workspaces; nothing is overwritten. Settings files hold the options above.',
   'settings.shortcuts': 'Shortcuts',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> search · <kbd>Alt+Shift+S</kbd> save tab · <kbd>Alt+Shift+A</kbd> save window · <kbd>Alt+Shift+D</kbd> open dashboard · change at <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
