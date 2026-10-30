@@ -1483,27 +1483,46 @@ function saveNote(id, before, after) {
 
 // Undo / redo of deletes and moves (Ctrl+Z / Ctrl+Shift+Z, and a delete toast's Undo): the whole state
 // from before each one is kept (the last 50), and undoing puts it back (keeping the state it replaces for
-// redo). Undoing an older one (from its toast) also undoes what came after it.
+// redo). Undoing an older one (from its toast) also undoes what came after it. The extension keeps the
+// history, so every open dashboard shares it; with an older extension, this page keeps its own.
 // `what` ({ verb: delete | move | merge, type, n }) names the change in the undo / redo toast, e.g.
 // "그룹 3개 삭제를 취소했습니다."
-const undoStack = [];
-const redoStack = [];
-function remember(before, what) {
-  const entry = { before, what };
-  undoStack.push(entry);
-  if (undoStack.length > 50) undoStack.shift();
-  redoStack.length = 0;
-  return entry;
+const pageHistory = {
+  past: [], future: [], seq: 0, // (past: what undo puts back; future: what redo does)
+  async remember({ before, what }) {
+    const id = ++this.seq;
+    this.past.push({ id, before, what });
+    if (this.past.length > 50) this.past.shift();
+    this.future.length = 0;
+    return id;
+  },
+  async undo({ id }) {
+    const i = id == null ? this.past.length - 1 : this.past.findIndex((e) => e.id === id);
+    if (i < 0) return null;
+    const [entry] = this.past.splice(i);
+    return this.swap(entry, this.future);
+  },
+  async redo() {
+    const entry = this.future.pop();
+    return entry ? this.swap(entry, this.past) : null;
+  },
+  async swap(entry, other) { // puts back entry's state, keeping the one it replaces in `other`
+    const now = structuredClone(state);
+    if (!(await apply({ op: 'replace', state: entry.before }))) return null;
+    other.push({ id: ++this.seq, before: now, what: entry.what });
+    return { what: entry.what };
+  },
+};
+const undoHistory = (cmd, args = {}) => (extFeatures.has('sharedHistory') ? run(B.call(cmd, args)) : pageHistory[cmd](args));
+// Returns the entry's id, for its toast's Undo
+const remember = (before, what) => undoHistory('remember', { before, what });
+async function undo(id = null, quiet = false) {
+  const r = await undoHistory('undo', { id });
+  if (r && !quiet) toast(undoText('undo', r.what));
 }
-async function undo(entry = undoStack.at(-1), quiet = false) {
-  const i = undoStack.lastIndexOf(entry);
-  if (i < 0) return;
-  undoStack.splice(i);
-  const now = structuredClone(state);
-  if (await apply({ op: 'replace', state: entry.before })) {
-    redoStack.push({ before: now, what: entry.what });
-    if (!quiet) toast(undoText('undo', entry.what));
-  }
+async function redo() {
+  const r = await undoHistory('redo');
+  if (r) toast(undoText('redo', r.what));
 }
 // (a mix of links and folders counts as items)
 const whatOf = (verb, nodes) => ({ verb, n: nodes.length, type: nodes.every((x) => x.type === nodes[0].type) ? nodes[0].type : 'item' });
@@ -1512,15 +1531,6 @@ function undoText(dir, what) {
   if (what.verb === 'merge') return t(`${dir}.merge`);
   const noun = what.n > 1 ? t(`noun.${what.type}N`, { n: what.n }) : t(`noun.${what.type}`);
   return t(`${dir}.${what.verb}`, { what: noun });
-}
-async function redo() {
-  const entry = redoStack.pop();
-  if (!entry) return;
-  const now = structuredClone(state);
-  if (await apply({ op: 'replace', state: entry.before })) {
-    undoStack.push({ before: now, what: entry.what });
-    toast(undoText('redo', entry.what));
-  }
 }
 
 async function deleteNode(node) {
@@ -1534,7 +1544,7 @@ async function deleteNode(node) {
   const snapshot = structuredClone(state);
   await animateOut([node.id]);
   if (await apply({ op: 'remove', id: node.id })) {
-    const entry = remember(snapshot, whatOf('delete', [node]));
+    const entry = await remember(snapshot, whatOf('delete', [node]));
     toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2180,7 +2190,7 @@ async function deleteSelected() {
   selected.clear();
   await animateOut(groups.map((g) => g.id));
   if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
-    const entry = remember(snapshot, whatOf('delete', groups));
+    const entry = await remember(snapshot, whatOf('delete', groups));
     toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2302,7 +2312,7 @@ async function deleteItems() {
   const snapshot = structuredClone(state);
   await animateOut(nodes.map((n) => n.id));
   if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
-    const entry = remember(snapshot, whatOf('delete', nodes));
+    const entry = await remember(snapshot, whatOf('delete', nodes));
     toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => undo(entry, true));
   }
 }
@@ -2767,7 +2777,7 @@ async function mergeGroups(fromId, intoId) {
     { op: 'patch', id: intoId, fields: { items: [...into.items, ...from.items], note, collapsed: false } },
     { op: 'remove', id: fromId });
   if (ok) {
-    const entry = remember(snapshot, { verb: 'merge' });
+    const entry = await remember(snapshot, { verb: 'merge' });
     toast(t('toast.merged', { name: into.name }), t('common.undo'), () => undo(entry, true));
   }
 }
