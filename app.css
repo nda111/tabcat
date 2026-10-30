@@ -19,12 +19,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; color-scheme: dark;
+    --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; --shadow: 0 1px 2px rgba(255,255,255,.05), 0 2px 10px rgba(255,255,255,.06); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ebe8e4;
-  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; color-scheme: dark;
+  --muted: #9a958f; --accent: #f29a52; --accent-soft: #3d2c1d; --hover: #2c2a30; --fav-bg: #e9e6e2; --fav-pad: 2px; --icon: #bdb8b2; --shadow: 0 1px 2px rgba(255,255,255,.05), 0 2px 10px rgba(255,255,255,.06); color-scheme: dark;
 }
 
 /* accent colour picked in Settings (orange, the default, keeps the values above): one hue, with
@@ -269,8 +269,8 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .sym-glyph { display: block; text-box: trim-both cap alphabetic; } /* centre the capital itself, whatever the font metrics */
 .node-sym .sym-letter { font-size: 24px; width: 40px; height: 40px; border-radius: 9px; }
 /* on a card: 90% of the two lines beside it (the name's top to the tools' bottom) */
-.group-head .node-sym { width: 36px; height: 36px; margin-block: -3px 0; font-size: 29.5px; } /* (centred on the two lines) */
-.group-head .node-sym .sym-letter { font-size: 20px; width: 33px; height: 33px; border-radius: 8px; }
+.group-head .node-sym { width: 38px; height: 38px; margin-block: -3px 0; font-size: 31.5px; } /* (centred on the two lines) */
+.group-head .node-sym .sym-letter { font-size: 21px; width: 35px; height: 35px; border-radius: 8px; }
 .node-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .node-line { display: flex; align-items: baseline; gap: 6px; min-height: 22px; } /* count sits on the name's baseline */
 /* the collapse button takes no more height than the name, so the header keeps its height when a group
@@ -283,7 +283,7 @@ body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 .collapse-btn .ico { transition: transform .12s; }
 .group.collapsed > .group-head .collapse-btn .ico { transform: rotate(-90deg); }
 .node-tools { display: flex; align-items: center; gap: 2px; margin-left: -6px; }
-.group-head .node-tools { margin-top: -6px; } /* (half the room the name and the tools had between them) */
+.group-head .node-tools { margin-top: -4px; } /* (closer than the default room between the name and the tools) */
 .tools-split { width: 1px; height: 14px; margin: 0 4px; background: var(--border); }
 .node-tools .icon-btn { color: var(--icon); }
 .node-tools .icon-btn:hover, .node-tools .icon-btn.hover { color: var(--accent); }
