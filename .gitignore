@@ -1,4 +1,4 @@
 web/
 .DS_Store
 Thumbs.db
-releases/
+releases/*.zip

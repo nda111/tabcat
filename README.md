@@ -1,107 +1,75 @@
-# tabcat 🐱
+<p align="center"><img src="icons/icon128.png" width="96" alt=""></p>
 
-A tab manager for Chromium-based browsers (Chrome, Edge, Brave, Whale, …), inspired by tabExtend.
-Tabs are summarized as **files** (icon · url · name), saved into a hierarchy and closed or suspended to save memory.
+<h1 align="center">tabcat</h1>
 
-tabcat has two parts, kept on two branches of this repository:
+<p align="center">
+Save your tabs into groups and open them again whenever you need.<br>
+Tabs you're not using are put to sleep to keep things light.
+</p>
 
-| Branch | Contents | Role |
-|---|---|---|
-| `main` | browser extension (this branch) | Owns the data (`chrome.storage.local`) and every tab operation. Popup, context menu, shortcuts, auto-suspend. |
-| [`pages`](../../tree/pages) | web dashboard | A static web page (no backend), published at <https://tabcat.ghyeok.com/>. Renders and edits the data through the extension bridge. |
+<p align="center">
+<a href="https://github.com/nda111/tabcat/releases/latest"><b>Download</b></a> ·
+<a href="https://tabcat.ghyeok.com/"><b>Dashboard</b></a> ·
+<a href="https://github.com/nda111/tabcat/issues">Report a problem</a>
+</p>
 
-```
-web page (allowed origins only)           extension
-┌───────────────────────┐ postMessage ┌─────────────┐  port   ┌──────────────────┐
-│ js/app.js (pages)     │◀──────────▶│ content.js  │◀──────▶│ background.js    │
-│ UI, drag & drop       │             │ (bridge)    │         │ storage + tabs   │
-└───────────────────────┘             └─────────────┘         └──────────────────┘
-```
+---
 
-## Setup
+Keep as many tabs open as you like. tabcat saves them as links in groups you arrange on a board,
+opens them again in one click, and puts the ones you aren't using to sleep so your browser stays quick.
 
-1. **Load the extension**: download the `.zip` attached to the latest
-   [release](../../releases/latest) and unzip it, open `chrome://extensions`, enable *Developer mode*,
-   click *Load unpacked*, and select the unzipped `tabcat` folder (or the root of a `main` checkout).
-   To update, replace that folder's contents with a newer release and press *Reload* on the extension.
-2. **Open the dashboard**: <https://tabcat.ghyeok.com/>, the popup's *Open dashboard* button, or `Ctrl+Shift+X`.
-   A local copy of the `pages` branch works too (see *Development*).
+It works in Chromium-based browsers: Chrome, Edge, Brave, Whale and others.
 
-Allowed dashboard origins (see `content_scripts[0].matches` and `web_accessible_resources[0].matches` in
-`manifest.json`):
+## Getting started
 
-- `https://tabcat.ghyeok.com/*` (published dashboard)
-- `http://localhost/*`, `http://127.0.0.1/*` (any port, for development)
+1. Download the `.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
+2. Open `chrome://extensions` (`edge://extensions` in Edge) and turn on **Developer mode**.
+3. Click **Load unpacked** and pick the unzipped `tabcat` folder.
 
-To host the dashboard elsewhere, add its exact origin to both lists and reload the extension.
-Avoid broad wildcards such as `https://*.github.io/*`: any page on a matching origin could talk to the bridge.
+The dashboard opens at <https://tabcat.ghyeok.com/> with a short tour. After that, press
+<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> on macOS) to bring it up
+any time, and press it again to go back to your tab.
 
-## Deployment
+Keep the folder where it is: the browser loads tabcat from it.
 
-GitHub Pages serves the `pages` branch (root) of this repository at the custom domain `tabcat.ghyeok.com`
-(`CNAME` file on `pages`; DNS: `CNAME tabcat → nda111.github.io`, HTTPS enforced).
-Pushing to `pages` publishes the dashboard.
+### Updating
 
-## Development
+Download the new release, replace the contents of your `tabcat` folder with it, and press **Reload** on tabcat
+in `chrome://extensions`. Your groups and settings stay as they are.
 
-Recommended local layout: the `pages` branch checked out as a worktree in `web/` (ignored on `main`).
+## What you can do
 
-```sh
-git clone git@github.com:nda111/tabcat.git && cd tabcat
-git worktree add web pages
-python3 -m http.server 8080 -d web      # dashboard at http://localhost:8080/
-```
+**Save tabs.** Drag a tab from *Open tabs* onto a group, or drag a window's header to save every tab in it.
+From any page, the toolbar button saves the tab to the group you pick, and
+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> / <kbd>A</kbd> saves the tab or the whole window.
 
-Commit extension changes from the repository root (`main`) and dashboard changes from `web/` (`pages`).
-The extension remembers the last dashboard URL that connected, so a local dashboard opens via the popup too.
+**Keep them in order.** Split your work into workspaces, say work and study, and each workspace into categories.
+Groups are cards on a board; they hold links and folders, up to four levels deep.
+Drag anything anywhere, give groups a symbol and a colour, and write notes in Markdown with checkboxes and math.
 
-## Data model
+**Open them again.** Click a link to open it, or open a whole group or folder at once, as tabs or as a tab group.
 
-```
-Workspace  (Name*, Symbol, Description)
-└─ Category  (Name*)
-   └─ Group  (Name*, Symbol, Note [markdown], board column)
-      ├─ Link    (URL*, Name*, Icon, Description)
-      └─ Folder  (Name*, Symbol)            ← folders nest up to 4 levels; they hold links and folders
-```
+**Stay light.** Put tabs you aren't looking at to sleep, or let tabcat do it after a few idle minutes.
+Close duplicate tabs in one click, and close tabs as you save them if you like.
 
-- Workspace → Category → Group is mandatory; links and folders always live under a group.
-- Symbol (optional) is a single emoji, or one capital letter or digit shown as a badge; Note is markdown; everything else is plain text.
+**Find anything.** <kbd>Ctrl</kbd>+<kbd>F</kbd> searches links, folders, groups and notes.
 
-## Features
+**Change your mind.** <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes deleting, moving, saving and closing duplicates,
+in every open dashboard.
 
-| Area | Features |
-|---|---|
-| Dashboard | Workspace sidebar · open-tabs panel (both resizable and collapsible to icon rails) · category tabs · board of group cards in a fixed 1–7 columns (setting; scrolls sideways when narrow); drag a group into any column |
-| Drag & drop | Open tab → exact position in a group/folder · window header → save whole window · drop on empty board → new group · move/reorder links and folders, nest folders · reorder groups, drop a group onto another to merge them, drop on a category tab or workspace to move · reorder categories and workspaces · saved link → open-tabs panel opens it · drag a URL from the address bar or another page |
-| Memory | Close tabs after saving (setting) · save & close a window · suspend (discard) inactive tabs · auto-suspend after N minutes · close duplicate tabs |
-| Organizing | Markdown notes with clickable task checkboxes and MathJax math (`$…$`, `$$…$$`) · collapse · sort by name · remove duplicate links · context menus · undo delete |
-| Opening | Click: new tab · Ctrl/middle click: background · Shift: new window · open a whole group/folder |
-| Search | `/` or `Ctrl+K`, searches links, groups, folders and notes; Enter opens the first hit |
-| Popup | Rename the current tab and save it to any group (searchable picker) · right-click the toolbar button → *Go tabcat* opens the dashboard in a new tab · save window · suspend · close duplicates · open dashboard |
-| Shortcuts | `Alt+Shift+C` popup · `Ctrl+Shift+X` dashboard · `Alt+Shift+S` save tab · `Alt+Shift+A` save window |
-| Data | JSON export / import of selected workspaces, categories and groups (import adds, never overwrites) · separate settings file · light / dark / system theme |
+**Make it yours.** Light and dark themes, accent colours, and 8 languages
+(English, 한국어, 日本語, 简体中文, Deutsch, Español, Français, Português).
+Install the dashboard as an app to give it a window of its own.
 
-## Files
+## Your data
 
-```
-manifest.json
-background.js     service worker: RPC handlers, bridge ports, context menu, shortcuts, auto-suspend
-content.js        bridge between the dashboard page and the background worker
-popup.html/css/js toolbar popup
-fonts/            Pretendard stylesheet (size-adjusted copy; font files load from jsDelivr)
-lib/store.js      data model, tree ops, op application, persistence
-lib/actions.js    save / close / suspend tabs
-icons/            logo.svg (the drawing; pages tint it in the accent colour) and the toolbar PNGs in the default accent
-```
+Everything stays in your browser, kept by the extension. There's no account and no server:
+the dashboard is a static page that only reads and edits what the extension holds.
+You can export it to a file, and import it again, in Settings.
 
-## Bridge protocol
+## Questions and problems
 
-Page → extension: `{ source: 'tabcat-page', id, cmd, args }`; replies come back as
-`{ source: 'tabcat-ext', reply: id, result | error }`, push events as `{ source: 'tabcat-ext', event, data }`
-(`ready`, `state`, `settings`, `tabs`, `disconnected`). The bridge only activates after the page sends
-`{ source: 'tabcat-page', cmd: 'hello' }`.
+Found a bug or have an idea? Tell us in [Issues](https://github.com/nda111/tabcat/issues).
+Every shortcut and gesture is in **Help** on the dashboard.
 
-Data mutations use `cmd: 'apply'` with a list of ops applied atomically
-(`create`, `patch`, `move`, `remove`, `firstGroup`, `firstCategory`, `replace`); `"$n"` in `id`/`parentId`
-refers to the result of op *n*. See `applyOp` in `lib/store.js`.
+If you'd like to look under the hood or change tabcat, see [docs/development.md](docs/development.md).
