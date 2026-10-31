@@ -51,6 +51,11 @@ with sync_playwright() as p:
     check(first() == ['DASH', 'c1'], f'another tab pinned: the dashboard is still first {first()}')
     sw.evaluate(f"chrome.tabs.move({other}, {{index:0}})"); time.sleep(.8)
     check(first() == ['DASH', 'c1'], f'a pinned tab moved ahead of it: the dashboard goes back in front {first()}')
+    # another page beside the dashboard (the privacy policy): opens where it is, like any page
+    pg = next(pg for pg in ctx.pages if pg.url.endswith('?b1'))
+    pg.goto(URL + 'privacy.html', wait_until='commit'); time.sleep(2)
+    check(pg.url == URL + 'privacy.html' and not pg.is_closed(), f'the privacy page opens in its tab ({pg.url})')
+    check(sw.evaluate(f"chrome.tabs.query({{}}).then(ts=>ts.filter(t=>(t.url||'').startsWith('{URL}privacy')).map(t=>t.pinned))") == [False], 'not taken for the dashboard')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
