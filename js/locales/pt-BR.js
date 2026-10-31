@@ -8,7 +8,7 @@ export default {
   'name.untitled': '(sem título)',
   'noext.title': 'Extensão do tabcat não encontrada.',
   'noext.need': 'O tabcat funciona junto com uma extensão do navegador.',
-  'noext.step1.html': 'Abra <a href="chrome://extensions" data-copy>chrome://extensions</a>, ative o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e instale a pasta da <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>extensão do tabcat</a>.',
+  'noext.step1.html': 'Abra <a href="chrome://extensions" data-copy>chrome://extensions</a>, ative o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e instale a pasta da <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extensão do tabcat</a>.',
   'noext.step3': 'Recarregue esta página.',
   'noext.retry': 'Tentar de novo',
   'noext.copied': 'Endereço copiado. Cole-o na barra de endereços de uma nova aba.',
@@ -107,7 +107,7 @@ export default {
   'toast.importFailed': 'Falha na importação: {error}', 'toast.settingsImported': 'Configurações importadas',
   'err.notJson': 'não é um arquivo JSON', 'err.noWorkspaces': 'nenhum espaço de trabalho encontrado',
   'err.notSettings': 'não é um arquivo de configurações do tabcat', 'err.noSettings': 'nenhuma configuração válida encontrada',
-  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo',
+  'settings.title': 'Configurações', 'settings.general': 'Geral', 'settings.closeOnSave': 'Fechar as abas depois de salvá-las', 'settings.groupTabs': 'Agrupar abas ao abrir tudo', 'settings.checkUpdates': 'Verificar atualizações automaticamente',
   'settings.autoSuspend': 'Suspender automaticamente abas inativas após (minutos)', 'settings.off': 'Desativado', 'settings.columns': 'Colunas do quadro (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma do navegador',
   'settings.appearance': 'Aparência', 'settings.theme': 'Tema', 'settings.color': 'Cor',
@@ -125,6 +125,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
   'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
+  'info.update': 'Nova versão disponível ({version})', 'info.getUpdate': 'Baixar', 'info.updateBadge': 'Atualização disponível',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.
 Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do quadro; os grupos são os cartões do quadro.</p>`,

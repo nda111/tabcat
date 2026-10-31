@@ -6,7 +6,7 @@ export default {
   'name.untitled': '(无标题)',
   'noext.title': '找不到 tabcat 扩展程序。',
   'noext.need': 'tabcat 需要与浏览器扩展程序配合使用。',
-  'noext.step1.html': '打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。',
+  'noext.step1.html': '打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。',
   'noext.step3': '请刷新此页面。',
   'noext.retry': '重试',
   'noext.copied': '地址已复制。请粘贴到新标签页的地址栏中。',
@@ -105,7 +105,7 @@ export default {
   'toast.importFailed': '导入失败：{error}', 'toast.settingsImported': '已导入设置',
   'err.notJson': '不是 JSON 文件', 'err.noWorkspaces': '未找到工作区',
   'err.notSettings': '不是 tabcat 设置文件', 'err.noSettings': '未找到有效的设置',
-  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组',
+  'settings.title': '设置', 'settings.general': '常规', 'settings.closeOnSave': '保存后关闭标签页', 'settings.groupTabs': '全部打开时将标签页分组', 'settings.checkUpdates': '自动检查更新',
   'settings.autoSuspend': '自动休眠不活跃标签页的时间 (分钟)', 'settings.off': '关闭', 'settings.columns': '面板列数 (1–8)',
   'settings.language': '语言', 'settings.langAuto': '浏览器默认',
   'settings.appearance': '外观', 'settings.theme': '主题', 'settings.color': '颜色',
@@ -123,6 +123,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
   'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
+  'info.update': '有新版本（{version}）', 'info.getUpdate': '前往下载', 'info.updateBadge': '有可用更新',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。
 在左侧选择工作区，在面板上方的栏中选择类别；面板上的卡片就是分组。</p>`,

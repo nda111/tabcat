@@ -6,7 +6,7 @@ export default {
   'name.untitled': '(無題)',
   'noext.title': 'tabcat 拡張機能が見つかりません。',
   'noext.need': 'tabcat はブラウザの拡張機能と一緒に動作します。',
-  'noext.step1.html': '<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。',
+  'noext.step1.html': '<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。',
   'noext.step3': 'このページを再読み込みしてください。',
   'noext.retry': '再試行',
   'noext.copied': 'アドレスをコピーしました。新しいタブのアドレスバーに貼り付けてください。',
@@ -105,7 +105,7 @@ export default {
   'toast.importFailed': 'インポートに失敗しました: {error}', 'toast.settingsImported': '設定をインポートしました。',
   'err.notJson': 'JSON ファイルではありません', 'err.noWorkspaces': 'ワークスペースが見つかりません',
   'err.notSettings': 'tabcat の設定ファイルではありません', 'err.noSettings': '有効な設定が見つかりません',
-  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる',
+  'settings.title': '設定', 'settings.general': '一般', 'settings.closeOnSave': '保存したタブを閉じる', 'settings.groupTabs': 'すべて開くときにタブをグループにまとめる', 'settings.checkUpdates': 'アップデートを自動で確認',
   'settings.autoSuspend': '非アクティブなタブを自動で休止するまでの時間 (分)', 'settings.off': 'オフ', 'settings.columns': 'ボードの列数 (1–8)',
   'settings.language': '言語', 'settings.langAuto': 'ブラウザの設定',
   'settings.appearance': '外観', 'settings.theme': 'テーマ', 'settings.color': '色',
@@ -123,6 +123,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Ctrl+Shift+X</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '完了',
   'help.title': 'ヘルプ', 'info.title': '情報', 'info.extension': '拡張機能', 'info.minimum': '必要な拡張機能', 'info.source': 'ソースコード', 'info.issues': '問題を報告', 'info.notConnected': '未接続',
+  'info.update': '新しいバージョンがあります（{version}）', 'info.getUpdate': 'ダウンロード', 'info.updateBadge': 'アップデートがあります',
   'help.org.html': `<h4>構成</h4>
 <p><b>ワークスペース</b> › <b>カテゴリ</b> › <b>グループ</b> › <b>フォルダ</b> (最大 4 階層) と <b>リンク</b>。
 左でワークスペースを、ボード上のバーでカテゴリを選びます。ボード上のカードがグループです。</p>`,

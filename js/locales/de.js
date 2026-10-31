@@ -8,7 +8,7 @@ export default {
   'name.untitled': '(ohne Titel)',
   'noext.title': 'tabcat-Erweiterung nicht gefunden.',
   'noext.need': 'tabcat arbeitet mit einer Browsererweiterung zusammen.',
-  'noext.step1.html': 'Öffne <a href="chrome://extensions" data-copy>chrome://extensions</a>, schalte den <b>Entwicklermodus</b> ein, klicke auf <b>Entpackte Erweiterung laden</b> und installiere den Ordner der <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat-Erweiterung</a>.',
+  'noext.step1.html': 'Öffne <a href="chrome://extensions" data-copy>chrome://extensions</a>, schalte den <b>Entwicklermodus</b> ein, klicke auf <b>Entpackte Erweiterung laden</b> und installiere den Ordner der <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat-Erweiterung</a>.',
   'noext.step3': 'Lade diese Seite neu.',
   'noext.retry': 'Erneut versuchen',
   'noext.copied': 'Adresse kopiert. Füge sie in die Adressleiste eines neuen Tabs ein.',
@@ -107,7 +107,7 @@ export default {
   'toast.importFailed': 'Import fehlgeschlagen: {error}', 'toast.settingsImported': 'Einstellungen importiert',
   'err.notJson': 'keine JSON-Datei', 'err.noWorkspaces': 'keine Arbeitsbereiche gefunden',
   'err.notSettings': 'keine tabcat-Einstellungsdatei', 'err.noSettings': 'keine gültigen Einstellungen gefunden',
-  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren',
+  'settings.title': 'Einstellungen', 'settings.general': 'Allgemein', 'settings.closeOnSave': 'Tabs nach dem Speichern schließen', 'settings.groupTabs': 'Tabs beim Öffnen aller gruppieren', 'settings.checkUpdates': 'Automatisch nach Updates suchen',
   'settings.autoSuspend': 'Inaktive Tabs automatisch pausieren nach (Minuten)', 'settings.off': 'Aus', 'settings.columns': 'Spalten im Board (1–8)',
   'settings.language': 'Sprache', 'settings.langAuto': 'Browsersprache',
   'settings.appearance': 'Darstellung', 'settings.theme': 'Design', 'settings.color': 'Farbe',
@@ -125,6 +125,7 @@ export default {
   'settings.keys.html': '<kbd>Strg+F</kbd> suchen · <kbd>Alt+Shift+S</kbd> Tab speichern · <kbd>Alt+Shift+A</kbd> Fenster speichern · <kbd>Ctrl+Shift+X</kbd> Dashboard öffnen · ändern unter <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Fertig',
   'help.title': 'Hilfe', 'info.title': 'Info', 'info.extension': 'Erweiterung', 'info.minimum': 'Benötigte Erweiterung', 'info.source': 'Quellcode', 'info.issues': 'Problem melden', 'info.notConnected': 'nicht verbunden',
+  'info.update': 'Neue Version verfügbar ({version})', 'info.getUpdate': 'Herunterladen', 'info.updateBadge': 'Update verfügbar',
   'help.org.html': `<h4>Wie alles geordnet ist</h4>
 <p><b>Arbeitsbereich</b> › <b>Kategorie</b> › <b>Gruppe</b> › <b>Ordner</b> (bis zu 4 Ebenen) und <b>Link</b>.
 Wähle links einen Arbeitsbereich und in der Leiste über dem Board eine Kategorie; die Karten auf dem Board sind die Gruppen.</p>`,

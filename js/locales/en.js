@@ -9,7 +9,7 @@ export default {
   // page: no extension
   'noext.title': 'tabcat extension not found.',
   'noext.need': 'tabcat works together with a browser extension.',
-  'noext.step1.html': 'Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>tabcat extension</a> folder.',
+  'noext.step1.html': 'Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.',
   'noext.step3': 'Reload this page.',
   'noext.retry': 'Retry',
   'noext.copied': 'Address copied. Paste it into a new tab’s address bar.',
@@ -122,7 +122,7 @@ export default {
   'err.notSettings': 'not a tabcat settings file', 'err.noSettings': 'no valid settings found',
 
   // settings
-  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all',
+  'settings.title': 'Settings', 'settings.general': 'General', 'settings.closeOnSave': 'Close tabs after saving them', 'settings.groupTabs': 'Group tabs when opening all', 'settings.checkUpdates': 'Check for updates automatically',
   'settings.autoSuspend': 'Auto-suspend unused tabs after (minutes)', 'settings.off': 'Off', 'settings.columns': 'Board columns (1–8)',
   'settings.language': 'Language', 'settings.langAuto': 'Browser default',
   'settings.appearance': 'Appearance', 'settings.theme': 'Theme', 'settings.color': 'Color',
@@ -142,6 +142,7 @@ export default {
 
   // help
   'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
+  'info.update': 'New version available ({version})', 'info.getUpdate': 'Download', 'info.updateBadge': 'Update available',
   'help.org.html': `<h4>How things are organized</h4>
 <p><b>Workspace</b> › <b>Category</b> › <b>Group</b> › <b>Folder</b> (up to 4 levels) and <b>Link</b>.
 Pick a workspace on the left and a category in the bar above the board; groups are the cards on the board.</p>`,

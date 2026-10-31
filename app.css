@@ -943,3 +943,14 @@ dialog .theme-opt input, dialog .swatch input { position: absolute; inset: 0; wi
 ::view-transition-old(*.settings-part), ::view-transition-new(*.settings-part) {
   inset: 0 auto auto 0; width: auto; height: auto; animation-duration: .35s;
 }
+
+/* ---------- updates ---------- */
+/* a newer release: a dot in the accent colour on About's icon, and a line under the version in About */
+.side-btn .sym { position: relative; }
+.update-dot {
+  position: absolute; top: -2px; right: -3px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--panel-2);
+}
+.info-update { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
+.info-update[hidden] { display: none; }
+.info-update .btn { text-decoration: none; }

@@ -8,7 +8,7 @@ export default {
   'name.untitled': '(sin título)',
   'noext.title': 'No se encontró la extensión tabcat.',
   'noext.need': 'tabcat funciona junto con una extensión del navegador.',
-  'noext.step1.html': 'Abre <a href="chrome://extensions" data-copy>chrome://extensions</a>, activa el <b>Modo de desarrollador</b>, haz clic en <b>Cargar descomprimida</b> e instala la carpeta de la <a href="https://github.com/nda111/tabcat"><span class="gh-mark"></span>extensión tabcat</a>.',
+  'noext.step1.html': 'Abre <a href="chrome://extensions" data-copy>chrome://extensions</a>, activa el <b>Modo de desarrollador</b>, haz clic en <b>Cargar descomprimida</b> e instala la carpeta de la <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extensión tabcat</a>.',
   'noext.step3': 'Recarga esta página.',
   'noext.retry': 'Reintentar',
   'noext.copied': 'Dirección copiada. Pégala en la barra de direcciones de una pestaña nueva.',
@@ -107,7 +107,7 @@ export default {
   'toast.importFailed': 'Error al importar: {error}', 'toast.settingsImported': 'Ajustes importados',
   'err.notJson': 'no es un archivo JSON', 'err.noWorkspaces': 'no se encontraron espacios de trabajo',
   'err.notSettings': 'no es un archivo de ajustes de tabcat', 'err.noSettings': 'no se encontraron ajustes válidos',
-  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo',
+  'settings.title': 'Ajustes', 'settings.general': 'General', 'settings.closeOnSave': 'Cerrar las pestañas al guardarlas', 'settings.groupTabs': 'Agrupar pestañas al abrir todo', 'settings.checkUpdates': 'Buscar actualizaciones automáticamente',
   'settings.autoSuspend': 'Suspender automáticamente las pestañas inactivas tras (minutos)', 'settings.off': 'Desactivado', 'settings.columns': 'Columnas del tablero (1–8)',
   'settings.language': 'Idioma', 'settings.langAuto': 'Idioma del navegador',
   'settings.appearance': 'Apariencia', 'settings.theme': 'Tema', 'settings.color': 'Color',
@@ -125,6 +125,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Ctrl+Shift+X</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Listo',
   'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',
+  'info.update': 'Hay una versión nueva ({version})', 'info.getUpdate': 'Descargar', 'info.updateBadge': 'Hay una actualización',
   'help.org.html': `<h4>Cómo se organiza todo</h4>
 <p><b>Espacio de trabajo</b> › <b>Categoría</b> › <b>Grupo</b> › <b>Carpeta</b> (hasta 4 niveles) y <b>Enlace</b>.
 Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el tablero; los grupos son las tarjetas del tablero.</p>`,

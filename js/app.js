@@ -11,7 +11,7 @@ const tr = t; // for code where `t` is a tab or a drop target
 const $ = (sel, root = document) => root.querySelector(sel);
 
 let state = null;
-let settings = { closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
+let settings = { closeOnSave: true, groupTabs: true, checkUpdates: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', language: 'auto', columns: 5 };
 
 // Accent colours for Settings > Color, in rainbow order (hue in oklch); orange is the original.
 // (mono has no hue: the other theme's background, see app.css)
@@ -3021,6 +3021,7 @@ function fillSettings() {
   const f = $('#settings-form');
   f.closeOnSave.checked = settings.closeOnSave;
   f.groupTabs.checked = settings.groupTabs !== false;
+  f.checkUpdates.checked = settings.checkUpdates !== false;
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
@@ -3040,13 +3041,14 @@ $('#settings-form').addEventListener('change', async (e) => {
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
     groupTabs: f.groupTabs.checked,
+    checkUpdates: f.checkUpdates.checked,
     autoSuspendMinutes: Math.max(0, parseInt(f.autoSuspendMinutes.value, 10) || 0),
     language: f.language.value,
     theme: f.theme.value,
     accent: f.accent.value,
     columns: Math.min(MAX_COLUMNS, Math.max(1, parseInt(f.columns.value, 10) || 3)),
   }));
-  if (s) { switchTheme(s); relayoutBoard(); switchLang(s.language); }
+  if (s) { switchTheme(s); relayoutBoard(); switchLang(s.language); checkUpdates(s); }
 });
 
 // Apply new settings; a changed theme or accent cross-fades the whole page from the old look.
@@ -3238,6 +3240,7 @@ const SETTINGS_IO = {
   language: (v) => v === 'auto' || Object.hasOwn(LANGS, v),
   closeOnSave: (v) => typeof v === 'boolean',
   groupTabs: (v) => typeof v === 'boolean',
+  checkUpdates: (v) => typeof v === 'boolean',
   autoSuspendMinutes: (v) => Number.isInteger(v) && v >= 0,
   theme: (v) => ['auto', 'light', 'dark'].includes(v),
   accent: (v) => Object.hasOwn(ACCENTS, v),
@@ -3246,7 +3249,7 @@ const SETTINGS_IO = {
 
 // Settings > Data > Reset settings: every option above back to its default (after asking; the data is
 // not touched)
-const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
+const SETTINGS_DEFAULTS = { language: 'auto', closeOnSave: true, groupTabs: true, checkUpdates: true, autoSuspendMinutes: 0, theme: 'auto', accent: 'purple', columns: 5 };
 $('#btn-reset-settings').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('reset.title'), text: t('reset.text'), ok: t('reset.ok'), danger: true }))) return;
   const s = await run(B.call('saveSettings', SETTINGS_DEFAULTS));
@@ -3255,6 +3258,7 @@ $('#btn-reset-settings').addEventListener('click', async () => {
   relayoutBoard();
   switchLang(s.language);
   fillSettings();
+  checkUpdates(s);
   toast(t('toast.settingsReset'));
 });
 
@@ -3299,10 +3303,48 @@ $('#btn-help').addEventListener('click', openGuide);
 $('#btn-info').addEventListener('click', () => {
   $('#info-ext').textContent = extVersion || t('info.notConnected');
   $('#info-min').textContent = MIN_EXTENSION;
+  showUpdate();
   const dlg = $('#info');
   dlg.showModal();
   dlg.querySelector('button').blur();
 });
+
+// Updates: the extension is installed from a GitHub release and doesn't update itself, so (unless turned
+// off in Settings) the dashboard looks up the latest release, at most twice a day, and when it's newer
+// than the connected extension says so: a dot on About, and in About a link to the release.
+const LATEST_RELEASE = 'https://api.github.com/repos/nda111/tabcat/releases/latest';
+const LATEST = 'tabcat:latest'; // { version, url, checkedAt } of the last look
+const CHECK_EVERY = 12 * 60 * 60 * 1000;
+let latest = null;
+try { latest = JSON.parse(localStorage.getItem(LATEST)); } catch { /* storage unavailable or unreadable */ }
+async function checkUpdates(s = settings) {
+  if (s.checkUpdates === false) return showUpdate();
+  if (!latest || !(Date.now() - latest.checkedAt < CHECK_EVERY)) {
+    try {
+      const r = await fetch(LATEST_RELEASE, { headers: { Accept: 'application/vnd.github+json' } });
+      if (r.ok) {
+        const rel = await r.json();
+        latest = { version: String(rel.tag_name).replace(/^v/, ''), url: rel.html_url, checkedAt: Date.now() };
+        try { localStorage.setItem(LATEST, JSON.stringify(latest)); } catch { /* storage unavailable */ }
+      }
+    } catch { /* offline: ask again next time */ }
+  }
+  showUpdate();
+}
+function newerRelease() {
+  return settings.checkUpdates !== false && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
+}
+function showUpdate() {
+  const rel = newerRelease();
+  const dot = $('#btn-info .update-dot');
+  const appearing = dot.hidden && !!rel;
+  dot.hidden = $('#info-update').hidden = !rel;
+  if (!rel) return;
+  dot.setAttribute('aria-label', t('info.updateBadge'));
+  $('#info-update-text').textContent = t('info.update', { version: `v${rel.version}` });
+  $('#info-update-get').href = rel.url;
+  if (appearing) dot.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+}
 
 /* ---------- side panels: collapse and resize ---------- */
 
@@ -3664,6 +3706,7 @@ async function start(ext) {
     toast(t('noext.old', { version: ext.version, min: MIN_EXTENSION }));
   }
   await refresh();
+  checkUpdates();
 }
 
 $('#no-ext-retry').addEventListener('click', () => location.reload());
