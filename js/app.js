@@ -5,6 +5,7 @@ import { typesetMath, mathReady } from './math.js';
 import { searchEmoji, favoriteEmoji, recordEmoji } from './emoji.js';
 import { icon, hydrateIcons } from './icons.js';
 import { LANGS, setLang, getLang, t, translateDom, randomName } from './i18n.js';
+import { sampleWorkspaces } from './sample.js';
 
 const tr = t; // for code where `t` is a tab or a drop target
 
@@ -113,12 +114,45 @@ function noTip(el) {
 
 function iconImg(url, icon) {
   const fallback = T.faviconFor(url);
-  const img = h('img', { class: 'fav', src: icon || fallback, alt: '', loading: 'lazy', draggable: 'false' });
+  const img = h('img', { class: 'fav', alt: '', loading: 'lazy', draggable: 'false' });
+  const show = (src) => { if (src.startsWith('chrome-extension:')) img.crossOrigin = 'anonymous'; img.src = src; }; // (readable: see blankFavicon)
+  show(icon || fallback);
   img.addEventListener('error', () => {
-    if (img.src !== fallback) img.src = fallback;
-    else if (img.src !== T.BLANK_ICON) img.src = T.BLANK_ICON;
+    if (img.src !== fallback) show(fallback);
+    else if (img.src !== T.BLANK_ICON) show(T.BLANK_ICON);
+  });
+  img.addEventListener('load', () => {
+    if (!img.src.startsWith('chrome-extension:') || img.classList.contains('fav-blank')) return;
+    blankFavicon().then((blank) => {
+      if (blank && img.naturalWidth === blank.w && favSig(img) === blank.sig) { img.classList.add('fav-blank'); img.src = CLEAR_PIXEL; }
+    });
   });
   return img;
+}
+// Chrome's own icon for a site it has no favicon of yet (a grey globe) is drawn in the accent colour
+// instead (.fav-blank). It's told apart by its pixels, learnt once from a site no one has visited.
+const CLEAR_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const sigCanvas = Object.assign(document.createElement('canvas'), { width: 16, height: 16 });
+function favSig(img) {
+  const g = sigCanvas.getContext('2d', { willReadFrequently: true });
+  g.clearRect(0, 0, 16, 16);
+  g.drawImage(img, 0, 0, 16, 16);
+  try {
+    const d = g.getImageData(0, 0, 16, 16).data;
+    let sig = 0;
+    for (let i = 0; i < d.length; i++) sig = (sig * 31 + d[i]) >>> 0;
+    return sig;
+  } catch { return null; } // (not readable: left as it is)
+}
+let blankLearnt = null;
+function blankFavicon() {
+  blankLearnt ||= (async () => {
+    const img = Object.assign(new Image(), { crossOrigin: 'anonymous', src: T.faviconFor('https://tabcat.invalid/') });
+    await img.decode();
+    const sig = favSig(img);
+    return sig == null ? null : { w: img.naturalWidth, sig };
+  })().catch(() => null);
+  return blankLearnt;
 }
 
 function highlight(text, q) {
@@ -4072,6 +4106,17 @@ function placeTour() {
 }
 // (started again from Help: the dialog makes way for it)
 $('#help-tour').addEventListener('click', () => { $('#help').close(); startTour(); });
+// Help's "Add sample workspaces": a work board, a study board and a trip (sample.js), in the page's
+// language, beside what is there; one Undo takes them away again.
+$('#help-sample').addEventListener('click', async () => {
+  $('#help').close();
+  const before = structuredClone(state);
+  const ids = await apply(...sampleWorkspaces(getLang()).map((node) => ({ op: 'create', parentId: null, node })));
+  if (!ids?.length) return;
+  const entry = await remember(before, { verb: 'sample' });
+  select(ids[0]);
+  toast(t('toast.sampleAdded'), t('common.undo'), () => undo(entry, true));
+});
 $('#tour-skip').addEventListener('click', endTour);
 $('#tour-prev').addEventListener('click', () => showTourStep(Math.max(0, tourStep - 1)));
 $('#tour-next').addEventListener('click', () => (tourStep === tour.length - 1 ? endTour() : showTourStep(tourStep + 1)));
