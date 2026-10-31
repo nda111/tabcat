@@ -22,7 +22,7 @@ with sync_playwright() as p:
     check(first() > .5, f'empty: the first column shows New group ({first()})')
     d.hover('#board .col:nth-child(3) .add-group'); time.sleep(.4)
     check(first() == 0, f'another column shows its own: the first steps aside ({first()})')
-    d.mouse.move(5, 790); time.sleep(.4)
+    d.mouse.move(5, 790); time.sleep(.6)
     check(first() > .5, f'and comes back after ({first()})')
     check(not errors, f'no page errors {errors}')
     ctx.close()
