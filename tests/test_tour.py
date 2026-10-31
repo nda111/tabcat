@@ -30,10 +30,10 @@ with sync_playwright() as p:
         d.click('#tour-next'); time.sleep(.8)
         steps.append(d.evaluate(STEP))
     order = [x['title'] for x in steps]
-    expected = ['Welcome to tabcat.', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search'] + (['Install app'] if installable else []) + ['Settings and help', 'Tour', 'Always at hand', "Let's get along. 😸"]
+    expected = ['Hello ', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search'] + (['Install app'] if installable else []) + ['Settings and help', 'Tour', 'Always at hand', "Let's get along. 😸"]
     check(installable and order == expected, f'the steps, in order (Install app while it can be installed) {order}')
     lit = {x['title']: x['spot'][:2] for x in steps}
-    unlit = {'Welcome to tabcat.', 'Always at hand', "Let's get along. 😸"}
+    unlit = {'Hello ', 'Always at hand', "Let's get along. 😸"}
     check(all((v == [0, 0]) == (k in unlit) for k, v in lit.items()), f'each step lights its part (the welcome, shortcut and last: none) {lit}')
     check(all(x['card'] for x in steps), 'the card stays on screen')
     sides = [x['side'] for x in steps if x['side']]
