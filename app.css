@@ -1009,3 +1009,4 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 @keyframes spin { to { transform: rotate(1turn); } }
 .info-status { color: var(--muted); }
 .info-status:empty { display: none; }
+.tour-logo { display: inline-block; width: 1.25em; height: 1.25em; vertical-align: -.25em; margin-left: 1px; }

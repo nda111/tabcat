@@ -21,7 +21,7 @@ export default {
   'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
   'help.tour': 'Hacer el recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
   'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Ayuda.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
-  'tour.welcome.title': 'Te damos la bienvenida a tabcat.', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos y vuelve a abrirlas cuando las necesites.',
+  'tour.welcome.title': 'Hola {logo}', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos y vuelve a abrirlas cuando las necesites.',
   'tour.workspaces.title': 'Espacios de trabajo', 'tour.workspaces.text': 'Las cajas más grandes. Divide tus cosas, como trabajo y estudio. Arrastra para reordenar.',
   'tour.tabs.title': 'Pestañas abiertas', 'tour.tabs.text': 'Tus ventanas y pestañas abiertas. También puedes {icon:save} guardar una ventana, {icon:suspend} dormir pestañas o {icon:dedupe} ordenar las duplicadas.',
   'tour.categories.title': 'Categorías', 'tour.categories.text': 'Temas dentro de un espacio de trabajo. Cada categoría tiene sus propios grupos.',

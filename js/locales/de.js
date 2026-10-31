@@ -21,7 +21,7 @@ export default {
   'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
   'help.tour': 'Tour starten', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}',
   'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über die Hilfe starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
-  'tour.welcome.title': 'Willkommen bei tabcat.', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen und öffne sie wieder, wann immer du sie brauchst.',
+  'tour.welcome.title': 'Hallo {logo}', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen und öffne sie wieder, wann immer du sie brauchst.',
   'tour.workspaces.title': 'Arbeitsbereiche', 'tour.workspaces.text': 'Die größten Einheiten. Teile deine Sachen auf, etwa Arbeit und Lernen. Zum Sortieren ziehen.',
   'tour.tabs.title': 'Offene Tabs', 'tour.tabs.text': 'Deine offenen Fenster und Tabs. Du kannst auch {icon:save} ein Fenster speichern, {icon:suspend} Tabs schlafen legen oder {icon:dedupe} Duplikate aufräumen.',
   'tour.categories.title': 'Kategorien', 'tour.categories.text': 'Themen innerhalb eines Arbeitsbereichs. Jede Kategorie hat ihre eigenen Gruppen.',

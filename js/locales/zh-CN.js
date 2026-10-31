@@ -19,7 +19,7 @@ export default {
   'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
   'help.tour': '开始导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
   'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从帮助开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
-  'tour.welcome.title': '欢迎使用 tabcat。', 'tour.welcome.text': '把标签页作为链接保存在分组里，需要时随时再打开。',
+  'tour.welcome.title': '你好 {logo}', 'tour.welcome.text': '把标签页作为链接保存在分组里，需要时随时再打开。',
   'tour.workspaces.title': '工作区', 'tour.workspaces.text': '最大的分类。可以按工作、学习来划分。拖动可调整顺序。',
   'tour.tabs.title': '打开的标签页', 'tour.tabs.text': '显示打开的浏览器窗口和标签页。还可以 {icon:save} 保存窗口、{icon:suspend} 休眠标签页、{icon:dedupe} 整理重复的标签页。',
   'tour.categories.title': '类别', 'tour.categories.text': '工作区里的主题。每个类别可以有不同的分组。',

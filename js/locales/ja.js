@@ -19,7 +19,7 @@ export default {
   'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
   'help.tour': 'ツアーを始める', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}',
   'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからヘルプでも始められます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
-  'tour.welcome.title': 'tabcat へようこそ。', 'tour.welcome.text': 'タブをグループの中のリンクとして保存して、必要なときにまた開けます。',
+  'tour.welcome.title': 'こんにちは {logo}', 'tour.welcome.text': 'タブをグループの中のリンクとして保存して、必要なときにまた開けます。',
   'tour.workspaces.title': 'ワークスペース', 'tour.workspaces.text': 'いちばん大きなまとまりです。仕事、勉強などに分けてみましょう。ドラッグで並べ替えられます。',
   'tour.tabs.title': '開いているタブ', 'tour.tabs.text': '開いているウィンドウとタブを表示します。{icon:save} ウィンドウを保存したり、{icon:suspend} タブを休止したり、{icon:dedupe} 重複したタブを整理したりもできます。',
   'tour.categories.title': 'カテゴリ', 'tour.categories.text': 'ワークスペースの中のテーマです。カテゴリごとに別のグループを作れます。',

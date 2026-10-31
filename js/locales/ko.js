@@ -19,7 +19,7 @@ export default {
   'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
   'help.tour': '둘러보기 시작', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
   'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드릴게요. 나중에 도움말에서도 시작할 수 있어요.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
-  'tour.welcome.title': 'tabcat에 오신 것을 환영합니다.', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 필요할 때 다시 열어볼 수 있어요.',
+  'tour.welcome.title': '안녕하세요 {logo}', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 필요할 때 다시 열어볼 수 있어요.',
   'tour.workspaces.title': '워크스페이스', 'tour.workspaces.text': '가장 큰 묶음입니다. 업무, 공부처럼 작업을 나눠보세요. 끌어서 순서를 바꿀 수 있어요.',
   'tour.tabs.title': '열린 탭', 'tour.tabs.text': '열린 브라우저 창과 탭을 보여줘요. {icon:save} 창을 저장하고, {icon:suspend} 탭을 재우고, {icon:dedupe} 중복되는 탭을 정리할 수도 있어요.',
   'tour.categories.title': '카테고리', 'tour.categories.text': '워크스페이스 안의 주제입니다. 카테고리마다 다른 그룹을 만들 수 있어요.',

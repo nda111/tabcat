@@ -3903,7 +3903,9 @@ function showTourStep(i) {
   bar.setAttribute('aria-valuemax', tour.length);
   bar.setAttribute('aria-label', t('tour.count', { i: i + 1, n: tour.length }));
   bar.firstElementChild.style.width = `${((i + 1) / tour.length) * 100}%`;
-  $('#tour-title').textContent = t(`tour.${key}.title`);
+  // (a {logo} in the title: the logo, as the page shows it)
+  $('#tour-title').replaceChildren(...t(`tour.${key}.title`).split('{logo}')
+    .flatMap((part, j) => (j ? [h('span', { class: 'logo tour-logo', role: 'img', 'aria-label': 'tabcat' }), part] : [part])));
   // (a {icon:name} in the text: that control's own icon, as the page shows it)
   // (and at its end, the key that steps on)
   $('#tour-text').replaceChildren(...t(`tour.${key}.text`).split(/\{icon:(\w+)\}/)

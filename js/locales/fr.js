@@ -21,7 +21,7 @@ export default {
   'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
   'help.tour': 'Faire la visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
   'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis l’aide.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
-  'tour.welcome.title': 'Bienvenue dans tabcat.', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes et rouvrez-les quand vous en avez besoin.',
+  'tour.welcome.title': 'Bonjour {logo}', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes et rouvrez-les quand vous en avez besoin.',
   'tour.workspaces.title': 'Espaces de travail', 'tour.workspaces.text': 'Les plus grands ensembles. Séparez vos activités, comme le travail et les études. Faites glisser pour réordonner.',
   'tour.tabs.title': 'Onglets ouverts', 'tour.tabs.text': 'Vos fenêtres et onglets ouverts. Vous pouvez aussi {icon:save} enregistrer une fenêtre, {icon:suspend} mettre des onglets en veille ou {icon:dedupe} ranger les doublons.',
   'tour.categories.title': 'Catégories', 'tour.categories.text': 'Des thèmes dans un espace de travail. Chaque catégorie a ses propres groupes.',
