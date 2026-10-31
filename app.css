@@ -971,6 +971,9 @@ dialog .field .swatches { margin-top: 6px; }
 .setting-row { display: flex; align-items: center; gap: 12px; min-height: 40px; }
 .setting-row + .setting-row { margin-top: 4px; }
 .setting-name { width: 52px; flex: none; font-weight: 600; }
+/* Settings is wider than other dialogs: the 11 accent swatches stay on one line even with a scrollbar
+   (a classic one takes 17px) */
+#settings { width: 480px; }
 .theme-opts { display: flex; gap: 6px; }
 dialog label.theme-opt {
   position: relative; display: grid; place-items: center; width: 34px; height: 34px; margin: 0;
