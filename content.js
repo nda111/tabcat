@@ -17,9 +17,12 @@
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache
+  // (installed from the Chrome Web Store, the manifest has the store's update_url: the browser keeps it
+  // up to date, and the dashboard needn't look for releases)
   function hello() {
     greeted = true;
-    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: chrome.runtime.getManifest().version, features: FEATURES } });
+    const manifest = chrome.runtime.getManifest();
+    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: manifest.version, features: FEATURES, updatesItself: !!manifest.update_url } });
   }
 
   function connect() {

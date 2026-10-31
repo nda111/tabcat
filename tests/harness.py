@@ -1,6 +1,6 @@
 # Shared setup for the browser tests: the dashboard served on :8765, Chromium with the extension
 # loaded (from a clean copy of the repo), a fresh profile each run, and PASS / FAIL reporting.
-import atexit, functools, http.server, os, shutil, sys, tempfile, threading, time
+import atexit, functools, json, http.server, os, shutil, sys, tempfile, threading, time
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,11 +24,15 @@ def serve():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     atexit.register(srv.shutdown)
 
-def extension_copy():
-    # the extension without the dashboard worktree, the tests or the logo's source files
+def extension_copy(manifest=None):
+    # the extension without the dashboard worktree, the tests or the logo's source files; `manifest`:
+    # fields to change in its manifest
     dst = tempfile.mkdtemp(prefix='tabcat-ext-')
     shutil.copytree(ROOT, dst, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('web', 'tests', 'releases', '.git', 'icon.af*', 'icon.jpg'))
+                    ignore=shutil.ignore_patterns('web', 'tests', 'releases', 'tools', '.git', 'icon.af*', 'icon.jpg'))
+    if manifest:
+        with open(dst + '/manifest.json') as f: m = json.load(f)
+        with open(dst + '/manifest.json', 'w') as f: json.dump({**m, **manifest}, f)
     atexit.register(shutil.rmtree, dst, True)
     return dst
 
@@ -37,12 +41,12 @@ def profile():
     atexit.register(shutil.rmtree, d, True)
     return d
 
-def launch(p, developer_mode=False, fresh=False, **kw):
+def launch(p, developer_mode=False, fresh=False, manifest=None, **kw):
     """Chromium with the extension; returns (context, service worker). developer_mode: as for anyone
     loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off).
     Unless `fresh`, as if used before: the dashboard it opens on install is closed, and the page has
-    offered its tour already."""
-    ext = extension_copy()
+    offered its tour already. `manifest`: fields to change in the extension's manifest."""
+    ext = extension_copy(manifest)
     prof = profile()
     if developer_mode:
         os.makedirs(prof + '/Default', exist_ok=True)

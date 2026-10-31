@@ -84,6 +84,19 @@ with sync_playwright() as p:
     failed = state()
     time.sleep(3.2)
     check(failed[0] and failed[1] and failed[2] and not state()[0], f"unreachable: says so, then the button is back {failed} {state()}")
+    ctx.close()
+    # installed from the Chrome Web Store (the manifest has the store's update_url): the browser keeps it
+    # up to date, so the dashboard doesn't look, and offers neither the setting nor the button
+    asked.clear(); RELEASE['tag_name'] = 'v9.9.9'
+    ctx, sw = launch(p, manifest={'update_url': 'http://127.0.0.1:9/updates.xml'})
+    ctx.route('https://api.github.com/**', github)
+    d = dashboard(ctx, errors); time.sleep(1)
+    check(not asked and not dot(d), f'from the store: not looked up, no dot ({len(asked)} asked)')
+    d.click('#btn-info'); time.sleep(.4)
+    check(d.evaluate("document.querySelector('#info-check').hidden && document.querySelector('#info-update').hidden"), 'from the store: About offers no check')
+    d.keyboard.press('Escape'); time.sleep(.3)
+    d.click('#btn-settings'); time.sleep(.3)
+    check(not d.is_visible('#settings-form [name=checkUpdates]'), 'from the store: no update setting')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
