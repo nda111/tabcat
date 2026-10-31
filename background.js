@@ -112,6 +112,22 @@ async function dashboardHere(windowId, keep = null) {
   } else await chrome.tabs.create({ windowId, url: s.dashboardUrl, pinned: true, index: 0 });
   await chrome.windows.update(windowId, { focused: true });
 }
+// Pinned, it stays the window's first tab: another tab pinned, dragged or moved in ahead of it, it goes
+// back in front. (While a tab is being dragged, tabs can't be moved: it tries again a moment later.)
+async function keepDashboardFirst(windowId) {
+  A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
+  for (let i = 0; i < 10; i++) {
+    const tabs = await chrome.tabs.query({ windowId, pinned: true }).catch(() => []);
+    const dash = tabs.find(isDashTab);
+    if (!dash || dash.index === 0) return;
+    if (await chrome.tabs.move(dash.id, { index: 0 }).then(() => true, () => false)) continue;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
+chrome.tabs.onMoved.addListener((id, { windowId }) => keepDashboardFirst(windowId));
+chrome.tabs.onAttached.addListener((id, { newWindowId }) => keepDashboardFirst(newWindowId));
+chrome.tabs.onUpdated.addListener((id, change, tab) => { if ('pinned' in change) keepDashboardFirst(tab.windowId); });
+chrome.tabs.onCreated.addListener((tab) => { if (tab.pinned) keepDashboardFirst(tab.windowId); });
 // The window to bring it to: the tab's, unless that has no tab strip (a popup): the last browser window
 async function windowFor(tab) {
   if (tab && (await chrome.windows.get(tab.windowId)).type === 'normal') return tab.windowId;

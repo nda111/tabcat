@@ -34,6 +34,7 @@ Keep the folder where it is: the browser loads tabcat from it.
 
 ### Updating
 
+When a new version is out, a dot appears on **About** in the dashboard, and About links to it.
 Download the new release, replace the contents of your `tabcat` folder with it, and press **Reload** on tabcat
 in `chrome://extensions`. Your groups and settings stay as they are.
 

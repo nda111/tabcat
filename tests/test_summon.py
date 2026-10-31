@@ -1,5 +1,6 @@
 # The dashboard comes to you: going to its address (or the popup's "Open dashboard") brings the one
-# dashboard into the current window as its first, pinned tab; the tab that went there goes back.
+# dashboard into the current window as its first, pinned tab; the tab that went there goes back. Pinned,
+# it stays the first tab.
 from harness import *
 
 TABS = f"chrome.windows.getAll({{populate:true, windowTypes:['normal']}}).then(ws=>ws.map(w=>w.tabs.map(t=>(t.pinned?'pin:':'')+((t.url||t.pendingUrl).startsWith('{URL}')?'DASH':(t.url||t.pendingUrl).split('?').pop())+(t.active?'*':''))))"
@@ -41,6 +42,15 @@ with sync_playwright() as p:
     pp.evaluate("chrome.runtime.sendMessage({ cmd: 'openDashboard' })"); time.sleep(1.5)
     w = sw.evaluate(TABS)
     check(dashes(w) == 1 and any(win[0] == 'pin:DASH*' for win in w), f"the popup's Open dashboard brings the same one {w}")
+    # pinned, it stays first: another tab pinned after it, or dragged in ahead of it
+    DW = f"chrome.tabs.query({{}}).then(ts=>ts.find(t=>(t.url||'').startsWith('{URL}')).windowId)"
+    win = sw.evaluate(DW)
+    other = sw.evaluate(f"chrome.tabs.create({{windowId:{win}, url:'{PAGE}c1', active:false}}).then(t=>t.id)"); time.sleep(.4)
+    sw.evaluate(f"chrome.tabs.update({other}, {{pinned:true}})"); time.sleep(.6)
+    first = lambda: sw.evaluate(f"chrome.tabs.query({{windowId:{win}}}).then(ts=>ts.map(t=>(t.url||t.pendingUrl).startsWith('{URL}')?'DASH':(t.url||t.pendingUrl).split('?').pop()).slice(0,2))")
+    check(first() == ['DASH', 'c1'], f'another tab pinned: the dashboard is still first {first()}')
+    sw.evaluate(f"chrome.tabs.move({other}, {{index:0}})"); time.sleep(.8)
+    check(first() == ['DASH', 'c1'], f'a pinned tab moved ahead of it: the dashboard goes back in front {first()}')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
