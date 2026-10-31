@@ -24,7 +24,11 @@ body.doc-page { display: block; overflow: visible; font-size: 14px; line-height:
 .doc-card li::marker { color: var(--muted); }
 .doc-card a { color: var(--accent); text-underline-offset: 2px; }
 .doc-date { color: var(--muted); font-size: 12.5px; margin-bottom: 20px !important; }
-.doc-lead { font-size: 15.5px; }
+/* the summary: a tinted box in the accent colour above the numbered sections */
+.doc-summary { margin: 0 0 8px; padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); }
+.doc-summary strong { display: block; margin-bottom: 4px; color: var(--accent); font-size: 12.5px; }
+.doc-summary p { margin: 0; }
+.doc-n { color: var(--muted); font-weight: 400; margin-right: 2px; }
 
 @media (max-width: 560px) {
   .doc-wrap { padding-top: 20px; }
