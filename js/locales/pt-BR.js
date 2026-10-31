@@ -125,7 +125,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
   'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
-  'info.update': 'Nova versão disponível ({version})', 'info.getUpdate': 'Baixar', 'info.updateBadge': 'Atualização disponível',
+  'info.update': 'Nova versão disponível ({version})', 'info.getUpdate': 'Baixar', 'info.updateBadge': 'Atualização disponível', 'info.check': 'Verificar atualizações', 'info.upToDate': 'Você está com a versão mais recente.', 'info.checkFailed': 'Não foi possível verificar. Tente mais tarde.',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.
 Escolha um espaço de trabalho à esquerda e uma categoria na barra acima do quadro; os grupos são os cartões do quadro.</p>`,

@@ -3303,6 +3303,7 @@ $('#btn-help').addEventListener('click', openGuide);
 $('#btn-info').addEventListener('click', () => {
   $('#info-ext').textContent = extVersion || t('info.notConnected');
   $('#info-min').textContent = MIN_EXTENSION;
+  $('#info-status').textContent = '';
   showUpdate();
   const dlg = $('#info');
   dlg.showModal();
@@ -3316,29 +3317,48 @@ const LATEST_RELEASE = 'https://api.github.com/repos/nda111/tabcat/releases/late
 const LATEST = 'tabcat:latest'; // { version, url, checkedAt } of the last look
 const CHECK_EVERY = 12 * 60 * 60 * 1000;
 let latest = null;
+let checkedByHand = false; // About's "Check for updates" pressed: its answer shows even with the setting off
 try { latest = JSON.parse(localStorage.getItem(LATEST)); } catch { /* storage unavailable or unreadable */ }
-async function checkUpdates(s = settings) {
-  if (s.checkUpdates === false) return showUpdate();
-  if (!latest || !(Date.now() - latest.checkedAt < CHECK_EVERY)) {
+// (true when it has an answer: a fresh one, or one looked up a while ago)
+async function checkUpdates(s = settings, now = false) {
+  if (s.checkUpdates === false && !now) return showUpdate();
+  if (now || !latest || !(Date.now() - latest.checkedAt < CHECK_EVERY)) {
     try {
-      const r = await fetch(LATEST_RELEASE, { headers: { Accept: 'application/vnd.github+json' } });
-      if (r.ok) {
-        const rel = await r.json();
-        latest = { version: String(rel.tag_name).replace(/^v/, ''), url: rel.html_url, checkedAt: Date.now() };
-        try { localStorage.setItem(LATEST, JSON.stringify(latest)); } catch { /* storage unavailable */ }
-      }
-    } catch { /* offline: ask again next time */ }
+      const r = await fetch(LATEST_RELEASE, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      const rel = await r.json();
+      latest = { version: String(rel.tag_name).replace(/^v/, ''), url: rel.html_url, checkedAt: Date.now() };
+      try { localStorage.setItem(LATEST, JSON.stringify(latest)); } catch { /* storage unavailable */ }
+    } catch { /* offline, or GitHub said no: ask again next time */
+      showUpdate();
+      return false;
+    }
   }
   showUpdate();
+  return true;
 }
+$('#info-check').addEventListener('click', async (e) => {
+  const button = e.currentTarget, status = $('#info-status');
+  button.disabled = true;
+  status.textContent = '';
+  checkedByHand = true;
+  const ok = await checkUpdates(settings, true);
+  button.disabled = false;
+  if (newerRelease()) return;
+  button.hidden = true;
+  status.textContent = t(ok ? 'info.upToDate' : 'info.checkFailed');
+  status.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  if (!ok) setTimeout(() => { button.hidden = false; status.textContent = ''; }, 3000);
+});
 function newerRelease() {
-  return settings.checkUpdates !== false && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
+  return (settings.checkUpdates !== false || checkedByHand) && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
 }
 function showUpdate() {
   const rel = newerRelease();
   const dot = $('#btn-info .update-dot');
   const appearing = dot.hidden && !!rel;
   dot.hidden = $('#info-update').hidden = !rel;
+  $('#info-check').hidden = !!rel || !extVersion || !!$('#info-status').textContent;
   if (!rel) return;
   dot.setAttribute('aria-label', t('info.updateBadge'));
   $('#info-update-text').textContent = t('info.update', { version: `v${rel.version}` });

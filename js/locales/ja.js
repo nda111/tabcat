@@ -123,7 +123,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 検索 · <kbd>Alt+Shift+S</kbd> タブを保存 · <kbd>Alt+Shift+A</kbd> ウィンドウを保存 · <kbd>Ctrl+Shift+X</kbd> ダッシュボードを開く · 変更: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '完了',
   'help.title': 'ヘルプ', 'info.title': '情報', 'info.extension': '拡張機能', 'info.minimum': '必要な拡張機能', 'info.source': 'ソースコード', 'info.issues': '問題を報告', 'info.notConnected': '未接続',
-  'info.update': '新しいバージョンがあります（{version}）', 'info.getUpdate': 'ダウンロード', 'info.updateBadge': 'アップデートがあります',
+  'info.update': '新しいバージョンがあります（{version}）', 'info.getUpdate': 'ダウンロード', 'info.updateBadge': 'アップデートがあります', 'info.check': 'アップデートを確認', 'info.upToDate': '最新バージョンです。', 'info.checkFailed': '確認できませんでした。しばらくしてからもう一度お試しください。',
   'help.org.html': `<h4>構成</h4>
 <p><b>ワークスペース</b> › <b>カテゴリ</b> › <b>グループ</b> › <b>フォルダ</b> (最大 4 階層) と <b>リンク</b>。
 左でワークスペースを、ボード上のバーでカテゴリを選びます。ボード上のカードがグループです。</p>`,

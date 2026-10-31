@@ -142,7 +142,7 @@ export default {
 
   // help
   'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
-  'info.update': 'New version available ({version})', 'info.getUpdate': 'Download', 'info.updateBadge': 'Update available',
+  'info.update': 'New version available ({version})', 'info.getUpdate': 'Download', 'info.updateBadge': 'Update available', 'info.check': 'Check for updates', 'info.upToDate': 'You\'re up to date.', 'info.checkFailed': 'Couldn\'t check. Try again later.',
   'help.org.html': `<h4>How things are organized</h4>
 <p><b>Workspace</b> › <b>Category</b> › <b>Group</b> › <b>Folder</b> (up to 4 levels) and <b>Link</b>.
 Pick a workspace on the left and a category in the bar above the board; groups are the cards on the board.</p>`,

@@ -123,7 +123,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Ctrl+Shift+X</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
   'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.source': '소스 코드', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
-  'info.update': '새 버전이 나왔어요 ({version})', 'info.getUpdate': '받으러 가기', 'info.updateBadge': '업데이트가 있어요',
+  'info.update': '새 버전이 나왔어요 ({version})', 'info.getUpdate': '받으러 가기', 'info.updateBadge': '업데이트가 있어요', 'info.check': '업데이트 확인', 'info.upToDate': '최신 버전이에요.', 'info.checkFailed': '확인하지 못했어요. 잠시 후 다시 해 보세요.',
   'help.org.html': `<h4>구성</h4>
 <p><b>워크스페이스</b> › <b>카테고리</b> › <b>그룹</b> › <b>폴더</b>(최대 4단계) 순서로 <b>링크</b>를 담아요.
 왼쪽에서 워크스페이스를, 보드 위 막대에서 카테고리를 골라보세요. 보드에 보이는 카드 하나하나가 그룹이에요.</p>`,
