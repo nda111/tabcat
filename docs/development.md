@@ -92,3 +92,8 @@ refers to the result of op *n*. See `applyOp` in `lib/store.js`.
 Bump `version` in `manifest.json`, commit, then zip the extension files (not `web/`, `tests/` or `docs/`) into
 `releases/v<version>.zip` under a `tabcat/` folder (with `LICENSE` and `README.md`), for example with `git archive --prefix=tabcat/`.
 Tag the commit `v<version>` and attach the zip to a GitHub release. (`releases/` is ignored: the zips and notes live on GitHub releases only.)
+
+The same version goes to the Chrome Web Store: `python tools/store_zip.py` writes `releases/v<version>-store.zip`
+(the manifest at the top, without the localhost pages); upload it in the Developer Dashboard.
+Installed from the store, the extension updates itself: its manifest has the store's `update_url`, so `content.js`
+tells the dashboard (`updatesItself` in `ready`), which then doesn't look for GitHub releases.
