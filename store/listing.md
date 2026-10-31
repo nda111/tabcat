@@ -25,6 +25,7 @@ for Korean, also upload the screenshots in `ko/`.
   5. `5-settings.png`: Settings (themes, colours, languages)
 - Small promo tile (440×280): `en/promo-small-440x280.png` (one for every language: the store takes a single one)
 - Marquee promo tile (1400×560, optional): `en/promo-marquee-1400x560.png`
+- Promo video (optional, a YouTube link): upload `en/demo.mp4` (29 s, 1280×800) to YouTube and paste its link
 
 **Official URL**: none (needs a verified domain in Search Console; optional)
 **Homepage URL**: https://github.com/nda111/tabcat

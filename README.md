@@ -13,7 +13,7 @@ Tabs you're not using are put to sleep to keep things light.
 <a href="https://github.com/nda111/tabcat/issues">Report a problem</a>
 </p>
 
-<p align="center"><img src="store/en/1-board.png" width="860" alt="The tabcat board: groups of links as cards in columns, with notes and checkboxes"></p>
+<p align="center"><img src="store/en/demo.gif" width="860" alt="tabcat in use: a tab dragged into a group, a tab saved from the toolbar, a group closed and moved, a search, and the colour and theme changed"></p>
 
 ---
 
