@@ -2,3 +2,4 @@ web/
 .DS_Store
 Thumbs.db
 releases/
+__pycache__/
