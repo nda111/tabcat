@@ -76,6 +76,9 @@ the dashboard is a static page that only reads and edits what the extension hold
 You can export it to a file, and import it again, in Settings.
 The full [privacy policy](https://tabcat.ghyeok.com/privacy) is on the dashboard's site.
 
+tabcat keeps your data only in your browser, so export a backup from Settings now and then.
+tabcat is provided as is, without warranty, as per the [MIT](LICENSE) License.
+
 ## Questions and problems
 
 Found a bug or have an idea? Tell us in [Issues](https://github.com/nda111/tabcat/issues).
