@@ -215,6 +215,8 @@ body.ws-collapsed .ws-add { display: flex; }
 .info-list { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
 .info-list dt { color: var(--muted); }
 .info-list dd { margin: 0; overflow-wrap: anywhere; }
+/* who made it, under what licence: small and grey, beside Close (the link as About's others) */
+.info-legal { margin-right: auto; align-self: center; color: var(--muted); font-size: 11.5px; }
 .guide { font-size: 13px; }
 /* Help's title row: the title, and at its end the tour (an action on the whole of it, not part of the text) */
 .help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }

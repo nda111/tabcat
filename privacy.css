@@ -30,6 +30,9 @@ body.doc-page { display: block; overflow: visible; font-size: 14px; line-height:
 .doc-summary p { margin: 0; }
 .doc-n { color: var(--muted); font-weight: 400; margin-right: 2px; }
 
+.doc-foot { margin-top: 18px; text-align: center; color: var(--muted); font-size: 12px; animation: fade-in .3s ease-out; }
+.doc-foot a { color: inherit; }
+
 @media (max-width: 560px) {
   .doc-wrap { padding-top: 20px; }
   .doc-card { padding: 22px 20px 18px; }
