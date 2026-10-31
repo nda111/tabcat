@@ -526,13 +526,16 @@ document.addEventListener('mousemove', (e) => {
 }, { passive: true });
 document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer = null; });
 
+const HOVER_STOP = '.columns, .col, #board, #ws-list, #cat-bar, #ws-head, #tabs-panel, #sidebar, dialog, body, html';
 function restoreHover() {
   if (tipEl && !tipEl.offsetParent) hideTip(); // its element was re-rendered away or hidden
   if (!pointer) return;
   const top = document.elementFromPoint(...pointer);
   // (not over the tour, which nothing redraws: there a .hover would only switch its glides off)
   if (top?.closest('#tour')) return;
-  for (let el = top; el; el = el.parentElement) el.classList.add('hover');
+  // (up to the panel it is in, not the panel or the page: .hover * stops transitions in all it holds,
+  // and on the page itself that restyled every element of a big board on each change)
+  for (let el = top; el && !el.matches(HOVER_STOP); el = el.parentElement) el.classList.add('hover');
 }
 
 function renderSidebar() {
@@ -678,6 +681,7 @@ function columnControl() {
 
 function renderBoard() {
   const board = $('#board');
+  const shown = board.dataset.parent;
   delete board.dataset.parent;
   const ws = currentWs();
   if (!ws) {
@@ -698,21 +702,30 @@ function renderBoard() {
   const cols = layoutColumns(cat, n);
   // each column: groups with clickable gaps between them ("new group here"), then a tail whose
   // New group card shows when the pointer is below the column's last group
-  board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => {
-    return h('div', { class: 'col', dataset: { col: i } },
-      list.flatMap((g, k) => [
-        k > 0 && h('div', {
-          class: 'gap-slot', dataset: { before: g.id },
-          onclick: () => addGroup(cat, columnOf(cat, ...groupAt(cat, g.id)), { beforeId: g.id }),
-        }),
-        cachedGroup(g),
-      ]),
-      h('div', { class: 'col-tail' },
-        h('div', {
-          class: 'add-group', dataset: { col: i, id: `add:${i}` },
-          onclick: (e) => { const end = columnEnd(cat, e.currentTarget.closest('.col')); addGroup(cat, end.column, { afterId: end.afterId }); },
-        }, icon('plus', 28))));
-  })));
+  const here = () => currentCat(currentWs());
+  const content = (list, i) => [
+    ...list.flatMap((g, k) => [
+      k > 0 && h('div', {
+        class: 'gap-slot', dataset: { before: g.id },
+        onclick: () => addGroup(here(), columnOf(here(), ...groupAt(here(), g.id)), { beforeId: g.id }),
+      }),
+      cachedGroup(g),
+    ]),
+    h('div', { class: 'col-tail' },
+      h('div', {
+        class: 'add-group', dataset: { col: i, id: `add:${i}` },
+        onclick: (e) => { const end = columnEnd(here(), e.currentTarget.closest('.col')); addGroup(here(), end.column, { afterId: end.afterId }); },
+      }, icon('plus', 28))),
+  ].filter(Boolean);
+  // The same category again (a change in it): the columns stay and only what changed in them is swapped,
+  // so the cards that didn't change stay where they are and the browser doesn't style and lay out the
+  // whole board again (on a big board, most of a render). Another category: built afresh.
+  const columns = board.querySelector(':scope > .columns');
+  if (shown === cat.id && columns?.children.length === cols.length) {
+    cols.forEach((list, i) => syncChildren(columns.children[i], content(list, i)));
+  } else {
+    board.replaceChildren(h('div', { class: 'columns' }, cols.map((list, i) => h('div', { class: 'col', dataset: { col: i } }, content(list, i)))));
+  }
   sizeAddCards(board);
   for (const id of groupCache.keys()) if (!cat.groups.some((g) => g.id === id)) groupCache.delete(id);
   // keep the selection to groups still on this board
@@ -722,6 +735,14 @@ function renderBoard() {
   if (!pickedItems.size) pickedGroup = null;
   document.body.classList.toggle('item-select', pickedItems.size > 0);
   typesetMath(board);
+}
+
+// Makes `kids` the children of `parent`, in order, moving only what is out of place (children already
+// in place aren't touched, so the browser keeps their style and layout).
+function syncChildren(parent, kids) {
+  const keep = new Set(kids);
+  for (const child of [...parent.children]) if (!keep.has(child)) child.remove(); // (first, or they'd push the rest along)
+  kids.forEach((kid, i) => { if (parent.children[i] !== kid) parent.insertBefore(kid, parent.children[i] || null); });
 }
 
 // A group's element is reused while nothing it shows has changed: on a big board rebuilding every
