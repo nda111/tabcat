@@ -1,4 +1,5 @@
-# The logo in the accent colour (page, tab icon, symbol), and a folder's items under its symbol's middle.
+# The logo in the accent colour (page, tab icon, symbol), and a folder's guide line three quarters of the way
+# across its chevron, with its items just past it.
 from harness import *
 
 ws = workspace('Look', [group('Nest', [link('a'), folder('f1', [link('b'), folder('f2', [link('c'), folder('f3', [link('d')], symbol=':tabcat:')], symbol='A')])])])
@@ -47,9 +48,12 @@ with sync_playwright() as p:
     d.keyboard.press('Enter'); time.sleep(1)
     check(not d.locator('dialog[open]').count() and sw.evaluate(SYM) == 'K', 'Enter again: saved')
 
-    geo = d.evaluate("""() => [...document.querySelectorAll('#board .folder')].map(f => { const sym=f.querySelector(':scope>.folder-head>.sym').getBoundingClientRect();
-        const row=f.querySelector(':scope>.items>.item>:is(.link-row,.folder-head)').getBoundingClientRect(); return [f.dataset.id, sym.left + sym.width / 2, row.left]; })""")
-    check(len(geo) == 3 and all(abs(mid - row) <= 1 for _, mid, row in geo), f"a folder's items start under its symbol's middle {geo}")
+    geo = d.evaluate("""() => [...document.querySelectorAll('#board .folder')].map(f => { const tw=f.querySelector(':scope>.folder-head>.twisty').getBoundingClientRect();
+        const line=f.querySelector(':scope>.items').getBoundingClientRect(); return [f.dataset.id, tw.left + tw.width * .75, line.left + .5]; })""")
+    check(len(geo) == 3 and all(abs(at - line) <= 1 for _, at, line in geo), f"a folder's guide line is 3/4 across its chevron {geo}")
+    sib = d.evaluate("""() => { const f = document.querySelector('#board .folder'); const l = [...f.parentElement.children].find((x) => x.matches('.link'));
+        const icon = (el) => el.querySelector(':scope>:is(.link-row,.folder-head)>:is(img,.sym)').getBoundingClientRect().left; return l ? [icon(f), icon(l)] : null; }""")
+    check(sib is None or abs(sib[0] - sib[1]) <= .5, f"a folder's symbol lines up with the links beside it {sib}")
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
