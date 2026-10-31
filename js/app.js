@@ -89,8 +89,37 @@ function btn(label, title, fn) {
 
 // "a · b · c" as unbreakable chunks: a narrow container wraps between chunks, never inside one.
 function chunks(parts) {
-  return parts.flatMap((t, i) => [i ? ' ' : null, h('span', { class: 'chunk' }, t + (i < parts.length - 1 ? ' ·' : ''))])
+  return parts.flatMap((t, i) => [i ? ' ' : null, h('span', { class: 'chunk' }, t, i < parts.length - 1 ? ' ·' : '')])
     .filter(Boolean);
+}
+
+// A count that rolls when it changes: the old number slides out and the new one in (up as it grows, down
+// as it shrinks). `key` names the count across redraws; a redraw in the middle of a roll carries it on.
+const ROLL = 300;
+const counts = new Map(); // key -> { n, prev, at }
+function rollNum(key, n) {
+  const now = performance.now();
+  let c = counts.get(key);
+  if (!c || c.n !== n) counts.set(key, c = { n, prev: c ? c.n : null, at: c ? now : -Infinity });
+  const cur = h('span', { class: 'num-now' }, n);
+  const el = h('span', { class: 'num' }, cur);
+  const into = now - c.at;
+  if (c.prev != null && into < ROLL) {
+    const up = n > c.prev;
+    const old = h('span', { class: 'num-old', 'aria-hidden': 'true' }, c.prev);
+    el.append(old);
+    const opts = { duration: ROLL, easing: 'cubic-bezier(.22, 1, .36, 1)', delay: -into, fill: 'backwards' };
+    cur.animate([{ transform: `translateY(${up ? 60 : -60}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], opts);
+    old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${up ? -60 : 60}%)`, opacity: 0 }], { ...opts, fill: 'forwards' })
+      .finished.then(() => old.remove(), () => {});
+  }
+  return el;
+}
+// a counted message (e.g. "4 tabs") with its number rolling (see rollNum)
+function counted(key, msg, n) {
+  const s = t(msg, { n });
+  const i = s.indexOf(String(n));
+  return i < 0 ? s : [s.slice(0, i), rollNum(key, n), s.slice(i + String(n).length)];
 }
 
 // A node's symbol (or `fallback`): emoji as text, a letter/digit as a small badge, the logo in the
@@ -1106,13 +1135,12 @@ async function renderTabs() {
   if (shut.size !== (ui.winCollapsed || []).length) { ui.winCollapsed = [...shut]; saveUi(); }
   const blocks = wins.map((w) => {
     const name = windowName(w, others);
-    const label = `${name} · ${t('count.tabs', { n: w.tabs.length })}`;
     const collapsed = shut.has(w.id);
     return h('div', { class: 'win' + (collapsed ? ' collapsed' : ''), dataset: { window: w.id } },
       h('div', { class: 'win-head', draggable: 'true', onclick: (e) => { if (!e.target.closest('button')) toggleWin(w.id); } },
         Object.assign(btn(icon('chevron', 14), t(collapsed ? 'act.expand' : 'act.collapse'), () => toggleWin(w.id)), { className: 'icon-btn win-twisty' }),
-        h('span', { class: 'grow' }, chunks(label.split(' · '))),
-        h('span', { class: 'win-count' }, w.tabs.length),
+        h('span', { class: 'grow' }, chunks([name, counted(`win:${w.id}`, 'count.tabs', w.tabs.length)])),
+        h('span', { class: 'win-count' }, rollNum(`rail:${w.id}`, w.tabs.length)),
         // (sleep, save, close: the same slots as a tab row's wake, save, close below)
         w.tabs.some(canSuspend) && btn(icon('suspend'), t('win.suspend'), () => suspend({ windowId: w.id })),
         w.tabs.length > 0 && btn(icon('save'), t(w.id === currentWindowId ? 'win.saveThis' : 'win.save'), () => saveWindow(w.id)),
@@ -1135,8 +1163,8 @@ async function renderTabs() {
       btn(icon('save'), tr('tab.save'), () => saveTabsTo([t.id])),
       noTip(btn(icon('close'), tr('tab.close'), () => { dropTabRows([t.id]); run(B.call('closeTabs', { tabIds: [t.id] })); }))))));
   });
-  $('#tab-stats').replaceChildren(...chunks([t('count.windows', { n: wins.length }), t('count.tabs', { n: all.length }),
-    sleeping && t('count.suspended', { n: sleeping }), dupes && t('count.duplicates', { n: dupes })].filter(Boolean)));
+  $('#tab-stats').replaceChildren(...chunks([counted('windows', 'count.windows', wins.length), counted('tabs', 'count.tabs', all.length),
+    sleeping && counted('asleep', 'count.suspended', sleeping), dupes && counted('dupes', 'count.duplicates', dupes)].filter(Boolean)));
   // always shown (so the row never reshuffles); greyed out when there is nothing to do
   $('#btn-suspend').disabled = !suspendable;
   $('#btn-dedupe').disabled = !dupes;

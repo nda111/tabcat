@@ -514,6 +514,10 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
 .panel-title { flex: 1; min-width: 0; }
 /* a chunk moves to the next line as a unit, and wraps inside only if it is wider than the whole line */
 .chunk { display: inline-block; max-width: 100%; }
+/* a rolling count (see rollNum): the old number on top of the new one while they pass */
+.num { position: relative; display: inline-block; }
+.num-now { display: inline-block; }
+.num-old { position: absolute; left: 0; top: 0; }
 /* sized to the one-line title + stats; stays put when the stats wrap */
 .panel-toggle.square { align-self: flex-start; }
 .panel-actions { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
