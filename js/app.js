@@ -1108,12 +1108,14 @@ function reveal(node, anc) {
 
 /* ---------- open tabs panel ---------- */
 
+let lastTabs = null; // the windows and tabs last drawn (what closing tabs can open again)
 async function renderTabs() {
   if (drag) { pendingTabsRender = true; return; }
   pendingTabsRender = false;
   const seq = ++tabsRenderSeq;
   const data = await run(B.call('getTabs'));
   if (!data || seq !== tabsRenderSeq) return; // a newer render is on its way
+  lastTabs = data;
   currentWindowId = data.currentWindowId;
   const wins = data.windows.sort((a, b) => (b.id === currentWindowId) - (a.id === currentWindowId));
   // same rules as the extension: suspendTabs skips active/pinned/audible/non-web tabs,
@@ -1286,7 +1288,10 @@ async function closeWindow(w, others) {
       ok: t('win.close'), danger: true,
     }))) return;
   }
-  run(B.call('closeWindow', { windowId: w.id }));
+  const urls = w.tabs.map((x) => x.url).filter(Boolean);
+  await run(B.call('closeWindow', { windowId: w.id }));
+  // (another window: Undo opens its tabs again in a new window; closing this one closes the dashboard too)
+  if (!own && urls.length) toast(t('toast.windowClosed', { n: urls.length }), t('common.undo'), () => run(B.call('openUrls', { urls, newWindow: true })));
 }
 
 // Labelled action buttons, or icons only as soon as the labelled row would not fit (measured on an
@@ -1375,9 +1380,17 @@ async function wakeTabs(ids) {
 }
 
 async function closePickedTabs(ids) {
+  const closing = (lastTabs?.windows || []).flatMap((w) => w.tabs).filter((x) => ids.includes(x.id) && x.url);
   clearTabs();
   dropTabRows(ids);
-  await run(B.call('closeTabs', { tabIds: ids }));
+  if (!(await run(B.call('closeTabs', { tabIds: ids })))) return;
+  // Undo opens them again, each in its window if that is still open (at its end)
+  if (closing.length) toast(t('toast.tabsClosed', { n: closing.length }), t('common.undo'), async () => {
+    const open = new Set(((await run(B.call('getTabs'))) || { windows: [] }).windows.map((w) => w.id));
+    for (const [win, tabs] of Map.groupBy(closing, (x) => (open.has(x.windowId) ? x.windowId : null))) {
+      await run(B.call('openUrls', { urls: tabs.map((x) => x.url), ...(win ? { windowId: win } : {}) }));
+    }
+  });
 }
 
 // Closing tabs from the panel: their rows close up right away instead of waiting for the browser's tab
@@ -3377,8 +3390,14 @@ $('#import-file').addEventListener('change', async (e) => {
     if (!list.length) throw new Error(t('err.noWorkspaces'));
     const picked = await pickNodes({ title: t('import.title', { file: file.name }), ok: t('import.ok'), workspaces: list });
     if (!picked) return;
-    await B.apply(...picked.map((node) => ({ op: 'create', parentId: null, node })));
-    toast(t('toast.imported', { n: picked.length }));
+    // (Settings closes first, so the new workspaces are seen arriving in the sidebar; one Undo takes them away)
+    $('#settings').close();
+    const before = structuredClone(state);
+    const ids = await apply(...picked.map((node) => ({ op: 'create', parentId: null, node })));
+    if (!ids?.length) return;
+    const entry = await remember(before, { verb: 'import', n: ids.length });
+    select(ids[0]);
+    toast(t('toast.imported', { n: ids.length }), t('common.undo'), () => undo(entry, true));
   } catch (err) {
     toast(t('toast.importFailed', { error: err.message }));
   }
@@ -3408,8 +3427,21 @@ $('#btn-reset-settings').addEventListener('click', async () => {
   switchLang(s.language);
   fillSettings();
   checkUpdates(s);
+  resetView();
   toast(t('toast.settingsReset'));
 });
+
+// ...and how this device shows the page, each part moving back as it does when changed by hand: the
+// side panels open at their default widths, the windows in Open tabs unfolded, Install app offered again
+function resetView() {
+  for (const p of Object.values(PANELS)) ui[p.width] = null;
+  saveUi();
+  applyPanels(); // (an open panel eases to its default width)
+  for (const p of Object.values(PANELS)) if (ui[p.collapsed]) $(p.toggle).click();
+  for (const id of ui.winCollapsed || []) toggleWin(id);
+  store.set(INSTALL_HIDDEN, null);
+  showInstall();
+}
 
 $('#btn-export-settings').addEventListener('click', () => {
   const out = Object.fromEntries(Object.keys(SETTINGS_IO).map((k) => [k, settings[k]]));
@@ -3428,7 +3460,10 @@ $('#import-settings-file').addEventListener('change', async (e) => {
     if (!Object.keys(patch).length) throw new Error(t('err.noSettings'));
     const s = await B.call('saveSettings', patch);
     switchTheme(s);
+    relayoutBoard();
+    switchLang(s.language);
     fillSettings();
+    checkUpdates(s);
     toast(t('toast.settingsImported'));
   } catch (err) {
     toast(t('toast.importFailed', { error: err.message }));

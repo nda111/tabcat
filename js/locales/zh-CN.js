@@ -116,7 +116,7 @@ export default {
   'data.exportSettings': '导出设置', 'data.importSettings': '导入设置', 'data.resetSettings': '重置设置', 'reset.title': '要重置所有设置吗？', 'reset.text': '语言、主题、颜色、列数等选项将恢复为默认值。工作区、分组和链接不会被重置。', 'reset.ok': '重置', 'toast.settingsReset': '设置已恢复为默认值', 'toast.undone': '已撤销', 'toast.redone': '已重做',
   'noun.group': '分组', 'noun.groupN': '{n} 个分组', 'noun.link': '链接', 'noun.linkN': '{n} 个链接', 'noun.folder': '文件夹', 'noun.folderN': '{n} 个文件夹', 'noun.item': '项目', 'noun.itemN': '{n} 个项目', 'noun.workspace': '工作区', 'noun.workspaceN': '{n} 个工作区', 'noun.category': '类别', 'noun.categoryN': '{n} 个类别',
   'undo.delete': '已撤销删除{what}', 'redo.delete': '已重做删除{what}', 'undo.move': '已撤销移动{what}', 'redo.move': '已重做移动{what}', 'undo.merge': '已撤销合并分组', 'redo.merge': '已重做合并分组',
-  'undo.sample': '已撤销添加示例工作区', 'redo.sample': '已重新添加示例工作区', 'toast.sampleAdded': '已添加示例工作区', 'undo.closeDupes': '已撤销关闭重复标签页', 'redo.closeDupes': '已重做关闭重复标签页', 'undo.dedupe': '已撤销移除重复链接', 'redo.dedupe': '已重做移除重复链接',
+  'undo.sample': '已撤销添加示例工作区', 'redo.sample': '已重新添加示例工作区', 'toast.sampleAdded': '已添加示例工作区', 'toast.windowClosed': '已关闭窗口（{n} 个标签页）', 'toast.tabsClosed': '已关闭 {n} 个标签页', 'undo.import': '已撤销导入 {n} 个工作区', 'redo.import': '已重新导入 {n} 个工作区', 'undo.closeDupes': '已撤销关闭重复标签页', 'redo.closeDupes': '已重做关闭重复标签页', 'undo.dedupe': '已撤销移除重复链接', 'redo.dedupe': '已重做移除重复链接',
   'undo.save': '已撤销保存 {n} 个标签页', 'redo.save': '已重做保存 {n} 个标签页',
   'data.note': '导入会把所选项目添加为新的工作区，不会覆盖任何内容。设置文件包含上面的选项。',
   'settings.shortcuts': '快捷键',
