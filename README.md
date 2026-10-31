@@ -74,6 +74,7 @@ Install the dashboard as an app to give it a window of its own.
 Everything stays in your browser, kept by the extension. There's no account and no server:
 the dashboard is a static page that only reads and edits what the extension holds.
 You can export it to a file, and import it again, in Settings.
+The full [privacy policy](https://tabcat.ghyeok.com/privacy) is on the dashboard's site.
 
 ## Questions and problems
 
