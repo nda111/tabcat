@@ -44,6 +44,19 @@ with sync_playwright() as p:
         ang = d.evaluate('__ang')
         between = [a for a in ang if -85 < a < -5]
         check(len(between) >= 3 and ang[-1] == (-90 if want == 'closes' else 0), f'the chevron turns as the folder {want} ({ang[0]} → {ang[-1]}, {len(between)} frames between)')
+    # a group dragged out of a column: that column's New group card, now where the drag began, doesn't
+    # show as if hovered (the browser keeps the hover there until the mouse moves); it does once it moves there
+    seed(sw, d, workspace('Drag', [group('A', [link('da1')], column=0), group('B', [link('db1'), link('db2')], column=0), group('D', [link('dd1')], column=2)]))
+    hb = d.locator('#board .group[data-id="B"] > .group-head').bounding_box(); db = d.locator('#board .group[data-id="D"]').bounding_box()
+    sx, sy, tx, ty = hb['x'] + hb['width'] - 70, hb['y'] + 22, db['x'] + db['width'] / 2, db['y'] + db['height'] + 40
+    d.mouse.move(sx, sy); d.mouse.down()
+    for i in range(1, 21): d.mouse.move(sx + (tx - sx) * i / 20, sy + (ty - sy) * i / 20); d.wait_for_timeout(16)
+    d.wait_for_timeout(300); d.mouse.up(); time.sleep(1.2)
+    card = lambda: float(d.evaluate("getComputedStyle(document.querySelector('#board .col[data-col=\"0\"] .add-group')).opacity"))
+    check(d.evaluate("document.querySelector('#board .group[data-id=\"B\"]').closest('.col').dataset.col") == '2' and card() == 0, f'a group dragged away: its old column shows no New group card ({card()})')
+    tail = d.locator('#board .col[data-col="0"] .add-group').bounding_box()
+    d.mouse.move(tail['x'] + 30, tail['y'] + 20); time.sleep(.4)
+    check(card() > .5, f'the mouse moved there: it shows ({card()})')
     for theme in ['light', 'dark']:
         settings(sw, theme=theme); time.sleep(.8)
         hs = d.evaluate("[...new Set([...document.querySelectorAll('#board .link-row, #board .folder-head')].filter((r) => r.offsetParent).map((r) => r.getBoundingClientRect().height))]")
