@@ -439,7 +439,7 @@ dialog a:not([class]), :is(#no-ext, #no-browser) a:not([class]) { color: var(--a
 .items .items .items .items .items .items { padding-left: 0; margin-left: 0; border-left: 0; }
 .item { border-radius: 6px; }
 .link-row, .folder-head {
-  display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: pointer; min-width: 0;
+  display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 20px; border-radius: 6px; cursor: pointer; min-width: 0;
 }
 .link-row:hover, .link-row.hover, .folder-head:hover, .folder-head.hover { background: var(--hover); }
 .link-row img, .tab-row img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
@@ -449,14 +449,16 @@ img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav
 .link-row:hover .head-actions, .link-row.hover .head-actions { display: flex; }
 .folder-head { user-select: none; }
 .folder.collapsed > .items { display: none; }
-.folder-head { gap: 6px; }
-.folder-head .twisty { display: inline-flex; color: var(--icon); transition: transform .12s; }
+/* a folder's chevron hangs in the room left of the symbol (rows start 20px in), so a folder's symbol and
+   name line up with the links beside it, whatever its symbol */
+.folder-head { position: relative; }
+.folder-head .twisty { position: absolute; left: 4px; top: 50%; translate: 0 -50%; display: inline-flex; color: var(--icon); transition: transform .12s; }
 .folder.collapsed > .folder-head .twisty { transform: rotate(-90deg); }
-/* the symbol in a fixed slot, so a folder's items (and the line beside them) start under its middle:
-   6px padding + 13px chevron + 6px gap + half the 18px slot (the line is the 1px just before it) */
-.folder-head > .sym { font-size: 15px; flex: none; width: 18px; height: 18px; display: inline-grid; place-items: center; }
+/* the symbol in a fixed slot as wide as a link's icon, so a folder's items (and the line beside them)
+   start under its middle: 20px in + half the 16px slot (the line is the 1px just before it) */
+.folder-head > .sym { font-size: 15px; flex: none; width: 16px; height: 18px; display: inline-grid; place-items: center; }
 .folder-head > .sym-letter { font-size: 11px; border-radius: 5px; }
-.items { --fold-mid: 33px; }
+.items { --fold-mid: 27px; }
 .sym.sym-icon { display: inline-grid; place-items: center; color: var(--icon); } /* a default line icon in place of a symbol */
 .folder-head .node-line { flex: 1; min-width: 0; min-height: 0; }
 .folder-head .node-line .name { font-size: 13px; font-weight: 400; }
