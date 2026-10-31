@@ -73,3 +73,8 @@ Found a bug or have an idea? Tell us in [Issues](https://github.com/nda111/tabca
 Every shortcut and gesture is in **Help** on the dashboard.
 
 If you'd like to look under the hood or change tabcat, see [docs/development.md](docs/development.md).
+
+## License
+
+tabcat is free and open source under the [MIT License](LICENSE).
+The bundled Pretendard font is under the SIL Open Font License 1.1.

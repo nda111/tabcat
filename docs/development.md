@@ -90,5 +90,5 @@ refers to the result of op *n*. See `applyOp` in `lib/store.js`.
 ## Releases
 
 Bump `version` in `manifest.json`, commit, then zip the extension files (not `web/`, `tests/` or `docs/`) into
-`releases/v<version>.zip` under a `tabcat/` folder, for example with `git archive --prefix=tabcat/`.
-Tag the commit `v<version>` and attach the zip to a GitHub release with the notes in `releases/v<version>.md`.
+`releases/v<version>.zip` under a `tabcat/` folder (with `LICENSE` and `README.md`), for example with `git archive --prefix=tabcat/`.
+Tag the commit `v<version>` and attach the zip to a GitHub release. (`releases/` is ignored: the zips and notes live on GitHub releases only.)
