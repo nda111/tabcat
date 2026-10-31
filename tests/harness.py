@@ -28,7 +28,7 @@ def extension_copy():
     # the extension without the dashboard worktree, the tests or the logo's source files
     dst = tempfile.mkdtemp(prefix='tabcat-ext-')
     shutil.copytree(ROOT, dst, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('web', 'tests', '.git', 'icon.af*', 'icon.jpg'))
+                    ignore=shutil.ignore_patterns('web', 'tests', 'releases', '.git', 'icon.af*', 'icon.jpg'))
     atexit.register(shutil.rmtree, dst, True)
     return dst
 

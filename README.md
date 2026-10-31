@@ -20,8 +20,10 @@ web page (allowed origins only)           extension
 
 ## Setup
 
-1. **Load the extension**: open `chrome://extensions`, enable *Developer mode*, click *Load unpacked*,
-   and select the root of a `main` checkout.
+1. **Load the extension**: download the `.zip` attached to the latest
+   [release](../../releases/latest) and unzip it, open `chrome://extensions`, enable *Developer mode*,
+   click *Load unpacked*, and select the unzipped `tabcat` folder (or the root of a `main` checkout).
+   To update, replace that folder's contents with a newer release and press *Reload* on the extension.
 2. **Open the dashboard**: <https://tabcat.ghyeok.com/>, the popup's *Open dashboard* button, or `Ctrl+Shift+X`.
    A local copy of the `pages` branch works too (see *Development*).
 
