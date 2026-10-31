@@ -54,6 +54,14 @@ with sync_playwright() as p:
     sib = d.evaluate("""() => { const f = document.querySelector('#board .folder'); const l = [...f.parentElement.children].find((x) => x.matches('.link'));
         const icon = (el) => el.querySelector(':scope>:is(.link-row,.folder-head)>:is(img,.sym)').getBoundingClientRect().left; return l ? [icon(f), icon(l)] : null; }""")
     check(sib is None or abs(sib[0] - sib[1]) <= .5, f"a folder's symbol lines up with the links beside it {sib}")
+    # following the system: its switch to dark cross-fades (a view transition from the old look), and
+    # the page then follows the system again (no theme of its own left set)
+    settings(sw, theme='auto'); time.sleep(1)
+    d.emulate_media(color_scheme='light'); time.sleep(.5)
+    d.evaluate("window.__olds = []; const o = document.startViewTransition.bind(document); document.startViewTransition = (f) => { __olds.push(document.documentElement.dataset.theme || null); return o(f); }")
+    d.emulate_media(color_scheme='dark'); time.sleep(1)
+    vt = d.evaluate("[__olds, document.documentElement.dataset.theme || null, getComputedStyle(document.body).backgroundColor]")
+    check('light' in vt[0] and vt[1] is None and vt[2] == 'rgb(24, 23, 26)', f'the system turning dark cross-fades from the light look {vt}')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
