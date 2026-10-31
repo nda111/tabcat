@@ -2187,8 +2187,17 @@ function growCard(held) {
 async function addWorkspace() {
   const v = await openEditor('workspace', {}, t('new.workspace'));
   if (!v) return;
-  const [id] = (await apply({ op: 'create', parentId: null, node: { type: 'workspace', ...v, categories: [{ type: 'category', name: t('def.category') }] } })) || [];
+  const node = { type: 'workspace', ...v, symbol: v.symbol || randomSymbol(), categories: [{ type: 'category', name: t('def.category') }] };
+  const [id] = (await apply({ op: 'create', parentId: null, node })) || [];
   if (id) select(id);
+}
+// A new workspace left without a symbol gets one of these, preferring one no workspace has yet.
+const WS_SYMBOLS = ['💼', '📚', '🏠', '✈️', '🎨', '🧪', '🎮', '🎵', '🌱', '🍳', '🏃', '📷', '🧭', '🛠️', '💡', '🚀', '🌙', '☕', '🐱', '📝', '🎬', '🧩', '🌊', '🍀'];
+function randomSymbol() {
+  const used = new Set(state.workspaces.map((w) => w.symbol));
+  const free = WS_SYMBOLS.filter((x) => !used.has(x));
+  const from = free.length ? free : WS_SYMBOLS;
+  return from[Math.floor(Math.random() * from.length)];
 }
 
 async function addCategory(ws) {
