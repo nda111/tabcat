@@ -122,7 +122,7 @@ export default {
   'settings.shortcuts': '快捷键',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
-  'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
+  'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.privacy': '隐私', 'info.issues': '报告问题', 'info.notConnected': '未连接',
   'info.update': '{version} 已发布', 'info.getUpdate': '前往下载', 'info.updateBadge': '有可用更新', 'info.check': '检查更新', 'info.upToDate': '已是最新版本。', 'info.checkFailed': '无法检查。',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。

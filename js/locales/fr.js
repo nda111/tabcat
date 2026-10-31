@@ -124,7 +124,7 @@ export default {
   'settings.shortcuts': 'Raccourcis',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> rechercher · <kbd>Alt+Shift+S</kbd> enregistrer l’onglet · <kbd>Alt+Shift+A</kbd> enregistrer la fenêtre · <kbd>Ctrl+Shift+X</kbd> ouvrir le tableau de bord · à modifier dans <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Terminé',
-  'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.source': 'Code source', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
+  'help.title': 'Aide', 'info.title': 'À propos', 'info.extension': 'Extension', 'info.minimum': 'Extension requise', 'info.source': 'Code source', 'info.privacy': 'Confidentialité', 'info.issues': 'Signaler un problème', 'info.notConnected': 'non connectée',
   'info.update': '{version} est sortie', 'info.getUpdate': 'Télécharger', 'info.updateBadge': 'Mise à jour disponible', 'info.check': 'Rechercher des mises à jour', 'info.upToDate': 'Vous avez la dernière version.', 'info.checkFailed': 'Vérification impossible.',
   'help.org.html': `<h4>Organisation</h4>
 <p><b>Espace de travail</b> › <b>Catégorie</b> › <b>Groupe</b> › <b>Dossier</b> (jusqu’à 4 niveaux) et <b>Lien</b>.

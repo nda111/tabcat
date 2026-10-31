@@ -565,11 +565,35 @@ function renderHead() {
   head.oncontextmenu = (e) => nodeMenu(e, ws);
 }
 
+// Another category picked: its underline slides over from the one picked before (a stand-in line glides
+// along the bar while the new button's own line waits).
+function slideCatLine(bar, from) {
+  const tab = bar.querySelector('.cat-tab.active');
+  if (!tab) return;
+  bar.querySelector(':scope > .cat-line')?.remove();
+  const line = h('div', { class: 'cat-line' });
+  line.style.top = `${tab.offsetTop + tab.offsetHeight - 2}px`;
+  bar.append(line);
+  tab.classList.add('line-away');
+  line.animate([{ left: `${from.left}px`, width: `${from.width}px` }, { left: `${tab.offsetLeft}px`, width: `${tab.offsetWidth}px` }],
+    { duration: 320, easing: GLIDE, fill: 'forwards' })
+    .finished.catch(() => {}).then(() => {
+      tab.style.transition = 'none'; // (its own line back at once, under the stand-in, not fading in)
+      tab.classList.remove('line-away');
+      void tab.offsetWidth;
+      tab.style.transition = '';
+      line.remove();
+    });
+}
+
 function renderCats() {
   const ws = currentWs();
   const bar = $('#cat-bar');
   if (!ws) { bar.replaceChildren(); return; }
   const cur = currentCat(ws);
+  const was = bar.querySelector('.cat-tab.active');
+  const from = was && bar.dataset.ws === ws.id && was.dataset.id !== cur?.id && { left: was.offsetLeft, width: was.offsetWidth };
+  bar.dataset.ws = ws.id;
   bar.replaceChildren(
     ...ws.categories.map((c) => h('div', {
       class: 'cat-tab' + (c === cur ? ' active' : ''), draggable: 'true', dataset: { id: c.id, type: 'category' },
@@ -578,6 +602,7 @@ function renderCats() {
       oncontextmenu: (e) => nodeMenu(e, c),
     }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
     Object.assign(btn(plus(), t('new.category'), () => addCategory(ws)), { className: 'icon-btn cat-add' }));
+  if (from) requestAnimationFrame(() => slideCatLine(bar, from)); // (once the column control is back in front)
   // the column stepper sits at the bar's start, so it never moves as tabs come and go
   if (cur) bar.prepend(columnControl(), h('span', { class: 'bar-split' }));
 }
@@ -3032,6 +3057,7 @@ function fillSettings() {
   f.closeOnSave.checked = settings.closeOnSave;
   f.groupTabs.checked = settings.groupTabs !== false;
   f.checkUpdates.checked = settings.checkUpdates !== false;
+  f.checkUpdates.closest('label').hidden = extUpdatesItself; // (from the store: the browser updates it)
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
   f.theme.value = settings.theme;
@@ -3320,9 +3346,10 @@ $('#btn-info').addEventListener('click', () => {
   dlg.querySelector('button').blur();
 });
 
-// Updates: the extension is installed from a GitHub release and doesn't update itself, so (unless turned
-// off in Settings) the dashboard looks up the latest release, at most twice a day, and when it's newer
-// than the connected extension says so: a dot on About, and in About a link to the release.
+// Updates: installed from a GitHub release, the extension doesn't update itself, so (unless turned off in
+// Settings) the dashboard looks up the latest release, at most twice a day, and when it's newer than the
+// connected extension says so: a dot on About, and in About a link to the release. Installed from the
+// Chrome Web Store, the browser updates it: none of this.
 const LATEST_RELEASE = 'https://api.github.com/repos/nda111/tabcat/releases/latest';
 const LATEST = 'tabcat:latest'; // { version, url, checkedAt } of the last look
 const CHECK_EVERY = 12 * 60 * 60 * 1000;
@@ -3331,7 +3358,7 @@ let checkedByHand = false; // About's "Check for updates" pressed: its answer sh
 try { latest = JSON.parse(localStorage.getItem(LATEST)); } catch { /* storage unavailable or unreadable */ }
 // (true when it has an answer: a fresh one, or one looked up a while ago)
 async function checkUpdates(s = settings, now = false) {
-  if (s.checkUpdates === false && !now) return showUpdate();
+  if (extUpdatesItself || (s.checkUpdates === false && !now)) return showUpdate();
   if (now || !latest || !(Date.now() - latest.checkedAt < CHECK_EVERY)) {
     try {
       const r = await fetch(LATEST_RELEASE, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
@@ -3368,14 +3395,14 @@ $('#info-check').addEventListener('click', async (e) => {
   shown.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
 });
 function newerRelease() {
-  return (settings.checkUpdates !== false || checkedByHand) && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
+  return !extUpdatesItself && (settings.checkUpdates !== false || checkedByHand) && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
 }
 function showUpdate() {
   const rel = newerRelease();
   const dot = $('#btn-info .update-dot');
   const appearing = dot.hidden && !!rel;
   dot.hidden = $('#info-update').hidden = !rel;
-  $('#info-check').hidden = !!rel || !extVersion || !!$('#info-status').textContent;
+  $('#info-check').hidden = !!rel || !extVersion || extUpdatesItself || !!$('#info-status').textContent;
   if (rel) $('#info-status').textContent = '';
   if (!rel) return;
   dot.setAttribute('aria-label', t('info.updateBadge'));
@@ -3689,11 +3716,13 @@ async function refresh() {
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
 const MIN_EXTENSION = '0.2.5'; // (0.2.5: group colours)
 let extVersion = null; // the connected extension's (shown in About)
+let extUpdatesItself = false; // installed from the Chrome Web Store (see "updates")
 // What the connected extension can do: it says so (0.2.11 on); an older one, by its version
 let extFeatures = new Set();
 const FEATURES_BY_VERSION = [['wakeTabs', '0.2.7'], ['logoSymbol', '0.2.10']];
 function setExtension(ext) {
   extVersion = ext.version || null;
+  extUpdatesItself = !!ext.updatesItself;
   extFeatures = new Set(Array.isArray(ext.features) ? ext.features
     : FEATURES_BY_VERSION.filter(([, v]) => extVersion && !olderThan(extVersion, v)).map(([f]) => f));
 }

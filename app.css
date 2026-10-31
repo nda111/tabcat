@@ -255,7 +255,7 @@ body.ws-collapsed .ws-add { display: flex; }
 
 #cat-bar {
   display: flex; align-items: center; gap: 2px; padding: 0 18px; border-bottom: 1px solid var(--border);
-  overflow-x: auto;
+  overflow-x: auto; position: relative;
 }
 .cat-tab {
   padding: 8px 12px; border-bottom: 2px solid transparent; cursor: pointer; user-select: none; white-space: nowrap;
@@ -263,6 +263,8 @@ body.ws-collapsed .ws-add { display: flex; }
 }
 .cat-tab:hover, .cat-tab.hover { color: var(--text); background: var(--hover); }
 .cat-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.cat-tab.active.line-away { border-bottom-color: transparent; transition: none; }
+.cat-line { position: absolute; height: 2px; background: var(--accent); pointer-events: none; }
 .cat-tab .count { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
 
 #board { flex: 1; overflow: auto; padding: 16px 18px 90px; } /* bottom room for the search field */
@@ -284,6 +286,8 @@ body.ws-collapsed .ws-add { display: flex; }
   :root:not([data-theme="light"]) :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
 }
 :root[data-theme="dark"] :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
+/* ...and steps aside while another column shows its own (the two cross-fade) */
+#board.empty-cat:has(.col:not(:first-child) .add-group:is(:hover, .hover, .drop-new)) .col:first-child .add-group { opacity: 0; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
 .bar-split { width: 1px; height: 16px; margin: 0 8px; background: var(--border); flex: none; }
 .col-ctl .col-n { min-width: 14px; text-align: center; font-size: 12px; color: var(--text); cursor: none; } /* the wheel works it */
