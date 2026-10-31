@@ -3892,6 +3892,9 @@ function showTourStep(i) {
     Object.assign(old.style, { position: 'absolute', left: `${body.offsetLeft}px`, top: `${body.offsetTop}px`, width: `${body.offsetWidth}px`, pointerEvents: 'none' });
     old.setAttribute('aria-hidden', 'true');
   }
+  // where the buttons were (in the card), for them to glide to where they go
+  const buttons = [...card.querySelectorAll('.tour-actions .btn')];
+  const was = new Map(buttons.map((b) => [b, !b.hidden && { x: b.offsetLeft, y: b.offsetTop, w: b.offsetWidth }]));
   tourStep = i;
   const { key } = tour[i];
   // (how far along: the bar fills; its label says it in words)
@@ -3906,17 +3909,38 @@ function showTourStep(i) {
   $('#tour-text').replaceChildren(...t(`tour.${key}.text`).split(/\{icon:(\w+)\}/)
     .map((part, j) => (j % 2 ? h('span', { class: 'tour-icon' }, icon(part, 15)) : part)), ' ', h('kbd', { class: 'tour-key' }, 'Space'));
   $('#tour-prev').hidden = i === 0;
+  $('#tour-skip').hidden = i === tour.length - 1; // (the last step: nothing left to skip)
   $('#tour-next').textContent = t(i === tour.length - 1 ? 'tour.done' : 'tour.next');
   placeTour();
   if (!old) return;
   card.append(old);
   const glide = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  // the buttons glide (and stretch, for a new label) from where they were; one appearing fades in, one
+  // going fades out where it was (a copy: the button itself is hidden already)
+  const moves = buttons.flatMap((b) => {
+    const from = was.get(b);
+    if (b.hidden) {
+      if (!from) return [];
+      const ghost = Object.assign(b.cloneNode(true), { id: '', hidden: false, tabIndex: -1 });
+      Object.assign(ghost.style, { position: 'absolute', left: `${from.x}px`, top: `${from.y}px`, width: `${from.w}px`, margin: 0, pointerEvents: 'none' });
+      card.append(ghost);
+      const a = ghost.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(.92)' }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
+      a.finished.then(() => ghost.remove(), () => ghost.remove());
+      return [a];
+    }
+    if (!from) return [b.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 0, transform: 'scale(.92)', offset: .3 }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'ease-out' })];
+    const dx = from.x - b.offsetLeft, dy = from.y - b.offsetTop, w = b.offsetWidth;
+    if (!dx && !dy && from.w === w) return [];
+    return [b.animate([{ transform: `translate(${dx}px, ${dy}px)`, width: `${from.w}px` }, { transform: 'none', width: `${w}px` }], glide)];
+  });
   tourFade = [
+    ...moves,
     card.animate([{ height: `${from}px` }, { height: `${card.offsetHeight}px` }], glide),
-    old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }),
     body.animate([{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' }),
   ];
-  tourFade[1].finished.then(() => old.remove(), () => old.remove());
+  const leaving = old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
+  tourFade.push(leaving);
+  leaving.finished.then(() => old.remove(), () => old.remove());
 }
 // The lit part (a step's element, if shown; else none: the card alone, centred) and the card beside it:
 // right of it, left, below or above, whichever fits first
