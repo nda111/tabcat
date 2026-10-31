@@ -288,6 +288,8 @@ body.ws-collapsed .ws-add { display: flex; }
   :root:not([data-theme="light"]) :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
 }
 :root[data-theme="dark"] :is(.col-tail .add-group:is(:hover, .hover), #board.empty-cat .col:first-child .add-group) { opacity: .7; }
+/* just after a drag, the browser's hover is where the drag began, not where the mouse is (see after-drag) */
+body.after-drag #board:not(.empty-cat) .col-tail .add-group:hover:not(.hover) { opacity: 0; }
 /* ...and steps aside while another column shows its own (the two cross-fade) */
 #board.empty-cat:has(.col:not(:first-child) .add-group:is(:hover, .hover, .drop-new)) .col:first-child .add-group { opacity: 0; }
 .col-ctl { display: flex; align-items: center; gap: 2px; color: var(--muted); }
@@ -594,7 +596,9 @@ body.tabs-collapsed #windows { padding: 0 6px 20px; }
 body.tabs-collapsed .win { margin: 0 0 6px; border-top: 1px solid var(--border); border-radius: 0; }
 body.tabs-collapsed .win-head { justify-content: center; padding: 3px 0 2px; }
 body.tabs-collapsed .win-head > :not(.win-count) { display: none; }
-body.tabs-collapsed .tab-row { padding: 6px 0 6px 14px; }
+body.tabs-collapsed .tab-row { aspect-ratio: 1; padding: 0; justify-content: center; } /* as tall as the rail is wide: a square button, its icon in the middle */
+body.tabs-collapsed .tab-row img { width: 18px; height: 18px; } /* as big as the panel button's icon above */
+.tab-row img { transition: width .25s cubic-bezier(.22, 1, .36, 1), height .25s cubic-bezier(.22, 1, .36, 1); } /* (grows and shrinks with the panel) */
 body.tabs-collapsed .tab-row > :not(img) { display: none; }
 
 body.tabs-collapsed #tabs-panel .resizer { display: none; }

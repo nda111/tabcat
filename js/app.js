@@ -523,6 +523,7 @@ function animateOut(ids) {
 let pointer = null;
 document.addEventListener('mousemove', (e) => {
   pointer = [e.clientX, e.clientY];
+  document.body.classList.remove('after-drag');
   for (const el of document.querySelectorAll('.hover')) el.classList.remove('hover');
 }, { passive: true });
 document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) pointer = null; });
@@ -2965,6 +2966,16 @@ document.addEventListener('drop', (e) => {
 });
 
 document.addEventListener('dragend', endDrag);
+// During a drag the browser stops following the mouse, so until it moves again it takes the pointer to be
+// where the drag began: a New group card that slides in there (its column's group was dragged away)
+// would show as if hovered. Until the next move, the drop point counts instead (see restoreHover), and
+// the browser's own hover shows no New group card (see .after-drag).
+for (const type of ['drop', 'dragend']) {
+  document.addEventListener(type, (e) => {
+    if (e.clientX || e.clientY) pointer = [e.clientX, e.clientY];
+    document.body.classList.add('after-drag');
+  }, true);
+}
 
 /* ================= settings, import/export ================= */
 
