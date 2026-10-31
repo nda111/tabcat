@@ -634,36 +634,37 @@ dialog .stepper input {
 .step-btn:active:not(:disabled) .ico { transform: scale(.78); transition-duration: .06s; }
 .step-btn:disabled { opacity: .35; cursor: default; }
 
-/* drop-downs: a chevron instead of the native arrow; where the browser lets the list itself be
-   styled (appearance: base-select), it drops in from the field and the chevron flips */
-dialog select {
+/* drop-downs (in dialogs, and the privacy page's language): a chevron instead of the native arrow; where
+   the browser lets the list itself be styled (appearance: base-select), it drops in from the field and the
+   chevron flips */
+:is(dialog, .doc-head) select {
   appearance: none; padding-right: 30px; cursor: pointer; transition: border-color .16s ease;
   background: var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;
 }
-dialog select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%); }
-dialog select:focus-visible { outline: none; border-color: var(--accent); }
+:is(dialog, .doc-head) select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%); }
+:is(dialog, .doc-head) select:focus-visible { outline: none; border-color: var(--accent); }
 @supports (appearance: base-select) {
-  dialog select, dialog select::picker(select) { appearance: base-select; }
-  dialog select { display: flex; align-items: center; background-image: none; padding-right: 8px; }
-  dialog select:open { border-color: var(--accent); }
-  dialog select::picker-icon {
+  :is(dialog, .doc-head) select, :is(dialog, .doc-head) select::picker(select) { appearance: base-select; }
+  :is(dialog, .doc-head) select { display: flex; align-items: center; background-image: none; padding-right: 8px; }
+  :is(dialog, .doc-head) select:open { border-color: var(--accent); }
+  :is(dialog, .doc-head) select::picker-icon {
     content: ''; width: 16px; height: 16px; margin-left: auto; background: currentColor; color: var(--muted);
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
     transition: rotate .26s cubic-bezier(.34, 1.32, .64, 1);
   }
-  dialog select:open::picker-icon { rotate: 180deg; }
-  dialog select::picker(select) {
+  :is(dialog, .doc-head) select:open::picker-icon { rotate: 180deg; }
+  :is(dialog, .doc-head) select::picker(select) {
     margin-top: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); color: var(--text);
     box-shadow: 0 8px 28px rgba(0,0,0,.16); max-height: min(320px, 60vh);
     opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top center;
     transition: opacity .16s ease, transform .26s cubic-bezier(.34, 1.32, .64, 1), overlay .26s allow-discrete, display .26s allow-discrete;
   }
-  dialog select:open::picker(select) { opacity: 1; transform: none; }
-  @starting-style { dialog select:open::picker(select) { opacity: 0; transform: translateY(-6px) scale(.97); } }
-  dialog select option { padding: 6px 8px; border-radius: 6px; font-weight: 400; transition: background-color .12s ease; }
-  dialog select option:is(:hover, :focus-visible) { background: var(--hover); outline: none; }
-  dialog select option:checked { color: var(--accent); font-weight: 600; }
-  dialog select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
+  :is(dialog, .doc-head) select:open::picker(select) { opacity: 1; transform: none; }
+  @starting-style { :is(dialog, .doc-head) select:open::picker(select) { opacity: 0; transform: translateY(-6px) scale(.97); } }
+  :is(dialog, .doc-head) select option { padding: 6px 8px; border-radius: 6px; font-weight: 400; transition: background-color .12s ease; }
+  :is(dialog, .doc-head) select option:is(:hover, :focus-visible) { background: var(--hover); outline: none; }
+  :is(dialog, .doc-head) select option:checked { color: var(--accent); font-weight: 600; }
+  :is(dialog, .doc-head) select option::checkmark { order: 1; margin-left: auto; color: var(--accent); }
 }
 dialog textarea { min-height: 120px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
 /* (the extension notice's card ends the same way: its action at the bottom right) */
