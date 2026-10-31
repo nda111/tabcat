@@ -383,7 +383,8 @@ function animateLayout(before) {
   const held = holdNote();
   const card = holdCard();
   const opening = holdExpanding();
-  try { animateMoves(before, wsChanged); } finally { openExpanded(opening); growNote(held); growCard(card); }
+  // (expanding is kept until the moves are worked out, so the contents opening up aren't popped in too)
+  try { animateMoves(before, wsChanged); } finally { expanding = null; openExpanded(opening); turnOpen(); growNote(held); growCard(card); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -1393,8 +1394,22 @@ const contentsOf = (id) => {
   const el = document.querySelector(`#board [data-id="${CSS.escape(id)}"]`);
   return el && (el.matches('.group') ? el.querySelector(':scope > .group-body') : el.querySelector(':scope > .items'));
 };
+// The chevron of a group / folder: it turns as its contents open or close (the element is drawn anew in
+// its new state, so a CSS transition never runs: the turn is played on the one there is at the time).
+// The turn is played on the drawing inside the icon, not on the icon: the browser draws a turning
+// element once and turns the picture, which blurs and pales the thin line until it stops; the drawing
+// is drawn afresh each frame, sharp all the way.
+const chevronOf = (id) => {
+  const el = document.querySelector(`#board [data-id="${CSS.escape(id)}"]`);
+  const path = el?.querySelector(el.matches('.group') ? ':scope > .group-head .collapse-btn .ico svg > *' : ':scope > .folder-head .twisty svg > *');
+  if (path) Object.assign(path.style, { transformBox: 'fill-box', transformOrigin: 'center' });
+  return path;
+};
+let turning = null; // id whose chevron turns open on the next render (see animateLayout)
 async function toggleCollapse(node) {
   if (!node.collapsed) {
+    chevronOf(node.id)?.animate([{ transform: 'none' }, { transform: 'rotate(-90deg)' }],
+      { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }); // (with the contents closing)
     const body = contentsOf(node.id);
     if (body) {
       body.style.overflow = 'hidden';
@@ -1402,7 +1417,7 @@ async function toggleCollapse(node) {
       await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
         { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
     }
-  } else expanding = node.id;
+  } else expanding = turning = node.id;
   apply({ op: 'patch', id: node.id, fields: { collapsed: !node.collapsed } });
 }
 // (called at the end of animateLayout)
@@ -1411,11 +1426,15 @@ async function toggleCollapse(node) {
 function holdExpanding() {
   if (!expanding) return null;
   const body = contentsOf(expanding);
-  expanding = null;
   if (!body) return null;
   const h = body.getBoundingClientRect().height;
   Object.assign(body.style, { height: '0px', minHeight: '0', overflow: 'hidden' });
   return { body, h };
+}
+function turnOpen() {
+  if (!turning) return;
+  chevronOf(turning)?.animate([{ transform: 'rotate(-90deg)' }, { transform: 'none' }], { duration: 320, easing: GLIDE }); // (with the contents opening)
+  turning = null;
 }
 function openExpanded(held) {
   if (!held) return;

@@ -440,10 +440,12 @@ dialog a:not([class]), :is(#no-ext, #no-browser) a:not([class]) { color: var(--a
 .item { border-radius: 6px; }
 .link-row, .folder-head {
   display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 20px; border-radius: 6px; cursor: pointer; min-width: 0;
+  line-height: 18px; /* a whole number: rows 26px tall, so each row's icon and text land on the same pixels */
 }
 .link-row:hover, .link-row.hover, .folder-head:hover, .folder-head.hover { background: var(--hover); }
 .link-row img, .tab-row img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
 img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav-pad); border-radius: 4px; }
+.link-row img.fav { margin-block: calc(-1 * var(--fav-pad)); } /* (its chip doesn't make the row taller than a folder's) */
 .link-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .link-row .desc { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }
 .link-row:hover .head-actions, .link-row.hover .head-actions { display: flex; }
