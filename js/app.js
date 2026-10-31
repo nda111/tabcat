@@ -3339,6 +3339,9 @@ $('#btn-help').addEventListener('click', openGuide);
 $('#btn-info').addEventListener('click', () => {
   $('#info-ext').textContent = extVersion || t('info.notConnected');
   $('#info-min').textContent = MIN_EXTENSION;
+  // (the dashboard has no version: everyone has the latest; when it was last published is what tells)
+  const published = new Date(document.lastModified);
+  $('#info-dash').textContent = t('info.dashboardDate', { date: new Intl.DateTimeFormat(getLang(), { dateStyle: 'long' }).format(published) });
   $('#info-status').textContent = '';
   showUpdate();
   const dlg = $('#info');
@@ -3714,7 +3717,7 @@ async function refresh() {
 }
 
 // Oldest extension this dashboard works with (an older one silently drops newer fields).
-const MIN_EXTENSION = '0.2.5'; // (0.2.5: group colours)
+const MIN_EXTENSION = '1.0.0'; // (the first release: what came before were builds in development)
 let extVersion = null; // the connected extension's (shown in About)
 let extUpdatesItself = false; // installed from the Chrome Web Store (see "updates")
 // What the connected extension can do: it says so (0.2.11 on); an older one, by its version

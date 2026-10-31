@@ -124,7 +124,7 @@ export default {
   'settings.shortcuts': 'Atalhos',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> pesquisar · <kbd>Alt+Shift+S</kbd> salvar aba · <kbd>Alt+Shift+A</kbd> salvar janela · <kbd>Ctrl+Shift+X</kbd> abrir painel · altere em <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Concluído',
-  'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.source': 'Código-fonte', 'info.privacy': 'Privacidade', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
+  'help.title': 'Ajuda', 'info.title': 'Sobre', 'info.extension': 'Extensão', 'info.minimum': 'Extensão necessária', 'info.dashboard': 'Painel', 'info.dashboardDate': 'Atualizado em {date}', 'info.source': 'Código-fonte', 'info.privacy': 'Privacidade', 'info.issues': 'Relatar um problema', 'info.notConnected': 'não conectada',
   'info.update': 'Saiu a {version}', 'info.getUpdate': 'Baixar', 'info.updateBadge': 'Atualização disponível', 'info.check': 'Verificar atualizações', 'info.upToDate': 'Já está atualizado.', 'info.checkFailed': 'Não deu para verificar.',
   'help.org.html': `<h4>Como tudo se organiza</h4>
 <p><b>Espaço de trabalho</b> › <b>Categoria</b> › <b>Grupo</b> › <b>Pasta</b> (até 4 níveis) e <b>Link</b>.

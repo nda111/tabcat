@@ -122,7 +122,7 @@ export default {
   'settings.shortcuts': '단축키',
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 검색 · <kbd>Alt+Shift+S</kbd> 탭 저장 · <kbd>Alt+Shift+A</kbd> 창 저장 · <kbd>Ctrl+Shift+X</kbd> 대시보드 열기 · 변경: <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': '완료',
-  'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.source': '소스 코드', 'info.privacy': '개인정보처리방침', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
+  'help.title': '도움말', 'info.title': '정보', 'info.extension': '확장 프로그램', 'info.minimum': '필요한 확장 버전', 'info.dashboard': '대시보드', 'info.dashboardDate': '{date} 업데이트', 'info.source': '소스 코드', 'info.privacy': '개인정보처리방침', 'info.issues': '문제 신고', 'info.notConnected': '연결되지 않음',
   'info.update': '{version} 나왔어요', 'info.getUpdate': '받으러 가기', 'info.updateBadge': '업데이트가 있어요', 'info.check': '업데이트 확인', 'info.upToDate': '최신 버전이에요.', 'info.checkFailed': '확인하지 못했어요.',
   'help.org.html': `<h4>구성</h4>
 <p><b>워크스페이스</b> › <b>카테고리</b> › <b>그룹</b> › <b>폴더</b>(최대 4단계) 순서로 <b>링크</b>를 담아요.
