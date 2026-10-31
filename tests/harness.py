@@ -29,7 +29,7 @@ def extension_copy(manifest=None):
     # fields to change in its manifest
     dst = tempfile.mkdtemp(prefix='tabcat-ext-')
     shutil.copytree(ROOT, dst, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('web', 'tests', 'releases', 'tools', '.git', 'icon.af*', 'icon.jpg'))
+                    ignore=shutil.ignore_patterns('web', 'tests', 'releases', 'tools', 'store', 'docs', '.git', 'icon.af*', 'icon.jpg'))
     if manifest:
         with open(dst + '/manifest.json') as f: m = json.load(f)
         with open(dst + '/manifest.json', 'w') as f: json.dump({**m, **manifest}, f)

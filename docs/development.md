@@ -95,5 +95,6 @@ Tag the commit `v<version>` and attach the zip to a GitHub release. (`releases/`
 
 The same version goes to the Chrome Web Store: `python tools/store_zip.py` writes `releases/v<version>-store.zip`
 (the manifest at the top, without the localhost pages); upload it in the Developer Dashboard.
+The listing's text and images are in `store/` (`listing.md`, and screenshots / promo tiles in `en/` and `ko/`).
 Installed from the store, the extension updates itself: its manifest has the store's `update_url`, so `content.js`
 tells the dashboard (`updatesItself` in `ready`), which then doesn't look for GitHub releases.

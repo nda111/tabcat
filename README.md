@@ -13,6 +13,8 @@ Tabs you're not using are put to sleep to keep things light.
 <a href="https://github.com/nda111/tabcat/issues">Report a problem</a>
 </p>
 
+<p align="center"><img src="store/en/1-board.png" width="860" alt="The tabcat board: groups of links as cards in columns, with notes and checkboxes"></p>
+
 ---
 
 Keep as many tabs open as you like. tabcat saves them as links in groups you arrange on a board,
@@ -61,6 +63,11 @@ in every open dashboard.
 **Make it yours.** Light and dark themes, accent colours, and 8 languages
 (English, 한국어, 日本語, 简体中文, Deutsch, Español, Français, Português).
 Install the dashboard as an app to give it a window of its own.
+
+| | | |
+|:-:|:-:|:-:|
+| <img src="store/en/2-dark.png" alt="Dark theme, with open tabs beside the board"> | <img src="store/en/3-search.png" alt="Searching links"> | <img src="store/en/4-popup.png" alt="Saving a tab from the toolbar"> |
+| Dark theme, open tabs beside the board | Search | Save from the toolbar |
 
 ## Your data
 
