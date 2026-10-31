@@ -339,6 +339,14 @@ function tintFavicon() {
 }
 // (the accent differs between light and dark)
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', tintFavicon);
+// Following the system, its switch between light and dark cross-fades as a switch made in Settings does:
+// the page is held in the old look for the transition's first picture, then let go.
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  const root = document.documentElement;
+  if (settings.theme !== 'auto' || root.dataset.theme || !document.startViewTransition) return;
+  root.dataset.theme = e.matches ? 'light' : 'dark';
+  document.startViewTransition(() => { delete root.dataset.theme; }).ready.catch(() => {});
+});
 
 const currentWs = () => state.workspaces.find((w) => w.id === ui.ws) || state.workspaces[0] || null;
 function currentCat(ws = currentWs()) {
