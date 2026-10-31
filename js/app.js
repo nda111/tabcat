@@ -762,6 +762,7 @@ function layoutColumns(cat, n) {
 // Parts of a group header that keep their own click behaviour (the rest toggles collapse).
 const HEAD_KEEP = '.name, .node-sym, button, textarea, input';
 
+let taskTicked = null; // { id, line, done, at } of the task last (un)ticked in a note
 function renderGroup(g) {
   const editing = editingNoteId === g.id;
   let note = null;
@@ -774,10 +775,19 @@ function renderGroup(g) {
     note.addEventListener('blur', () => saveNote(g.id, g.note, note.value));
   } else if (g.note) {
     note = h('div', { class: 'note', html: renderMarkdown(g.note), title: t('note.clickTip') });
+    // a task just ticked (or unticked) animates in the card drawn for the new note, carrying on from
+    // where it was in any card drawn for it before (the click's own redraw, then the extension's)
+    const tick = taskTicked?.id === g.id && performance.now() - taskTicked.at < 600 && taskTicked;
+    const li = tick && note.querySelector(`input[data-line="${tick.line}"]`)?.closest('li');
+    if (li) {
+      li.classList.add(tick.done ? 'ticking' : 'unticking');
+      li.style.setProperty('--since', `${tick.at - performance.now()}ms`);
+    }
     note.addEventListener('click', (e) => {
       if (e.target.closest('a')) return;
       if (e.target.matches('input[type=checkbox]')) {
         e.preventDefault();
+        taskTicked = { id: g.id, line: +e.target.dataset.line, done: e.target.checked, at: performance.now() };
         apply({ op: 'patch', id: g.id, fields: { note: toggleTask(g.note, +e.target.dataset.line) } });
         return;
       }
@@ -3337,18 +3347,25 @@ async function checkUpdates(s = settings, now = false) {
   showUpdate();
   return true;
 }
+// About's "Check for updates": a spinner beside it while it asks, then the answer in its place (in the
+// same row: About keeps its height). Pressed again within a minute, the answer it just had does.
+const ASK_AGAIN = 60 * 1000;
 $('#info-check').addEventListener('click', async (e) => {
-  const button = e.currentTarget, status = $('#info-status');
+  const button = e.currentTarget, spinner = $('#info-checking'), status = $('#info-status');
   button.disabled = true;
-  status.textContent = '';
+  spinner.hidden = false;
   checkedByHand = true;
-  const ok = await checkUpdates(settings, true);
+  const fresh = latest && Date.now() - latest.checkedAt < ASK_AGAIN;
+  const [ok] = await Promise.all([fresh || checkUpdates(settings, true), new Promise((r) => setTimeout(r, 500))]);
   button.disabled = false;
-  if (newerRelease()) return;
-  button.hidden = true;
-  status.textContent = t(ok ? 'info.upToDate' : 'info.checkFailed');
-  status.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
-  if (!ok) setTimeout(() => { button.hidden = false; status.textContent = ''; }, 3000);
+  spinner.hidden = true;
+  if (!newerRelease()) {
+    status.textContent = t(ok ? 'info.upToDate' : 'info.checkFailed');
+    if (!ok) setTimeout(() => { status.textContent = ''; showUpdate(); }, 3000);
+  }
+  showUpdate();
+  const shown = newerRelease() ? $('#info-update') : status;
+  shown.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
 });
 function newerRelease() {
   return (settings.checkUpdates !== false || checkedByHand) && latest?.version && extVersion && olderThan(extVersion, latest.version) ? latest : null;
@@ -3359,6 +3376,7 @@ function showUpdate() {
   const appearing = dot.hidden && !!rel;
   dot.hidden = $('#info-update').hidden = !rel;
   $('#info-check').hidden = !!rel || !extVersion || !!$('#info-status').textContent;
+  if (rel) $('#info-status').textContent = '';
   if (!rel) return;
   dot.setAttribute('aria-label', t('info.updateBadge'));
   $('#info-update-text').textContent = t('info.update', { version: `v${rel.version}` });

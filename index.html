@@ -225,7 +225,9 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     <form method="dialog">
       <h3 class="logo-title"><span class="logo" role="img" aria-label="tabcat"></span><span data-i18n="info.title">About</span></h3>
       <dl class="info-list">
-        <dt data-i18n="info.extension">Extension</dt><dd><span class="info-version"><span id="info-ext"></span><button type="button" class="btn small" id="info-check" data-i18n="info.check">Check for updates</button><span class="info-status" id="info-status"></span></span>
+        <dt data-i18n="info.extension">Extension</dt><dd class="info-version"><span id="info-ext"></span>
+          <button type="button" class="btn small" id="info-check" data-i18n="info.check">Check for updates</button><span class="spinner small" id="info-checking" hidden></span>
+          <span class="info-status" id="info-status"></span>
           <span class="info-update" id="info-update" hidden><span id="info-update-text"></span><a class="btn small primary" id="info-update-get" target="_blank" rel="noopener" data-i18n="info.getUpdate">Download</a></span></dd>
         <dt data-i18n="info.minimum">Required extension</dt><dd id="info-min"></dd>
         <dt data-i18n="info.source">Source code</dt><dd><a href="https://github.com/nda111/tabcat" target="_blank" rel="noopener">github.com/nda111/tabcat</a></dd>
@@ -277,7 +279,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
         <section data-i18n-html="help.notes.html">
           <h4>Notes and symbols</h4>
           <ul>
-            <li>Group notes are Markdown with task checkboxes and math: <code>$…$</code> or <code>\(…\)</code> inline, <code>$$…$$</code> or <code>\[…\]</code> on its own, and LaTeX environments such as <code>\begin{align}…\end{align}</code> or <code>\begin{pmatrix}…\end{pmatrix}</code>.</li>
+            <li>Group notes are Markdown with task checkboxes (<code>[ ]</code>, <code>[x]</code>) and math: <code>$…$</code> or <code>\(…\)</code> inline, <code>$$…$$</code> or <code>\[…\]</code> on its own, and LaTeX environments such as <code>\begin{align}…\end{align}</code> or <code>\begin{pmatrix}…\end{pmatrix}</code>.</li>
             <li>A symbol is one emoji, letter or digit, or the tabcat logo; search emoji by name (in English) in the editor.</li>
           </ul>
         </section>

@@ -89,10 +89,10 @@ export function renderMarkdown(src) {
     }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { flushPara(); closeList(); out.push('<hr>'); return; }
     if ((m = line.match(/^\s*>\s?(.*)$/))) { flushPara(); closeList(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); return; }
-    if ((m = line.match(/^\s*[-*+]\s+\[([ xX])\]\s+(.*)$/))) {
+    if ((m = line.match(/^\s*(?:[-*+]\s+)?\[([ xX])\](?:\s+(.*))?$/))) { // "[ ] task", or as a list item "- [ ] task"
       flushPara(); openList('ul');
       const checked = m[1] !== ' ';
-      out.push(`<li class="task${checked ? ' done' : ''}"><input type="checkbox" data-line="${i}"${checked ? ' checked' : ''}> <span>${inline(m[2])}</span></li>`);
+      out.push(`<li class="task${checked ? ' done' : ''}"><input type="checkbox" data-line="${i}"${checked ? ' checked' : ''}> <span><span class="task-text">${inline(m[2] || '')}</span></span></li>`);
       return;
     }
     if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) { flushPara(); openList('ul'); out.push(`<li>${inline(m[1])}</li>`); return; }

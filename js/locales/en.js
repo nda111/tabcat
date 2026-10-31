@@ -142,7 +142,7 @@ export default {
 
   // help
   'help.title': 'Help', 'info.title': 'About', 'info.extension': 'Extension', 'info.minimum': 'Required extension', 'info.source': 'Source code', 'info.issues': 'Report a problem', 'info.notConnected': 'not connected',
-  'info.update': 'New version available ({version})', 'info.getUpdate': 'Download', 'info.updateBadge': 'Update available', 'info.check': 'Check for updates', 'info.upToDate': 'You\'re up to date.', 'info.checkFailed': 'Couldn\'t check. Try again later.',
+  'info.update': '{version} is out', 'info.getUpdate': 'Download', 'info.updateBadge': 'Update available', 'info.check': 'Check for updates', 'info.upToDate': 'You\'re up to date.', 'info.checkFailed': 'Couldn\'t check.',
   'help.org.html': `<h4>How things are organized</h4>
 <p><b>Workspace</b> › <b>Category</b> › <b>Group</b> › <b>Folder</b> (up to 4 levels) and <b>Link</b>.
 Pick a workspace on the left and a category in the bar above the board; groups are the cards on the board.</p>`,
@@ -169,7 +169,7 @@ Pick a workspace on the left and a category in the bar above the board; groups a
 </ul>`,
   'help.notes.html': `<h4>Notes and symbols</h4>
 <ul>
-<li>Group notes are Markdown with task checkboxes and math: <code>$…$</code> or <code>\\(…\\)</code> inline, <code>$$…$$</code> or <code>\\[…\\]</code> on its own, and LaTeX environments such as <code>\\begin{align}…\\end{align}</code> or <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
+<li>Group notes are Markdown with task checkboxes (<code>[ ]</code>, <code>[x]</code>) and math: <code>$…$</code> or <code>\\(…\\)</code> inline, <code>$$…$$</code> or <code>\\[…\\]</code> on its own, and LaTeX environments such as <code>\\begin{align}…\\end{align}</code> or <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
 <li>A symbol is one emoji, letter or digit, or the tabcat logo; search emoji by name (in English) in the editor.</li>
 </ul>`,
   'help.memory.html': `<h4>Memory</h4>

@@ -123,7 +123,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> 搜索 · <kbd>Alt+Shift+S</kbd> 保存标签页 · <kbd>Alt+Shift+A</kbd> 保存窗口 · <kbd>Ctrl+Shift+X</kbd> 打开仪表板 · 在 <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a> 中更改',
   'settings.done': '完成',
   'help.title': '帮助', 'info.title': '关于', 'info.extension': '扩展程序', 'info.minimum': '所需扩展版本', 'info.source': '源代码', 'info.issues': '报告问题', 'info.notConnected': '未连接',
-  'info.update': '有新版本（{version}）', 'info.getUpdate': '前往下载', 'info.updateBadge': '有可用更新', 'info.check': '检查更新', 'info.upToDate': '已是最新版本。', 'info.checkFailed': '无法检查，请稍后再试。',
+  'info.update': '{version} 已发布', 'info.getUpdate': '前往下载', 'info.updateBadge': '有可用更新', 'info.check': '检查更新', 'info.upToDate': '已是最新版本。', 'info.checkFailed': '无法检查。',
   'help.org.html': `<h4>组织方式</h4>
 <p><b>工作区</b> › <b>类别</b> › <b>分组</b> › <b>文件夹</b> (最多 4 层) 和 <b>链接</b>。
 在左侧选择工作区，在面板上方的栏中选择类别；面板上的卡片就是分组。</p>`,
@@ -150,7 +150,7 @@ export default {
 </ul>`,
   'help.notes.html': `<h4>笔记和符号</h4>
 <ul>
-<li>分组笔记是支持任务复选框和数学公式的 Markdown：行内用 <code>$…$</code> 或 <code>\\(…\\)</code>，独立成行用 <code>$$…$$</code> 或 <code>\\[…\\]</code>，也支持 <code>\\begin{align}…\\end{align}</code>、<code>\\begin{pmatrix}…\\end{pmatrix}</code> 等 LaTeX 环境。</li>
+<li>分组笔记是支持任务复选框（<code>[ ]</code>、<code>[x]</code>）和数学公式的 Markdown：行内用 <code>$…$</code> 或 <code>\\(…\\)</code>，独立成行用 <code>$$…$$</code> 或 <code>\\[…\\]</code>，也支持 <code>\\begin{align}…\\end{align}</code>、<code>\\begin{pmatrix}…\\end{pmatrix}</code> 等 LaTeX 环境。</li>
 <li>符号是一个表情、字母、数字或 tabcat 标志；可在编辑器中按名称 (英文) 搜索表情。</li>
 </ul>`,
   'help.memory.html': `<h4>内存</h4>

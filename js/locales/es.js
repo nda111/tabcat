@@ -125,7 +125,7 @@ export default {
   'settings.keys.html': '<kbd>Ctrl+F</kbd> buscar · <kbd>Alt+Shift+S</kbd> guardar pestaña · <kbd>Alt+Shift+A</kbd> guardar ventana · <kbd>Ctrl+Shift+X</kbd> abrir panel · cámbialos en <a href="chrome://extensions/shortcuts" id="shortcuts-link"><code>chrome://extensions/shortcuts</code></a>',
   'settings.done': 'Listo',
   'help.title': 'Ayuda', 'info.title': 'Información', 'info.extension': 'Extensión', 'info.minimum': 'Extensión requerida', 'info.source': 'Código fuente', 'info.issues': 'Informar de un problema', 'info.notConnected': 'sin conexión',
-  'info.update': 'Hay una versión nueva ({version})', 'info.getUpdate': 'Descargar', 'info.updateBadge': 'Hay una actualización', 'info.check': 'Buscar actualizaciones', 'info.upToDate': 'Tienes la última versión.', 'info.checkFailed': 'No se pudo comprobar. Inténtalo más tarde.',
+  'info.update': 'Ya salió {version}', 'info.getUpdate': 'Descargar', 'info.updateBadge': 'Hay una actualización', 'info.check': 'Buscar actualizaciones', 'info.upToDate': 'Tienes la última versión.', 'info.checkFailed': 'No se pudo comprobar.',
   'help.org.html': `<h4>Cómo se organiza todo</h4>
 <p><b>Espacio de trabajo</b> › <b>Categoría</b> › <b>Grupo</b> › <b>Carpeta</b> (hasta 4 niveles) y <b>Enlace</b>.
 Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el tablero; los grupos son las tarjetas del tablero.</p>`,
@@ -152,7 +152,7 @@ Elige un espacio de trabajo a la izquierda y una categoría en la barra sobre el
 </ul>`,
   'help.notes.html': `<h4>Notas y símbolos</h4>
 <ul>
-<li>Las notas de grupo son Markdown con casillas de tareas y matemáticas: <code>$…$</code> o <code>\\(…\\)</code> en línea, <code>$$…$$</code> o <code>\\[…\\]</code> aparte, y entornos LaTeX como <code>\\begin{align}…\\end{align}</code> o <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
+<li>Las notas de grupo son Markdown con casillas de tareas (<code>[ ]</code>, <code>[x]</code>) y matemáticas: <code>$…$</code> o <code>\\(…\\)</code> en línea, <code>$$…$$</code> o <code>\\[…\\]</code> aparte, y entornos LaTeX como <code>\\begin{align}…\\end{align}</code> o <code>\\begin{pmatrix}…\\end{pmatrix}</code>.</li>
 <li>Un símbolo es un emoji, una letra, un dígito o el logo de tabcat; en el editor puedes buscar emojis por su nombre (en inglés).</li>
 </ul>`,
   'help.memory.html': `<h4>Memoria</h4>
