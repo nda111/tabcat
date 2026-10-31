@@ -13,7 +13,7 @@ Images are in `en/` (the default listing) and `ko/` (the Korean listing); the ot
 **Category**: Productivity › Workflow & Planning
 
 **Language**: English (the default). Add the other 7 under "Localized listings" and paste each description below;
-for Korean, also upload the images in `ko/`.
+for Korean, also upload the screenshots in `ko/`.
 
 **Graphics**
 - Store icon: `icons/icon128.png` (already in the zip; upload it again if asked)
@@ -22,8 +22,9 @@ for Korean, also upload the images in `ko/`.
   2. `2-dark.png`: dark theme, open tabs beside the board
   3. `3-search.png`: search
   4. `4-popup.png`: saving a tab from the toolbar
-- Small promo tile (440×280): `promo-small-440x280.png`
-- Marquee promo tile (1400×560, optional): `promo-marquee-1400x560.png`
+  5. `5-settings.png`: Settings (themes, colours, languages)
+- Small promo tile (440×280): `en/promo-small-440x280.png` (one for every language: the store takes a single one)
+- Marquee promo tile (1400×560, optional): `en/promo-marquee-1400x560.png`
 
 **Official URL**: none (needs a verified domain in Search Console; optional)
 **Homepage URL**: https://github.com/nda111/tabcat
