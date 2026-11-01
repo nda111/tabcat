@@ -18,6 +18,16 @@ with sync_playwright() as p:
     d.evaluate(PULL, '#board'); d.mouse.wheel(0, 300); time.sleep(.25); d.mouse.wheel(0, 400); time.sleep(1.6)
     pp = d.evaluate('__p')
     check(min(pp) < -8 and pp[-1] == 0, f'a turn of the wheel past the bottom bounces off it ({min(pp)})')
+    # a trackpad swipe whose momentum runs into the end: it bounces there at once and is back at rest while
+    # the momentum is still coming (not held pulled until it stops)
+    cdp0 = ctx.new_cdp_session(d)
+    d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=b.scrollHeight-b.clientHeight-300;})()"); time.sleep(.3)
+    d.evaluate(PULL, '#board')
+    deltas = [35] * 6 + [35 * 0.95 ** i for i in range(45)]
+    for x in deltas: cdp0.send('Input.dispatchMouseEvent', {'type': 'mouseWheel', 'x': 600, 'y': 300, 'deltaX': 0, 'deltaY': x})
+    pp = d.evaluate('__p')
+    check(min(pp) < -5 and pp[-1] == 0, f'trackpad momentum into the end bounces and settles while it still comes ({min(pp)}, {pp[-1]})')
+    time.sleep(.5)
     th = d.locator('#main > .sf-thumb.y')
     check(th.evaluate("e=>e.classList.contains('show')") and d.evaluate("getComputedStyle(document.querySelector('#board')).scrollbarWidth") == 'none',
           "a slim scrollbar shows over the board in place of the browser's")
