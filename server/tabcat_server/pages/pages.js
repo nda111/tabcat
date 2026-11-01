@@ -114,7 +114,8 @@ export function passwordToggles(root = document) {
     // (a field sized in its row, as on the admin page: its wrapper takes the size)
     if (input.style.cssText) { wrap.style.cssText = input.style.cssText; input.style.cssText = ''; }
     input.replaceWith(wrap);
-    const b = h('button', { type: 'button', class: 'pw-eye', 'aria-pressed': 'false', title: t('showPassword'), 'aria-label': t('showPassword') });
+    // (out of the Tab order: Tab goes from a password field on to the next field, its repeat)
+    const b = h('button', { type: 'button', class: 'pw-eye', tabindex: '-1', 'aria-pressed': 'false', title: t('showPassword'), 'aria-label': t('showPassword') });
     b.innerHTML = EYE;
     wrap.append(input, b);
     return b;
