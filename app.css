@@ -271,6 +271,16 @@ body.ws-collapsed .ws-add { display: flex; }
 .cat-tab .count { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
 
 #board { flex: 1; overflow: auto; padding: 16px 18px 90px; } /* bottom room for the search field */
+/* scrollbars: a slim, faint rounded thumb on no track; darker under the pointer or held.
+   (Not hidden until the pointer is over the list: Chrome doesn't repaint a scrollbar for its box's :hover) */
+:is(#board, #ws-list, #windows, #picker-tree)::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+:is(#board, #ws-list, #windows, #picker-tree)::-webkit-scrollbar-corner { background: transparent; }
+:is(#board, #ws-list, #windows, #picker-tree)::-webkit-scrollbar-thumb {
+  border: 3px solid transparent; background-clip: padding-box; border-radius: 99px; min-height: 40px;
+  background-color: color-mix(in srgb, var(--muted) 32%, transparent);
+}
+:is(#board, #ws-list, #windows, #picker-tree)::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--muted) 70%, transparent); }
+:is(#board, #ws-list, #windows, #picker-tree)::-webkit-scrollbar-thumb:active { background-color: var(--muted); border-width: 2px; }
 /* user-chosen columns: each column stacks its groups, so a card sits right under the one above */
 .columns { display: flex; align-items: stretch; gap: 14px; min-height: 100%; }
 .col { flex: 1 1 0; min-width: 240px; display: flex; flex-direction: column; } /* narrow window: scroll sideways */
