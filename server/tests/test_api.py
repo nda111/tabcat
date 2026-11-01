@@ -13,7 +13,12 @@ def check(cond, msg):
     if not cond: failed.append(msg)
 
 app = create_app(C.load(tempfile.mkdtemp(), dashboard=WEB))
-c = TestClient(app, follow_redirects=False)
+c = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50000))  # (on the server's own computer)
+remote = TestClient(app, follow_redirects=False, client=('203.0.113.9', 50000))
+
+# setting it up: only from the server's own computer (a forwarded address from elsewhere counts for nothing)
+check(b'setupHereTitle' in remote.get('/setup').content, 'from elsewhere, /setup says to set it up on its computer')
+check(remote.post('/api/setup', json={'username': 'evil', 'password': '12345678'}, headers={'X-Forwarded-For': '127.0.0.1'}).status_code == 403, 'and refuses it there, a forged X-Forwarded-For too')
 J = lambda **kw: kw
 
 # no account yet: the dashboard sends you to make the first one
@@ -40,7 +45,7 @@ check(c.patch(f'/api/admin/users/{boss}', json=J(admin=False)).status_code == 40
 check(c.delete(f'/api/admin/users/{boss}').status_code == 409, "you can't delete yourself")
 
 # signing in as someone else
-k = TestClient(app, follow_redirects=False)
+k = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50001))
 check(k.get('/').headers.get('location') == '/login', 'signed out: / goes to /login')
 check(k.post('/api/login', json=J(username='kid', password='wrong one')).status_code == 401, 'a wrong password is refused')
 check(k.post('/api/login', json=J(username='kid', password='kidpass99')).status_code == 200, 'the right one signs in')
@@ -53,23 +58,32 @@ check(k.post('/api/login', json=J(username='kid', password='newpass123')).status
 check(k.post('/api/me/password', json={'current': 'newpass123', 'new': 'mine-now-1'}).status_code == 200, 'a user changes their password')
 
 # sign-up modes and invitations
-n = TestClient(app, follow_redirects=False)
+n = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n.post('/api/signup', json=J(username='new1', password='12345678')).status_code == 403, 'sign-up closed: refused')
 c.put('/api/admin/settings', json=J(signup='open'))
 check(n.post('/api/signup', json=J(username='new1', password='12345678')).status_code == 200, 'open: anyone signs up')
 c.put('/api/admin/settings', json=J(signup='invite'))
-n2 = TestClient(app, follow_redirects=False)
+n2 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n2.post('/api/signup', json=J(username='new2', password='12345678')).status_code == 403, 'by invitation: none, refused')
 code = c.post('/api/admin/invites', json=J(days=7)).json()['code']
 check(n2.post('/api/signup', json=J(username='new2', password='12345678', invite=code)).status_code == 200, 'with one, signs up')
-n3 = TestClient(app, follow_redirects=False)
+n3 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite=code)).status_code == 403, 'an invitation is used once')
 check([i['used_by'] for i in c.get('/api/admin/invites').json()] == ['new2'], 'the admin sees who used it')
 
 # throttling
-t = TestClient(app, follow_redirects=False)
+t = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 codes = [t.post('/api/login', json=J(username='boss', password='nope nope')).status_code for _ in range(9)]
 check(codes[-1] == 429, f'many wrong passwords: it waits ({codes[-2:]})')
+
+# the admin page from an address it isn't open to
+app2 = create_app(C.load(tempfile.mkdtemp(), dashboard=WEB, admin_from='10.0.0.0/8'))
+a2 = TestClient(app2, follow_redirects=False, client=('127.0.0.1', 50003))
+a2.post('/api/setup', json=J(username='root', password='12345678'))
+check(a2.get('/api/admin/users').status_code == 403 and b'adminHereTitle' in a2.get('/admin').content, 'admin_from: from elsewhere, no admin page')
+a3 = TestClient(app2, follow_redirects=False, client=('10.1.2.3', 50004))
+a3.post('/api/login', json=J(username='root', password='12345678'))
+check(a3.get('/api/admin/users').status_code == 200, 'and from an address it is open to, the admin page')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

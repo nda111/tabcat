@@ -21,6 +21,13 @@ class Config:
     # 'auto': the latest from GitHub (the pages branch, as tabcat.ghyeok.com), kept in the data folder;
     # else a folder with the dashboard's files (e.g. a checkout of the pages branch, while working on it)
     dashboard: str = 'auto'
+    # who may make the first account (the admin), and who may use the admin page: lists of addresses or
+    # networks (CIDR). By default the first account only from this computer, the admin page from anywhere.
+    setup_from: tuple = ('127.0.0.1/32', '::1/128')
+    admin_from: tuple = ('0.0.0.0/0', '::/0')
+    # proxies in front of it whose X-Forwarded-For is believed (Caddy, nginx, Tailscale's serve on this
+    # computer); from anyone else, the header counts for nothing
+    trusted_proxies: tuple = ('127.0.0.1', '::1')
 
     @property
     def db_path(self) -> Path:
@@ -31,7 +38,11 @@ class Config:
         return self.data_dir / 'dashboard' if self.dashboard == 'auto' else Path(self.dashboard).expanduser().resolve()
 
 
-def load(data_dir=None, host=None, port=None, dashboard=None) -> Config:
+def _list(v):
+    return tuple(x.strip() for x in (v.split(',') if isinstance(v, str) else v) if str(x).strip())
+
+
+def load(data_dir=None, host=None, port=None, dashboard=None, setup_from=None, admin_from=None, trusted_proxies=None) -> Config:
     data = Path(data_dir or os.environ.get('TABCAT_DATA') or default_data_dir()).expanduser().resolve()
     file = {}
     if (data / 'config.toml').exists():
@@ -43,4 +54,7 @@ def load(data_dir=None, host=None, port=None, dashboard=None) -> Config:
         host=pick(host, 'TABCAT_HOST', 'host', '127.0.0.1'),
         port=int(pick(port, 'TABCAT_PORT', 'port', 8080)),
         dashboard=str(pick(dashboard, 'TABCAT_DASHBOARD', 'dashboard', 'auto')),
+        setup_from=_list(pick(setup_from, 'TABCAT_SETUP_FROM', 'setup_from', Config.setup_from)),
+        admin_from=_list(pick(admin_from, 'TABCAT_ADMIN_FROM', 'admin_from', Config.admin_from)),
+        trusted_proxies=_list(pick(trusted_proxies, 'TABCAT_TRUSTED_PROXIES', 'trusted_proxies', Config.trusted_proxies)),
     )

@@ -53,6 +53,7 @@ function buildMenus() {
       chrome.contextMenus.create({ id: serverItem[0], title: serverItem[1], contexts: serverItem[2] }, () => void chrome.runtime.lastError);
       done();
     }));
+    gateMenus();
   });
   return menus;
 }
@@ -566,6 +567,27 @@ async function serverGate() {
   } catch { /* not reached */ }
   return null;
 }
+// The menu's saving items, greyed out while saving needs the server's account first: looked at again on
+// connecting and disconnecting, when a page of the server loads (signing in and out happen there), and when
+// a browser window comes to the front
+const SAVE_MENUS = ['save-tab', 'save-link', 'save-window'];
+let gating = null;
+function gateMenus() {
+  gating ||= (async () => {
+    const gate = await serverGate();
+    for (const id of SAVE_MENUS) chrome.contextMenus.update(id, { enabled: !gate }, () => void chrome.runtime.lastError);
+  })().finally(() => { gating = null; });
+  return gating;
+}
+chrome.tabs.onUpdated.addListener(async (_id, change, tab) => {
+  if (change.status !== 'complete' || !tab.url) return;
+  const { server } = await S.loadSettings();
+  if (server && new URL(tab.url).origin === server) gateMenus();
+});
+chrome.windows.onFocusChanged.addListener(async (id) => {
+  if (id !== chrome.windows.WINDOW_ID_NONE && (await S.loadSettings()).server) gateMenus();
+});
+
 // Saving from the menu or a shortcut while that's needed: the server's page for it opens instead
 async function blockedSave() {
   const gate = await serverGate();
@@ -691,7 +713,7 @@ const handlers = {
   },
   saveWindow: ({ windowId, ...opts }) => saveWindow(windowId, opts),
   // (for the popup: what saving needs first on a server, or null)
-  serverStatus: () => serverGate(),
+  serverStatus: () => { gateMenus(); return serverGate(); },
   closeDuplicates: () => closeDuplicates(),
   suspendTabs: (args) => A.suspendTabs(args || {}),
   // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group

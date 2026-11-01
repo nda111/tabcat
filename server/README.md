@@ -89,6 +89,12 @@ Set before it starts, on the command line, in the environment, or in `config.tom
 | Address to listen on | `--host` | `TABCAT_HOST` | `127.0.0.1` |
 | Port | `--port` | `TABCAT_PORT` | `8080` |
 | Dashboard | `--dashboard` | `TABCAT_DASHBOARD` | `auto`: the latest from GitHub, as tabcat.ghyeok.com; or a folder with its files |
+| Who may make the first account (the admin) | `--setup-from` | `TABCAT_SETUP_FROM` | this computer only (`127.0.0.1/32,::1/128`) |
+| Who may use the admin page | `--admin-from` | `TABCAT_ADMIN_FROM` | anywhere (`0.0.0.0/0,::/0`) |
+| Proxies whose `X-Forwarded-For` is believed | `--trusted-proxies` | `TABCAT_TRUSTED_PROXIES` | this computer only |
+
+The lists take addresses or networks, comma-separated (`192.168.0.0/16,10.1.2.3`). Behind a proxy on another
+computer, add it to the trusted proxies, or every visitor looks like the proxy.
 
 Everything else (sign-up, invitations, accounts, updating the dashboard, backups) is on the admin page, at `/admin`.
 

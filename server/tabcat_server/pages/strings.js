@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    setupHereTitle: 'Set up this server on the computer it runs on.', setupHereText: 'For safety, its first account (the admin) can only be made from that computer: open {local} there. To allow other addresses, start it with --setup-from.', adminHereTitle: 'The admin page isn’t open to this address.', adminHereText: 'The server lets admins in only from the addresses it was started with (--admin-from).',
     notConnNeed: 'tabcat works together with a browser extension.', notConnStoreHtml: 'Install <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat from the Chrome Web Store</a>.', notConnManualHtml: 'Or install it by hand. Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.', notConnRetry: 'Retry',
     notConnTitle: 'Not connected to your tabcat server.', notConnInstall: 'Install tabcat from the Chrome Web Store.', notConnConnect: 'Right-click tabcat’s toolbar button and connect to the server.',
     privacy: 'Privacy',
@@ -26,6 +27,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    setupHereTitle: '서버 설정은 서버를 실행한 컴퓨터에서 해 주세요.', setupHereText: '안전을 위해 첫 계정(관리자)은 그 컴퓨터에서만 만들 수 있습니다. 그 컴퓨터에서 {local}을(를) 여세요. 다른 주소도 허용하려면 --setup-from 옵션으로 서버를 실행하세요.', adminHereTitle: '이 주소에서는 관리자 페이지를 쓸 수 없습니다.', adminHereText: '서버는 실행할 때 지정한 주소(--admin-from)에서만 관리자 페이지를 엽니다.',
     notConnNeed: 'tabcat은 브라우저 확장 프로그램과 함께 작동합니다.', notConnStoreHtml: '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 웹 스토어에서 tabcat</a>을 설치하세요.', notConnManualHtml: '또는 직접 설치할 수도 있습니다. <a href="chrome://extensions" data-copy>chrome://extensions</a>를 열고 <b>개발자 모드</b>를 켠 뒤, <b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 익스텐션</a> 폴더를 설치하세요.', notConnRetry: '다시 시도',
     notConnTitle: 'tabcat 서버에 연결되지 않았습니다.', notConnInstall: 'Chrome 웹 스토어에서 tabcat을 설치하세요.', notConnConnect: 'tabcat 툴바 버튼을 우클릭하고 서버에 연결해 주세요.',
     privacy: '개인정보처리방침',
@@ -51,6 +53,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    setupHereTitle: 'サーバーのセットアップは、サーバーを動かしているコンピューターで行ってください。', setupHereText: '安全のため、最初のアカウント（管理者）はそのコンピューターでのみ作成できます。そのコンピューターで {local} を開いてください。ほかのアドレスを許可するには、--setup-from を付けて起動します。', adminHereTitle: 'このアドレスからは管理ページを使えません。', adminHereText: 'サーバーは、起動時に指定したアドレス（--admin-from）からのみ管理ページを開きます。',
     notConnNeed: 'tabcat はブラウザの拡張機能と一緒に動作します。', notConnStoreHtml: '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome ウェブストアから tabcat</a> をインストールしてください。', notConnManualHtml: 'ストアを使わずにインストールすることもできます。<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。', notConnRetry: '再試行',
     notConnTitle: 'tabcat サーバーに接続されていません。', notConnInstall: 'Chrome ウェブストアから tabcat をインストールしてください。', notConnConnect: 'tabcat のツールバーボタンを右クリックして、サーバーに接続してください。',
     privacy: 'プライバシー',
@@ -76,6 +79,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    setupHereTitle: '请在运行服务器的电脑上进行设置。', setupHereText: '为了安全，第一个账号（管理员）只能在那台电脑上创建：请在那台电脑上打开 {local}。要允许其他地址，请用 --setup-from 启动服务器。', adminHereTitle: '此地址无法使用管理页面。', adminHereText: '服务器只对启动时指定的地址（--admin-from）开放管理页面。',
     notConnNeed: 'tabcat 需要与浏览器扩展程序配合使用。', notConnStoreHtml: '从 <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 应用商店</a>安装 tabcat。', notConnManualHtml: '也可以手动安装：打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。', notConnRetry: '重试',
     notConnTitle: '未连接到 tabcat 服务器。', notConnInstall: '从 Chrome 应用商店安装 tabcat。', notConnConnect: '右键点击 tabcat 工具栏按钮，连接到服务器。',
     privacy: '隐私',
@@ -101,6 +105,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    setupHereTitle: 'Configura este servidor en el ordenador donde se ejecuta.', setupHereText: 'Por seguridad, su primera cuenta (la de administrador) solo se puede crear desde ese ordenador: abre {local} allí. Para permitir otras direcciones, inícialo con --setup-from.', adminHereTitle: 'La página de administración no está abierta a esta dirección.', adminHereText: 'El servidor solo deja entrar a los administradores desde las direcciones con que se inició (--admin-from).',
     notConnNeed: 'tabcat funciona junto con una extensión del navegador.', notConnStoreHtml: 'Instala <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat desde Chrome Web Store</a>.', notConnManualHtml: 'También puedes instalarla a mano. Abre <a href="chrome://extensions" data-copy>chrome://extensions</a>, activa el <b>Modo de desarrollador</b>, haz clic en <b>Cargar descomprimida</b> e instala la carpeta de la <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extensión tabcat</a>.', notConnRetry: 'Reintentar',
     notConnTitle: 'No estás conectado a tu servidor de tabcat.', notConnInstall: 'Instala tabcat desde Chrome Web Store.', notConnConnect: 'Haz clic derecho en el botón de tabcat de la barra de herramientas y conéctate al servidor.',
     privacy: 'Privacidad',
@@ -126,6 +131,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    setupHereTitle: 'Richte diesen Server auf dem Computer ein, auf dem er läuft.', setupHereText: 'Aus Sicherheitsgründen lässt sich das erste Konto (der Admin) nur auf diesem Computer anlegen: Öffne dort {local}. Um andere Adressen zuzulassen, starte ihn mit --setup-from.', adminHereTitle: 'Die Verwaltungsseite ist für diese Adresse nicht offen.', adminHereText: 'Der Server lässt Admins nur von den Adressen herein, mit denen er gestartet wurde (--admin-from).',
     notConnNeed: 'tabcat arbeitet mit einer Browsererweiterung zusammen.', notConnStoreHtml: 'Installiere <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat aus dem Chrome Web Store</a>.', notConnManualHtml: 'Oder installiere es von Hand. Öffne <a href="chrome://extensions" data-copy>chrome://extensions</a>, schalte den <b>Entwicklermodus</b> ein, klicke auf <b>Entpackte Erweiterung laden</b> und installiere den Ordner der <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat-Erweiterung</a>.', notConnRetry: 'Erneut versuchen',
     notConnTitle: 'Nicht mit deinem tabcat-Server verbunden.', notConnInstall: 'Installiere tabcat aus dem Chrome Web Store.', notConnConnect: 'Klicke mit der rechten Maustaste auf die tabcat-Schaltfläche in der Symbolleiste und verbinde dich mit dem Server.',
     privacy: 'Datenschutz',
@@ -151,6 +157,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    setupHereTitle: 'Configurez ce serveur sur l’ordinateur où il tourne.', setupHereText: 'Par sécurité, son premier compte (l’administrateur) ne peut être créé que depuis cet ordinateur : ouvrez-y {local}. Pour autoriser d’autres adresses, lancez-le avec --setup-from.', adminHereTitle: 'La page d’administration n’est pas ouverte à cette adresse.', adminHereText: 'Le serveur n’accepte les admins que depuis les adresses indiquées à son lancement (--admin-from).',
     notConnNeed: 'tabcat fonctionne avec une extension de navigateur.', notConnStoreHtml: 'Installez <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat depuis le Chrome Web Store</a>.', notConnManualHtml: 'Vous pouvez aussi l’installer à la main. Ouvrez <a href="chrome://extensions" data-copy>chrome://extensions</a>, activez le <b>Mode développeur</b>, cliquez sur <b>Charger l’extension non empaquetée</b> et installez le dossier de l’<a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extension tabcat</a>.', notConnRetry: 'Réessayer',
     notConnTitle: 'Non connecté à votre serveur tabcat.', notConnInstall: 'Installez tabcat depuis le Chrome Web Store.', notConnConnect: 'Faites un clic droit sur le bouton tabcat de la barre d’outils et connectez-vous au serveur.',
     privacy: 'Confidentialité',
@@ -176,6 +183,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    setupHereTitle: 'Configure este servidor no computador onde ele roda.', setupHereText: 'Por segurança, a primeira conta (a de admin) só pode ser criada nesse computador: abra {local} lá. Para permitir outros endereços, inicie-o com --setup-from.', adminHereTitle: 'A página de administração não está aberta a este endereço.', adminHereText: 'O servidor só deixa admins entrarem pelos endereços com que foi iniciado (--admin-from).',
     notConnNeed: 'O tabcat funciona junto com uma extensão do navegador.', notConnStoreHtml: 'Instale o <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat pela Chrome Web Store</a>.', notConnManualHtml: 'Você também pode instalar manualmente. Abra <a href="chrome://extensions" data-copy>chrome://extensions</a>, ative o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e instale a pasta da <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extensão do tabcat</a>.', notConnRetry: 'Tentar de novo',
     notConnTitle: 'Não conectado ao seu servidor do tabcat.', notConnInstall: 'Instale o tabcat pela Chrome Web Store.', notConnConnect: 'Clique com o botão direito no botão do tabcat na barra de ferramentas e conecte ao servidor.',
     privacy: 'Privacidade',

@@ -3,6 +3,7 @@
 The dashboard's own files are public (they are on GitHub anyway; the extension looks at its manifest to know
 a tabcat server answers), but the page itself opens only signed in: else the sign-in page (or, with no
 account yet, the page that makes the first one, an admin)."""
+import ipaddress
 import mimetypes
 import tempfile
 import time
@@ -45,6 +46,8 @@ def create_app(config) -> FastAPI:
         u = need_user(request)
         if not u['admin']:
             raise HTTPException(403, 'admins only')
+        if not allowed(request, config.admin_from):
+            raise HTTPException(403, 'the admin page is not open to this address')
         return u
 
     def no_users() -> bool:
@@ -72,8 +75,19 @@ def create_app(config) -> FastAPI:
             raise HTTPException(400, 'bad JSON')
         return data if isinstance(data, dict) else {}
 
+    # (who's asking: the connection's address, or, from a trusted proxy, the one it says it's passing on:
+    # uvicorn does that, believing only config.trusted_proxies)
     def client(request: Request) -> str:
-        return request.headers.get('x-forwarded-for', '').split(',')[0].strip() or (request.client.host if request.client else '?')
+        return request.client.host if request.client else '?'
+
+    def allowed(request: Request, networks) -> bool:
+        try:
+            ip = ipaddress.ip_address(client(request))
+            if ip.version == 6 and ip.ipv4_mapped:
+                ip = ip.ipv4_mapped
+            return any(ip in ipaddress.ip_network(n, strict=False) for n in networks)
+        except ValueError:
+            return False
 
     # ---------- pages ----------
 
@@ -87,8 +101,10 @@ def create_app(config) -> FastAPI:
         return page('login.html')
 
     @app.get('/setup')
-    def setup_page():
-        return page('setup.html') if no_users() else RedirectResponse('/login')
+    def setup_page(request: Request):
+        if not no_users():
+            return RedirectResponse('/login')
+        return page('setup.html') if allowed(request, config.setup_from) else page('setup-elsewhere.html')
 
     @app.get('/account')
     def account_page(request: Request):
@@ -99,7 +115,9 @@ def create_app(config) -> FastAPI:
         u = user_of(request)
         if not u:
             return RedirectResponse('/login?next=/admin')
-        return page('admin.html') if u['admin'] else RedirectResponse('/')
+        if not u['admin']:
+            return RedirectResponse('/')
+        return page('admin.html') if allowed(request, config.admin_from) else page('admin-elsewhere.html')
 
     @app.get('/_server/{name}')
     def server_asset(name: str):
@@ -119,6 +137,8 @@ def create_app(config) -> FastAPI:
         data = await body(request)
         if not no_users():
             raise HTTPException(409, 'there are accounts already')
+        if not allowed(request, config.setup_from):
+            raise HTTPException(403, 'set the server up from the computer it runs on')
         name, pw = data.get('username', ''), data.get('password', '')
         if not auth.valid_username(name) or not auth.valid_password(pw):
             raise HTTPException(400, 'bad username or password')
