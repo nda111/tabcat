@@ -80,7 +80,7 @@ $('#form').addEventListener('submit', async (e) => {
     return say(reached ? 'connectNotTabcat' : 'connectUnreachable', true);
   }
   const r = await chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin } });
-  if (r?.error) { $('#go').disabled = false; $('#msg').textContent = r.error; $('#msg').classList.add('error'); return; }
+  if (r?.error) { $('#go').disabled = false; return say(/allowed/.test(r.error) ? 'connectDenied' : 'connectNotTabcat', true); } // (rare: e.g. the leave taken back meanwhile)
   window.close();
 });
 $('#cancel').addEventListener('click', () => window.close());
