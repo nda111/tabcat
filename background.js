@@ -50,6 +50,18 @@ function buildMenus() {
   return menus;
 }
 
+// Closes tabs (or a whole window), remembered: undo opens them again where they were. Returns the
+// history entry's id (for the dashboard's toast), or true when there was nothing to remember.
+async function closeTabs(tabs, what, close = () => chrome.tabs.remove(tabs.map((t) => t.id))) {
+  const keep = tabs.filter((t) => (t.url || t.pendingUrl) && !A.isDashboard(t.url || t.pendingUrl));
+  const closed = await A.tabInfos(keep);
+  await close();
+  if (!closed.length) return true;
+  const id = S.uid();
+  await withHistory((h) => pushChange(h, { id, what: { ...what, n: closed.length }, closed }));
+  return id;
+}
+
 chrome.runtime.onStartup.addListener(init);
 init();
 chrome.runtime.onInstalled.addListener(retirePinnedDashboards);
@@ -409,11 +421,12 @@ const historyHandlers = {
   undo: ({ id } = {}) => withHistory(async (h) => {
     const i = id == null ? h.undo.length - 1 : h.undo.findIndex((e) => e.id === id);
     if (i < 0) return null;
-    const gone = h.undo.splice(i);
+    // (an older data change put back takes the later ones with it, though closing tabs alone stays
+    // undoable; closed tabs opened again take nothing else with them)
+    const gone = h.undo[i].data ? h.undo.splice(i) : h.undo.splice(i, 1);
     const back = await restore(gone[0]);
     await dropSnaps(gone);
-    // (an older data change put back takes the later ones with it; closing tabs alone stays undoable)
-    if (gone.length > 1 && gone[0].data) h.undo.push(...gone.slice(1).filter((e) => !e.data));
+    if (gone.length > 1) h.undo.push(...gone.slice(1).filter((e) => !e.data));
     if (!back) return null;
     h.redo.push(back);
     return { what: back.what };
@@ -438,8 +451,9 @@ async function saveTabs(tabs, opts = {}, save = () => A.saveTabs(tabs, opts)) {
   const result = await save();
   if (result == null || !saving.length) return result;
   const close = opts.close ?? settings.closeOnSave;
+  const closed = close && await A.tabInfos(saving);
   await withHistory(async (h) => pushChange(h, {
-    id: await snap(before), data: true, what: { verb: 'save', n: saving.length }, ...(close && { closed: saving.map(A.tabInfo) }),
+    id: await snap(before), data: true, what: { verb: 'save', n: saving.length }, ...(close && { closed }),
   }));
   return result;
 }
@@ -468,6 +482,8 @@ const handlers = {
 
   async getTabs(_args, senderTab) {
     const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+    const groupsBy = Map.groupBy((await chrome.tabGroups?.query({}).catch(() => [])) || [], (g) => g.windowId);
+    for (const [w, gs] of groupsBy) groupsBy.set(w, gs.map(({ id, title, color, collapsed }) => ({ id, title: title || '', color, collapsed })));
     return {
       currentWindowId: senderTab?.windowId ?? null,
       windows: windows.map((w) => ({
@@ -478,7 +494,10 @@ const handlers = {
           .map((t) => ({
             id: t.id, windowId: t.windowId, url: t.url || t.pendingUrl || '', title: t.title || '',
             favIconUrl: t.favIconUrl || '', active: t.active, pinned: t.pinned, discarded: t.discarded, audible: t.audible,
+            groupId: t.groupId ?? -1,
           })),
+        // its tab groups: { id, title, color, collapsed }
+        groups: groupsBy.get(w.id) || [],
       })),
     };
   },
@@ -548,7 +567,10 @@ const handlers = {
     await chrome.windows.update(t.windowId, { focused: true });
     return true;
   },
-  closeTabs: ({ tabIds }) => chrome.tabs.remove(tabIds).then(() => true),
+  async closeTabs({ tabIds }) {
+    const tabs = (await Promise.all(tabIds.map((id) => chrome.tabs.get(id).catch(() => null)))).filter(Boolean);
+    return closeTabs(tabs, { verb: 'closeTabs' });
+  },
   // unload the given tabs from memory (the active tab of a window can't be discarded and is skipped)
   async discardTabs({ tabIds }) {
     let n = 0;
@@ -564,7 +586,9 @@ const handlers = {
     if (tabIds.length > 1) await chrome.tabs.move(tabIds.slice(1), { windowId: win.id, index: -1 });
     return win.id;
   },
-  closeWindow: ({ windowId }) => chrome.windows.remove(windowId).then(() => true),
+  async closeWindow({ windowId }) {
+    return closeTabs(await chrome.tabs.query({ windowId }), { verb: 'closeWindow' }, () => chrome.windows.remove(windowId));
+  },
   openDashboard: () => openDashboard(),
 };
 
