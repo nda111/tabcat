@@ -1730,7 +1730,7 @@ async function deleteNode(node) {
       }))) return;
   const snapshot = structuredClone(state);
   await animateOut([node.id]);
-  if (await apply({ op: 'remove', id: node.id })) {
+  if (await apply({ op: 'remove', id: node.id, trash: true })) {
     const entry = await remember(snapshot, whatOf('delete', [node]));
     toast(t('toast.deleted', { name: node.name || node.url }), t('common.undo'), () => undo(entry, true));
   }
@@ -2391,7 +2391,7 @@ async function deleteSelected() {
   const snapshot = structuredClone(state);
   selected.clear();
   await animateOut(groups.map((g) => g.id));
-  if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id })))) {
+  if (await apply(...groups.map((g) => ({ op: 'remove', id: g.id, trash: true })))) {
     const entry = await remember(snapshot, whatOf('delete', groups));
     toast(one ? t('toast.deleted', { name: groups[0].name }) : t('toast.deletedGroups', { n: groups.length }), t('common.undo'), () => undo(entry, true));
   }
@@ -2513,7 +2513,7 @@ async function deleteItems() {
   if (!nodes.length) return;
   const snapshot = structuredClone(state);
   await animateOut(nodes.map((n) => n.id));
-  if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id })))) {
+  if (await apply(...nodes.map((n) => ({ op: 'remove', id: n.id, trash: true })))) {
     const entry = await remember(snapshot, whatOf('delete', nodes));
     toast(t('toast.deletedItems', { n: nodes.length }), t('common.undo'), () => undo(entry, true));
   }
@@ -3521,6 +3521,88 @@ $('#btn-info').addEventListener('click', () => {
   dlg.querySelector('button').blur();
 });
 
+// Recently deleted: what was deleted in the last 30 days (the extension keeps it), newest first, each
+// with where it was and when; Restore puts it back (where it was, or as near as is left: see the
+// extension's putBack) and shows it; it can also be deleted for good, or all of it at once.
+// The list follows changes made meanwhile (an undo puts something back on the board: it leaves the list).
+let trashEntries = [];
+async function openTrash() {
+  await renderTrash();
+  const dlg = $('#trash');
+  dlg.showModal();
+  dlg.querySelector('button').blur();
+}
+async function renderTrash() {
+  trashEntries = (await run(B.call('getTrash'))) || [];
+  const list = $('#trash-list');
+  const keep = new Map([...list.children].map((li) => [li.dataset.id, li]));
+  list.replaceChildren(...trashEntries.map((e) => keep.get(e.id) || trashRow(e)));
+  for (const li of list.children) li.querySelector('.trash-when').textContent = timeAgo(trashEntries.find((e) => e.id === li.dataset.id).deletedAt);
+  $('#trash-none').hidden = trashEntries.length > 0;
+  $('#trash-clear').disabled = !trashEntries.length;
+}
+function trashRow(e) {
+  const n = e.node;
+  const sym = n.type === 'link' ? iconImg(n.url, n.icon) : symbolEl(n.symbol, icon(n.type === 'workspace' ? 'columns' : n.type, 16));
+  const where = e.trail.map((a) => `${T.textSymbol(a.symbol) ? T.textSymbol(a.symbol) + ' ' : ''}${a.name}`).join(' › ');
+  const links = n.type === 'link' ? 0 : T.countLinks(n);
+  const about = [where, links ? t('trash.links', { n: links }) : ''].filter(Boolean).join(' · ');
+  return h('li', { class: 'trash-row', dataset: { id: e.id } }, sym,
+    h('span', { class: 'trash-text' },
+      h('span', { class: 'trash-name', title: n.url || '' }, n.name || n.url),
+      h('span', { class: 'trash-where' }, about, about ? ' · ' : '', h('span', { class: 'trash-when' }))),
+    h('button', { type: 'button', class: 'btn small', onclick: () => restoreTrash(e) }, t('trash.restore')),
+    btn(icon('trash', 15), t('trash.forget'), () => forgetTrash(e)));
+}
+// "3 minutes ago", "yesterday", in the page's language
+function timeAgo(at) {
+  const rtf = new Intl.RelativeTimeFormat(getLang(), { numeric: 'auto' });
+  const s = (at - Date.now()) / 1000;
+  for (const [unit, size] of [['day', 86400], ['hour', 3600], ['minute', 60]]) if (Math.abs(s) >= size) return rtf.format(Math.round(s / size), unit);
+  return rtf.format(0, 'minute');
+}
+// a row leaving: it folds away
+function dropTrashRow(id) {
+  const li = $('#trash-list').querySelector(`[data-id="${CSS.escape(id)}"]`);
+  if (!li) return Promise.resolve();
+  const height = li.getBoundingClientRect().height;
+  return li.animate([{ height: `${height}px`, opacity: 1 }, { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 }],
+    { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => li.remove());
+}
+async function restoreTrash(e) {
+  const id = await run(B.call('restoreTrash', { id: e.id }));
+  if (!id) return renderTrash();
+  await dropTrashRow(e.id);
+  await stateArrived(id);
+  const r = T.locate(state, id);
+  if (r) {
+    $('#trash').close();
+    reveal(r.node, r.ancestors);
+  }
+  toast(t('toast.restored', { name: e.node.name || e.node.url }), t('common.undo'), () => undo(null, true));
+  renderTrash();
+}
+async function forgetTrash(e) {
+  await dropTrashRow(e.id);
+  await run(B.call('emptyTrash', { id: e.id }));
+  renderTrash();
+}
+// until the state with node `id` in it has come from the extension (or a moment has passed)
+async function stateArrived(id) {
+  for (let i = 0; i < 3 && !T.locate(state, id); i++) await Promise.race([nextState(), new Promise((r) => setTimeout(r, 600))]);
+}
+$('#btn-trash').addEventListener('click', openTrash);
+$('#trash-clear').addEventListener('click', async () => {
+  if (!(await confirmDialog({ title: t('trash.clearTitle'), text: t('trash.clearText', { n: trashEntries.length }), ok: t('trash.clear'), danger: true }))) return;
+  await Promise.all(trashEntries.map((e) => dropTrashRow(e.id)));
+  await run(B.call('emptyTrash'));
+  renderTrash();
+});
+let trashTimer;
+const trashChanged = () => { clearTimeout(trashTimer); trashTimer = setTimeout(() => { if ($('#trash').open) renderTrash(); }, 80); };
+B.on('trash', trashChanged);
+B.on('state', trashChanged);
+
 // Updates: installed from a GitHub release, the extension doesn't update itself, so (unless turned off in
 // Settings) the dashboard looks up the latest release, at most twice a day, and when it's newer than the
 // connected extension says so: a dot on About, and in About a link to the release. Installed from the
@@ -3900,6 +3982,7 @@ function setExtension(ext) {
   extUpdatesItself = !!ext.updatesItself;
   extFeatures = new Set(Array.isArray(ext.features) ? ext.features
     : FEATURES_BY_VERSION.filter(([, v]) => extVersion && !olderThan(extVersion, v)).map(([f]) => f));
+  $('#btn-trash').hidden = !extFeatures.has('trash');
 }
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));

@@ -809,6 +809,22 @@ dialog .field-label { display: block; font-weight: 600; }
 .no-ext-card h2 { margin: 0 0 6px; }
 .no-ext-card ol { padding-left: 20px; }
 .no-ext-card li { margin-bottom: 6px; }
+/* Recently deleted: a row per deleted thing (its symbol, name, where it was and when), Restore and delete for good */
+#trash { width: 520px; }
+.trash-note { margin: -6px 0 12px; }
+#trash-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.trash-row { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 8px; overflow: hidden; }
+.trash-row:hover { background: var(--hover); }
+.trash-row > .sym, .trash-row > img.fav { flex: none; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+.trash-row > .sym svg { width: 16px; height: 16px; }
+.trash-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trash-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-where { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-row .btn { flex: none; }
+.trash-none { margin: 4px 0 0; }
+#trash menu .menu-gap { flex: 1; }
+#trash-clear { color: var(--danger); }
+#trash-clear:disabled { color: var(--muted); }
 .shortcut-missing { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--accent-soft); font-size: 12px; }
 .shortcut-missing[hidden] { display: none; }
 .shortcut-missing .btn { flex: none; margin-left: auto; }
