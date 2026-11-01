@@ -57,7 +57,7 @@ async function showCounts() {
   $('#open-key').textContent = commands.find((c) => c.name === 'open-dashboard')?.shortcut || '';
   $('#open-key').hidden = !$('#open-key').textContent;
 
-  const target = groupPicker(S.allTargets(state), settings.lastGroupId);
+  const target = groupPicker(S.allTargets(state, settings.columns), settings.lastGroupId); // (as the board shows them)
   $('#close').checked = settings.closeOnSave;
   $('#close').addEventListener('change', () => S.saveSettings({ closeOnSave: $('#close').checked }));
 

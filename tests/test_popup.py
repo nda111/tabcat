@@ -1,6 +1,7 @@
 # The toolbar popup: tidying buttons say how many tabs they would touch (off at none), their results
 # can be undone, saving a window can be undone (links out, tabs back), and the dashboard line shows
 # its shortcut.
+import json
 from harness import *
 
 PAGE = 'http://127.0.0.1:8765/page?'
@@ -36,6 +37,13 @@ with sync_playwright() as p:
     pp.click('#open'); time.sleep(1.5)
     first = sw.evaluate(f"chrome.tabs.query({{windowId:self.__w}}).then(ts=>[(ts[0].url||ts[0].pendingUrl).startsWith('{URL}'), ts[0].pinned])")
     check(first == [True, True], f'the dashboard line brings the dashboard here, pinned first {first}')
+    # its save targets come in board order: column by column, top to bottom
+    sw.evaluate("""chrome.storage.local.get('tabcat').then(r => { const s = r.tabcat; s.workspaces = [%s];
+      return chrome.storage.local.set({tabcat: s}); })""" % json.dumps(workspace('W', [group('A', [], column=1), group('B', [], column=0), group('C', [], column=2), group('D', [], column=0)])))
+    pp = ctx.new_page(); pp.on('pageerror', lambda e: errors.append(str(e)))
+    pp.goto(sw.url.replace('background.js', 'popup.html')); time.sleep(1); pp.click('#target-btn'); time.sleep(.4)
+    names = pp.eval_on_selector_all('#target-list .picker-item .name', 'els => els.map(e => e.textContent)')
+    check(names == ['B', 'D', 'A', 'C'], f'save targets in board order {names}')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
