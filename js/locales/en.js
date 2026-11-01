@@ -9,7 +9,8 @@ export default {
   // page: no extension
   'noext.title': 'tabcat extension not found.',
   'noext.need': 'tabcat works together with a browser extension.',
-  'noext.step1.html': 'Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.',
+  'noext.store.html': 'Install <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat from the Chrome Web Store</a>.',
+  'noext.manual.html': 'Or install it by hand. Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.',
   'noext.step3': 'Reload this page.',
   'noext.retry': 'Retry',
   'noext.copied': 'Address copied. Paste it into a new tab’s address bar.',
