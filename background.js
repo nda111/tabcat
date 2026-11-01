@@ -590,6 +590,8 @@ const handlers = {
     return closeTabs(await chrome.tabs.query({ windowId }), { verb: 'closeWindow' }, () => chrome.windows.remove(windowId));
   },
   openDashboard: () => openDashboard(),
+  // { command name: its keys ('' when none: Chrome leaves one unset whose keys another extension has) }
+  getShortcuts: () => chrome.commands.getAll().then((cs) => Object.fromEntries(cs.map((c) => [c.name, c.shortcut || '']))),
 };
 
 async function handle(msg, senderTab) {

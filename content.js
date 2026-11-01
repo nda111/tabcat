@@ -14,8 +14,8 @@
   // wakeTabs (load suspended tabs again), logoSymbol (the logo as a symbol), looseData (keeps any symbol,
   // colour, column or plain field a newer dashboard sends), sharedHistory (undo / redo across dashboards),
   // closeHistory (closing tabs / windows is undoable; they return with their tab groups; getTabs tells
-  // each tab's group and each window's groups)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory'];
+  // each tab's group and each window's groups), shortcuts (getShortcuts: the keys each command has)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache
