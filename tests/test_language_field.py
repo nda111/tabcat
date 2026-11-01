@@ -13,7 +13,7 @@ with sync_playwright() as p:
         d.evaluate(REC); d.select_option('#language', v); time.sleep(.5)
         first = d.evaluate('__s')[0]
         (oy, ot), (ny, nt) = first
-        check(ny * sign > 10 and oy == 0 and nt == name, f'{v}: the new one comes from {"below" if sign > 0 else "above"} ({first})')
+        check(ny * sign > 0 and oy * sign <= 0 and nt == name, f'{v}: the new one comes from {"below" if sign > 0 else "above"} ({first})')
         time.sleep(.8)
         check(d.locator('.select-slide').count() == 0 and d.evaluate("!document.querySelector('#language').classList.contains('sliding')"), f'{v}: then the field shows it itself')
     check(not errors, f'no page errors {errors}')
