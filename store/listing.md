@@ -58,7 +58,8 @@ STAY LIGHT
 
 AND
 • Ctrl+F searches links, folders, groups and notes.
-• Ctrl+Z undoes deleting, moving, saving and closing duplicates.
+• Ctrl+Z undoes adding, editing, deleting, moving and saving, and closing tabs and windows.
+• What you delete stays in Recently deleted for 30 days.
 • Light and dark themes, accent colours, 8 languages.
 • Install the dashboard as an app for a window of its own.
 
@@ -95,7 +96,8 @@ tabcat은 탭에게 보드를 만들어 줘요. Ctrl+Shift+X로 열 수 있어�
 
 그리고
 • Ctrl+F로 링크, 폴더, 그룹, 메모를 찾아요.
-• Ctrl+Z로 삭제, 이동, 저장, 중복 닫기를 되돌려요.
+• Ctrl+Z로 추가, 수정, 삭제, 이동, 저장, 탭과 창 닫기를 되돌려요.
+• 삭제한 것은 휴지통에 30일 동안 남아요.
 • 밝은 테마와 어두운 테마, 테마 색, 8개 언어를 지원해요.
 • 대시보드를 앱으로 설치하면 전용 창에서 열려요.
 
@@ -132,7 +134,8 @@ tabcat はタブのためのボードです。Ctrl+Shift+X で開きます。
 
 そのほか
 • Ctrl+F でリンク、フォルダ、グループ、メモを検索。
-• Ctrl+Z で削除、移動、保存、重複タブを閉じる操作を元に戻せます。
+• Ctrl+Z で追加、編集、削除、移動、保存、タブやウィンドウを閉じる操作を元に戻せます。
+• 削除したものは「最近削除した項目」に 30 日間残ります。
 • ライト / ダークテーマ、アクセントカラー、8 言語に対応。
 • ダッシュボードをアプリとしてインストールすると、専用のウィンドウで開きます。
 
@@ -169,7 +172,8 @@ tabcat 为你的标签页准备了一块看板。按 Ctrl+Shift+X 打开。
 
 还有
 • Ctrl+F 搜索链接、文件夹、分组和备注。
-• Ctrl+Z 撤销删除、移动、保存和关闭重复标签页。
+• Ctrl+Z 撤销添加、编辑、删除、移动、保存，以及关闭标签页和窗口。
+• 删除的内容会在“最近删除”中保留 30 天。
 • 浅色和深色主题、强调色、8 种语言。
 • 把看板安装为应用，在独立窗口中打开。
 
@@ -206,7 +210,8 @@ LEICHT BLEIBEN
 
 UND
 • Strg+F durchsucht Links, Ordner, Gruppen und Notizen.
-• Strg+Z macht Löschen, Verschieben, Speichern und das Schließen doppelter Tabs rückgängig.
+• Strg+Z macht Hinzufügen, Bearbeiten, Löschen, Verschieben, Speichern und das Schließen von Tabs und Fenstern rückgängig.
+• Was du löschst, bleibt 30 Tage unter „Zuletzt gelöscht".
 • Helles und dunkles Design, Akzentfarben, 8 Sprachen.
 • Installiere das Dashboard als App für ein eigenes Fenster.
 
@@ -243,7 +248,8 @@ LIGERO
 
 Y ADEMÁS
 • Ctrl+F busca enlaces, carpetas, grupos y notas.
-• Ctrl+Z deshace borrar, mover, guardar y cerrar duplicadas.
+• Ctrl+Z deshace añadir, editar, borrar, mover y guardar, y cerrar pestañas y ventanas.
+• Lo que borras se queda 30 días en Eliminados recientemente.
 • Tema claro y oscuro, colores de acento, 8 idiomas.
 • Instala el panel como aplicación para tener su propia ventana.
 
@@ -280,7 +286,8 @@ RESTER LÉGER
 
 ET AUSSI
 • Ctrl+F cherche dans les liens, dossiers, groupes et notes.
-• Ctrl+Z annule une suppression, un déplacement, un enregistrement ou la fermeture des doublons.
+• Ctrl+Z annule un ajout, une modification, une suppression, un déplacement, un enregistrement ou la fermeture d'onglets et de fenêtres.
+• Ce que vous supprimez reste 30 jours dans Supprimés récemment.
 • Thèmes clair et sombre, couleurs d'accent, 8 langues.
 • Installez le tableau de bord comme application, dans sa propre fenêtre.
 
@@ -317,7 +324,8 @@ LEVE
 
 E MAIS
 • Ctrl+F busca links, pastas, grupos e notas.
-• Ctrl+Z desfaz excluir, mover, salvar e fechar duplicadas.
+• Ctrl+Z desfaz adicionar, editar, excluir, mover e salvar, e fechar abas e janelas.
+• O que você exclui fica 30 dias em Excluídos recentemente.
 • Tema claro e escuro, cores de destaque, 8 idiomas.
 • Instale o painel como aplicativo para ter uma janela só dele.
 
