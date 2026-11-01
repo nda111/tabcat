@@ -144,21 +144,61 @@ function noTip(el) {
 }
 
 function iconImg(url, icon) {
-  const fallback = T.faviconFor(url);
   const img = h('img', { class: 'fav', alt: '', loading: 'lazy', draggable: 'false' });
-  const show = (src) => { if (src.startsWith('chrome-extension:')) img.crossOrigin = 'anonymous'; img.src = src; }; // (readable: see blankFavicon)
-  show(icon || fallback);
-  img.addEventListener('error', () => {
-    if (img.src !== fallback) show(fallback);
-    else if (img.src !== T.BLANK_ICON) show(T.BLANK_ICON);
-  });
+  // its own icon, else the browser's for the page, else a blank one: each tried when the one before fails
+  const tries = [...new Set([icon, T.faviconFor(url), T.BLANK_ICON].filter(Boolean))];
+  let at = -1;
+  const next = () => {
+    if (++at >= tries.length) return;
+    setFavSrc(img, tries[at], next);
+  };
+  img.addEventListener('error', () => { if (img.dataset.ext !== 'asking') next(); });
   img.addEventListener('load', () => {
-    if (!img.src.startsWith('chrome-extension:') || img.classList.contains('fav-blank')) return;
+    if (!img.dataset.ext || img.src === CLEAR_PIXEL || img.classList.contains('fav-blank')) return;
     blankFavicon().then((blank) => {
       if (blank && img.naturalWidth === blank.w && favSig(img) === blank.sig) { img.classList.add('fav-blank'); img.src = CLEAR_PIXEL; }
     });
   });
+  img.retry = (src) => { tries.splice(0, tries.length, ...new Set([src, T.faviconFor(url), T.BLANK_ICON].filter(Boolean))); at = -1; next(); };
+  next();
   return img;
+}
+// An image's source, the browser's icons included: straight from the extension, readable (see blankFavicon),
+// or, on a dashboard that may not load them (the user's own server: see content.js), asked of the
+// extension in batches and kept. `failed`: there's none.
+let favAsk = false;
+const favCache = new Map();
+let favQueue = new Map(), favTimer = null;
+function askFavicon(src) {
+  if (!favCache.has(src)) {
+    favCache.set(src, new Promise((done) => { favQueue.set(src, done); }));
+    clearTimeout(favTimer);
+    favTimer = setTimeout(async () => {
+      const batch = favQueue;
+      favQueue = new Map();
+      const urls = [...batch.keys()];
+      const out = (await B.call('favicons', { urls }).catch(() => null)) || [];
+      urls.forEach((u, i) => batch.get(u)(out[i] || null));
+    }, 16);
+  }
+  return favCache.get(src);
+}
+function setFavSrc(img, src, failed = () => {}) {
+  const ext = src.startsWith('chrome-extension:');
+  img.dataset.ext = ext ? '1' : '';
+  img.dataset.want = src;
+  if (!ext || !favAsk) {
+    if (ext) img.crossOrigin = 'anonymous';
+    img.src = src;
+    return;
+  }
+  img.dataset.ext = 'asking';
+  img.src = CLEAR_PIXEL;
+  askFavicon(src).then((data) => {
+    if (img.dataset.want !== src) return;
+    img.dataset.ext = '1';
+    if (data) img.src = data; else failed();
+  });
 }
 // Chrome's own icon for a site it has no favicon of yet (a grey globe) is drawn in the accent colour
 // instead (.fav-blank). It's told apart by its pixels, learnt once from a site no one has visited.
@@ -178,7 +218,8 @@ function favSig(img) {
 let blankLearnt = null;
 function blankFavicon() {
   blankLearnt ||= (async () => {
-    const img = Object.assign(new Image(), { crossOrigin: 'anonymous', src: T.faviconFor('https://tabcat.invalid/') });
+    const src = T.faviconFor('https://tabcat.invalid/');
+    const img = favAsk ? Object.assign(new Image(), { src: await askFavicon(src) }) : Object.assign(new Image(), { crossOrigin: 'anonymous', src });
     await img.decode();
     const sig = favSig(img);
     return sig == null ? null : { w: img.naturalWidth, sig };
@@ -2025,7 +2066,7 @@ function openEditor(type, data = {}, title, onPreview = null) {
     if (kind === 'icon') {
       const preview = iconImg(data.url || '', data.icon || '');
       input.placeholder = t('icon.placeholder');
-      input.addEventListener('input', () => { preview.src = input.value || T.faviconFor(inputs.url.value); });
+      input.addEventListener('input', () => preview.retry(input.value || T.faviconFor(inputs.url.value)));
       const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
       file.addEventListener('change', async () => {
         const f = file.files[0];
@@ -4155,6 +4196,7 @@ function setExtension(ext) {
   extFeatures = new Set(Array.isArray(ext.features) ? ext.features
     : FEATURES_BY_VERSION.filter(([, v]) => extVersion && !olderThan(extVersion, v)).map(([f]) => f));
   $('#btn-trash').hidden = !extFeatures.has('trash');
+  favAsk = ext.favicons === 'ask' && extFeatures.has('favicons');
 }
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
