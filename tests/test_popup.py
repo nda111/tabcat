@@ -26,8 +26,11 @@ with sync_playwright() as p:
     pp.click('#dedupe'); time.sleep(.8)
     check(sw.evaluate(WIN) == 'ab' and count('dedupe') == ('', True), 'closed the duplicate; the button is off now')
     check(pp.is_visible('#msg-undo'), 'its result offers Undo')
-    pp.click('#msg-undo'); time.sleep(1.2)
-    check(sw.evaluate(WIN) == 'aab' and count('dedupe')[0] == '1', 'Undo opens it again')
+    pp.click('#msg-undo')
+    for _ in range(20):  # (the tab comes back loading: its address, and so the count, may take a moment)
+        time.sleep(.25)
+        if sw.evaluate(WIN) == 'aab' and count('dedupe')[0] == '1': break
+    check(sw.evaluate(WIN) == 'aab' and count('dedupe')[0] == '1', f'Undo opens it again ({sw.evaluate(WIN)!r}, {count("dedupe")})')
     groups = lambda: sw.evaluate("chrome.storage.local.get('tabcat').then(r=>JSON.stringify(r.tabcat).match(/\"type\":\"group\"/g).length)")
     g0 = groups()
     pp.click('#save-window'); time.sleep(1.5)
