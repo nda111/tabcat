@@ -9,7 +9,7 @@ export default {
   'noext.store.html': '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome ウェブストアから tabcat</a> をインストールしてください。',
   'noext.manual.html': 'ストアを使わずにインストールすることもできます。<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。',
   'noext.step3': 'このページを再読み込みしてください。',
-  'noext.retry': '再試行', 'elsewhere.title': 'tabcat はサーバーに接続されています。', 'elsewhere.text': 'tabcat は現在 {server} に接続されています。ここで使うには、tabcat のツールバーボタンのメニューからサーバーとの接続を解除してください。', 'elsewhere.open': '{host} を開く', 'noext.connect': 'tabcat のツールバーボタンを右クリックして、サーバーに接続してください。', 'noext.serverTitle': 'tabcat サーバーに接続されていません。', 'settings.account': 'アカウント', 'account.manage': 'アカウント', 'account.admin': 'サーバー管理',
+  'noext.retry': '再試行', 'elsewhere.title': 'tabcat はサーバーに接続されています。', 'elsewhere.text': 'tabcat は現在 {server} に接続されています。ここで使うには、tabcat のツールバーボタンのメニューからサーバーとの接続を解除してください。', 'elsewhere.open': '{host} を開く', 'noext.connect': 'tabcat のツールバーボタンを右クリックして、サーバーに接続してください。', 'noext.serverTitle': 'tabcat サーバーに接続されていません。', 'settings.account': 'アカウント', 'account.manage': 'アカウント', 'account.admin': 'サーバー管理', 'account.signOut': 'ログアウト',
   'noext.copied': 'アドレスをコピーしました。新しいタブのアドレスバーに貼り付けてください。',
   'boot.loading': '読み込み中…',
   'browser.title': 'このブラウザには対応していません。',

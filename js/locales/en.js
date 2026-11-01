@@ -12,7 +12,7 @@ export default {
   'noext.store.html': 'Install <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat from the Chrome Web Store</a>.',
   'noext.manual.html': 'Or install it by hand. Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.',
   'noext.step3': 'Reload this page.',
-  'noext.retry': 'Retry', 'elsewhere.title': 'tabcat is connected to your server.', 'elsewhere.text': 'Your tabcat is on {server} now. To use it here instead, disconnect from the server in the menu of tabcat’s toolbar button.', 'elsewhere.open': 'Open {host}', 'noext.connect': 'Right-click tabcat’s toolbar button and connect to the server.', 'noext.serverTitle': 'Not connected to your tabcat server.', 'settings.account': 'Account', 'account.manage': 'Your account', 'account.admin': 'Server admin',
+  'noext.retry': 'Retry', 'elsewhere.title': 'tabcat is connected to your server.', 'elsewhere.text': 'Your tabcat is on {server} now. To use it here instead, disconnect from the server in the menu of tabcat’s toolbar button.', 'elsewhere.open': 'Open {host}', 'noext.connect': 'Right-click tabcat’s toolbar button and connect to the server.', 'noext.serverTitle': 'Not connected to your tabcat server.', 'settings.account': 'Account', 'account.manage': 'Your account', 'account.admin': 'Server admin', 'account.signOut': 'Sign out',
   'noext.copied': 'Address copied. Paste it into a new tab’s address bar.',
   'boot.loading': 'Loading…',
   'browser.title': 'This browser isn’t supported.',

@@ -4256,7 +4256,7 @@ async function init() {
 }
 
 // On the user's own tabcat server, the account signed in there: in Settings, with the way to its page (and
-// the admin page, for an admin). (Not on tabcat.ghyeok.com or this computer: no server there to ask.)
+// the admin page, for an admin), and signing out. (Not on tabcat.ghyeok.com or this computer: no server there to ask.)
 async function showAccount() {
   if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
   const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
@@ -4265,6 +4265,11 @@ async function showAccount() {
   $('#account-name').textContent = me.username;
   $('#account-admin').hidden = !me.admin;
 }
+// (signed out, the server shows its sign-in in the dashboard's place)
+$('#account-signout').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  location.reload();
+});
 
 async function start(ext) {
   setExtension(ext);
