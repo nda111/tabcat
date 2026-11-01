@@ -27,6 +27,28 @@ there, right-click tabcat's toolbar button, choose **Connect to a server…**, a
 Put it behind HTTPS (Caddy, nginx, Tailscale's `serve`…) when other computers reach it: passwords and
 your data travel to it.
 
+## Working on it
+
+From the top of a tabcat checkout (with the dashboard's `pages` branch in `web/`, as in docs/development.md),
+a virtual environment with the server installed in place (edits to `server/` apply on the next start):
+
+```sh
+python -m venv .venv
+.venv/Scripts/python -m pip install -e server      # Windows (on macOS / Linux: .venv/bin/python)
+```
+
+Then run it with the dashboard from `web/` and its data in `.tabcat-server/` (both kept out of git):
+
+```powershell
+.venv\Scripts\tabcat-server --dashboard web --data-dir .tabcat-server --port 8090     # PowerShell
+```
+
+```sh
+.venv/Scripts/tabcat-server.exe --dashboard web --data-dir .tabcat-server --port 8090  # WSL, with the same Windows venv
+```
+
+and open <http://tabcat.localhost:8090> (any `*.localhost` is your computer, and counts as a server for the extension).
+
 ## Settings
 
 Set before it starts, on the command line, in the environment, or in `config.toml` in the data folder:

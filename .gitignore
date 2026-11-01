@@ -3,3 +3,5 @@ web/
 Thumbs.db
 releases/
 __pycache__/
+.venv/
+.tabcat-server/
