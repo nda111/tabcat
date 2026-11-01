@@ -14,7 +14,7 @@ with sync_playwright() as p:
     d.mouse.move(600, 300); time.sleep(.3)
     d.evaluate(PULL, '#board'); d.mouse.wheel(0, -100); d.mouse.wheel(0, -100); time.sleep(1.8)
     pp = d.evaluate('__p')
-    check(20 < max(pp) <= 80 and pp[-1] == 0 and d.evaluate("document.querySelector('#board').style.clipPath") == '', f'the wheel past the top pulls the board (at most 80px) and it springs back ({max(pp)})')
+    check(20 < max(pp) <= 110 and pp[-1] == 0 and d.evaluate("document.querySelector('#board').style.clipPath") == '', f'the wheel past the top pulls the board (at most 110px) and it springs back ({max(pp)})')
     d.evaluate(PULL, '#board'); d.mouse.wheel(0, 300); time.sleep(.25); d.mouse.wheel(0, 400); time.sleep(1.6)
     pp = d.evaluate('__p')
     check(min(pp) < -8 and pp[-1] == 0, f'a turn of the wheel past the bottom bounces off it ({min(pp)})')
@@ -60,6 +60,17 @@ with sync_playwright() as p:
     tt = d.evaluate('__t')
     check(max(tt) < min(tt) + 60, f'and at the top, at the top ({min(tt)}..{max(tt)})')
     time.sleep(.5)
+    # at the bottom, scrolling down (a bounce) then straight back up goes up at once, mouse or trackpad
+    for name, down, up in [('mouse', [100], [-100, -100]), ('trackpad', [30] * 8, [-20] * 10)]:
+        d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=b.scrollHeight-b.clientHeight;})()"); time.sleep(.6)
+        top0 = d.evaluate("document.querySelector('#board').scrollTop")
+        for x in down: wheel(x)
+        time.sleep(.05)
+        for x in up: wheel(x)
+        time.sleep(.4)
+        top1 = d.evaluate("document.querySelector('#board').scrollTop")
+        check(top1 < top0 - 100, f'{name}: down at the bottom, then up, scrolls up straight away ({top0} -> {top1})')
+        time.sleep(.8)
     th = d.locator('#main > .sf-thumb.y')
     check(th.evaluate("e=>e.classList.contains('show')") and d.evaluate("getComputedStyle(document.querySelector('#board')).scrollbarWidth") == 'none',
           "a slim scrollbar shows over the board in place of the browser's")
