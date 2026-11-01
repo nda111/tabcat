@@ -2365,7 +2365,10 @@ $('#board').addEventListener('pointerdown', (e) => {
   // (the New group card and the gaps add a group on a plain click, but pressing and moving
   // there starts a box selection like the rest of the empty board)
   if (e.target.closest('.group, button, input, textarea, a')) return;
-  if (e.pointerType === 'touch' && !touchBoxing) return touchHold(e, () => $('#board').dispatchEvent(new PointerEvent('pointerdown', e)));
+  if (e.pointerType === 'touch' && !touchBoxing) {
+    return touchHold(e, () => $('#board').dispatchEvent(new PointerEvent('pointerdown', e)),
+      () => { if (!e.shiftKey && !e.ctrlKey && !e.metaKey) { clearSelection(); clearItems(); } }); // (a tap on empty space deselects, as a click does)
+  }
   // plain: select what the box covers; Ctrl/⌘: add it; Shift: invert it
   const mode = e.shiftKey ? 'invert' : e.ctrlKey || e.metaKey ? 'add' : 'replace';
   const base = mode === 'replace' ? new Set() : new Set(selected);
@@ -2405,19 +2408,33 @@ $('#board').addEventListener('pointerdown', (e) => {
   addEventListener('pointercancel', onUp);
 });
 
-// Touch: a finger on the empty board scrolls it, as anywhere; held still a moment first, it draws a box
-// selection instead (the board then doesn't scroll under it, and no context menu comes up).
+// Touch tells three things apart where a mouse drag would draw a box selection (the empty board, or empty
+// space in the group of the current pick): a finger that moves scrolls, as anywhere; a tap (lifted
+// without moving) is a click; held still a moment first, it draws the box (a ring under the finger says
+// so; the board then doesn't scroll under it, and no context menu comes up).
 let touchBoxing = false, touchPending = false;
-function touchHold(e, start) {
+function touchHold(e, start, tap = null) {
   const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
   touchPending = true;
   const end = () => {
     clearTimeout(timer); touchPending = false;
-    removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', end);
   };
   const move = (ev) => { if (ev.pointerId === id && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) end(); };
-  const timer = setTimeout(() => { end(); touchBoxing = true; navigator.vibrate?.(8); start(); }, 450);
-  addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end);
+  const up = (ev) => { end(); if (ev.pointerId === id) tap?.(); };
+  const timer = setTimeout(() => {
+    end();
+    touchBoxing = true;
+    navigator.vibrate?.(8);
+    const ring = h('div', { class: 'touch-ring' });
+    Object.assign(ring.style, { left: `${x0}px`, top: `${y0}px` });
+    document.body.append(ring);
+    ring.addEventListener('animationend', () => ring.remove());
+    const done = () => { removeEventListener('pointerup', done); removeEventListener('pointercancel', done); setTimeout(() => { touchBoxing = false; }, 300); };
+    addEventListener('pointerup', done); addEventListener('pointercancel', done);
+    start();
+  }, 450);
+  addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', end);
 }
 addEventListener('touchmove', (e) => { if (touchBoxing) e.preventDefault(); }, { passive: false });
 addEventListener('contextmenu', (e) => { if (touchBoxing || touchPending) { e.preventDefault(); e.stopImmediatePropagation(); } }, { capture: true });
@@ -2548,6 +2565,7 @@ $('#board').addEventListener('pointerdown', (e) => {
   const gid = body.closest('.group').dataset.id;
   const active = pickedItems.size && pickedGroup === gid;
   if (!active || e.target.closest('.item')) return; // (Shift-drags are handled by smartBox)
+  if (e.pointerType === 'touch' && !touchBoxing) return touchHold(e, () => e.target.dispatchEvent(new PointerEvent('pointerdown', e)));
   return smartBox(e, true); // (the same box as a Shift-drag, adding to the pick)
 });
 

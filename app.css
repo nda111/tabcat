@@ -332,6 +332,13 @@ body.after-drag #board:not(.empty-cat) .col-tail .add-group:hover:not(.hover) { 
 /* picking groups / links / folders: the selection fades in and out (the classes are toggled in place) */
 #board .group { outline: 2px solid transparent; outline-offset: 2px; transition: outline-color .16s ease; }
 #board .group.selected { outline-color: var(--accent); }
+/* touch: held still long enough to draw a box, a ring spreads from under the finger */
+.touch-ring {
+  position: fixed; z-index: 41; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
+  border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+  animation: touch-ring .42s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes touch-ring { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
 #marquee.picking-items { border-style: dashed; } /* the box is picking links / folders */
 #marquee { position: fixed; z-index: 40; pointer-events: none; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 3px; }
 body.selecting { user-select: none; cursor: crosshair; }
