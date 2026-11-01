@@ -7,6 +7,7 @@ import ipaddress
 import mimetypes
 import tempfile
 import time
+from collections import deque
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -16,6 +17,8 @@ from . import __version__, auth, dashboard
 from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
+MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
+API_PER_MINUTE = 240          # (per address)
 NO_STORE = {'Cache-Control': 'no-store'}
 
 
@@ -66,11 +69,18 @@ def create_app(config) -> FastAPI:
         return r
 
     async def body(request: Request) -> dict:
-        # (JSON only: a form posted from another site can't send it, nor the cookie's SameSite=Lax POST)
+        # (JSON only: a form posted from another site can't send it, nor the cookie's SameSite=Lax POST;
+        # and small: read only up to MAX_BODY, however it's sent)
         if request.headers.get('content-type', '').split(';')[0] != 'application/json':
             raise HTTPException(415, 'JSON expected')
+        raw = bytearray()
+        async for chunk in request.stream():
+            raw += chunk
+            if len(raw) > MAX_BODY:
+                raise HTTPException(413, 'too large')
         try:
-            data = await request.json()
+            import json
+            data = json.loads(raw or b'{}')
         except Exception:
             raise HTTPException(400, 'bad JSON')
         return data if isinstance(data, dict) else {}
@@ -88,6 +98,35 @@ def create_app(config) -> FastAPI:
             return any(ip in ipaddress.ip_network(n, strict=False) for n in networks)
         except ValueError:
             return False
+
+    # ---------- guarding it ----------
+    # Against floods: each address gets so many API calls a minute (signing in has its own, stricter limit:
+    # see auth.Throttle); bodies are small (see body). The database is only ever asked with parameters, never
+    # text put together from what's sent, so nothing sent can change a query. And every answer says: no
+    # framing by other sites, no guessing at content types, no full addresses passed on to other sites.
+    # (A flood bigger than one computer: for what's in front of it, a proxy or Tailscale, to stop.)
+    hits: dict[str, deque] = {}
+
+    @app.middleware('http')
+    async def guard(request: Request, call_next):
+        if request.url.path.startswith('/api/'):
+            if int(request.headers.get('content-length') or 0) > MAX_BODY:
+                return JSONResponse({'detail': 'too large'}, 413)
+            now, who = time.time(), client(request)
+            q = hits.setdefault(who, deque())
+            while q and now - q[0] > 60:
+                q.popleft()
+            if len(q) >= API_PER_MINUTE:
+                return JSONResponse({'detail': 'too many requests: wait a minute'}, 429, headers={'Retry-After': '60'})
+            q.append(now)
+            if len(hits) > 10000:  # (forget addresses gone quiet)
+                for k in [k for k, v in hits.items() if not v or now - v[-1] > 60]:
+                    hits.pop(k, None)
+        response = await call_next(request)
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'DENY')
+        response.headers.setdefault('Referrer-Policy', 'same-origin')
+        return response
 
     # ---------- pages ----------
 
@@ -131,6 +170,12 @@ def create_app(config) -> FastAPI:
     @app.get('/api/server')
     def server_info():
         return {'tabcat': True, 'version': __version__, 'signup': db.setting('signup'), 'setup': no_users()}
+
+    # Is a username free? (for signing up: 'valid' and 'free'; asked as often as the API's limit lets)
+    @app.get('/api/username')
+    def username_free(name: str = ''):
+        valid = auth.valid_username(name)
+        return {'valid': valid, 'free': valid and not db.one('select 1 from users where username = ?', name)}
 
     @app.post('/api/setup')
     async def setup(request: Request):

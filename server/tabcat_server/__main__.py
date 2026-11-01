@@ -39,7 +39,8 @@ def main(argv=None):
     from .app import create_app
     print(f'tabcat-server: data in {cfg.data_dir}, dashboard from {cfg.dashboard}, on http://{cfg.host}:{cfg.port}')
     # (Ctrl+C: open connections, which browsers keep, get 3 seconds to finish, not forever)
-    common = dict(host=cfg.host, port=cfg.port, proxy_headers=True, forwarded_allow_ips=list(cfg.trusted_proxies), log_level='warning', timeout_graceful_shutdown=3)
+    common = dict(host=cfg.host, port=cfg.port, proxy_headers=True, forwarded_allow_ips=list(cfg.trusted_proxies), log_level='warning', timeout_graceful_shutdown=3,
+                  limit_concurrency=200, timeout_keep_alive=5)  # (so many connections at once; idle ones closed soon)
     if a.reload:  # (working on the server: it starts again when its code changes)
         import os
         os.environ.update(TABCAT_DATA=str(cfg.data_dir), TABCAT_DASHBOARD=cfg.dashboard, TABCAT_SETUP_FROM=','.join(cfg.setup_from),

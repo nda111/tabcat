@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, say, t } from './pages.js';
+import { $, api, modal, say, t } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -18,4 +18,13 @@ $('#pw-form').addEventListener('submit', async (e) => {
     e.target.reset();
     say($('#pw-msg'), t('changed'), 'ok');
   } catch (err) { say($('#pw-msg'), err.message, 'error'); }
+});
+// deleting this account: typed out first, as the dialog says (the last admin can't: the server says so)
+$('#delete-me').addEventListener('click', async () => {
+  const phrase = t('deletePhrase', { name: me.username });
+  if (!(await modal({ title: t('deleteAccount'), text: t('deleteAccountText', { phrase }), input: phrase, ok: t('deleteAccount'), danger: true }))) return;
+  try {
+    await api('me', { method: 'DELETE', body: { confirm: true } });
+    location.replace('/login');
+  } catch (err) { say($('#delete-msg'), err.message, 'error'); }
 });

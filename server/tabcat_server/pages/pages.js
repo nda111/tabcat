@@ -51,7 +51,8 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (!r.ok) {
     const detail = data?.detail || r.statusText;
     const key = /turned off/.test(detail) ? 'errOff' : /closed/.test(detail) ? 'errClosed' : /invitation/.test(detail) ? 'errInvite'
-      : /taken/.test(detail) ? 'errTaken' : /bad username|too short/.test(detail) ? 'errBad' : KNOWN[r.status];
+      : /taken/.test(detail) ? 'errTaken' : /bad username|too short/.test(detail) ? 'errBad' : /last admin/.test(detail) ? 'errLastAdmin'
+      : /current password/.test(detail) ? 'errCurrent' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
     const err = new Error(key ? t(key) : t('errGeneric', { detail }));
     err.status = r.status;
     throw err;
@@ -133,3 +134,90 @@ export function passwordToggles(root = document) {
   });
 }
 passwordToggles();
+
+// ---------- the dashboard's feel ----------
+
+// Scrolling with give at the ends and a slim scrollbar: the dashboard's own (its file, on this server)
+import('/js/scroll-feel.js').then(({ scrollFeel }) => scrollFeel(document.documentElement, { inner: true })).catch(() => {});
+
+// A dialog in place of the browser's confirm(): resolves true (OK) or false. `input`: a phrase to type first
+// (OK waits for it). It springs in and fades out.
+export function modal({ title, text = '', ok, danger = false, input = null }) {
+  return new Promise((done) => {
+    const field = input ? h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', placeholder: input }) : null;
+    const go = h('button', { type: 'submit', class: `btn ${danger ? 'danger' : 'primary'}`, disabled: !!input }, ok);
+    const form = h('form', { method: 'dialog' }, h('h2', {}, title), text ? h('p', {}, text) : null, field,
+      h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: () => close(false) }, t('cancel')), go));
+    const dlg = h('dialog', { class: 'modal' }, form);
+    field?.addEventListener('input', () => { go.disabled = field.value.trim() !== input; });
+    form.addEventListener('submit', (e) => { e.preventDefault(); if (!go.disabled) close(true); });
+    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(false); });
+    let closing = false;
+    function close(yes) {
+      if (closing) return;
+      closing = true;
+      dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 140, easing: 'ease-in' })
+        .finished.then(() => { dlg.remove(); done(yes); });
+    }
+    document.body.append(dlg);
+    dlg.showModal();
+    dlg.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.34, 1.4, .64, 1)' });
+    (field || go).focus();
+  });
+}
+
+// Number fields: − / + beside the value; the wheel over it steps it too; a step slides the new value in from
+// the side it came. Changes are announced as a 'change' (once a burst of steps settles).
+export function stepper(input) {
+  const wrap = h('div', { class: 'stepper' });
+  input.replaceWith(wrap);
+  let timer = null;
+  const changed = () => { clearTimeout(timer); timer = setTimeout(() => input.dispatchEvent(new Event('change', { bubbles: true })), 400); };
+  const sync = () => {
+    down.disabled = input.min !== '' && +input.value <= +input.min;
+    up.disabled = input.max !== '' && +input.value >= +input.max;
+  };
+  const step = (dir) => {
+    const before = input.value;
+    if (dir > 0) input.stepUp(); else input.stepDown();
+    if (input.value === before) return;
+    input.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.34, 1.32, .64, 1)' });
+    sync();
+    changed();
+  };
+  const button = (dir, label) => h('button', { type: 'button', class: 'step-btn', tabindex: '-1', 'aria-hidden': 'true',
+    onpointerdown: (e) => { e.preventDefault(); step(dir); } }, h('span', {}, label));
+  const down = button(-1, '−'), up = button(1, '+');
+  let acc = 0;
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    acc += e.deltaY;
+    if (Math.abs(acc) < 40) return;
+    step(acc < 0 ? 1 : -1);
+    acc = 0;
+  }, { passive: false });
+  input.addEventListener('input', sync);
+  wrap.append(input, down, up);
+  sync();
+  return { sync };
+}
+
+// Rows that come, go and move glide (FLIP): `change` rebuilds `list`'s children; the ones there before move from
+// where they were, new ones grow in
+export async function flip(list, change) {
+  const keyed = (el) => el.dataset.key;
+  const before = new Map([...list.children].map((el) => [keyed(el), el.getBoundingClientRect()]));
+  await change();
+  for (const el of list.children) {
+    const was = before.get(keyed(el));
+    if (!was) { el.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' }); continue; }
+    const now = el.getBoundingClientRect(), dy = was.top - now.top;
+    if (Math.abs(dy) > .5) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  }
+}
+
+// A random password, easy to read out (no 0/O, 1/l/I)
+export function randomPassword(n = 14) {
+  const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return [...crypto.getRandomValues(new Uint32Array(n))].map((x) => abc[x % abc.length]).join('');
+}

@@ -1,30 +1,43 @@
 // The admin page: users, sign-up and invitations, the server and its dashboard
-import { $, api, bytes, date, h, say, t } from './pages.js';
+import { $, api, bytes, date, flip, h, modal, randomPassword, say, stepper, t } from './pages.js';
 
 const me = await api('me');
+const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
 
 // ---------- users ----------
 async function users() {
   const list = await api('admin/users');
-  $('#users').replaceChildren(...list.map((u) => {
-    const act = (label, fn, cls = '') => h('button', { type: 'button', class: `btn small ${cls}`, onclick: () => fn().catch((e) => say($('#users-msg'), e.message, 'error')) }, t(label));
-    const edit = (patch) => api(`admin/users/${u.id}`, { method: 'PATCH', body: patch }).then(users);
-    const self = u.id === me.id;
-    return h('tr', {},
-      h('td', {}, h('b', {}, u.username), self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null),
-      h('td', {}, h('span', { class: `tag ${u.admin ? 'accent' : ''}` }, t(u.admin ? 'admin' : 'member')), ' ', u.disabled ? h('span', { class: 'tag off' }, t('off')) : null),
-      h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
-      h('td', {}, h('div', { class: 'row' },
-        act(u.admin ? 'removeAdmin' : 'makeAdmin', () => edit({ admin: !u.admin })),
-        self ? null : act(u.disabled ? 'turnOn' : 'turnOff', () => edit({ disabled: !u.disabled })),
-        act('resetPassword', async () => {
-          const pw = prompt(t('newPasswordFor', { name: u.username }));
-          if (pw) await edit({ password: pw });
-        }),
-        self ? null : act('remove', async () => {
-          if (confirm(t('confirmDelete', { name: u.username }))) await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(users);
-        }, 'danger'))));
-  }));
+  await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
+}
+function row(u) {
+  const self = u.id === me.id;
+  const fail = (e) => say($('#users-msg'), e.message, 'error');
+  const edit = (patch) => api(`admin/users/${u.id}`, { method: 'PATCH', body: patch }).then(() => { say($('#users-msg'), ''); return users(); }, fail);
+  const role = (admin, label) => h('button', { type: 'button', class: u.admin === admin ? 'on' : '', 'aria-pressed': String(u.admin === admin),
+    onclick: () => { if (u.admin !== admin) edit({ admin }); } }, t(label));
+  // reset: a new random password, set at once, shown in place of the button (click: copied)
+  const pw = newPasswords.get(u.id);
+  const reset = pw
+    ? h('button', { type: 'button', class: 'newpw', title: t('copy'), onclick: async (e) => { await navigator.clipboard?.writeText(pw); e.currentTarget.title = t('copied'); say($('#users-msg'), t('copied'), 'ok'); } }, pw)
+    : h('button', { type: 'button', class: 'btn small', onclick: async () => {
+      const fresh = randomPassword();
+      const ok = await api(`admin/users/${u.id}`, { method: 'PATCH', body: { password: fresh } }).then(() => true, (e) => { fail(e); return false; });
+      if (!ok) return;
+      newPasswords.set(u.id, fresh);
+      users();
+    } }, t('resetPassword'));
+  return h('tr', { 'data-key': u.id },
+    h('td', {}, h('b', {}, u.username), self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null, ' ',
+      u.disabled ? h('span', { class: 'tag off' }, t('off')) : null),
+    h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
+    h('td', {}, h('div', { class: 'row' },
+      h('span', { class: 'seg', role: 'group' }, role(true, 'admin'), role(false, 'member')),
+      self ? null : h('button', { type: 'button', class: 'btn small', onclick: () => edit({ disabled: !u.disabled }) }, t(u.disabled ? 'turnOn' : 'turnOff')),
+      reset,
+      self ? null : h('button', { type: 'button', class: 'btn small danger', onclick: async () => {
+        if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
+        await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(users, fail);
+      } }, t('remove')))));
 }
 $('#add-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -37,10 +50,12 @@ $('#add-form').addEventListener('submit', async (e) => {
 });
 
 // ---------- sign-up ----------
+const days = stepper($('#session-days'));
 async function settings() {
   const s = await api('admin/settings');
   for (const r of document.querySelectorAll('input[name=signup]')) r.checked = r.value === s.signup;
   $('#session-days').value = s.session_days;
+  days.sync();
 }
 async function save(patch) {
   try {
@@ -52,21 +67,24 @@ $('#signup').addEventListener('change', (e) => save({ signup: e.target.value }))
 $('#session-days').addEventListener('change', (e) => save({ session_days: +e.target.value }));
 
 // ---------- invitations ----------
+stepper($('#invite-days'));
 const inviteLink = (code) => `${location.origin}/login?invite=${encodeURIComponent(code)}`;
 async function invites() {
   const list = await api('admin/invites');
-  if (!list.length) return $('#invites').replaceChildren(h('tr', {}, h('td', { class: 'muted small' }, t('noInvites'))));
-  $('#invites').replaceChildren(...list.map((i) => h('tr', {},
-    h('td', {}, h('code', {}, i.code)),
-    h('td', { class: 'muted small' }, i.used_by ? t('usedBy', { name: i.used_by }) : i.expires_at ? t('expires', { date: date(i.expires_at) }) : t('noExpiry')),
-    h('td', {}, h('div', { class: 'row' },
-      i.used_by ? null : h('button', { type: 'button', class: 'btn small', onclick: async (e) => { await navigator.clipboard.writeText(inviteLink(i.code)); e.target.textContent = t('copied'); } }, t('copy')),
-      h('button', { type: 'button', class: 'btn small danger', onclick: () => api(`admin/invites/${encodeURIComponent(i.code)}`, { method: 'DELETE' }).then(invites) }, t('remove')))))));
+  await flip($('#invites'), () => {
+    if (!list.length) return $('#invites').replaceChildren(h('tr', { 'data-key': 'none' }, h('td', { class: 'muted small' }, t('noInvites'))));
+    $('#invites').replaceChildren(...list.map((i) => h('tr', { 'data-key': i.code },
+      h('td', {}, h('code', {}, i.code)),
+      h('td', { class: 'muted small' }, i.used_by ? t('usedBy', { name: i.used_by }) : i.expires_at ? t('expires', { date: date(i.expires_at) }) : t('noExpiry')),
+      h('td', {}, h('div', { class: 'row' },
+        i.used_by ? null : h('button', { type: 'button', class: 'btn small', onclick: async (e) => { await navigator.clipboard?.writeText(inviteLink(i.code)); e.currentTarget.textContent = t('copied'); } }, t('copy')),
+        h('button', { type: 'button', class: 'btn small danger', onclick: () => api(`admin/invites/${encodeURIComponent(i.code)}`, { method: 'DELETE' }).then(invites) }, t('remove')))))));
+  });
 }
 $('#invite-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const days = $('#invite-days').value ? +$('#invite-days').value : null;
-  await api('admin/invites', { method: 'POST', body: { days } });
+  const d = $('#invite-days').value ? +$('#invite-days').value : null;
+  await api('admin/invites', { method: 'POST', body: { days: d } });
   await invites();
 });
 

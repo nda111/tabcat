@@ -95,6 +95,17 @@ a3 = TestClient(app2, follow_redirects=False, client=('10.1.2.3', 50004))
 a3.post('/api/login', json=J(username='root', password='12345678'))
 check(a3.get('/api/admin/users').status_code == 200, 'and from an address it is open to, the admin page')
 
+# attacks: SQL in what's sent changes nothing; big bodies and floods are turned away; framing refused
+check(t.post('/api/login', json=J(username="boss' OR '1'='1' --", password="x' OR '1'='1")).status_code in (401, 429), 'SQL in a username or password signs no one in')
+check(c.get('/api/username', params={'name': "x' OR 1=1 --"}).json() == {'valid': False, 'free': False}, '…nor reads anything')
+check(c.post('/api/admin/users', content=b'{"username": "' + b'a' * 70000 + b'"}', headers={'Content-Type': 'application/json'}).status_code == 413, 'a body over 64 KB is turned away')
+r = c.get('/login')
+check(r.headers.get('x-frame-options') == 'DENY' and r.headers.get('x-content-type-options') == 'nosniff', 'pages may not be framed by other sites, nor their types guessed')
+flood = TestClient(create_app(C.load(tempfile.mkdtemp(), dashboard=WEB)), follow_redirects=False, client=('198.51.100.7', 1))
+codes = [flood.get('/api/server').status_code for _ in range(245)]
+check(codes.count(429) >= 5 and codes[0] == 200, f'a flood from one address is turned away after 240 calls a minute ({codes.count(429)} refused)')
+check(c.get('/api/username', params={'name': 'boss'}).json() == {'valid': True, 'free': False} and c.get('/api/username', params={'name': 'nobody9'}).json()['free'] is True, 'the username check: taken, or free')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
