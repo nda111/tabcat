@@ -41,6 +41,7 @@ a { color: var(--accent); }
 }
 .card { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(0,0,0,.05); }
 .card.wide { max-width: 860px; }
+.card > :last-child { margin-bottom: 0; } /* (the box's own padding below it, as above) */
 h1 { font-size: 20px; margin: 0 0 6px; }
 h1 + label { margin-top: 16px; }
 h2 { font-size: 15px; margin: 0 0 10px; }
