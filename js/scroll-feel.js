@@ -1,0 +1,227 @@
+// Scrolling with some give: past an end, the wheel or a finger pulls the list a little further (less the
+// further it goes) and it springs back when let go; a fling that runs into an end bounces off it. And a
+// slim scrollbar drawn over the list in place of the browser's: it shows while the pointer is over the
+// list or it scrolls, and under the pointer (or held) it widens and takes the accent colour; past an end
+// it shrinks against that end. (Chromium bounces only on macOS, and its scrollbars can't animate.)
+// The same file is in the extension (lib/) for the toolbar popup.
+//
+// scrollFeel(el, { inner, bar }):
+//   inner: the list's own box stays put and what's in it moves (for a box with a border or a background
+//          of its own, e.g. a dialog); otherwise the box moves and is clipped to where it was
+//   bar:   draw the scrollbar (it goes in el's parent, which it positions if need be)
+
+const MAX = 80;           // a pull never goes further than this (px)
+const K = 230, C = 17;    // the spring back: stiffness and damping (a little overshoot)
+
+const CSS = `
+.sf-nobar { scrollbar-width: none; }
+.sf-nobar::-webkit-scrollbar { display: none; }
+.sf-pulling > * { translate: 0 var(--sf-pull); }
+.sf-thumb { position: absolute; z-index: 6; display: flex; box-sizing: border-box; opacity: 0; pointer-events: none; touch-action: none; transition: opacity .3s ease; }
+.sf-thumb[hidden] { display: none; }
+.sf-thumb.y { width: 12px; padding: 0 3px; justify-content: flex-end; }
+.sf-thumb.x { height: 12px; padding: 3px 0; align-items: flex-end; }
+.sf-thumb::before {
+  content: ''; flex: none; border-radius: 99px; background: color-mix(in srgb, var(--muted) 40%, transparent);
+  transition: width .22s cubic-bezier(.22, 1, .36, 1), height .22s cubic-bezier(.22, 1, .36, 1), background-color .22s ease;
+}
+.sf-thumb.y::before { width: 4px; height: 100%; }
+.sf-thumb.x::before { height: 4px; width: 100%; }
+.sf-thumb.show { opacity: 1; pointer-events: auto; transition-duration: .15s; }
+.sf-thumb:hover::before, .sf-thumb.held::before { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+.sf-thumb.y:hover::before, .sf-thumb.y.held::before { width: 6px; }
+.sf-thumb.x:hover::before, .sf-thumb.x.held::before { height: 6px; }
+`;
+let styled = false;
+
+export function scrollFeel(el, { inner = false, bar = true } = {}) {
+  if (!el || el.sfReady) return;
+  el.sfReady = true;
+  if (!styled) { styled = true; document.head.append(Object.assign(document.createElement('style'), { textContent: CSS })); }
+
+  let pull = 0, vel = 0, raf = 0, releaseTimer = 0, touching = false, held = false, pad0 = null;
+  const room = () => el.scrollHeight - el.clientHeight;
+  const atTop = () => el.scrollTop <= 0;
+  const atEnd = () => el.scrollTop >= room() - 1;
+  // how far it has been pulled (raw) and how far that takes it: the further, the less it gives
+  let raw = 0;
+  const rub = (r) => Math.sign(r) * MAX * (1 - Math.exp(-Math.abs(r) * 0.42 / MAX));
+  const unrub = (p) => Math.sign(p) * -Math.log(1 - Math.min(0.99, Math.abs(p) / MAX)) * MAX / 0.42;
+
+  function show(p) {
+    pull = p;
+    const r = Math.round(p * 10) / 10;
+    if (inner) {
+      if (pad0 == null) pad0 = parseFloat(getComputedStyle(el).paddingBottom) || 0;
+      el.classList.toggle('sf-pulling', r !== 0);
+      el.style.setProperty('--sf-pull', `${r}px`);
+      // (pulled up at the end, room below so the browser doesn't take the scroll position back)
+      el.style.paddingBottom = r < 0 ? `${pad0 - r}px` : '';
+    } else {
+      el.style.translate = r ? `0 ${r}px` : '';
+      el.style.clipPath = r > 0 ? `inset(0 0 ${r}px 0)` : r < 0 ? `inset(${-r}px 0 0 0)` : '';
+    }
+    paint();
+  }
+  // the spring back to rest, from where it is at the speed it has
+  function spring() {
+    cancelAnimationFrame(raf);
+    let last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      vel += (-K * pull - C * vel) * dt;
+      const x = pull + vel * dt;
+      if (Math.abs(x) < 0.3 && Math.abs(vel) < 10) { vel = 0; raf = 0; show(0); return; }
+      show(x);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  const stop = () => { cancelAnimationFrame(raf); raf = 0; vel = 0; };
+  // a pull by d (content moving down when positive); toward rest it takes back the pull, and stops there
+  function pullBy(d) {
+    raw = unrub(pull);
+    const r = raw + d;
+    show(raw && Math.sign(r) !== Math.sign(raw) ? 0 : rub(r));
+  }
+  // a bounce off an end at speed v (px/s, positive: content moving down)
+  const kick = (v) => { if (pull || raf || touching || held) return; vel = Math.max(-1100, Math.min(1100, v)); spring(); };
+  // something inside that still scrolls that way takes the scroll
+  function innerScrolls(target, dy) {
+    for (let n = target; n && n !== el && n instanceof Element; n = n.parentElement) {
+      if (n.scrollHeight <= n.clientHeight + 1 || !/(auto|scroll)/.test(getComputedStyle(n).overflowY)) continue;
+      if (dy < 0 ? n.scrollTop > 0 : n.scrollTop < n.scrollHeight - n.clientHeight - 1) return true;
+    }
+    return false;
+  }
+
+  el.addEventListener('wheel', (e) => {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1);
+    if (!dy || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if (innerScrolls(e.target, dy)) return;
+    // a turn of the wheel that runs past the end: scroll to the end, then bounce off it by the rest
+    const left = dy > 0 ? room() - el.scrollTop : el.scrollTop;
+    if (!pull && left > 1 && Math.abs(dy) > left + 8 && room() > 1) {
+      e.preventDefault();
+      const over = Math.abs(dy) - left, v = -Math.sign(dy) * Math.min(1100, 260 + over * 5);
+      let done = false;
+      const go = () => { if (!done) { done = true; kick(v); } };
+      el.addEventListener('scrollend', go, { once: true });
+      setTimeout(go, 400);
+      el.scrollBy({ top: dy > 0 ? left : -left, behavior: 'smooth' });
+      return;
+    }
+    if (!pull && !((dy < 0 && atTop()) || (dy > 0 && atEnd()))) return;
+    e.preventDefault();
+    stop();
+    pullBy(-dy);
+    clearTimeout(releaseTimer);
+    releaseTimer = setTimeout(spring, 110);
+  }, { passive: false });
+
+  let ty = null;
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    ty = e.touches[0].clientY;
+    touching = true;
+    if (raf) stop();
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    if (ty == null || e.touches.length !== 1) return;
+    const y = e.touches[0].clientY, dy = y - ty;
+    ty = y;
+    if (!e.cancelable || document.body.classList.contains('selecting')) return;
+    if (!pull && !((dy > 0 && atTop()) || (dy < 0 && atEnd()))) return;
+    if (innerScrolls(e.target, -dy)) return;
+    e.preventDefault();
+    pullBy(dy);
+  }, { passive: false });
+  const lift = () => { ty = null; touching = false; if (pull) spring(); };
+  el.addEventListener('touchend', lift);
+  el.addEventListener('touchcancel', lift);
+
+  // a fling (a run of scroll events close together) that reaches an end bounces off it
+  let lastTop = el.scrollTop, lastAt = 0, run = 0, v = 0;
+  el.addEventListener('scroll', () => {
+    const now = performance.now(), top = el.scrollTop, dt = now - lastAt;
+    if (dt > 60) { run = 0; v = 0; } else if (dt > 0) { run++; v = (top - lastTop) / dt; }
+    lastTop = top; lastAt = now;
+    if (run >= 2 && Math.abs(v) > 0.5 && ((v < 0 && top <= 0) || (v > 0 && top >= room() - 1))) kick(-v * 380);
+    wake();
+    paint();
+  }, { passive: true });
+
+  // the scrollbar
+  let ty_ = null, tx_ = null, hover = false, awake = false, sleepTimer = 0;
+  function paint() {
+    if (!ty_) return;
+    const ch = el.clientHeight, sh = el.scrollHeight, cw = el.clientWidth, sw = el.scrollWidth;
+    const left = el.offsetLeft + el.clientLeft, top = el.offsetTop + el.clientTop, gap = 2;
+    const range = sh - ch - (inner && pull < 0 ? -pull : 0);
+    ty_.hidden = range <= 1;
+    if (!ty_.hidden) {
+      let th = Math.max(32, ch * ch / (range + ch)), y = Math.min(1, el.scrollTop / range) * (ch - th);
+      if (pull > 0) { th = Math.max(14, th - pull); y = 0; } else if (pull < 0) { th = Math.max(14, th + pull); y = ch - th; }
+      Object.assign(ty_.style, { left: `${left + cw - 12}px`, top: `${top + y + gap}px`, height: `${th - 2 * gap}px` });
+    }
+    tx_.hidden = sw - cw <= 1;
+    if (!tx_.hidden) {
+      const tw = Math.max(32, cw * cw / sw), x = el.scrollLeft / (sw - cw) * (cw - tw);
+      Object.assign(tx_.style, { left: `${left + x + gap}px`, top: `${top + ch - 12}px`, width: `${tw - 2 * gap - (ty_.hidden ? 0 : 10)}px` });
+    }
+  }
+  const showBar = () => { const on = hover || awake || held; ty_.classList.toggle('show', on); tx_.classList.toggle('show', on); };
+  function wake() {
+    if (!ty_) return;
+    awake = true; showBar();
+    clearTimeout(sleepTimer);
+    sleepTimer = setTimeout(() => { awake = false; showBar(); }, 900);
+  }
+  function grab(thumb, vertical) {
+    thumb.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      thumb.setPointerCapture(e.pointerId);
+      held = true; thumb.classList.add('held'); showBar();
+      const p0 = vertical ? e.clientY : e.clientX, s0 = vertical ? el.scrollTop : el.scrollLeft;
+      const per = vertical ? (el.scrollHeight - el.clientHeight) / Math.max(1, el.clientHeight - thumb.offsetHeight)
+        : (el.scrollWidth - el.clientWidth) / Math.max(1, el.clientWidth - thumb.offsetWidth);
+      const move = (ev) => {
+        const to = s0 + ((vertical ? ev.clientY : ev.clientX) - p0) * per;
+        el.scrollTo(vertical ? { top: to, behavior: 'instant' } : { left: to, behavior: 'instant' });
+      };
+      const up = () => {
+        thumb.removeEventListener('pointermove', move);
+        thumb.removeEventListener('pointerup', up);
+        thumb.removeEventListener('pointercancel', up);
+        held = false; thumb.classList.remove('held'); wake();
+      };
+      thumb.addEventListener('pointermove', move);
+      thumb.addEventListener('pointerup', up);
+      thumb.addEventListener('pointercancel', up);
+    });
+  }
+  if (bar) {
+    el.classList.add('sf-nobar');
+    const host = el.parentElement;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    ty_ = Object.assign(document.createElement('div'), { className: 'sf-thumb y', hidden: true });
+    tx_ = Object.assign(document.createElement('div'), { className: 'sf-thumb x', hidden: true });
+    host.append(ty_, tx_);
+    grab(ty_, true);
+    grab(tx_, false);
+    for (const n of [el, ty_, tx_]) {
+      n.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') { hover = true; paint(); showBar(); } });
+      n.addEventListener('pointerleave', () => { hover = false; showBar(); });
+    }
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(); }); } };
+    new ResizeObserver(later).observe(el);
+    new MutationObserver(later).observe(el, { childList: true, subtree: true, characterData: true });
+    paint();
+  }
+  return { paint };
+}

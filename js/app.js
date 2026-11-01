@@ -6,6 +6,7 @@ import { searchEmoji, favoriteEmoji, recordEmoji } from './emoji.js';
 import { icon, hydrateIcons } from './icons.js';
 import { LANGS, setLang, getLang, t, translateDom, randomName } from './i18n.js';
 import { sampleWorkspaces } from './sample.js';
+import { scrollFeel } from './scroll-feel.js';
 
 const tr = t; // for code where `t` is a tab or a drop target
 
@@ -1368,12 +1369,14 @@ $('#windows').addEventListener('pointerdown', (e) => {
   const onUp = () => {
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onUp);
     box.remove();
     document.body.classList.remove('selecting');
     if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
   };
   addEventListener('pointermove', onMove);
   addEventListener('pointerup', onUp);
+  addEventListener('pointercancel', onUp);
 });
 
 // a click anywhere outside the open-tab rows (and their menu) ends the tab selection
@@ -2362,6 +2365,7 @@ $('#board').addEventListener('pointerdown', (e) => {
   // (the New group card and the gaps add a group on a plain click, but pressing and moving
   // there starts a box selection like the rest of the empty board)
   if (e.target.closest('.group, button, input, textarea, a')) return;
+  if (e.pointerType === 'touch' && !touchBoxing) return touchHold(e, () => $('#board').dispatchEvent(new PointerEvent('pointerdown', e)));
   // plain: select what the box covers; Ctrl/⌘: add it; Shift: invert it
   const mode = e.shiftKey ? 'invert' : e.ctrlKey || e.metaKey ? 'add' : 'replace';
   const base = mode === 'replace' ? new Set() : new Set(selected);
@@ -2387,15 +2391,36 @@ $('#board').addEventListener('pointerdown', (e) => {
   const onUp = () => {
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onUp);
     box.remove();
     document.body.classList.remove('selecting');
     if (!moved && !base.size) { clearSelection(); clearItems(); } // a plain click on empty space deselects
     // a box selection must not also count as a click on what it started on (e.g. New group)
     if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+    removeEventListener('pointercancel', onUp);
+    setTimeout(() => { touchBoxing = false; }, 300); // (past the context menu a long press brings on lifting)
   };
   addEventListener('pointermove', onMove);
   addEventListener('pointerup', onUp);
+  addEventListener('pointercancel', onUp);
 });
+
+// Touch: a finger on the empty board scrolls it, as anywhere; held still a moment first, it draws a box
+// selection instead (the board then doesn't scroll under it, and no context menu comes up).
+let touchBoxing = false, touchPending = false;
+function touchHold(e, start) {
+  const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
+  touchPending = true;
+  const end = () => {
+    clearTimeout(timer); touchPending = false;
+    removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+  };
+  const move = (ev) => { if (ev.pointerId === id && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) end(); };
+  const timer = setTimeout(() => { end(); touchBoxing = true; navigator.vibrate?.(8); start(); }, 450);
+  addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end);
+}
+addEventListener('touchmove', (e) => { if (touchBoxing) e.preventDefault(); }, { passive: false });
+addEventListener('contextmenu', (e) => { if (touchBoxing || touchPending) { e.preventDefault(); e.stopImmediatePropagation(); } }, { capture: true });
 
 async function deleteSelected() {
   const groups = [...selected].map((id) => T.locate(state, id)?.node).filter(Boolean);
@@ -2505,12 +2530,14 @@ function smartBox(e, add = false) {
   const onUp = () => {
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onUp);
     box.remove();
     document.body.classList.remove('selecting');
     if (moved) addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
   };
   addEventListener('pointermove', onMove);
   addEventListener('pointerup', onUp);
+  addEventListener('pointercancel', onUp);
 }
 
 // Box selection inside the group of the selection (without Shift: from empty space in that group).
@@ -3626,6 +3653,12 @@ async function forgetTrash(e) {
 async function stateArrived(id) {
   for (let i = 0; i < 3 && !T.locate(state, id); i++) await Promise.race([nextState(), new Promise((r) => setTimeout(r, 600))]);
 }
+// Scrolling with give at the ends, and slim scrollbars (see scroll-feel.js): the board, both side panels,
+// the picker; dialogs bounce too (their content moves inside them)
+for (const sel of ['#board', '#ws-list', '#windows']) scrollFeel($(sel));
+scrollFeel($('.side-bottom'), { inner: true });
+scrollFeel($('#picker-tree'), { inner: true });
+for (const dlg of document.querySelectorAll('dialog')) scrollFeel(dlg, { inner: true, bar: false });
 $('#btn-trash').addEventListener('click', openTrash);
 $('#trash-clear').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('trash.clearTitle'), text: t('trash.clearText', { n: trashEntries.length }), ok: t('trash.clear'), danger: true }))) return;
