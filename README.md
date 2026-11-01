@@ -47,6 +47,23 @@ in `chrome://extensions`. Your groups and settings stay as they are.
 A hand-installed tabcat and the store's are separate extensions with separate data.
 To move over, export your data in **Settings** first, then import it into the other one.
 
+### Hosting the dashboard locally
+
+The dashboard is a static page, and your data stays in the extension wherever the page comes from,
+so you can serve it yourself:
+
+```sh
+git clone -b pages https://github.com/nda111/tabcat.git tabcat-dashboard
+cd tabcat-dashboard
+python3 -m http.server 8080
+```
+
+Then open <http://localhost:8080/>. tabcat connects to a dashboard on `localhost` or `127.0.0.1` at any port,
+and the shortcut and toolbar button open the dashboard you used last. To go back, open
+<https://tabcat.ghyeok.com/> once. Run `git pull` to get dashboard updates.
+
+To serve it from another address, add that address to `content_scripts` in `manifest.json` and install tabcat by hand.
+
 ## What you can do
 
 **Save tabs.** Drag a tab from *Open tabs* onto a group, or drag a window's header to save every tab in it.
