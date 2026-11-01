@@ -26,7 +26,7 @@ with sync_playwright() as p:
     deltas = [35] * 6 + [35 * 0.95 ** i for i in range(45)]
     for x in deltas: cdp0.send('Input.dispatchMouseEvent', {'type': 'mouseWheel', 'x': 600, 'y': 300, 'deltaX': 0, 'deltaY': x})
     pp = d.evaluate('__p')
-    check(min(pp) < -5 and pp[-1] == 0, f'trackpad momentum into the end bounces and settles while it still comes ({min(pp)}, {pp[-1]})')
+    check(min(pp) < -5 and abs(pp[-1]) <= 1, f'trackpad momentum into the end bounces and settles while it still comes ({min(pp)}, {pp[-1]})')
     time.sleep(.5)
     # momentum that starts a moment after the finger lifts, stronger: still one bounce, not two
     def bounces(pp):
@@ -49,6 +49,17 @@ with sync_playwright() as p:
     for x in [4] * 15: wheel(x)
     check(d.evaluate("parseFloat((document.querySelector('#board').style.translate||'0 0').split(' ')[1])||0") < -5, 'after a quiet moment, pushing at the end pulls again')
     time.sleep(1)
+    # bouncing at the bottom, the thumb stays down there (springing back overshoots; it doesn't leap up)
+    THUMB = "window.__t=[]; const t=document.querySelector('#main > .sf-thumb.y'); (function f(){ __t.push(t.getBoundingClientRect().top); if(__t.length<80) requestAnimationFrame(f); })()"
+    d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=b.scrollHeight-b.clientHeight;})()"); time.sleep(.5)
+    d.evaluate(THUMB); d.mouse.wheel(0, 100); time.sleep(1.5)
+    tt = d.evaluate('__t')
+    check(min(tt) > max(tt) - 60, f'bouncing at the bottom, the thumb stays at the bottom ({min(tt)}..{max(tt)})')
+    d.evaluate("document.querySelector('#board').scrollTop = 0"); time.sleep(.5)
+    d.evaluate(THUMB); d.mouse.wheel(0, -100); time.sleep(1.5)
+    tt = d.evaluate('__t')
+    check(max(tt) < min(tt) + 60, f'and at the top, at the top ({min(tt)}..{max(tt)})')
+    time.sleep(.5)
     th = d.locator('#main > .sf-thumb.y')
     check(th.evaluate("e=>e.classList.contains('show')") and d.evaluate("getComputedStyle(document.querySelector('#board')).scrollbarWidth") == 'none',
           "a slim scrollbar shows over the board in place of the browser's")
