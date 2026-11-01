@@ -67,9 +67,10 @@ with sync_playwright() as p:
     d.fill('#add-name', 'kid'); d.fill('#add-pw', 'kidpass99'); d.click('#add-form button[type=submit]')
     d.wait_for_function("document.querySelectorAll('#users tr').length === 2", timeout=5000)
     check(d.locator('#users tr').count() == 2, 'and adds a user')
-    d.locator('#signup input[value=invite]').check(); time.sleep(.4)
+    d.locator('#signup input[value=invite]').check()
+    d.wait_for_function("document.querySelector('#settings-msg').textContent", timeout=5000)
     check('Saved' in d.inner_text('#settings-msg'), 'sign-up is set to by invitation')
-    d.click('#invite-form button[type=submit]'); time.sleep(.5)
+    d.click('#invite-form button[type=submit]'); d.wait_for_selector('#invites code', timeout=5000)
     check(d.locator('#invites code').count() == 1, 'an invitation is made')
     check('github' not in d.inner_text('#info').lower() and 'web' in d.inner_text('#info'), 'the server tells where its dashboard comes from')
     # the dashboard: linked up, the board; Settings has the account. (Going to its address in a tab, the
