@@ -43,10 +43,17 @@ const MENUS = [
 let menus = Promise.resolve();
 function buildMenus() {
   // chained: two overlapping rebuilds would create the same ids twice
-  menus = menus.then(() => new Promise((done) => chrome.contextMenus.removeAll(() => {
-    for (const [id, key, contexts] of MENUS) chrome.contextMenus.create({ id, title: I.t(key), contexts }, () => void chrome.runtime.lastError);
-    done();
-  })));
+  menus = menus.then(async () => {
+    const { server } = await S.loadSettings();
+    // (on the toolbar button: connect to the user's own server, or disconnect from it)
+    const serverItem = ['server', server ? I.t('menuDisconnect', { host: new URL(server).host }) : I.t('menuConnect'), ['action']];
+    await new Promise((done) => chrome.contextMenus.removeAll(() => {
+      for (const [id, key, contexts] of MENUS) chrome.contextMenus.create({ id, title: I.t(key), contexts }, () => void chrome.runtime.lastError);
+      chrome.contextMenus.create({ id: 'sep-server', type: 'separator', contexts: ['action'] }, () => void chrome.runtime.lastError);
+      chrome.contextMenus.create({ id: serverItem[0], title: serverItem[1], contexts: serverItem[2] }, () => void chrome.runtime.lastError);
+      done();
+    }));
+  });
   return menus;
 }
 
@@ -342,6 +349,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     case 'dedupe':
       await closeDuplicates();
       break;
+    case 'server':
+      if ((await S.loadSettings()).server) await disconnectServer();
+      else await chrome.windows.create({ url: 'connect.html', type: 'popup', width: 440, height: 300, focused: true });
+      break;
   }
 });
 
@@ -598,6 +609,22 @@ const handlers = {
   // Moves tabs (in the order given) to `index` of window `windowId` (the place before the tab now at that
   // index; -1: the end), as the open tabs panel shows them dropped. Landing between two tabs of one tab
   // group, they join it; landing outside, they leave theirs. (feature: moveTabs)
+  // The favicons at these chrome-extension://…/_favicon/ addresses, as data: URLs (null where there's none),
+  // for a dashboard that may not load them itself (feature: favicons)
+  async favicons({ urls }) {
+    const base = chrome.runtime.getURL('/_favicon/');
+    return Promise.all((urls || []).slice(0, 500).map(async (u) => {
+      if (typeof u !== 'string' || !u.startsWith(base)) return null;
+      try {
+        const r = await fetch(u);
+        if (!r.ok) return null;
+        const bytes = new Uint8Array(await r.arrayBuffer());
+        let bin = '';
+        for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        return `data:${r.headers.get('content-type') || 'image/png'};base64,${btoa(bin)}`;
+      } catch { return null; }
+    }));
+  },
   async moveTabs({ tabIds, windowId, index }) {
     const tabs = (await Promise.all(tabIds.map((id) => chrome.tabs.get(id).catch(() => null)))).filter(Boolean);
     if (!tabs.length) return false;
@@ -723,9 +750,60 @@ async function handle(msg, senderTab) {
 // popup → background (popup closes as soon as tabs are created/closed, so it delegates here)
 chrome.runtime.onMessage.addListener((msg, sender, respond) => {
   if (sender.id !== chrome.runtime.id) return false;
-  handle(msg, sender.tab).then((result) => respond({ result }), (e) => respond({ error: e.message }));
+  // (connecting to a server: only from the extension's own pages, never a dashboard through the bridge)
+  const own = sender.url?.startsWith(chrome.runtime.getURL(''));
+  const job = own && SERVER_CMDS[msg.cmd] ? SERVER_CMDS[msg.cmd](msg.args || {}) : handle(msg, sender.tab);
+  job.then((result) => respond({ result }), (e) => respond({ error: e.message }));
   return true;
 });
+
+/* ================= the user's own server ================= */
+
+// Connected to a server (its origin, allowed by the user in connect.html), the extension links up with the
+// dashboard it hosts as it does with tabcat.ghyeok.com: content.js runs there too (registered here, the
+// manifest can't list it), and the shortcut and toolbar open it. Disconnecting hands the permission back and
+// goes back to tabcat.ghyeok.com.
+const SERVER_SCRIPT = 'tabcat-server';
+const hostPattern = (origin) => { const u = new URL(origin); return `${u.protocol}//${u.hostname}/*`; }; // (by host: any port)
+const DEFAULT_DASHBOARD = S.DEFAULT_SETTINGS?.dashboardUrl || 'https://tabcat.ghyeok.com/';
+async function linkServer(origin) {
+  await chrome.scripting.unregisterContentScripts({ ids: [SERVER_SCRIPT] }).catch(() => {});
+  if (!origin) return;
+  await chrome.scripting.registerContentScripts([{ id: SERVER_SCRIPT, matches: [hostPattern(origin)], js: ['content.js'], runAt: 'document_start' }]);
+}
+async function connectServer({ origin }) {
+  const u = new URL(origin);
+  if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('not an origin');
+  if (!(await chrome.permissions.contains({ origins: [hostPattern(origin)] }))) throw new Error('not allowed');
+  const before = (await S.loadSettings()).server;
+  if (before && hostPattern(before) !== hostPattern(origin)) await chrome.permissions.remove({ origins: [hostPattern(before)] }).catch(() => {});
+  await linkServer(origin);
+  await S.saveSettings({ server: origin, dashboardUrl: `${origin}/` });
+  A.setDashboardUrl(`${origin}/`);
+  await buildMenus();
+  await openDashboard();
+  return true;
+}
+async function disconnectServer() {
+  const { server } = await S.loadSettings();
+  await linkServer(null);
+  if (server) await chrome.permissions.remove({ origins: [hostPattern(server)] }).catch(() => {});
+  await S.saveSettings({ server: null, dashboardUrl: DEFAULT_DASHBOARD });
+  A.setDashboardUrl(DEFAULT_DASHBOARD);
+  await buildMenus();
+  return true;
+}
+const SERVER_CMDS = { connectServer, disconnectServer };
+// (the registration and the permission can go apart: taken back in chrome://extensions, the server is gone)
+async function checkServer() {
+  const { server } = await S.loadSettings();
+  if (!server) return linkServer(null);
+  if (await chrome.permissions.contains({ origins: [hostPattern(server)] })) return linkServer(server);
+  await disconnectServer();
+}
+chrome.runtime.onStartup.addListener(checkServer);
+chrome.runtime.onInstalled.addListener(checkServer);
+chrome.permissions.onRemoved.addListener(checkServer);
 
 // dashboard bridge: content.js opens a long-lived port per dashboard tab
 const ports = new Set();

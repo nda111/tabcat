@@ -1,0 +1,12 @@
+/* The small window "Connect to a server" opens in (from the toolbar button's right-click menu) */
+body.connect { padding: 16px 18px; }
+.connect .brand { font-size: 15px; margin-bottom: 8px; }
+.connect p { margin: 0 0 12px; }
+.connect input {
+  width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; background: var(--panel-2);
+  transition: border-color .16s ease;
+}
+.connect input:focus { outline: none; border-color: var(--accent); }
+.connect .msg { min-height: 1.45em; margin: 8px 0 10px; font-size: 12px; color: var(--muted); }
+.connect .msg.error { color: var(--danger, #d64545); }
+.connect .actions { display: flex; justify-content: flex-end; gap: 8px; }

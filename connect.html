@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tabcat</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="fonts/pretendard.css">
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="connect.css">
+  <script type="module" src="connect.js"></script>
+</head>
+<body class="connect">
+  <form id="form" novalidate>
+    <div class="brand"><span class="logo"></span><span data-i18n="connectTitle">Connect to a server</span></div>
+    <p class="muted" data-i18n="connectText">Use the tabcat dashboard your own server hosts.</p>
+    <input id="address" type="url" autocomplete="url" spellcheck="false" data-i18n-placeholder="connectPlaceholder" placeholder="https://tabcat.example.com">
+    <p class="msg" id="msg" role="status"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="cancel" data-i18n="connectCancel">Cancel</button>
+      <button type="submit" class="btn primary" id="go" data-i18n="connectButton">Connect</button>
+    </div>
+  </form>
+</body>
+</html>

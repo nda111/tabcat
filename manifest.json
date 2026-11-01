@@ -30,7 +30,8 @@
     "contextMenus",
     "alarms",
     "favicon",
-    "tabGroups"
+    "tabGroups",
+    "scripting"
   ],
   "commands": {
     "_execute_action": {
@@ -83,5 +84,9 @@
         "https://tabcat.ghyeok.com/*"
       ]
     }
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
   ]
 }

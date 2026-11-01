@@ -17,8 +17,9 @@
   // each tab's group and each window's groups), shortcuts (getShortcuts: the keys each command has),
   // trash (Recently deleted: a remove marked `trash` is kept 30 days; getTrash, restoreTrash, emptyTrash;
   // a 'trash' event when it changes), moveTabs (moveTabs: tabs dropped in the open tabs panel move there,
-  // in and out of tab groups; getTabs tells each tab's index)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs'];
+  // in and out of tab groups; getTabs tells each tab's index), favicons (favicons: the icons as images, for a
+  // dashboard on the user's own server, which the browser won't let load them from the extension itself)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs', 'favicons'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache
@@ -27,7 +28,10 @@
   function hello() {
     greeted = true;
     const manifest = chrome.runtime.getManifest();
-    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: manifest.version, features: FEATURES, updatesItself: !!manifest.update_url } });
+    // (icons straight from the extension only where the manifest lets pages load them: elsewhere, ask)
+    const direct = (manifest.web_accessible_resources || []).flatMap((r) => r.matches)
+      .some((m) => { try { return new URL(m.replace(/\*$/, '')).hostname === location.hostname; } catch { return false; } });
+    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: manifest.version, features: FEATURES, updatesItself: !!manifest.update_url, favicons: direct ? 'direct' : 'ask' } });
   }
 
   function connect() {

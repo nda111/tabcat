@@ -41,7 +41,7 @@ def profile():
     atexit.register(shutil.rmtree, d, True)
     return d
 
-def launch(p, developer_mode=False, fresh=False, manifest=None, **kw):
+def launch(p, developer_mode=False, fresh=False, manifest=None, extra_args=(), **kw):
     """Chromium with the extension; returns (context, service worker). developer_mode: as for anyone
     loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off).
     Unless `fresh`, as if used before: the dashboard it opens on install is closed, and the page has
@@ -52,7 +52,7 @@ def launch(p, developer_mode=False, fresh=False, manifest=None, **kw):
         os.makedirs(prof + '/Default', exist_ok=True)
         with open(prof + '/Default/Preferences', 'w') as f: f.write('{"extensions":{"ui":{"developer_mode":true}}}')
     ctx = p.chromium.launch_persistent_context(prof, channel='chromium', headless=True,
-        args=[f'--disable-extensions-except={ext}', f'--load-extension={ext}'], **kw)
+        args=[f'--disable-extensions-except={ext}', f'--load-extension={ext}', *extra_args], **kw)
     sw = ctx.service_workers[0] if ctx.service_workers else ctx.wait_for_event('serviceworker')
     if not fresh:
         ctx.add_init_script("try { localStorage.setItem('tabcat:tourOffered', '1'); } catch {}")
