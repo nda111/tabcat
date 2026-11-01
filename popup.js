@@ -1,6 +1,7 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 import { setLang, getLang, t } from './lib/i18n.js';
+import { scrollFeel } from './lib/scroll-feel.js';
 
 
 const $ = (sel) => document.querySelector(sel);
@@ -228,3 +229,6 @@ function groupPicker(entries, initialId) {
   btn.disabled = !entries.length;
   return picker;
 }
+
+// the save-target list scrolls with give at its ends and a slim scrollbar (lib/scroll-feel.js)
+scrollFeel(document.getElementById('target-list'));
