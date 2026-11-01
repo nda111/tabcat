@@ -824,7 +824,13 @@ async function connectServer({ origin }) {
   A.setDashboardUrl(`${origin}/`);
   await buildMenus();
   await reloadDashboards(origin);
-  await openDashboard();
+  // (a page of the server open already, as its sign-in or setup asking to connect: that one, loaded again;
+  // else its dashboard, opened)
+  const open = (await chrome.tabs.query({ url: hostPatterns(origin) }))[0];
+  if (open) {
+    await chrome.tabs.update(open.id, { active: true });
+    await chrome.windows.update(open.windowId, { focused: true });
+  } else await openDashboard();
   return true;
 }
 async function disconnectServer() {

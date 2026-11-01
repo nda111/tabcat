@@ -59,6 +59,14 @@
   window.addEventListener('message', (e) => {
     if (e.source !== window || e.origin !== location.origin || e.data?.source !== PAGE) return;
     if (e.data.cmd === 'hello') { if (port || connect()) hello(); return; }
+    // (a server's own pages, signing in: is the extension here, and linked to this server? Nothing more:
+    // no link to the extension is opened for them)
+    if (e.data.cmd === 'probe') {
+      chrome.storage.local.get('tabcat:settings').catch(() => ({})).then((r) => {
+        toPage({ event: 'probe', data: { server: r['tabcat:settings']?.server || null } });
+      });
+      return;
+    }
     if (!greeted) return; // page must say hello first
     if (!port && !connect()) { toPage({ reply: e.data.id, error: 'tabcat extension is not available (reload the page)' }); return; }
     port.postMessage({ id: e.data.id, cmd: e.data.cmd, args: e.data.args });

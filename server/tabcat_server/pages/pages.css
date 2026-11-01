@@ -93,3 +93,7 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px;
 .foot { color: var(--muted); font-size: 12px; text-align: center; }
 .foot a { color: inherit; }
 @media (max-width: 640px) { .hide-narrow { display: none; } }
+.steps { margin: 12px 0 0; padding-left: 20px; }
+.steps li { margin-bottom: 6px; }
+/* (until it's known whether the extension is connected here: the form, or how to connect) */
+[data-checking] { visibility: hidden; }

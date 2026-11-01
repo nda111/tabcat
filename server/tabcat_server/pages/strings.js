@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    notConnTitle: 'Not connected to your tabcat server.', notConnInstall: 'Install tabcat from the Chrome Web Store.', notConnConnect: 'Right-click tabcat’s toolbar button and connect to the server.',
     privacy: 'Privacy',
     signIn: 'Sign in', signInTitle: 'Sign in to tabcat', username: 'Username', password: 'Password', passwordAgain: 'Password again',
     signUp: 'Create account', signUpTitle: 'Create a tabcat account', haveAccount: 'Have an account? Sign in', noAccount: 'New here? Create an account',
@@ -24,6 +25,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    notConnTitle: 'tabcat 서버에 연결되지 않았습니다.', notConnInstall: 'Chrome 웹 스토어에서 tabcat을 설치하세요.', notConnConnect: 'tabcat 툴바 버튼을 우클릭하고 서버에 연결해 주세요.',
     privacy: '개인정보처리방침',
     signIn: '로그인', signInTitle: 'tabcat 로그인', username: '아이디', password: '비밀번호', passwordAgain: '비밀번호 확인',
     signUp: '계정 만들기', signUpTitle: 'tabcat 계정 만들기', haveAccount: '계정이 있나요? 로그인', noAccount: '처음인가요? 계정 만들기',
@@ -47,6 +49,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    notConnTitle: 'tabcat サーバーに接続されていません。', notConnInstall: 'Chrome ウェブストアから tabcat をインストールしてください。', notConnConnect: 'tabcat のツールバーボタンを右クリックして、サーバーに接続してください。',
     privacy: 'プライバシー',
     signIn: 'ログイン', signInTitle: 'tabcat にログイン', username: 'ユーザー名', password: 'パスワード', passwordAgain: 'パスワード（確認）',
     signUp: 'アカウントを作成', signUpTitle: 'tabcat アカウントを作成', haveAccount: 'アカウントをお持ちですか？ ログイン', noAccount: 'はじめてですか？ アカウントを作成',
@@ -70,6 +73,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    notConnTitle: '未连接到 tabcat 服务器。', notConnInstall: '从 Chrome 应用商店安装 tabcat。', notConnConnect: '右键点击 tabcat 工具栏按钮，连接到服务器。',
     privacy: '隐私',
     signIn: '登录', signInTitle: '登录 tabcat', username: '用户名', password: '密码', passwordAgain: '再次输入密码',
     signUp: '创建账号', signUpTitle: '创建 tabcat 账号', haveAccount: '已有账号？登录', noAccount: '第一次来？创建账号',
@@ -93,6 +97,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    notConnTitle: 'No estás conectado a tu servidor de tabcat.', notConnInstall: 'Instala tabcat desde Chrome Web Store.', notConnConnect: 'Haz clic derecho en el botón de tabcat de la barra de herramientas y conéctate al servidor.',
     privacy: 'Privacidad',
     signIn: 'Iniciar sesión', signInTitle: 'Inicia sesión en tabcat', username: 'Usuario', password: 'Contraseña', passwordAgain: 'Repite la contraseña',
     signUp: 'Crear cuenta', signUpTitle: 'Crea una cuenta de tabcat', haveAccount: '¿Ya tienes cuenta? Inicia sesión', noAccount: '¿Eres nuevo? Crea una cuenta',
@@ -116,6 +121,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    notConnTitle: 'Nicht mit deinem tabcat-Server verbunden.', notConnInstall: 'Installiere tabcat aus dem Chrome Web Store.', notConnConnect: 'Klicke mit der rechten Maustaste auf die tabcat-Schaltfläche in der Symbolleiste und verbinde dich mit dem Server.',
     privacy: 'Datenschutz',
     signIn: 'Anmelden', signInTitle: 'Bei tabcat anmelden', username: 'Benutzername', password: 'Passwort', passwordAgain: 'Passwort wiederholen',
     signUp: 'Konto erstellen', signUpTitle: 'tabcat-Konto erstellen', haveAccount: 'Schon ein Konto? Anmelden', noAccount: 'Neu hier? Konto erstellen',
@@ -139,6 +145,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    notConnTitle: 'Non connecté à votre serveur tabcat.', notConnInstall: 'Installez tabcat depuis le Chrome Web Store.', notConnConnect: 'Faites un clic droit sur le bouton tabcat de la barre d’outils et connectez-vous au serveur.',
     privacy: 'Confidentialité',
     signIn: 'Se connecter', signInTitle: 'Se connecter à tabcat', username: 'Nom d’utilisateur', password: 'Mot de passe', passwordAgain: 'Mot de passe (encore)',
     signUp: 'Créer un compte', signUpTitle: 'Créer un compte tabcat', haveAccount: 'Déjà un compte ? Se connecter', noAccount: 'Nouveau ici ? Créer un compte',
@@ -162,6 +169,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    notConnTitle: 'Não conectado ao seu servidor do tabcat.', notConnInstall: 'Instale o tabcat pela Chrome Web Store.', notConnConnect: 'Clique com o botão direito no botão do tabcat na barra de ferramentas e conecte ao servidor.',
     privacy: 'Privacidade',
     signIn: 'Entrar', signInTitle: 'Entrar no tabcat', username: 'Usuário', password: 'Senha', passwordAgain: 'Repita a senha',
     signUp: 'Criar conta', signUpTitle: 'Criar uma conta no tabcat', haveAccount: 'Já tem conta? Entrar', noAccount: 'É novo aqui? Criar conta',

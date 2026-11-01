@@ -67,3 +67,32 @@ export function say(el, text, kind = '') {
 
 export const date = (s) => s ? new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s * 1000)) : t('never');
 export const bytes = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
+
+// Is tabcat's extension here and connected to this server? (Its content script runs on a server's pages only
+// once connected: then it answers a 'probe'. No answer soon: not connected, or no extension.)
+// (It answers at once: a short wait is enough. Should an answer come later, on a slow machine, `late` runs.)
+export function connected(late = () => {}, wait = 200) {
+  return new Promise((done) => {
+    let settled = false;
+    const t = setTimeout(() => { settled = true; done(false); }, wait);
+    function on(e) {
+      if (e.source !== window || e.data?.source !== 'tabcat-ext' || e.data.event !== 'probe') return;
+      removeEventListener('message', on);
+      const here = e.data.data?.server === location.origin;
+      if (!settled) { clearTimeout(t); settled = true; done(here); } else if (here) late();
+    }
+    addEventListener('message', on);
+    setTimeout(() => removeEventListener('message', on), 5000);
+    postMessage({ source: 'tabcat-page', cmd: 'probe' }, location.origin);
+  });
+}
+
+// Not connected: the steps to connect, in place of the form (connecting loads the page again)
+const STORE = 'https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib';
+export function showNotConnected(card) {
+  card.replaceChildren(
+    h('h1', {}, t('notConnTitle')),
+    h('ol', { class: 'steps' },
+      h('li', {}, h('a', { href: STORE, target: '_blank', rel: 'noopener' }, t('notConnInstall'))),
+      h('li', {}, t('notConnConnect'))));
+}
