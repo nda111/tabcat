@@ -804,7 +804,13 @@ dialog .field-label { display: block; font-weight: 600; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: var(--shadow); } }
 
 /* ---------- extension missing ---------- */
-:is(#no-ext, #no-browser) { position: fixed; inset: 0; z-index: 300; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 16px; }
+:is(#no-ext, #no-browser) {
+  position: fixed; inset: 0; z-index: 300; background: var(--bg); display: flex; flex-direction: column; align-items: center;
+  justify-content: safe center; /* (a window too short for it scrolls, from the top) */ gap: 20px; padding: 16px; overflow-y: auto;
+}
+.no-ext-logo, .no-ext-card, .no-ext-foot { flex: none; }
+.no-ext-foot { color: var(--muted); font-size: 12px; text-align: center; }
+:is(#no-ext, #no-browser) .no-ext-foot a { color: inherit; }
 .no-ext-logo { display: block; width: 56px; height: 56px; } /* centred above the card: whose page this is; the card says what's wrong */
 :is(#no-ext, #no-browser)[hidden] { display: none; }
 .no-ext-card { max-width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: var(--shadow); }

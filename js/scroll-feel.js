@@ -8,7 +8,8 @@
 // scrollFeel(el, { inner, bar }):
 //   inner: the list's own box stays put and what's in it moves (for a box with a border or a background
 //          of its own, e.g. a dialog); otherwise the box moves and is clipped to where it was
-//   bar:   draw the scrollbar (it goes in el's parent, which it positions if need be)
+//   bar:   draw the scrollbar (it goes in el's parent, which it positions if need be; for the page itself
+//          (document.documentElement) or a fixed overlay, fixed on the page above everything)
 
 const MAX = 80;           // a pull never goes further than this (px)
 const K = 230, C = 17;    // the spring back: stiffness and damping (a little overshoot)
@@ -19,6 +20,7 @@ const CSS = `
 .sf-pulling > * { translate: 0 var(--sf-pull); }
 .sf-thumb { position: absolute; z-index: 6; display: flex; box-sizing: border-box; opacity: 0; pointer-events: none; touch-action: none; transition: opacity .3s ease; }
 .sf-thumb[hidden] { display: none; }
+.sf-thumb.fixed { position: fixed; z-index: 2147483000; }
 .sf-thumb.y { width: 12px; padding: 0 3px; justify-content: flex-end; }
 .sf-thumb.x { height: 12px; padding: 3px 0; align-items: flex-end; }
 .sf-thumb::before {
@@ -39,6 +41,7 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
   el.sfReady = true;
   if (!styled) { styled = true; document.head.append(Object.assign(document.createElement('style'), { textContent: CSS })); }
 
+  const root = el === document.documentElement;
   let pull = 0, vel = 0, raf = 0, releaseTimer = 0, touching = false, held = false, pad0 = null;
   const room = () => el.scrollHeight - el.clientHeight;
   const atTop = () => el.scrollTop <= 0;
@@ -144,7 +147,7 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
 
   // a fling (a run of scroll events close together) that reaches an end bounces off it
   let lastTop = el.scrollTop, lastAt = 0, run = 0, v = 0;
-  el.addEventListener('scroll', () => {
+  (root ? window : el).addEventListener('scroll', () => {
     const now = performance.now(), top = el.scrollTop, dt = now - lastAt;
     if (dt > 60) { run = 0; v = 0; } else if (dt > 0) { run++; v = (top - lastTop) / dt; }
     lastTop = top; lastAt = now;
@@ -155,10 +158,12 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
 
   // the scrollbar
   let ty_ = null, tx_ = null, hover = false, awake = false, sleepTimer = 0;
+  const fixed = root || getComputedStyle(el).position === 'fixed';
   function paint() {
     if (!ty_) return;
     const ch = el.clientHeight, sh = el.scrollHeight, cw = el.clientWidth, sw = el.scrollWidth;
-    const left = el.offsetLeft + el.clientLeft, top = el.offsetTop + el.clientTop, gap = 2;
+    const box = fixed ? (root ? { left: 0, top: 0 } : el.getBoundingClientRect()) : { left: el.offsetLeft, top: el.offsetTop };
+    const left = box.left + el.clientLeft, top = box.top + el.clientTop, gap = 2;
     const range = sh - ch - (inner && pull < 0 ? -pull : 0);
     ty_.hidden = range <= 1;
     if (!ty_.hidden) {
@@ -206,10 +211,11 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
   }
   if (bar) {
     el.classList.add('sf-nobar');
-    const host = el.parentElement;
-    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-    ty_ = Object.assign(document.createElement('div'), { className: 'sf-thumb y', hidden: true });
-    tx_ = Object.assign(document.createElement('div'), { className: 'sf-thumb x', hidden: true });
+    const host = fixed ? document.body : el.parentElement;
+    if (!fixed && getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    const kind = fixed ? ' fixed' : '';
+    ty_ = Object.assign(document.createElement('div'), { className: 'sf-thumb y' + kind, hidden: true });
+    tx_ = Object.assign(document.createElement('div'), { className: 'sf-thumb x' + kind, hidden: true });
     host.append(ty_, tx_);
     grab(ty_, true);
     grab(tx_, false);

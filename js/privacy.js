@@ -3,6 +3,7 @@
 // springs to its new size, as the dashboard's Settings does.
 import { LANGS, resolveLang } from './i18n.js';
 import { TEXT } from './privacy-text.js';
+import { scrollFeel } from './scroll-feel.js';
 
 const EFFECTIVE = new Date(2026, 9, 31);
 
@@ -51,3 +52,6 @@ pick.addEventListener('change', () => {
   vt.ready.catch(() => {});
   vt.finished.finally(() => named.forEach(([el]) => { el.style.viewTransitionName = ''; el.style.viewTransitionClass = ''; }));
 });
+
+// the page scrolls with give at its ends, with the dashboard's slim scrollbar
+scrollFeel(document.documentElement, { inner: true });

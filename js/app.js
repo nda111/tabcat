@@ -3659,6 +3659,7 @@ for (const sel of ['#board', '#ws-list', '#windows']) scrollFeel($(sel));
 scrollFeel($('.side-bottom'), { inner: true });
 scrollFeel($('#picker-tree'), { inner: true });
 for (const dlg of document.querySelectorAll('dialog')) scrollFeel(dlg, { inner: true, bar: false });
+for (const sel of ['#no-ext', '#no-browser']) scrollFeel($(sel), { inner: true });
 $('#btn-trash').addEventListener('click', openTrash);
 $('#trash-clear').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('trash.clearTitle'), text: t('trash.clearText', { n: trashEntries.length }), ok: t('trash.clear'), danger: true }))) return;
