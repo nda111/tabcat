@@ -13,7 +13,7 @@ WS = "chrome.storage.local.get('tabcat').then(r=>r.tabcat.workspaces.map(w=>w.na
 serve()
 errors = []
 with sync_playwright() as p:
-    ctx, sw = launch(p, manifest={'host_permissions': ['http://tabcat.localhost/*']})
+    ctx, sw = launch(p, manifest={'host_permissions': ['*://tabcat.localhost/*']})
     menu = lambda: sw.evaluate("new Promise(r => chrome.contextMenus.update('server', {}, () => r(!chrome.runtime.lastError)))")
     check(menu(), 'the toolbar button has the server item')
     # (the browser shows only the first ACTION_MENU_TOP_LEVEL_LIMIT of the button's items: it must be among them)
@@ -31,12 +31,18 @@ with sync_playwright() as p:
     srv.goto(SERVER + '/'); time.sleep(1.5)
     step2 = srv.inner_text('#no-ext-step2')
     check(srv.is_visible('#no-ext') and 'connect to the server' in step2, f"before connecting, the server's dashboard says to connect to it ({step2!r})")
+    check(srv.inner_text('#no-ext-title') == 'Not connected to your tabcat server.' and local.locator('#no-ext-title').inner_text() == 'tabcat extension not found.',
+          f"(titled as not connected to the server: {srv.inner_text('#no-ext-title')!r})")
 
     # the connect window
     ext = sw.url.rsplit('/', 1)[0]
     c = ctx.new_page(); c.on('pageerror', lambda e: errors.append(str(e)))
     c.goto(f'{ext}/connect.html'); time.sleep(.5)
     check(c.is_visible('#address'), 'connect.html shows its form')
+    # opened from a server's dashboard, its address is filled in (without the scheme: it needn't be typed)
+    c2 = ctx.new_page(); c2.goto(f'{ext}/connect.html?address=' + SERVER); time.sleep(.4)
+    check(c2.input_value('#address') == 'tabcat.localhost:8765', f"opened from a server's dashboard, its address is filled in ({c2.input_value('#address')!r})")
+    c2.close()
     c.fill('#address', 'not a url ://'); c.click('#go'); time.sleep(.3)
     check('error' in c.get_attribute('#msg', 'class'), f"a bad address is refused ({c.inner_text('#msg')!r})")
     # connect (as the form does once allowed): the open server dashboard loads again and links up

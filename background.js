@@ -351,7 +351,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       break;
     case 'server':
       if ((await S.loadSettings()).server) await disconnectServer();
-      else await chrome.windows.create({ url: 'connect.html', type: 'popup', width: 440, height: 300, focused: true });
+      else {
+        // (looking at a tabcat dashboard on some server, as when it says to connect: its address, filled in)
+        let address = '';
+        try {
+          const u = new URL(tab?.url || '');
+          const ours = ['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(u.hostname);
+          if (/^https?:$/.test(u.protocol) && !ours && /^tabcat\b/.test(tab.title || '')) address = u.origin;
+        } catch { /* no page */ }
+        await chrome.windows.create({ url: `connect.html${address ? `?address=${encodeURIComponent(address)}` : ''}`, type: 'popup', width: 440, height: 300, focused: true });
+      }
       break;
   }
 });
@@ -764,7 +773,7 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
 // manifest can't list it), and the shortcut and toolbar open it. Disconnecting hands the permission back and
 // goes back to tabcat.ghyeok.com.
 const SERVER_SCRIPT = 'tabcat-server';
-const hostPattern = (origin) => { const u = new URL(origin); return `${u.protocol}//${u.hostname}/*`; }; // (by host: any port)
+const hostPattern = (origin) => `*://${new URL(origin).hostname}/*`; // (by host: either scheme, any port)
 const DEFAULT_DASHBOARD = S.DEFAULT_SETTINGS?.dashboardUrl || 'https://tabcat.ghyeok.com/';
 async function linkServer(origin) {
   await chrome.scripting.unregisterContentScripts({ ids: [SERVER_SCRIPT] }).catch(() => {});
