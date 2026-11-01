@@ -1,0 +1,47 @@
+# tabcat server
+
+Your own tabcat server, for your own computers: it hosts the tabcat dashboard at your address, with
+accounts (each with its own data) and an admin page. tabcat works without one; this is for when you want it.
+
+It hosts the dashboard only. Syncing your data between computers comes next.
+
+## Run it
+
+With Python 3.10 or newer:
+
+```sh
+pip install ./server          # from a checkout of the tabcat repository
+tabcat-server --port 8080
+```
+
+Or with Docker:
+
+```sh
+docker build -t tabcat-server server
+docker run -d -p 8080:8080 -v tabcat-data:/data tabcat-server
+```
+
+Then open it in your browser. The first visit makes the first account, an admin. To use the dashboard
+there, right-click tabcat's toolbar button, choose **Connect to a server…**, and enter its address.
+
+Put it behind HTTPS (Caddy, nginx, Tailscale's `serve`…) when other computers reach it: passwords and
+your data travel to it.
+
+## Settings
+
+Set before it starts, on the command line, in the environment, or in `config.toml` in the data folder:
+
+| Setting | Command line | Environment | Default |
+|---|---|---|---|
+| Data folder (the database, the dashboard's files) | `--data-dir` | `TABCAT_DATA` | `~/.local/share/tabcat-server` (Windows: `%LOCALAPPDATA%\tabcat-server`) |
+| Address to listen on | `--host` | `TABCAT_HOST` | `127.0.0.1` |
+| Port | `--port` | `TABCAT_PORT` | `8080` |
+| Dashboard | `--dashboard` | `TABCAT_DASHBOARD` | `auto`: the latest from GitHub, as tabcat.ghyeok.com; or a folder with its files |
+
+Everything else (sign-up, invitations, accounts, updating the dashboard, backups) is on the admin page, at `/admin`.
+
+## Back it up
+
+The admin page downloads a copy of the database. Or copy `tabcat.db` from the data folder.
+
+Forgot the admin's password? On the server: `tabcat-server reset-password USERNAME`.

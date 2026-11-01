@@ -1,0 +1,81 @@
+"""The server's API, without a browser: first account, signing in, accounts, sign-up modes, invitations,
+the admin's limits, and the dashboard behind the sign-in. Run: python tests/test_api.py"""
+import os, sys, tempfile
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from fastapi.testclient import TestClient
+from tabcat_server import config as C
+from tabcat_server.app import create_app
+
+WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'web')
+failed = []
+def check(cond, msg):
+    print(('PASS ' if cond else 'FAIL ') + msg, flush=True)
+    if not cond: failed.append(msg)
+
+app = create_app(C.load(tempfile.mkdtemp(), dashboard=WEB))
+c = TestClient(app, follow_redirects=False)
+J = lambda **kw: kw
+
+# no account yet: the dashboard sends you to make the first one
+check(c.get('/').headers.get('location') == '/setup', 'no account yet: / goes to /setup')
+check(c.get('/manifest.webmanifest').json()['name'] == 'tabcat', "the dashboard's manifest is public (the extension looks at it)")
+check(c.get('/api/server').json()['setup'] is True, '/api/server says it needs setting up')
+check(c.post('/api/setup', data='x').status_code == 415, 'the API takes JSON only')
+check(c.post('/api/setup', json=J(username='a', password='12345678')).status_code == 400, 'a one-letter username is refused')
+r = c.post('/api/setup', json=J(username='boss', password='correct horse'))
+check(r.status_code == 200 and 'tabcat_session' in r.cookies, 'the first account is made, and signed in')
+check('httponly' in r.headers['set-cookie'].lower() and 'samesite=lax' in r.headers['set-cookie'].lower(), '(its cookie: HttpOnly, SameSite=Lax)')
+check(c.get('/api/me').json()['admin'] is True, 'it is an admin')
+check(c.post('/api/setup', json=J(username='x2', password='12345678')).status_code == 409, 'a second "first" account is refused')
+check(c.get('/').status_code == 200 and b'<title>tabcat</title>' in c.get('/').content, 'signed in: the dashboard')
+check(c.get('/admin').status_code == 200, 'and the admin page')
+
+# accounts
+r = c.post('/api/admin/users', json=J(username='kid', password='kidpass99'))
+check(r.status_code == 200 and r.json()['admin'] is False, 'an admin adds a user')
+kid = r.json()['id']
+check(c.post('/api/admin/users', json=J(username='KID', password='kidpass99')).status_code == 409, 'usernames are unique, whatever the case')
+boss = c.get('/api/me').json()['id']
+check(c.patch(f'/api/admin/users/{boss}', json=J(admin=False)).status_code == 409, 'the last admin stays an admin')
+check(c.delete(f'/api/admin/users/{boss}').status_code == 409, "you can't delete yourself")
+
+# signing in as someone else
+k = TestClient(app, follow_redirects=False)
+check(k.get('/').headers.get('location') == '/login', 'signed out: / goes to /login')
+check(k.post('/api/login', json=J(username='kid', password='wrong one')).status_code == 401, 'a wrong password is refused')
+check(k.post('/api/login', json=J(username='kid', password='kidpass99')).status_code == 200, 'the right one signs in')
+check(k.get('/api/admin/users').status_code == 403 and k.get('/admin').headers.get('location') == '/', "a user can't use the admin page")
+c.patch(f'/api/admin/users/{kid}', json=J(disabled=True))
+check(k.get('/api/me').status_code == 401, 'turned off: signed out at once')
+check(k.post('/api/login', json=J(username='kid', password='kidpass99')).status_code == 403, 'and can’t sign in')
+c.patch(f'/api/admin/users/{kid}', json=J(disabled=False, password='newpass123'))
+check(k.post('/api/login', json=J(username='kid', password='newpass123')).status_code == 200, 'turned on with a new password: signs in with it')
+check(k.post('/api/me/password', json={'current': 'newpass123', 'new': 'mine-now-1'}).status_code == 200, 'a user changes their password')
+
+# sign-up modes and invitations
+n = TestClient(app, follow_redirects=False)
+check(n.post('/api/signup', json=J(username='new1', password='12345678')).status_code == 403, 'sign-up closed: refused')
+c.put('/api/admin/settings', json=J(signup='open'))
+check(n.post('/api/signup', json=J(username='new1', password='12345678')).status_code == 200, 'open: anyone signs up')
+c.put('/api/admin/settings', json=J(signup='invite'))
+n2 = TestClient(app, follow_redirects=False)
+check(n2.post('/api/signup', json=J(username='new2', password='12345678')).status_code == 403, 'by invitation: none, refused')
+code = c.post('/api/admin/invites', json=J(days=7)).json()['code']
+check(n2.post('/api/signup', json=J(username='new2', password='12345678', invite=code)).status_code == 200, 'with one, signs up')
+n3 = TestClient(app, follow_redirects=False)
+check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite=code)).status_code == 403, 'an invitation is used once')
+check([i['used_by'] for i in c.get('/api/admin/invites').json()] == ['new2'], 'the admin sees who used it')
+
+# throttling
+t = TestClient(app, follow_redirects=False)
+codes = [t.post('/api/login', json=J(username='boss', password='nope nope')).status_code for _ in range(9)]
+check(codes[-1] == 429, f'many wrong passwords: it waits ({codes[-2:]})')
+
+# the rest
+check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
+check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
+check(c.get('/../config.toml').status_code == 404 and c.get('/%2e%2e/tabcat.db').status_code == 404, "files outside the dashboard can't be fetched")
+check(c.get('/privacy').status_code == 200, '/privacy finds privacy.html')
+check(c.post('/api/logout').status_code == 200 and c.get('/api/me').status_code == 401, 'signing out ends the session')
+print('all passed' if not failed else f'{len(failed)} failed')
+sys.exit(1 if failed else 0)

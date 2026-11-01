@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tabcat</title>
+  <link rel="icon" href="/icons/icon32.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="stylesheet" href="/_server/pages.css">
+  <script type="module" src="/_server/account.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand"><span class="logo"></span>tabcat</div>
+    <div class="card">
+      <h1 data-t="accountTitle">Your account</h1>
+      <p class="muted" id="who"></p>
+      <div class="row">
+        <a class="btn primary" href="/" data-t="openTabcat">Open tabcat</a>
+        <a class="btn" href="/admin" id="admin-link" hidden data-t="adminPage">Server admin</a>
+        <span class="grow"></span>
+        <button type="button" class="btn" id="logout" data-t="signOut">Sign out</button>
+      </div>
+      <hr>
+      <form id="pw-form" novalidate>
+        <h2 data-t="changePassword">Change password</h2>
+        <input type="text" id="pw-user" autocomplete="username" hidden>
+        <label><span data-t="currentPassword">Current password</span><input type="password" id="current" autocomplete="current-password"></label>
+        <label><span data-t="newPassword">New password</span> <span class="muted small" data-t="pwHint"></span><input type="password" id="new" autocomplete="new-password"></label>
+        <label><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>
+        <p class="msg" id="pw-msg"></p>
+        <div class="row end"><button type="submit" class="btn primary" data-t="change">Change</button></div>
+      </form>
+      <hr>
+      <div class="row"><button type="button" class="btn" id="others" data-t="signOutOthers">Sign out of other devices</button><span class="msg" id="others-msg"></span></div>
+    </div>
+  </div>
+</body>
+</html>

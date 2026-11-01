@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tabcat</title>
+  <link rel="icon" href="/icons/icon32.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="stylesheet" href="/_server/pages.css">
+  <script type="module" src="/_server/admin.js"></script>
+</head>
+<body>
+  <div class="wrap top">
+    <div class="row" style="width:100%;max-width:860px">
+      <div class="brand"><span class="logo"></span><span data-t="adminTitle">Server admin</span></div>
+      <span class="grow"></span>
+      <a class="btn" href="/" data-t="openTabcat">Open tabcat</a>
+      <a class="btn" href="/account" data-t="accountTitle">Your account</a>
+    </div>
+
+    <div class="card wide">
+      <section>
+        <h2 data-t="users">Users</h2>
+        <table><thead><tr><th data-t="username">Username</th><th></th><th class="hide-narrow" data-t="lastSeen">Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table>
+        <p class="msg" id="users-msg"></p>
+        <form id="add-form" class="row" novalidate>
+          <input type="text" id="add-name" data-t-placeholder="username" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:140px;margin:0">
+          <input type="password" id="add-pw" data-t-placeholder="password" autocomplete="new-password" style="flex:1;min-width:140px;margin:0">
+          <label class="check" style="margin:0"><input type="checkbox" id="add-admin"><span data-t="asAdmin">Admin</span></label>
+          <button type="submit" class="btn primary" data-t="add">Add</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="card wide">
+      <section>
+        <h2 data-t="signup">Sign-up</h2>
+        <div class="radios" id="signup">
+          <label><input type="radio" name="signup" value="closed"><span><b data-t="signupClosed"></b><br><span class="muted small" data-t="signupClosedText"></span></span></label>
+          <label><input type="radio" name="signup" value="invite"><span><b data-t="signupInvite"></b><br><span class="muted small" data-t="signupInviteText"></span></span></label>
+          <label><input type="radio" name="signup" value="open"><span><b data-t="signupOpen"></b><br><span class="muted small" data-t="signupOpenText"></span></span></label>
+        </div>
+        <label style="max-width:260px"><span data-t="sessionDays">Stay signed in for (days)</span><input type="number" id="session-days" min="1" max="365"></label>
+        <p class="msg" id="settings-msg"></p>
+      </section>
+      <section>
+        <h2 data-t="invites">Invitations</h2>
+        <form id="invite-form" class="row" style="align-items:flex-end" novalidate>
+          <label style="margin:0;flex:1;min-width:220px"><span class="muted small" data-t="expiresIn"></span><input type="number" id="invite-days" min="1" max="365" value="7"></label>
+          <button type="submit" class="btn" data-t="createInvite">Create invitation</button>
+        </form>
+        <table style="margin-top:8px"><tbody id="invites"></tbody></table>
+      </section>
+    </div>
+
+    <div class="card wide">
+      <section>
+        <h2 data-t="server">Server</h2>
+        <dl id="info"></dl>
+        <div class="row">
+          <button type="button" class="btn" id="update" data-t="updateNow">Update now</button>
+          <a class="btn" href="/api/admin/backup" data-t="backup">Download a backup</a>
+          <span class="msg" id="info-msg"></span>
+        </div>
+      </section>
+    </div>
+    <p class="foot">tabcat-server</p>
+  </div>
+</body>
+</html>

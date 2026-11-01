@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tabcat</title>
+  <link rel="icon" href="/icons/icon32.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="stylesheet" href="/_server/pages.css">
+  <script type="module" src="/_server/setup.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand"><span class="logo"></span>tabcat</div>
+    <form class="card" id="form" novalidate>
+      <h1 data-t="setupTitle">Set up your tabcat server</h1>
+      <p class="muted" data-t="setupText"></p>
+      <label><span data-t="username">Username</span> <span class="muted small" data-t="userHint"></span><input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+      <label><span data-t="password">Password</span> <span class="muted small" data-t="pwHint"></span><input type="password" id="password" autocomplete="new-password"></label>
+      <label><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>
+      <p class="msg" id="msg"></p>
+      <button type="submit" class="btn primary wide" id="go" data-t="setupButton">Create admin account</button>
+    </form>
+  </div>
+</body>
+</html>
