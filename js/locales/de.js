@@ -11,7 +11,7 @@ export default {
   'noext.store.html': 'Installiere <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat aus dem Chrome Web Store</a>.',
   'noext.manual.html': 'Oder installiere es von Hand. Öffne <a href="chrome://extensions" data-copy>chrome://extensions</a>, schalte den <b>Entwicklermodus</b> ein, klicke auf <b>Entpackte Erweiterung laden</b> und installiere den Ordner der <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat-Erweiterung</a>.',
   'noext.step3': 'Lade diese Seite neu.',
-  'noext.retry': 'Erneut versuchen', 'elsewhere.title': 'tabcat ist mit deinem Server verbunden.', 'elsewhere.text': 'Dein tabcat ist jetzt auf {server}. Um es hier zu nutzen, trenne die Verbindung zum Server im Menü der tabcat-Schaltfläche in der Symbolleiste.', 'elsewhere.open': '{host} öffnen', 'noext.connect': 'Klicke mit der rechten Maustaste auf die tabcat-Schaltfläche in der Symbolleiste und verbinde dich mit dem Server.',
+  'noext.retry': 'Erneut versuchen', 'elsewhere.title': 'tabcat ist mit deinem Server verbunden.', 'elsewhere.text': 'Dein tabcat ist jetzt auf {server}. Um es hier zu nutzen, trenne die Verbindung zum Server im Menü der tabcat-Schaltfläche in der Symbolleiste.', 'elsewhere.open': '{host} öffnen', 'noext.connect': 'Klicke mit der rechten Maustaste auf die tabcat-Schaltfläche in der Symbolleiste und verbinde dich mit dem Server.', 'noext.serverTitle': 'Nicht mit deinem tabcat-Server verbunden.',
   'noext.copied': 'Adresse kopiert. Füge sie in die Adressleiste eines neuen Tabs ein.',
   'boot.loading': 'Wird geladen…',
   'browser.title': 'Dieser Browser wird nicht unterstützt.',

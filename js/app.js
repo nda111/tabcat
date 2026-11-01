@@ -4173,8 +4173,10 @@ function showNoExtension() {
   // on the user's own server (not tabcat.ghyeok.com, nor this computer), the second step is connecting the
   // extension to it (rather than reloading: connecting loads the page again itself)
   const own = !['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname);
+  // (there, what's missing is the link to the server: the extension's install is step one)
+  $('#no-ext-title').dataset.i18n = own ? 'noext.serverTitle' : 'noext.title';
   $('#no-ext-step2').dataset.i18n = own ? 'noext.connect' : 'noext.step3';
-  $('#no-ext-step2').textContent = t($('#no-ext-step2').dataset.i18n);
+  for (const el of [$('#no-ext-title'), $('#no-ext-step2')]) el.textContent = t(el.dataset.i18n);
 }
 // Connected to the user's own server, the extension's data is there: this dashboard (elsewhere) says so
 // and links to it, rather than showing the board.
