@@ -356,3 +356,9 @@ def create_app(config) -> FastAPI:
         return FileResponse(f, media_type=media, headers={'Cache-Control': 'no-cache'})
 
     return app
+
+
+def from_env() -> FastAPI:
+    """The app as --reload starts it (in a process of its own: the settings come through the environment)."""
+    from . import config
+    return create_app(config.load())

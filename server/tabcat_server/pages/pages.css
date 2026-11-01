@@ -2,19 +2,22 @@
    and the accent the dashboard last used on this server (see pages.js) */
 :root {
   --bg: #f4f2ef; --panel: #ffffff; --panel-2: #faf9f7; --border: #e4e0da; --text: #24211e; --muted: #7d766e;
-  --hover: #e8e2da; --accent: #e8822f; --on-accent: #fff; --danger: #d64545; color-scheme: light;
+  --hover: #e8e2da; --accent: oklch(.66 .16 300); --on-accent: #fff; --danger: #d64545; color-scheme: light; /* (tabcat's own: purple) */
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ecebe9; --muted: #9a958f;
-  --hover: #2c2a30; --accent: #f29a52; color-scheme: dark;
+  --hover: #2c2a30; --accent: oklch(.75 .13 300); color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #18171a; --panel: #222125; --panel-2: #1d1c20; --border: #34323a; --text: #ecebe9; --muted: #9a958f;
-  --hover: #2c2a30; --accent: #f29a52; color-scheme: dark;
+  --hover: #2c2a30; --accent: oklch(.75 .13 300); color-scheme: dark;
 }
 :root[data-accent] { --accent: oklch(.66 .16 var(--hue)); }
 @media (prefers-color-scheme: dark) { :root[data-accent]:not([data-theme="light"]) { --accent: oklch(.75 .13 var(--hue)); } }
 :root[data-accent][data-theme="dark"] { --accent: oklch(.75 .13 var(--hue)); }
+:root[data-accent="orange"] { --accent: #e8822f; }
+@media (prefers-color-scheme: dark) { :root[data-accent="orange"]:not([data-theme="light"]) { --accent: #f29a52; } }
+:root[data-accent="orange"][data-theme="dark"] { --accent: #f29a52; }
 :root[data-accent="mono"] { --accent: #18171a; --on-accent: #f4f2ef; }
 :root[data-accent="mono"][data-theme="dark"] { --accent: #f4f2ef; --on-accent: #18171a; }
 * { box-sizing: border-box; }
@@ -67,6 +70,8 @@ label.check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
 .row.end { justify-content: flex-end; }
 .grow { flex: 1; }
 .msg { min-height: 1.5em; margin: 4px 0 10px; font-size: 13px; color: var(--muted); }
+.msg:empty { min-height: 0; margin: 0; } /* (no message: no room kept for one) */
+form > .btn.wide { margin-top: 4px; }
 .msg.error { color: var(--danger); }
 .msg.ok { color: var(--accent); }
 .links { text-align: center; margin-top: 14px; }
@@ -85,5 +90,6 @@ dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margi
 dt { color: var(--muted); }
 dd { margin: 0; overflow-wrap: anywhere; }
 code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
-.foot { color: var(--muted); font-size: 12px; }
+.foot { color: var(--muted); font-size: 12px; text-align: center; }
+.foot a { color: inherit; }
 @media (max-width: 640px) { .hide-narrow { display: none; } }

@@ -24,14 +24,7 @@ export function t(key, vars = {}) {
 for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
 for (const el of document.querySelectorAll('[data-t-placeholder]')) el.placeholder = t(el.dataset.tPlaceholder);
 
-// the look: theme and accent, as the dashboard last showed them here
-try {
-  const look = JSON.parse(store('tabcat:look') || '{}');
-  const root = document.documentElement;
-  if (look.theme === 'light' || look.theme === 'dark') root.dataset.theme = look.theme;
-  if (look.accent === 'mono') root.dataset.accent = 'mono';
-  else if (look.hue != null && look.accent && look.accent !== 'orange') { root.dataset.accent = look.accent; root.style.setProperty('--hue', look.hue); }
-} catch { /* no look kept: tabcat's own */ }
+// (the look: look.js, before the first paint)
 
 export const $ = (s, root = document) => root.querySelector(s);
 export const h = (tag, attrs = {}, ...kids) => {

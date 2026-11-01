@@ -1,4 +1,4 @@
-"""tabcat-server [run] [--data-dir D] [--host H] [--port P] [--dashboard auto|FOLDER]
+"""tabcat-server [run] [--data-dir D] [--host H] [--port P] [--dashboard auto|FOLDER] [--reload]
 tabcat-server reset-password USERNAME [--data-dir D]   (asks for the new password)"""
 import argparse
 import getpass
@@ -13,6 +13,7 @@ def main(argv=None):
     ap.add_argument('--host')
     ap.add_argument('--port', type=int)
     ap.add_argument('--dashboard', help="'auto' (from GitHub, the default) or a folder with the dashboard's files")
+    ap.add_argument('--reload', action='store_true', help='start again when the server\'s code changes (while working on it)')
     a = ap.parse_args(argv)
     from . import config as C
     cfg = C.load(a.data_dir, a.host, a.port, a.dashboard)
@@ -34,7 +35,14 @@ def main(argv=None):
     import uvicorn
     from .app import create_app
     print(f'tabcat-server: data in {cfg.data_dir}, dashboard from {cfg.dashboard}, on http://{cfg.host}:{cfg.port}')
-    uvicorn.run(create_app(cfg), host=cfg.host, port=cfg.port, proxy_headers=True, forwarded_allow_ips='*', log_level='warning')
+    # (Ctrl+C: open connections, which browsers keep, get 3 seconds to finish, not forever)
+    common = dict(host=cfg.host, port=cfg.port, proxy_headers=True, forwarded_allow_ips='*', log_level='warning', timeout_graceful_shutdown=3)
+    if a.reload:  # (working on the server: it starts again when its code changes)
+        import os
+        os.environ.update(TABCAT_DATA=str(cfg.data_dir), TABCAT_DASHBOARD=cfg.dashboard)
+        uvicorn.run('tabcat_server.app:from_env', factory=True, reload=True, reload_dirs=[os.path.dirname(__file__)], **common)
+    else:
+        uvicorn.run(create_app(cfg), **common)
 
 
 if __name__ == '__main__':

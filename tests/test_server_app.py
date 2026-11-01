@@ -23,6 +23,8 @@ with sync_playwright() as p:
     d.set_viewport_size({'width': 1300, 'height': 800})
     d.goto(SERVER + '/'); d.wait_for_load_state('networkidle')
     check(d.url.endswith('/setup') and d.is_visible('#username'), f'first visit: make the first account ({d.url})')
+    bg = d.evaluate("getComputedStyle(document.querySelector('#go')).backgroundColor")
+    check('300' in bg, f"in tabcat's own purple, with no look kept yet ({bg})")
     d.fill('#username', 'boss'); d.fill('#password', 'correct horse'); d.fill('#again', 'correct horse'); d.click('#go')
     d.wait_for_url('**/admin'); d.wait_for_selector('#users tr')
     check(d.locator('#users tr').count() == 1 and 'boss' in d.inner_text('#users'), 'the admin page lists it')
