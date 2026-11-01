@@ -105,3 +105,18 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px;
 body[data-checking] .wrap { visibility: hidden; }
 /* how to connect: as wide as the dashboard's own notice */
 .card.notice { max-width: 520px; padding: 28px; }
+
+/* a password field's show / hide button, inside its right end: it shows how the text is now (hidden: the eye
+   slashed; shown: the eye, in the accent colour), the slash drawing out and in as it changes */
+.pw { position: relative; display: block; }
+label .pw { margin-top: 5px; }
+.pw input { margin: 0; padding-right: 40px; }
+.pw-eye {
+  position: absolute; top: 50%; right: 5px; translate: 0 -50%; width: 30px; height: 30px; display: grid; place-items: center;
+  border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; padding: 0;
+  transition: color .16s ease, background-color .05s ease;
+}
+.pw-eye:hover { color: var(--text); background: var(--hover); }
+.pw-eye.shown { color: var(--accent); }
+.pw-eye .slash { stroke-dasharray: 23; stroke-dashoffset: 0; transition: stroke-dashoffset .28s cubic-bezier(.22, 1, .36, 1); }
+.pw-eye.shown .slash { stroke-dashoffset: 23; }

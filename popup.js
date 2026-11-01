@@ -45,13 +45,13 @@ async function showCounts() {
   for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
   for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
   for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
-  if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
-  const hue = S.ACCENT_HUES[settings.accent];
-  if (settings.accent === 'mono') document.documentElement.dataset.accent = 'mono'; // (no hue: see popup.css)
-  else if (hue != null && settings.accent !== 'orange') {
-    document.documentElement.dataset.accent = settings.accent;
-    document.documentElement.style.setProperty('--hue', hue);
-  }
+  // the look, as set (popup-look.js showed the one kept from last time; kept again for next time)
+  const root = document.documentElement, hue = S.ACCENT_HUES[settings.accent];
+  if (settings.theme !== 'auto') root.dataset.theme = settings.theme; else delete root.dataset.theme;
+  if (settings.accent === 'mono') { root.dataset.accent = 'mono'; root.style.removeProperty('--hue'); } // (no hue: see popup.css)
+  else if (hue != null && settings.accent !== 'orange') { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
+  else { delete root.dataset.accent; root.style.removeProperty('--hue'); }
+  try { localStorage.setItem('tabcat:popupLook', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
   A.setDashboardUrl(settings.dashboardUrl);
   showCounts();
   // the dashboard's shortcut as set (chrome://extensions/shortcuts), if any

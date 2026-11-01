@@ -102,3 +102,33 @@ export function showNotConnected(card) {
   // (a page can't open chrome:// addresses: that one is copied instead, as on the dashboard)
   for (const a of card.querySelectorAll('a[data-copy]')) a.addEventListener('click', (e) => { e.preventDefault(); navigator.clipboard?.writeText(a.getAttribute('href')); });
 }
+
+// Every password field gets a button to show what's typed, or hide it again: all the page's fields at once (a
+// password and its repeat go together). The eye shows how it is now: slashed while hidden, plain once shown.
+const EYE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  + '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg>';
+export function passwordToggles(root = document) {
+  const fields = [...root.querySelectorAll('input[type=password]')];
+  const buttons = fields.map((input) => {
+    const wrap = h('span', { class: 'pw' });
+    // (a field sized in its row, as on the admin page: its wrapper takes the size)
+    if (input.style.cssText) { wrap.style.cssText = input.style.cssText; input.style.cssText = ''; }
+    input.replaceWith(wrap);
+    const b = h('button', { type: 'button', class: 'pw-eye', 'aria-pressed': 'false', title: t('showPassword'), 'aria-label': t('showPassword') });
+    b.innerHTML = EYE;
+    wrap.append(input, b);
+    return b;
+  });
+  let shown = false;
+  for (const b of buttons) b.addEventListener('click', () => {
+    shown = !shown;
+    for (const input of fields) input.type = shown ? 'text' : 'password';
+    for (const x of buttons) {
+      x.classList.toggle('shown', shown);
+      x.setAttribute('aria-pressed', String(shown));
+      x.title = x.ariaLabel = t(shown ? 'hidePassword' : 'showPassword');
+      x.firstChild.animate([{ transform: 'scale(.8)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(.34, 1.56, .64, 1)' });
+    }
+  });
+}
+passwordToggles();
