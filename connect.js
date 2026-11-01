@@ -17,7 +17,7 @@ else if (hue != null && settings.accent !== 'orange') {
   document.documentElement.dataset.accent = settings.accent;
   document.documentElement.style.setProperty('--hue', hue);
 }
-document.title = `tabcat · ${t('connectTitle')}`;
+document.title = 'tabcat';
 $('#address').focus();
 
 // The window fits what it holds, in this language (opened as a small window: not when it's a tab)
