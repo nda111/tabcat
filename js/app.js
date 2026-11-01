@@ -3205,6 +3205,37 @@ $('#swatches').append(...Object.entries(ACCENTS).map(([name, hue]) =>
 $('#language').append(h('option', { value: 'auto', dataset: { i18n: 'settings.langAuto' } }),
   ...Object.entries(LANGS).map(([code, name]) => h('option', { value: code, lang: code }, name)));
 
+// A new choice slides in where the old one was: from below when it's further down the list (the old one
+// going up), from above when it's further up. (The field's own text hides meanwhile; the new text follows
+// the language as it changes, see applyText. Settings' language spring leaves the field out: switchLang.)
+const langSelect = $('#language');
+const langWrap = h('span', { class: 'select-wrap' });
+langSelect.replaceWith(langWrap);
+langWrap.append(langSelect);
+let langSlide = null;
+langSelect.addEventListener('change', () => {
+  const from = +(langSelect.dataset.shown ?? 0), to = langSelect.selectedIndex;
+  langSelect.dataset.shown = to;
+  if (from === to) return;
+  const dir = to > from ? 1 : -1;
+  langSlide?.remove();
+  const cs = getComputedStyle(langSelect);
+  const line = (text) => h('span', { class: 'select-slide-line', style: `padding-left: ${cs.paddingLeft}; font-size: ${cs.fontSize}; font-weight: ${cs.fontWeight}; color: ${cs.color}` }, text);
+  const old = line(langSelect.options[from]?.textContent || ''), now = line(langSelect.options[to].textContent);
+  const box = h('span', { class: 'select-slide', style: `inset: ${cs.borderTopWidth} ${cs.borderRightWidth} ${cs.borderBottomWidth} ${cs.borderLeftWidth}; border-radius: ${cs.borderRadius}` }, old, now);
+  langWrap.append(box);
+  langSlide = box;
+  langSelect.classList.add('sliding');
+  const ease = { duration: 380, easing: GLIDE, fill: 'both' };
+  old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 100}%)`, opacity: 0 }], ease);
+  now.animate([{ transform: `translateY(${dir * 100}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], ease).finished.then(() => {
+    if (langSlide !== box) return;
+    box.remove();
+    langSlide = null;
+    langSelect.classList.remove('sliding');
+  }, () => {});
+});
+
 // Number fields: − / + beside the value instead of the browser's spinners. A step slides the new
 // value in from the side it moved to; held down, a button repeats and saves once on release.
 // (The buttons stay out of the tab order: the field itself steps with the arrow keys.)
@@ -3274,6 +3305,7 @@ function fillSettings() {
   f.checkUpdates.closest('label').hidden = extUpdatesItself; // (from the store: the browser updates it)
   f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
   f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
+  f.language.dataset.shown = f.language.selectedIndex;
   f.theme.value = settings.theme;
   f.accent.value = Object.hasOwn(ACCENTS, settings.accent) ? settings.accent : 'purple';
   f.columns.value = boardColumns();
@@ -3339,7 +3371,8 @@ async function switchLang(setting = 'auto', fade = true) {
   const frames = dlg.open ? [dlg, ...dlg.querySelectorAll('#settings-form > fieldset')] : [];
   const parts = frames.flatMap((f) => [...(f === dlg ? $('#settings-form') : f).children].filter((el) => el.tagName !== 'FIELDSET'));
   const named = [...frames.map((el) => [el, 'settings-frame']), ...parts.map((el) => [el, 'settings-part'])];
-  named.forEach(([el, cls], i) => { el.style.viewTransitionName = `settings-${i}`; el.style.viewTransitionClass = cls; });
+  if (dlg.open) named.push([langWrap, 'settings-part', 'settings-lang']);
+  named.forEach(([el, cls, name], i) => { el.style.viewTransitionName = name || `settings-${i}`; el.style.viewTransitionClass = cls; });
   const vt = document.startViewTransition(swap);
   vt.ready.catch(() => {}); // (cut short by the next one: nothing to handle)
   vt.finished.finally(() => named.forEach(([el]) => {
@@ -3352,6 +3385,7 @@ async function switchLang(setting = 'auto', fade = true) {
 function applyText() {
   document.documentElement.lang = getLang();
   translateDom();
+  langSlide?.lastChild.replaceChildren(langSelect.selectedOptions[0]?.textContent || '');
   applyPanels();
   fitActions();
   if ($('#settings').open) fillSettings();

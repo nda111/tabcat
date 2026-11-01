@@ -1031,6 +1031,9 @@ dialog .theme-opt input, dialog .swatch input { position: absolute; inset: 0; wi
   animation-duration: .5s; animation-timing-function: cubic-bezier(.34, 1.32, .64, 1);
 }
 ::view-transition-old(*.settings-frame), ::view-transition-new(*.settings-frame) { height: 100%; animation-duration: .35s; }
+/* (the language field moves with the rest, but shows itself live: its new value slides in, see app.js) */
+::view-transition-old(settings-lang) { display: none; }
+::view-transition-new(settings-lang) { animation: none; }
 ::view-transition-old(*.settings-part), ::view-transition-new(*.settings-part) {
   inset: 0 auto auto 0; width: auto; height: auto; animation-duration: .35s;
 }
@@ -1078,3 +1081,9 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .info-status { color: var(--muted); }
 .info-status:empty { display: none; }
 .tour-logo { display: inline-block; width: 1.25em; height: 1.25em; vertical-align: -.25em; margin-left: 1px; }
+
+/* a select whose new value slides in over it (the language field) */
+.select-wrap { position: relative; display: block; }
+.select-wrap select.sliding { color: transparent; }
+.select-slide { position: absolute; overflow: hidden; pointer-events: none; }
+.select-slide-line { position: absolute; inset: 0; display: flex; align-items: center; white-space: nowrap; }
