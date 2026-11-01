@@ -63,13 +63,23 @@ check(n.post('/api/signup', json=J(username='new1', password='12345678')).status
 c.put('/api/admin/settings', json=J(signup='open'))
 check(n.post('/api/signup', json=J(username='new1', password='12345678')).status_code == 200, 'open: anyone signs up')
 c.put('/api/admin/settings', json=J(signup='invite'))
+c.put('/api/admin/settings', json=J(signup='closed'))
+code0 = c.post('/api/admin/invites', json=J(days=7)).json()['code']
+n0 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
+check(n0.post('/api/signup', json=J(username='sneak', password='12345678', invite=code0)).status_code == 403, 'closed: an invitation link does not work either')
+c.put('/api/admin/settings', json=J(signup='invite'))
 n2 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n2.post('/api/signup', json=J(username='new2', password='12345678')).status_code == 403, 'by invitation: none, refused')
 code = c.post('/api/admin/invites', json=J(days=7)).json()['code']
 check(n2.post('/api/signup', json=J(username='new2', password='12345678', invite=code)).status_code == 200, 'with one, signs up')
 n3 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite=code)).status_code == 403, 'an invitation is used once')
-check([i['used_by'] for i in c.get('/api/admin/invites').json()] == ['new2'], 'the admin sees who used it')
+check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()], 'the admin sees who used it')
+
+# deleting your own account (the last admin can't)
+check(n2.request('DELETE', '/api/me', json={'confirm': True}).status_code == 200 and n2.get('/api/me').status_code == 401, 'a user deletes their own account, and is signed out')
+check(n2.post('/api/login', json=J(username='new2', password='12345678')).status_code == 401, 'it is gone')
+check(c.request('DELETE', '/api/me', json={'confirm': True}).status_code == 409, 'the last admin can’t delete themselves')
 
 # throttling
 t = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))

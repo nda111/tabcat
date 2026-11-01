@@ -166,12 +166,12 @@ def create_app(config) -> FastAPI:
         mode = db.setting('signup')
         name, pw, code = data.get('username', ''), data.get('password', ''), data.get('invite') or ''
         invite = None
-        if mode == 'invite' or (mode == 'closed' and code):
+        if mode == 'closed':  # (closed: invitations too)
+            raise HTTPException(403, 'sign-up is closed')
+        if mode == 'invite':
             invite = db.one('select * from invites where code = ? and used_by is null and (expires_at is null or expires_at > ?)', code, time.time())
             if not invite:
                 raise HTTPException(403, 'this invitation is not valid')
-        elif mode != 'open':
-            raise HTTPException(403, 'sign-up is closed')
         if not auth.valid_username(name) or not auth.valid_password(pw):
             raise HTTPException(400, 'bad username or password')
         if db.one('select 1 from users where username = ?', name):
@@ -204,6 +204,21 @@ def create_app(config) -> FastAPI:
         # (signed out everywhere else)
         db.run('delete from sessions where user_id = ? and token != ?', u['id'], auth.token_hash(request.cookies.get(auth.COOKIE, '')))
         return {'ok': True}
+
+    # Deleting your own account: confirmed by typing the phrase the page shows (its words, checked there); the
+    # last admin can't go
+    @app.delete('/api/me')
+    async def delete_me(request: Request):
+        u = need_user(request)
+        data = await body(request)
+        if data.get('confirm') is not True:
+            raise HTTPException(400, 'not confirmed')
+        if u['admin'] and admins() == 1:
+            raise HTTPException(409, 'the last admin stays')
+        db.run('delete from users where id = ?', u['id'])
+        r = JSONResponse({'ok': True})
+        r.delete_cookie(auth.COOKIE, path='/')
+        return r
 
     @app.post('/api/me/logout-others')
     def logout_others(request: Request):

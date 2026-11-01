@@ -565,7 +565,8 @@ async function serverGate() {
   try {
     if ((await (await ask('server')).json()).setup) return { server, need: 'setup' };
     if ((await ask('me')).status === 401) return { server, need: 'signin' };
-  } catch { /* not reached */ }
+  } catch { return null; /* not reached */ }
+  await ensureAccount(); // (signed in: their data, not another account's)
   return null;
 }
 // The menu's items (all but connecting to a server), greyed out while tabcat needs the server's account
@@ -860,6 +861,31 @@ async function reloadDashboards(also) {
   }
   await Promise.all([...ids].map((id) => chrome.tabs.reload(id).catch(() => {})));
 }
+// Each account on a server has data of its own too: the space in use is named for the server and, once someone
+// has signed in there, their account. Who's signed in is asked of the server as a dashboard links up and before
+// saving: another account than the space's, and the space changes to theirs (signed out, it stays, all of tabcat
+// locked meanwhile). Not reached: as it was.
+const spaceName = (server, user) => (user ? `${server}|${user}` : server);
+let accountCheck = null;
+function ensureAccount() {
+  accountCheck ||= (async () => {
+    const s = await S.loadSettings();
+    if (!s.server) return false;
+    let me;
+    try {
+      const r = await fetch(`${s.server}/api/me`, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(4000) });
+      if (!r.ok) return false;
+      me = await r.json();
+    } catch { return false; }
+    const user = me?.id != null ? String(me.id) : null;
+    if (!user || user === (s.serverUser ?? null)) return false;
+    await switchSpace(spaceName(s.server, s.serverUser), spaceName(s.server, user));
+    await S.saveSettings({ serverUser: user });
+    return true;
+  })().finally(() => { accountCheck = null; });
+  return accountCheck;
+}
+
 async function connectServer({ origin }) {
   const u = new URL(origin);
   if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('bad-origin');
@@ -868,8 +894,9 @@ async function connectServer({ origin }) {
   if (before === origin) { await openDashboard(); return true; }
   if (before && new URL(before).hostname !== new URL(origin).hostname) await chrome.permissions.remove({ origins: hostPatterns(before) }).catch(() => {});
   await linkServer(origin);
-  await switchSpace(before || 'local', origin);
-  await S.saveSettings({ server: origin, dashboardUrl: `${origin}/` });
+  const { serverUser } = await S.loadSettings();
+  await switchSpace(before ? spaceName(before, serverUser) : 'local', origin);
+  await S.saveSettings({ server: origin, serverUser: null, dashboardUrl: `${origin}/` });
   A.setDashboardUrl(`${origin}/`);
   await buildMenus();
   await reloadDashboards(origin);
@@ -883,10 +910,10 @@ async function connectServer({ origin }) {
   return true;
 }
 async function disconnectServer() {
-  const { server } = await S.loadSettings();
+  const { server, serverUser } = await S.loadSettings();
   await linkServer(null);
-  if (server) await switchSpace(server, 'local');
-  await S.saveSettings({ server: null, dashboardUrl: DEFAULT_DASHBOARD });
+  if (server) await switchSpace(spaceName(server, serverUser), 'local');
+  await S.saveSettings({ server: null, serverUser: null, dashboardUrl: DEFAULT_DASHBOARD });
   A.setDashboardUrl(DEFAULT_DASHBOARD);
   await buildMenus();
   if (server) await reloadDashboards(server);
@@ -918,6 +945,8 @@ chrome.runtime.onConnect.addListener(async (port) => {
       const { server } = await S.loadSettings();
       const from = new URL(port.sender.url || port.sender.tab.url).origin;
       if (server && from !== server) throw new Error(`tabcat is connected to ${server}`);
+      // (the server's dashboard: the signed-in account's data, looked at once as it links up)
+      if (server) await (port.account ||= ensureAccount());
       const result = await handle(msg, port.sender.tab);
       port.postMessage({ reply: msg.id, result });
     } catch (e) {

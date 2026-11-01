@@ -90,6 +90,9 @@ with sync_playwright() as p:
     check(d.evaluate("document.querySelector('#no-ext').hidden"), 'connected: the board')
     d.click('#btn-settings'); time.sleep(.5)
     check(d.is_visible('#account-row') and d.inner_text('#account-name') == 'boss' and d.is_visible('#account-admin'), 'Settings shows the account, and the admin page for an admin')
+    # something of boss's: theirs only
+    sw.evaluate("chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces.push({id:'bossws',type:'workspace',name:'BossOnly',symbol:'',description:'',categories:[{id:'bossc',type:'category',name:'C',groups:[]}]}); return chrome.storage.local.set({tabcat:s})})")
+    time.sleep(.6)
     d.keyboard.press('Escape'); time.sleep(.3)
     # signed out: the dashboard asks to sign in again
     d.evaluate("fetch('/api/logout', { method: 'POST' })"); time.sleep(.3)
@@ -103,6 +106,13 @@ with sync_playwright() as p:
     d.fill('#username', 'kid'); d.fill('#password', 'kidpass99'); d.click('#go'); d.wait_for_url(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000)
     d.click('#btn-settings'); d.wait_for_function("document.querySelector('#account-name').textContent === 'kid'", timeout=5000)
     check(d.inner_text('#account-name') == 'kid' and not d.is_visible('#account-admin'), 'a user signs in: no admin page for them')
+    names = lambda: d.evaluate("[...document.querySelectorAll('.ws-item')].map(e => e.title)")
+    check('BossOnly' not in names(), f"each account has its own data: kid doesn't see boss's ({names()})")
+    d.keyboard.press('Escape'); time.sleep(.3)
+    d.evaluate("fetch('/api/logout', { method: 'POST' })"); time.sleep(.3)
+    d.reload(); d.wait_for_selector('#username', timeout=10000)
+    d.fill('#username', 'boss'); d.fill('#password', 'correct horse'); d.click('#go'); d.wait_for_url(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000); time.sleep(.5)
+    check('BossOnly' in names(), f"and boss's is back for boss ({names()})")
     check(not errors, f'no page errors {errors}')
     ctx.close()
 srv.should_exit = True
