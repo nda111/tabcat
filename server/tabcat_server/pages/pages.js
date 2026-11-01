@@ -91,6 +91,7 @@ export function connected(late = () => {}, wait = 200) {
 // loads the page again). The text is the dashboard's, its links included (trusted: from strings.js).
 export function showNotConnected(card) {
   const html = (tag, attrs, markup) => { const el = h(tag, attrs); el.innerHTML = markup; return el; };
+  card.classList.add('notice');
   card.replaceChildren(
     h('h1', {}, t('notConnTitle')),
     h('p', {}, t('notConnNeed')),

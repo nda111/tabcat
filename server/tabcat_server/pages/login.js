@@ -3,7 +3,9 @@ import { $, api, connected, say, showNotConnected, t } from './pages.js';
 
 // only with the extension connected to this server: else, how to connect
 const linked = await connected(() => location.reload());
-$('#form').removeAttribute('data-checking'); // (shown once it's known which)
+// (the page shows once it's known which, in its fonts if they come soon: nothing shifts after)
+await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 300))]);
+document.body.removeAttribute('data-checking');
 if (linked) await main();
 else showNotConnected($('#form'));
 

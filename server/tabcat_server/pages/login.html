@@ -11,10 +11,10 @@
   <script src="/_server/look.js"></script>
   <script type="module" src="/_server/login.js"></script>
 </head>
-<body>
+<body data-checking>
   <div class="wrap">
     <div class="brand"><span class="logo"></span>tabcat</div>
-    <form class="card" id="form" data-checking novalidate>
+    <form class="card" id="form" novalidate>
       <h1 id="title" data-t="signInTitle">Sign in to tabcat</h1>
       <label><span data-t="username">Username</span><input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
       <label><span data-t="password">Password</span><input type="password" id="password" autocomplete="current-password" required></label>
