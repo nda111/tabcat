@@ -309,7 +309,7 @@ async function run(promise) {
   try { return await promise; } catch (err) {
     // (the extension went away under the page: see reloadWhenIdle, not its own English message)
     if (/extension is not available/.test(err.message)) reloadWhenIdle();
-    else toast(err.message);
+    else if (!elsewhere()) toast(err.message); // (on the server meanwhile: the page says so already)
     return undefined;
   }
 }
@@ -3803,7 +3803,7 @@ for (const sel of ['#board', '#ws-list', '#windows']) scrollFeel($(sel));
 scrollFeel($('.side-bottom'), { inner: true });
 scrollFeel($('#picker-tree'), { inner: true });
 for (const dlg of document.querySelectorAll('dialog')) scrollFeel(dlg, { inner: true, bar: false });
-for (const sel of ['#no-ext', '#no-browser']) scrollFeel($(sel), { inner: true });
+for (const sel of ['#no-ext', '#no-browser', '#elsewhere']) scrollFeel($(sel), { inner: true });
 $('#btn-trash').addEventListener('click', openTrash);
 $('#trash-clear').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('trash.clearTitle'), text: t('trash.clearText', { n: trashEntries.length }), ok: t('trash.clear'), danger: true }))) return;
@@ -4150,7 +4150,7 @@ B.on('settings', (s) => {
   switchLang(s.language);
 });
 B.on('tabs', scheduleTabs);
-B.on('ready', (ext) => { if (ext) setExtension(ext); if (state) refresh(); }); // reconnected after the service worker restarted (or the extension was updated)
+B.on('ready', (ext) => { if (ext) setExtension(ext); if (elsewhere()) return showElsewhere(); if (state) refresh(); }); // reconnected after the service worker restarted (or the extension was updated)
 B.on('disconnected', reloadWhenIdle);
 // Back to the dashboard (its tab shown again, or its window focused): redraw the open tabs at once.
 // While hidden, Chrome stretches the page's timers (up to a minute), so a pending redraw may lag.
@@ -4170,6 +4170,21 @@ function supportedBrowser() {
 
 function showNoExtension() {
   $('#no-ext').hidden = false;
+  // on the user's own server (not tabcat.ghyeok.com, nor this computer), the second step is connecting the
+  // extension to it (rather than reloading: connecting loads the page again itself)
+  const own = !['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname);
+  $('#no-ext-step2').dataset.i18n = own ? 'noext.connect' : 'noext.step3';
+  $('#no-ext-step2').textContent = t($('#no-ext-step2').dataset.i18n);
+}
+// Connected to the user's own server, the extension's data is there: this dashboard (elsewhere) says so
+// and links to it, rather than showing the board.
+let extServer = null;
+const elsewhere = () => !!extServer && extServer !== location.origin;
+function showElsewhere() {
+  $('#elsewhere').hidden = false;
+  $('#no-ext').hidden = true;
+  $('#elsewhere-text').textContent = t('elsewhere.text', { server: extServer });
+  Object.assign($('#elsewhere-open'), { href: `${extServer}/`, textContent: t('elsewhere.open', { host: new URL(extServer).host }) });
 }
 
 async function refresh() {
@@ -4197,6 +4212,7 @@ function setExtension(ext) {
     : FEATURES_BY_VERSION.filter(([, v]) => extVersion && !olderThan(extVersion, v)).map(([f]) => f));
   $('#btn-trash').hidden = !extFeatures.has('trash');
   favAsk = ext.favicons === 'ask' && extFeatures.has('favicons');
+  extServer = ext.server || null;
 }
 const olderThan = (a, b) => {
   const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
@@ -4238,9 +4254,10 @@ async function init() {
 }
 
 async function start(ext) {
-  setTimeout(offerTour, 800); // (once the board is up: see "tour")
   setExtension(ext);
   $('#no-ext').hidden = true;
+  if (elsewhere()) return showElsewhere();
+  setTimeout(offerTour, 800); // (once the board is up: see "tour")
   if (olderThan(ext.version, MIN_EXTENSION)) {
     toast(t('noext.old', { version: ext.version, min: MIN_EXTENSION }));
   }

@@ -54,6 +54,15 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     </div>
     <footer class="no-ext-foot">© 2026 Yu Geunhyeok · <a href="privacy.html" target="_blank" rel="noopener" data-i18n="info.privacy">Privacy</a> · <a href="https://github.com/nda111/tabcat" target="_blank" rel="noopener">GitHub</a></footer>
   </div>
+  <div id="elsewhere" hidden>
+    <span class="logo no-ext-logo"></span>
+    <div class="no-ext-card">
+      <h2 data-i18n="elsewhere.title">tabcat is connected to your server.</h2>
+      <p id="elsewhere-text"></p>
+      <menu><a class="btn primary" id="elsewhere-open" href="/"></a></menu>
+    </div>
+    <footer class="no-ext-foot">© 2026 Yu Geunhyeok · <a href="privacy.html" target="_blank" rel="noopener" data-i18n="info.privacy">Privacy</a> · <a href="https://github.com/nda111/tabcat" target="_blank" rel="noopener">GitHub</a></footer>
+  </div>
   <div id="no-ext" hidden>
     <span class="logo no-ext-logo"></span>
     <div class="no-ext-card">
@@ -61,7 +70,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
       <p data-i18n="noext.need">tabcat works together with a browser extension.</p>
       <ol>
         <li data-i18n-html="noext.store.html">Install <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat from the Chrome Web Store</a>.</li>
-        <li data-i18n="noext.step3">Reload this page.</li>
+        <li id="no-ext-step2" data-i18n="noext.step3">Reload this page.</li>
       </ol>
       <p class="no-ext-manual" data-i18n-html="noext.manual.html">Or install it by hand. Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.</p>
       <menu><button class="btn primary" id="no-ext-retry" data-i18n="noext.retry">Retry</button></menu>

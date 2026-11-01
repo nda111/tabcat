@@ -11,7 +11,7 @@ export default {
   'noext.store.html': 'Instale o <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat pela Chrome Web Store</a>.',
   'noext.manual.html': 'Você também pode instalar manualmente. Abra <a href="chrome://extensions" data-copy>chrome://extensions</a>, ative o <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e instale a pasta da <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>extensão do tabcat</a>.',
   'noext.step3': 'Recarregue esta página.',
-  'noext.retry': 'Tentar de novo',
+  'noext.retry': 'Tentar de novo', 'elsewhere.title': 'O tabcat está conectado ao seu servidor.', 'elsewhere.text': 'Agora o seu tabcat está em {server}. Para usar aqui, desconecte do servidor no menu do botão do tabcat na barra de ferramentas.', 'elsewhere.open': 'Abrir {host}', 'noext.connect': 'Clique com o botão direito no botão do tabcat na barra de ferramentas e conecte ao servidor.',
   'noext.copied': 'Endereço copiado. Cole-o na barra de endereços de uma nova aba.',
   'boot.loading': 'Carregando…',
   'browser.title': 'Este navegador não é compatível.',
