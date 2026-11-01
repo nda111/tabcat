@@ -3949,7 +3949,26 @@ async function start(ext) {
   }
   await refresh();
   checkUpdates();
+  checkShortcuts();
 }
+
+// Chrome leaves a shortcut unset when another extension has its keys already (as a copy of tabcat loaded
+// by hand does, for the store's): say so once, and in Settings for as long as it lasts (looked at again
+// on coming back to the page, as from chrome://extensions/shortcuts)
+const SHORTCUT_NOTED = 'tabcat:shortcutNoted';
+async function checkShortcuts() {
+  if (!extFeatures.has('shortcuts')) return;
+  const keys = await B.call('getShortcuts').catch(() => null);
+  const missing = keys?.['open-dashboard'] === '';
+  $('#shortcut-missing').hidden = !missing;
+  if (!missing) { store.set(SHORTCUT_NOTED, null); return; }
+  if (store.get(SHORTCUT_NOTED)) return;
+  store.set(SHORTCUT_NOTED, '1');
+  toast(t('shortcut.missing'), t('shortcut.set'), openShortcuts);
+}
+const openShortcuts = () => run(B.call('openUrls', { urls: ['chrome://extensions/shortcuts'], active: true }));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && extVersion) checkShortcuts(); });
+$('#shortcut-set').addEventListener('click', openShortcuts);
 
 $('#no-ext-retry').addEventListener('click', () => location.reload());
 
