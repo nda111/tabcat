@@ -53,7 +53,7 @@ function buildMenus() {
 // Closes tabs (or a whole window), remembered: undo opens them again where they were. Returns the
 // history entry's id (for the dashboard's toast), or true when there was nothing to remember.
 async function closeTabs(tabs, what, close = () => chrome.tabs.remove(tabs.map((t) => t.id))) {
-  const keep = tabs.filter((t) => (t.url || t.pendingUrl) && !A.isDashboard(t.url || t.pendingUrl) && !A.isNewTab(t.url || t.pendingUrl)); // (a new tab: nothing to bring back)
+  const keep = tabs.filter((t) => (t.url || t.pendingUrl) && !A.isDashboard(t.url || t.pendingUrl));
   const closed = await A.tabInfos(keep);
   await close();
   if (!closed.length) return true;
@@ -588,12 +588,38 @@ const handlers = {
           .map((t) => ({
             id: t.id, windowId: t.windowId, url: t.url || t.pendingUrl || '', title: t.title || '',
             favIconUrl: t.favIconUrl || '', active: t.active, pinned: t.pinned, discarded: t.discarded, audible: t.audible,
-            groupId: t.groupId ?? -1,
+            groupId: t.groupId ?? -1, index: t.index,
           })),
         // its tab groups: { id, title, color, collapsed }
         groups: groupsBy.get(w.id) || [],
       })),
     };
+  },
+  // Moves tabs (in the order given) to `index` of window `windowId` (the place before the tab now at that
+  // index; -1: the end), as the open tabs panel shows them dropped. Landing between two tabs of one tab
+  // group, they join it; landing outside, they leave theirs. (feature: moveTabs)
+  async moveTabs({ tabIds, windowId, index }) {
+    const tabs = (await Promise.all(tabIds.map((id) => chrome.tabs.get(id).catch(() => null)))).filter(Boolean);
+    if (!tabs.length) return false;
+    const ids = tabs.map((t) => t.id);
+    // each goes, in turn, just before the tab now at `index` (one not moving), or to the end
+    const anchorId = index < 0 ? null : (await chrome.tabs.query({ windowId })).find((t) => t.index >= index && !ids.includes(t.id))?.id;
+    for (const id of ids) {
+      const anchor = anchorId && await chrome.tabs.get(anchorId).catch(() => null);
+      const tab = await chrome.tabs.get(id);
+      const at = !anchor ? -1 : tab.windowId === windowId && tab.index < anchor.index ? anchor.index - 1 : anchor.index;
+      await chrome.tabs.move(id, { windowId, index: at });
+    }
+    const all = await chrome.tabs.query({ windowId });
+    const pos = all.findIndex((t) => t.id === ids[0]);
+    const before = all[pos - 1], after = all[pos + ids.length];
+    const group = before && after && before.groupId !== -1 && before.groupId === after.groupId ? before.groupId : -1;
+    if (group !== -1) await chrome.tabs.group({ tabIds: ids, groupId: group }).catch(() => {});
+    else {
+      const grouped = ids.filter((id) => all.find((t) => t.id === id)?.groupId !== -1);
+      if (grouped.length) await chrome.tabs.ungroup(grouped).catch(() => {});
+    }
+    return true;
   },
   async saveTabs({ tabIds, tabs, ...opts }) {
     if (tabIds) tabs = (await Promise.all(tabIds.map((id) => chrome.tabs.get(id).catch(() => null)))).filter(Boolean);

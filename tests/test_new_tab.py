@@ -1,5 +1,5 @@
 # A new tab is listed with the open tabs (it was taken for the dashboard, from when tabcat was the new tab
-# page, and left out); there's nothing in it to save, so dragging it onto a group saves nothing.
+# page, and left out), and dragged onto a group it's saved there like any tab.
 import json
 from harness import *
 
@@ -20,8 +20,7 @@ with sync_playwright() as p:
     if os.environ.get('SHOT'): d.screenshot(path=os.environ['SHOT'])
     time.sleep(.7)
     items = [x for x in json.loads(sw.evaluate("chrome.storage.local.get('tabcat').then(r=>JSON.stringify(r.tabcat.workspaces))")) if x['id'] == 'N'][0]['categories'][0]['groups'][0]['items']
-    check([x['id'] for x in items] == ['a'], f'dragged onto a group, nothing is saved ({[x.get("url") for x in items]})')
-    check(sw.evaluate("chrome.tabs.query({}).then(ts => ts.some(t => /newtab|new-tab-page/.test(t.url || t.pendingUrl)))"), 'and the tab stays open')
+    check(len(items) == 2 and any('newtab' in x['url'] for x in items), f'dragged onto a group, it is saved there ({[x.get("url") for x in items]})')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()

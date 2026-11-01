@@ -16,8 +16,9 @@
   // closeHistory (closing tabs / windows is undoable; they return with their tab groups; getTabs tells
   // each tab's group and each window's groups), shortcuts (getShortcuts: the keys each command has),
   // trash (Recently deleted: a remove marked `trash` is kept 30 days; getTrash, restoreTrash, emptyTrash;
-  // a 'trash' event when it changes)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash'];
+  // a 'trash' event when it changes), moveTabs (moveTabs: tabs dropped in the open tabs panel move there,
+  // in and out of tab groups; getTabs tells each tab's index)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache
