@@ -162,6 +162,12 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
           <span class="setting-name" data-i18n="settings.app">App</span>
           <button type="button" class="btn" id="settings-install"><span data-icon="download"></span><span data-i18n="side.install">Install app</span></button>
         </div>
+        <div class="setting-row" id="account-row" hidden>
+          <span class="setting-name" data-i18n="settings.account">Account</span>
+          <span id="account-name" class="account-name"></span>
+          <a class="btn" href="/account" data-i18n="account.manage">Your account</a>
+          <a class="btn" href="/admin" id="account-admin" hidden data-i18n="account.admin">Server admin</a>
+        </div>
         <label class="check" id="install-side-row" hidden><input type="checkbox" id="install-side"> <span data-i18n="settings.installSide">Show Install app in the sidebar</span></label>
       </fieldset>
       <fieldset>

@@ -4255,6 +4255,17 @@ async function init() {
   await start(ext);
 }
 
+// On the user's own tabcat server, the account signed in there: in Settings, with the way to its page (and
+// the admin page, for an admin). (Not on tabcat.ghyeok.com or this computer: no server there to ask.)
+async function showAccount() {
+  if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
+  const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
+  if (!me?.username) return;
+  $('#account-row').hidden = false;
+  $('#account-name').textContent = me.username;
+  $('#account-admin').hidden = !me.admin;
+}
+
 async function start(ext) {
   setExtension(ext);
   $('#no-ext').hidden = true;
@@ -4266,6 +4277,7 @@ async function start(ext) {
   await refresh();
   checkUpdates();
   checkShortcuts();
+  showAccount();
 }
 
 // Chrome leaves a shortcut unset when another extension has its keys already (as a copy of tabcat loaded
