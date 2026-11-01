@@ -87,12 +87,17 @@ export function connected(late = () => {}, wait = 200) {
   });
 }
 
-// Not connected: the steps to connect, in place of the form (connecting loads the page again)
-const STORE = 'https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib';
+// Not connected: the steps to connect, in place of the form, as the dashboard's own notice has them (connecting
+// loads the page again). The text is the dashboard's, its links included (trusted: from strings.js).
 export function showNotConnected(card) {
+  const html = (tag, attrs, markup) => { const el = h(tag, attrs); el.innerHTML = markup; return el; };
   card.replaceChildren(
     h('h1', {}, t('notConnTitle')),
-    h('ol', { class: 'steps' },
-      h('li', {}, h('a', { href: STORE, target: '_blank', rel: 'noopener' }, t('notConnInstall'))),
-      h('li', {}, t('notConnConnect'))));
+    h('p', {}, t('notConnNeed')),
+    h('ol', { class: 'steps' }, html('li', {}, t('notConnStoreHtml')), h('li', {}, t('notConnConnect'))),
+    html('p', { class: 'manual' }, t('notConnManualHtml')),
+    h('div', { class: 'row end' }, h('button', { type: 'button', class: 'btn primary', onclick: () => location.reload() }, t('notConnRetry'))));
+  for (const a of card.querySelectorAll('a')) Object.assign(a, { target: '_blank', rel: 'noopener' });
+  // (a page can't open chrome:// addresses: that one is copied instead, as on the dashboard)
+  for (const a of card.querySelectorAll('a[data-copy]')) a.addEventListener('click', (e) => { e.preventDefault(); navigator.clipboard?.writeText(a.getAttribute('href')); });
 }
