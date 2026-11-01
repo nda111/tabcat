@@ -8,7 +8,7 @@ Tabs you're not using are put to sleep to keep things light.
 </p>
 
 <p align="center">
-<a href="https://github.com/nda111/tabcat/releases/latest"><b>Download</b></a> ·
+<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib"><b>Chrome Web Store</b></a> ·
 <a href="https://tabcat.ghyeok.com/"><b>Dashboard</b></a> ·
 <a href="https://github.com/nda111/tabcat/issues">Report a problem</a>
 </p>
@@ -24,21 +24,28 @@ It works in Chromium-based browsers: Chrome, Edge, Brave, Whale and others.
 
 ## Getting started
 
-1. Download the `.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
-2. Open `chrome://extensions` (`edge://extensions` in Edge) and turn on **Developer mode**.
-3. Click **Load unpacked** and pick the unzipped `tabcat` folder.
+Install tabcat from the [Chrome Web Store](https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib).
+It updates itself from there.
 
 The dashboard opens at <https://tabcat.ghyeok.com/> with a short tour. After that, press
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> on macOS) to bring it up
 any time, and press it again to go back to your tab.
 
+### Installing by hand
+
+For a browser that can't use the Chrome Web Store, or to try a release before it reaches the store:
+
+1. Download the `.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
+2. Open `chrome://extensions` (`edge://extensions` in Edge) and turn on **Developer mode**.
+3. Click **Load unpacked** and pick the unzipped `tabcat` folder.
+
 Keep the folder where it is: the browser loads tabcat from it.
-
-### Updating
-
 When a new version is out, a dot appears on **About** in the dashboard, and About links to it.
 Download the new release, replace the contents of your `tabcat` folder with it, and press **Reload** on tabcat
 in `chrome://extensions`. Your groups and settings stay as they are.
+
+A hand-installed tabcat and the store's are separate extensions with separate data.
+To move over, export your data in **Settings** first, then import it into the other one.
 
 ## What you can do
 

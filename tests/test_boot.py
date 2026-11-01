@@ -24,6 +24,7 @@ with sync_playwright() as p:
     check(s[:1] == ['blank'] and s[-1] == 'no-ext' and 'board' not in s, f'no extension: blank, then the notice, never the board {s}')
     check('spinner' in s, 'no extension: the spinner shows while waiting')
     check(pg.inner_text('#no-ext h2') == 'tabcat 확장 프로그램을 찾을 수 없습니다.', 'the notice is in the page language')
+    check(pg.locator('#no-ext li').first.locator('a').get_attribute('href').startswith('https://chromewebstore.google.com/detail/tabcat/'), 'it points to the Chrome Web Store first')
     pg.click('#no-ext a[data-copy]'); time.sleep(.4)
     check(pg.evaluate('navigator.clipboard.readText()') == 'chrome://extensions', 'chrome:// link copies its address')
     for label, (ua, init) in (('firefox', FIREFOX), ('samsung phone', SAMSUNG)):
