@@ -43,6 +43,14 @@ with sync_playwright() as p:
     c2 = ctx.new_page(); c2.goto(f'{ext}/connect.html?address=' + SERVER); time.sleep(.4)
     check(c2.input_value('#address') == 'tabcat.localhost:8765', f"opened from a server's dashboard, its address is filled in ({c2.input_value('#address')!r})")
     c2.close()
+    # what connect.html asks for is what the manifest lets it ask for: the browser puts the question to the
+    # user (asked for anything else, it refuses outright, and the window would say tabcat wasn't allowed)
+    ask = "(o) => Promise.race([chrome.permissions.request({ origins: o }).then(() => 'answered', (e) => 'refused: ' + e.message), new Promise((r) => setTimeout(() => r('asking'), 1500))])"
+    q = ctx.new_page(); q.goto(f'{ext}/connect.html'); time.sleep(.3)
+    ours = q.evaluate(ask, ['https://some.server/*', 'http://some.server/*'])
+    q.close()
+    check(ours == 'asking', f"what connect.html asks for, the browser asks the user ({ours!r})")
+    check("['https', 'http'].map((p) => `${p}://" in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'connect.js')).read(), '(connect.js asks in that form)')
     c.fill('#address', 'not a url ://'); c.click('#go'); time.sleep(.3)
     check('error' in c.get_attribute('#msg', 'class'), f"a bad address is refused ({c.inner_text('#msg')!r})")
     # connect (as the form does once allowed): the open server dashboard loads again and links up

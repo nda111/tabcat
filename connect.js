@@ -52,9 +52,10 @@ $('#form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const origins = originsOf($('#address').value);
   if (!origins) return say('connectBadUrl', true);
-  // (permissions go by host, either scheme, any port; asked first, straight from the click: only a click may ask)
-  const pattern = `*://${new URL(origins[0]).hostname}/*`;
-  if (!(await chrome.permissions.request({ origins: [pattern] }).catch(() => false))) return say('connectDenied', true);
+  // (permissions go by host, any port, both schemes, one pattern each as the manifest's optional ones are;
+  // asked first, straight from the click: only a click may ask)
+  const patterns = ['https', 'http'].map((p) => `${p}://${new URL(origins[0]).hostname}/*`);
+  if (!(await chrome.permissions.request({ origins: patterns }).catch(() => false))) return say('connectDenied', true);
   say('connectChecking');
   $('#go').disabled = true;
   let origin = null, reached = false;
@@ -63,7 +64,7 @@ $('#form').addEventListener('submit', async (e) => {
   }
   if (!origin) {
     $('#go').disabled = false;
-    if (!settings.server || new URL(settings.server).hostname !== new URL(origins[0]).hostname) await chrome.permissions.remove({ origins: [pattern] }).catch(() => {});
+    if (!settings.server || new URL(settings.server).hostname !== new URL(origins[0]).hostname) await chrome.permissions.remove({ origins: patterns }).catch(() => {});
     return say(reached ? 'connectNotTabcat' : 'connectUnreachable', true);
   }
   const r = await chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin } });

@@ -773,12 +773,13 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
 // manifest can't list it), and the shortcut and toolbar open it. Disconnecting hands the permission back and
 // goes back to tabcat.ghyeok.com.
 const SERVER_SCRIPT = 'tabcat-server';
-const hostPattern = (origin) => `*://${new URL(origin).hostname}/*`; // (by host: either scheme, any port)
+// (permissions go by host, any port, both schemes: as the manifest's optional ones list them, one per scheme)
+const hostPatterns = (origin) => ['https', 'http'].map((p) => `${p}://${new URL(origin).hostname}/*`);
 const DEFAULT_DASHBOARD = S.DEFAULT_SETTINGS?.dashboardUrl || 'https://tabcat.ghyeok.com/';
 async function linkServer(origin) {
   await chrome.scripting.unregisterContentScripts({ ids: [SERVER_SCRIPT] }).catch(() => {});
   if (!origin) return;
-  await chrome.scripting.registerContentScripts([{ id: SERVER_SCRIPT, matches: [hostPattern(origin)], js: ['content.js'], runAt: 'document_start' }]);
+  await chrome.scripting.registerContentScripts([{ id: SERVER_SCRIPT, matches: hostPatterns(origin), js: ['content.js'], runAt: 'document_start' }]);
 }
 // Each server has data of its own, apart from the browser's own (what tabcat.ghyeok.com shows): connecting
 // puts the one in use away under its space's name and takes out the server's (new: a fresh start), and
@@ -800,7 +801,7 @@ async function switchSpace(from, to) {
 // The dashboards open now (here, on tabcat.ghyeok.com or on `also`) load again, to show what they now are
 async function reloadDashboards(also) {
   const ids = new Set([...ports].map((p) => p.sender.tab.id));
-  if (also) for (const t of await chrome.tabs.query({ url: hostPattern(also) })) ids.add(t.id);
+  if (also) for (const t of await chrome.tabs.query({ url: hostPatterns(also) })) ids.add(t.id);
   for (const t of await chrome.tabs.query({ url: ['https://tabcat.ghyeok.com/*', 'http://localhost/*', 'http://127.0.0.1/*'] })) {
     if (A.isDashboard(t.url) || /^https:\/\/tabcat\.ghyeok\.com\/(index\.html)?([?#]|$)/.test(t.url)) ids.add(t.id);
   }
@@ -809,10 +810,10 @@ async function reloadDashboards(also) {
 async function connectServer({ origin }) {
   const u = new URL(origin);
   if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('not an origin');
-  if (!(await chrome.permissions.contains({ origins: [hostPattern(origin)] }))) throw new Error('not allowed');
+  if (!(await chrome.permissions.contains({ origins: hostPatterns(origin) }))) throw new Error('not allowed');
   const before = (await S.loadSettings()).server;
   if (before === origin) { await openDashboard(); return true; }
-  if (before && hostPattern(before) !== hostPattern(origin)) await chrome.permissions.remove({ origins: [hostPattern(before)] }).catch(() => {});
+  if (before && new URL(before).hostname !== new URL(origin).hostname) await chrome.permissions.remove({ origins: hostPatterns(before) }).catch(() => {});
   await linkServer(origin);
   await switchSpace(before || 'local', origin);
   await S.saveSettings({ server: origin, dashboardUrl: `${origin}/` });
@@ -830,7 +831,7 @@ async function disconnectServer() {
   A.setDashboardUrl(DEFAULT_DASHBOARD);
   await buildMenus();
   if (server) await reloadDashboards(server);
-  if (server) await chrome.permissions.remove({ origins: [hostPattern(server)] }).catch(() => {});
+  if (server) await chrome.permissions.remove({ origins: hostPatterns(server) }).catch(() => {});
   return true;
 }
 const SERVER_CMDS = { connectServer, disconnectServer };
@@ -838,7 +839,7 @@ const SERVER_CMDS = { connectServer, disconnectServer };
 async function checkServer() {
   const { server } = await S.loadSettings();
   if (!server) return linkServer(null);
-  if (await chrome.permissions.contains({ origins: [hostPattern(server)] })) return linkServer(server);
+  if (await chrome.permissions.contains({ origins: hostPatterns(server) })) return linkServer(server);
   await disconnectServer();
 }
 chrome.runtime.onStartup.addListener(checkServer);
