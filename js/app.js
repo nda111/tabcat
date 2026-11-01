@@ -3532,14 +3532,23 @@ async function openTrash() {
   dlg.showModal();
   dlg.querySelector('button').blur();
 }
+// The dialog's height glides from what it was to what it now is (rows gone, the note in their place)
+// rather than jumping.
 async function renderTrash() {
   trashEntries = (await run(B.call('getTrash'))) || [];
-  const list = $('#trash-list');
+  const dlg = $('#trash'), list = $('#trash-list'), none = $('#trash-none');
+  const from = dlg.open ? dlg.getBoundingClientRect().height : 0;
+  const noted = !none.hidden;
   const keep = new Map([...list.children].map((li) => [li.dataset.id, li]));
   list.replaceChildren(...trashEntries.map((e) => keep.get(e.id) || trashRow(e)));
   for (const li of list.children) li.querySelector('.trash-when').textContent = timeAgo(trashEntries.find((e) => e.id === li.dataset.id).deletedAt);
-  $('#trash-none').hidden = trashEntries.length > 0;
+  none.hidden = trashEntries.length > 0;
   $('#trash-clear').disabled = !trashEntries.length;
+  if (!from) return;
+  const to = dlg.getBoundingClientRect().height;
+  const ease = { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  if (Math.abs(to - from) > .5) dlg.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${to}px`, overflow: 'hidden' }], ease);
+  if (!none.hidden && !noted) none.animate([{ opacity: 0 }, { opacity: 1 }], ease);
 }
 function trashRow(e) {
   const n = e.node;
@@ -3561,18 +3570,25 @@ function timeAgo(at) {
   for (const [unit, size] of [['day', 86400], ['hour', 3600], ['minute', 60]]) if (Math.abs(s) >= size) return rtf.format(Math.round(s / size), unit);
   return rtf.format(0, 'minute');
 }
-// a row leaving: it folds away
-function dropTrashRow(id) {
-  const li = $('#trash-list').querySelector(`[data-id="${CSS.escape(id)}"]`);
-  if (!li) return Promise.resolve();
-  const height = li.getBoundingClientRect().height;
-  return li.animate([{ height: `${height}px`, opacity: 1 }, { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 }],
-    { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => li.remove());
+// rows leaving: they fold away (with the gap after them); when they're all that's left they only fade,
+// and renderTrash then glides the dialog to the "nothing deleted" note in one go (folding first and then
+// growing again for the note would bounce)
+function dropTrashRows(ids) {
+  const list = $('#trash-list');
+  const rows = ids.map((id) => list.querySelector(`[data-id="${CSS.escape(id)}"]`)).filter(Boolean);
+  const all = rows.length >= list.children.length;
+  return Promise.all(rows.map((li) => {
+    const height = li.getBoundingClientRect().height;
+    const frames = all ? [{ opacity: 1 }, { opacity: 0 }]
+      : [{ height: `${height}px`, opacity: 1 }, { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '-2px', opacity: 0 }];
+    return li.animate(frames, { duration: all ? 140 : 220, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => { if (!all) li.remove(); });
+  }));
 }
 async function restoreTrash(e) {
   const id = await run(B.call('restoreTrash', { id: e.id }));
   if (!id) return renderTrash();
-  await dropTrashRow(e.id);
+  await dropTrashRows([e.id]);
   await stateArrived(id);
   const r = T.locate(state, id);
   if (r) {
@@ -3583,7 +3599,7 @@ async function restoreTrash(e) {
   renderTrash();
 }
 async function forgetTrash(e) {
-  await dropTrashRow(e.id);
+  await dropTrashRows([e.id]);
   await run(B.call('emptyTrash', { id: e.id }));
   renderTrash();
 }
@@ -3594,7 +3610,7 @@ async function stateArrived(id) {
 $('#btn-trash').addEventListener('click', openTrash);
 $('#trash-clear').addEventListener('click', async () => {
   if (!(await confirmDialog({ title: t('trash.clearTitle'), text: t('trash.clearText', { n: trashEntries.length }), ok: t('trash.clear'), danger: true }))) return;
-  await Promise.all(trashEntries.map((e) => dropTrashRow(e.id)));
+  await dropTrashRows(trashEntries.map((e) => e.id));
   await run(B.call('emptyTrash'));
   renderTrash();
 });
