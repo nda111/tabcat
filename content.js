@@ -25,13 +25,15 @@
   let parked = false; // page is in the back/forward cache
   // (installed from the Chrome Web Store, the manifest has the store's update_url: the browser keeps it
   // up to date, and the dashboard needn't look for releases)
-  function hello() {
+  async function hello() {
     greeted = true;
     const manifest = chrome.runtime.getManifest();
+    // (connected to the user's own server, its dashboard is the one: another is told where it is)
+    const server = (await chrome.storage.local.get('tabcat:settings').catch(() => ({})))['tabcat:settings']?.server || null;
     // (icons straight from the extension only where the manifest lets pages load them: elsewhere, ask)
     const direct = (manifest.web_accessible_resources || []).flatMap((r) => r.matches)
       .some((m) => { try { return new URL(m.replace(/\*$/, '')).hostname === location.hostname; } catch { return false; } });
-    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: manifest.version, features: FEATURES, updatesItself: !!manifest.update_url, favicons: direct ? 'direct' : 'ask' } });
+    toPage({ event: 'ready', data: { extensionId: chrome.runtime.id, version: manifest.version, features: FEATURES, updatesItself: !!manifest.update_url, favicons: direct ? 'direct' : 'ask', server } });
   }
 
   function connect() {

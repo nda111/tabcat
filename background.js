@@ -771,26 +771,57 @@ async function linkServer(origin) {
   if (!origin) return;
   await chrome.scripting.registerContentScripts([{ id: SERVER_SCRIPT, matches: [hostPattern(origin)], js: ['content.js'], runAt: 'document_start' }]);
 }
+// Each server has data of its own, apart from the browser's own (what tabcat.ghyeok.com shows): connecting
+// puts the one in use away under its space's name and takes out the server's (new: a fresh start), and
+// disconnecting does the reverse. The undo history starts over. (The server keeps its copy in step: later.)
+const SPACE_KEYS = [S.KEY, TRASH_KEY, 'tabcat:tabGroupLinks'];
+async function switchSpace(from, to) {
+  const named = (k, space) => `${k}@${space}`;
+  const now = await chrome.storage.local.get(SPACE_KEYS);
+  const next = await chrome.storage.local.get(SPACE_KEYS.map((k) => named(k, to)));
+  const out = {};
+  for (const k of SPACE_KEYS) {
+    if (now[k] !== undefined) out[named(k, from)] = now[k];
+    out[k] = next[named(k, to)] ?? (k === S.KEY ? S.defaultState() : k === TRASH_KEY ? [] : {});
+  }
+  await chrome.storage.local.set(out);
+  await chrome.storage.local.remove(SPACE_KEYS.map((k) => named(k, to)));
+  await withHistory(async (h) => { await dropSnaps([...h.undo, ...h.redo]); h.undo = []; h.redo = []; });
+}
+// The dashboards open now (here, on tabcat.ghyeok.com or on `also`) load again, to show what they now are
+async function reloadDashboards(also) {
+  const ids = new Set([...ports].map((p) => p.sender.tab.id));
+  if (also) for (const t of await chrome.tabs.query({ url: hostPattern(also) })) ids.add(t.id);
+  for (const t of await chrome.tabs.query({ url: ['https://tabcat.ghyeok.com/*', 'http://localhost/*', 'http://127.0.0.1/*'] })) {
+    if (A.isDashboard(t.url) || /^https:\/\/tabcat\.ghyeok\.com\/(index\.html)?([?#]|$)/.test(t.url)) ids.add(t.id);
+  }
+  await Promise.all([...ids].map((id) => chrome.tabs.reload(id).catch(() => {})));
+}
 async function connectServer({ origin }) {
   const u = new URL(origin);
   if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('not an origin');
   if (!(await chrome.permissions.contains({ origins: [hostPattern(origin)] }))) throw new Error('not allowed');
   const before = (await S.loadSettings()).server;
+  if (before === origin) { await openDashboard(); return true; }
   if (before && hostPattern(before) !== hostPattern(origin)) await chrome.permissions.remove({ origins: [hostPattern(before)] }).catch(() => {});
   await linkServer(origin);
+  await switchSpace(before || 'local', origin);
   await S.saveSettings({ server: origin, dashboardUrl: `${origin}/` });
   A.setDashboardUrl(`${origin}/`);
   await buildMenus();
+  await reloadDashboards(origin);
   await openDashboard();
   return true;
 }
 async function disconnectServer() {
   const { server } = await S.loadSettings();
   await linkServer(null);
-  if (server) await chrome.permissions.remove({ origins: [hostPattern(server)] }).catch(() => {});
+  if (server) await switchSpace(server, 'local');
   await S.saveSettings({ server: null, dashboardUrl: DEFAULT_DASHBOARD });
   A.setDashboardUrl(DEFAULT_DASHBOARD);
   await buildMenus();
+  if (server) await reloadDashboards(server);
+  if (server) await chrome.permissions.remove({ origins: [hostPattern(server)] }).catch(() => {});
   return true;
 }
 const SERVER_CMDS = { connectServer, disconnectServer };
@@ -814,6 +845,10 @@ chrome.runtime.onConnect.addListener(async (port) => {
   port.onDisconnect.addListener(() => ports.delete(port));
   port.onMessage.addListener(async (msg) => {
     try {
+      // (connected to a server, only its dashboard has the data: another one is told where it is)
+      const { server } = await S.loadSettings();
+      const from = new URL(port.sender.url || port.sender.tab.url).origin;
+      if (server && from !== server) throw new Error(`tabcat is connected to ${server}`);
       const result = await handle(msg, port.sender.tab);
       port.postMessage({ reply: msg.id, result });
     } catch (e) {
@@ -826,6 +861,7 @@ chrome.runtime.onConnect.addListener(async (port) => {
     const u = new URL(url);
     const dash = u.origin + u.pathname;
     const s = await S.loadSettings();
+    if (s.server && u.origin !== s.server) return; // (not the dashboard while connected to a server)
     if (s.dashboardUrl !== dash) await S.saveSettings({ dashboardUrl: dash });
     A.setDashboardUrl(dash);
   }
