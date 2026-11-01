@@ -30,10 +30,19 @@ with sync_playwright() as p:
     c.evaluate(f"chrome.runtime.sendMessage({{ cmd: 'connectServer', args: {{ origin: '{SERVER}' }} }})")
     d.wait_for_selector('#username', timeout=15000)
     check(d.url.endswith('/setup') and d.is_visible('#username'), f'connected (it loads again): make the first account ({d.url})')
+    # the toolbar popup: no saving before the server is set up (and signed in); what to do instead
+    def popup():
+        pp = ctx.new_page(); pp.goto(sw.url.replace('background.js', 'popup.html')); time.sleep(1.2)
+        out = (pp.is_visible('#server-card'), pp.inner_text('#server-card') if pp.is_visible('#server-card') else '', pp.is_visible('#save-card'), pp.is_visible('#suspend'))
+        pp.close(); return out
+    pop = popup()
+    check(pop[0] and 'Set up' in pop[1] and not pop[2] and pop[3], f'popup, server not set up: no saving, set it up first (sleeping tabs still there) {pop}')
     bg = d.evaluate("getComputedStyle(document.querySelector('#go')).backgroundColor")
     check('300' in bg, f"in tabcat's own purple, with no look kept yet ({bg})")
     d.fill('#username', 'boss'); d.fill('#password', 'correct horse'); d.fill('#again', 'correct horse'); d.click('#go')
     d.wait_for_url('**/admin'); d.wait_for_selector('#users tr')
+    pop = popup()
+    check(not pop[0] and pop[2], f'popup, signed in: saving as ever {pop}')
     check(d.locator('#users tr').count() == 1 and 'boss' in d.inner_text('#users'), 'the admin page lists it')
     d.fill('#add-name', 'kid'); d.fill('#add-pw', 'kidpass99'); d.click('#add-form button[type=submit]')
     d.wait_for_function("document.querySelectorAll('#users tr').length === 2", timeout=5000)
@@ -60,6 +69,11 @@ with sync_playwright() as p:
     d.evaluate("fetch('/api/logout', { method: 'POST' })"); time.sleep(.3)
     d.reload(); d.wait_for_url('**/login'); d.wait_for_selector('#username', timeout=10000)
     check(d.url.endswith('/login'), f'signed out, the dashboard asks to sign in ({d.url})')
+    pop = popup()
+    check(pop[0] and 'Sign in' in pop[1] and not pop[2], f'popup, signed out: no saving, sign in first {pop}')
+    with ctx.expect_page(lambda pg: pg.url.endswith('/login'), timeout=10000):
+        res = c.evaluate("chrome.runtime.sendMessage({ cmd: 'saveTabs', args: { tabs: [{ url: 'https://example.com/', title: 'x' }] } })")
+    check(res.get('result') is None, f'saving anyway (a shortcut, the menu): not saved, the sign-in page opens ({res})')
     d.fill('#username', 'kid'); d.fill('#password', 'kidpass99'); d.click('#go'); d.wait_for_url(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000)
     d.click('#btn-settings'); time.sleep(.5)
     check(d.inner_text('#account-name') == 'kid' and not d.is_visible('#account-admin'), 'a user signs in: no admin page for them')

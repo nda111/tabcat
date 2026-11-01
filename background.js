@@ -333,6 +333,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       if (tab) await saveTabs([tab]);
       break;
     case 'save-link': {
+      if (await blockedSave()) break;
       const s = await S.loadSettings();
       await S.update((state) => {
         const gid = S.ensureGroup(state, s.lastGroupId, { allowFolder: true });
@@ -551,7 +552,30 @@ const historyHandlers = {
 };
 // Closes duplicate tabs, remembered for undo; returns how many
 // Saves tabs (closing them, as set), remembered: undo takes the links out and opens the tabs again
+// While connected to a server, saving needs an account there: the server set up, and signed in. Asked of the
+// server (the sign-in cookie goes with the extension's request: it may reach that site). Not reached: saving
+// goes on (tabcat works offline; the data is in the browser, as it is until syncing comes). Returns what's
+// needed ({ server, need: 'setup' | 'signin' }), or null.
+async function serverGate() {
+  const { server } = await S.loadSettings();
+  if (!server) return null;
+  const ask = (path) => fetch(`${server}/api/${path}`, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(4000) });
+  try {
+    if ((await (await ask('server')).json()).setup) return { server, need: 'setup' };
+    if ((await ask('me')).status === 401) return { server, need: 'signin' };
+  } catch { /* not reached */ }
+  return null;
+}
+// Saving from the menu or a shortcut while that's needed: the server's page for it opens instead
+async function blockedSave() {
+  const gate = await serverGate();
+  if (!gate) return false;
+  await chrome.tabs.create({ url: `${gate.server}/${gate.need === 'setup' ? 'setup' : 'login'}` });
+  return true;
+}
+
 async function saveTabs(tabs, opts = {}, save = () => A.saveTabs(tabs, opts)) {
+  if (await blockedSave()) return null;
   const settings = await S.loadSettings();
   A.setDashboardUrl(settings.dashboardUrl);
   const saving = tabs.filter(A.isSaveable);
@@ -666,6 +690,8 @@ const handlers = {
     return saveTabs(tabs || [], opts);
   },
   saveWindow: ({ windowId, ...opts }) => saveWindow(windowId, opts),
+  // (for the popup: what saving needs first on a server, or null)
+  serverStatus: () => serverGate(),
   closeDuplicates: () => closeDuplicates(),
   suspendTabs: (args) => A.suspendTabs(args || {}),
   // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group

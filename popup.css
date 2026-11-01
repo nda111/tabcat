@@ -155,3 +155,6 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 /* the copyright line at the bottom */
 .popup .foot { margin: 10px 0 0; text-align: center; font-size: 11px; color: var(--muted); }
 .popup .foot a { color: inherit; }
+
+/* connected to a server but not signed in (or it isn't set up): what to do first, in place of saving */
+.server-card p { margin: 0 0 10px; }
