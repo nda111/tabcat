@@ -11,8 +11,11 @@
 //   bar:   draw the scrollbar (it goes in el's parent, which it positions if need be; for the page itself
 //          (document.documentElement) or a fixed overlay, fixed on the page above everything)
 
-const MAX = 80;           // a pull never goes further than this (px)
-const K = 230, C = 17;    // the spring back: stiffness and damping (a little overshoot)
+const MAX = 110;          // a pull never goes further than this (px)
+const GIVE = 0.55;        // how readily it gives when pulled (of each px pulled, at first)
+const K = 160, C = 14;    // the spring back: stiffness and damping (soft, a little overshoot)
+const SOFT = 1.35;        // how hard a scroll that runs into an end throws it past (x its speed's share)
+const VMAX = 1500;        // ...at most (px/s)
 
 const CSS = `
 .sf-nobar { scrollbar-width: none; }
@@ -48,8 +51,8 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
   const atEnd = () => el.scrollTop >= room() - 1;
   // how far it has been pulled (raw) and how far that takes it: the further, the less it gives
   let raw = 0;
-  const rub = (r) => Math.sign(r) * MAX * (1 - Math.exp(-Math.abs(r) * 0.42 / MAX));
-  const unrub = (p) => Math.sign(p) * -Math.log(1 - Math.min(0.99, Math.abs(p) / MAX)) * MAX / 0.42;
+  const rub = (r) => Math.sign(r) * MAX * (1 - Math.exp(-Math.abs(r) * GIVE / MAX));
+  const unrub = (p) => Math.sign(p) * -Math.log(1 - Math.min(0.99, Math.abs(p) / MAX)) * MAX / GIVE;
 
   function show(p) {
     pull = p;
@@ -91,8 +94,10 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
   // a bounce off an end at speed v (px/s, positive: content moving down)
   // scroll to `end` at a steady speed, then bounce at speed v
   let aim = null, aimTimer = 0, gliding = 0, wheelAt = 0, wheelAd = 0, fade = 0, run_ = 0, wv = 0, after = null;
+  let glideSign = 0;
   function glide(end, v) {
     cancelAnimationFrame(gliding);
+    glideSign = -Math.sign(v);
     const from = el.scrollTop, dur = Math.max(40, Math.min(120, Math.abs(end - from) / 3)), t0 = performance.now();
     const step = (now) => {
       const t = Math.min(1, (now - t0) / dur);
@@ -104,7 +109,7 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
   }
   const kick = (v) => {
     if (pull || raf || touching || held) return;
-    vel = Math.max(-1100, Math.min(1100, v));
+    vel = Math.max(-VMAX, Math.min(VMAX, v * SOFT));
     after = { sign: -Math.sign(v) };
     spring();
   };
@@ -123,7 +128,7 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
     if (!dy || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     if (innerScrolls(e.target, dy)) return;
     const now = performance.now(), dt = now - wheelAt, ad = Math.abs(dy);
-    fade = dt < 50 && ad < wheelAd ? fade + 1 : 0; // (a trackpad's momentum: events ever weaker)
+    fade = dt < 80 && ad < wheelAd ? fade + 1 : 0; // (a trackpad's momentum: events ever weaker)
     wheelAt = now; wheelAd = ad;
     // a run of events close together is one gesture (a trackpad's swipe, and its momentum after it): its speed
     run_ = dt < 50 ? run_ + 1 : 0;
@@ -136,12 +141,14 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
       after = null;
     }
     // A trackpad swipe (or its momentum) that reaches the end at speed bounces off it at that speed
+    // while it glides to the end to bounce, more of the same scroll is part of that, not a pull
+    if (gliding && Math.sign(dy) === glideSign) { e.preventDefault(); return; }
     const edge0 = (dy < 0 && atTop()) || (dy > 0 && atEnd());
     if (!pull && run_ >= 3 && Math.abs(wv) > 0.4 && room() > 1) {
       if (edge0 || (dy > 0 ? el.scrollTop + dy >= room() : el.scrollTop + dy <= 0)) {
         e.preventDefault();
         el.scrollTo({ top: dy > 0 ? room() : 0, behavior: 'instant' });
-        kick(-Math.sign(dy) * Math.min(1100, 300 + Math.abs(wv) * 450));
+        kick(-Math.sign(dy) * Math.min(VMAX, 300 + Math.abs(wv) * 600));
         return;
       }
     }
@@ -155,7 +162,7 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
       if (over > 8) {
         e.preventDefault();
         aim = null;
-        glide(dy > 0 ? room() : 0, -Math.sign(dy) * Math.min(1100, 320 + over * 4));
+        glide(dy > 0 ? room() : 0, -Math.sign(dy) * Math.min(VMAX, 320 + over * 4));
         return;
       }
       if (!gliding) {
@@ -165,12 +172,19 @@ export function scrollFeel(el, { inner = false, bar = true } = {}) {
         return;
       }
     }
+    // scrolling away from the end it's at scrolls as usual, at once, while the bounce settles on its own
+    // (not taken for a pull: springing back overshoots a little, which would read as pulling the other way)
+    if (pull && room() > 1 && (el.scrollTop > room() / 2 ? dy < 0 : dy > 0)) {
+      clearTimeout(releaseTimer);
+      if (!raf) spring();
+      return;
+    }
     if (!pull && !((dy < 0 && atTop()) || (dy > 0 && atEnd()))) return;
     // a turn of a mouse wheel at the end (a big step, not a trackpad's stream) bounces off it at once,
     // rather than pulling and waiting to see whether more comes
     if (!pull && ad >= 50) {
       e.preventDefault();
-      if (!raf) kick(-Math.sign(dy) * Math.min(1100, 400 + ad * 4));
+      if (!raf) kick(-Math.sign(dy) * Math.min(VMAX, 400 + ad * 4));
       return;
     }
     e.preventDefault();
