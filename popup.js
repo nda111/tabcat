@@ -58,13 +58,14 @@ async function showCounts() {
   $('#open-key').textContent = commands.find((c) => c.name === 'open-dashboard')?.shortcut || '';
   $('#open-key').hidden = !$('#open-key').textContent;
 
-  // Connected to a server, saving needs its account first: until the server says it's signed in (and set up),
-  // no saving here; what to do instead (the rest, sleeping tabs and closing duplicates, works as ever)
+  // Connected to a server, tabcat needs its account first: until the server says it's signed in (and set up),
+  // none of it here (saving, sleeping tabs, closing duplicates, the dashboard); what to do instead
   if (settings.server) {
-    $('#save-card').hidden = true;
-    $('#save-window').hidden = true;
+    const parts = ['#save-card', '#tools', '#open'];
+    const show = (on) => { for (const sel of parts) $(sel).hidden = !on; };
+    show(false);
     chrome.runtime.sendMessage({ cmd: 'serverStatus' }).then(({ result: gate } = {}) => {
-      if (!gate) { $('#save-card').hidden = false; $('#save-window').hidden = false; return; }
+      if (!gate) return show(true);
       $('#server-text').textContent = t(gate.need === 'setup' ? 'serverNeedsSetup' : 'serverNeedsSignIn');
       $('#server-go').textContent = t(gate.need === 'setup' ? 'serverSetUp' : 'serverSignIn');
       $('#server-go').onclick = async () => {
@@ -72,7 +73,7 @@ async function showCounts() {
         window.close();
       };
       $('#server-card').hidden = false;
-    }, () => { $('#save-card').hidden = false; $('#save-window').hidden = false; });
+    }, () => show(true));
   }
   const target = groupPicker(S.allTargets(state, settings.columns), settings.lastGroupId); // (as the board shows them)
   $('#close').checked = settings.closeOnSave;

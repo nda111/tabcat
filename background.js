@@ -326,6 +326,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 /* ================= context menu & shortcuts ================= */
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (GATED_MENUS.includes(info.menuItemId) && await blockedSave()) return; // (greyed out meanwhile: in case)
   switch (info.menuItemId) {
     case 'go-tabcat':
       await openDashboard();
@@ -334,7 +335,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       if (tab) await saveTabs([tab]);
       break;
     case 'save-link': {
-      if (await blockedSave()) break;
       const s = await S.loadSettings();
       await S.update((state) => {
         const gid = S.ensureGroup(state, s.lastGroupId, { allowFolder: true });
@@ -379,6 +379,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
     const w = await chrome.windows.getLastFocused();
     await saveWindow(w.id);
   } else if (command === 'open-dashboard') {
+    if (await blockedSave()) return; // (connected to a server, not signed in: its sign-in instead)
     await toggleDashboard(tab);
   }
 });
@@ -567,15 +568,15 @@ async function serverGate() {
   } catch { /* not reached */ }
   return null;
 }
-// The menu's saving items, greyed out while saving needs the server's account first: looked at again on
-// connecting and disconnecting, when a page of the server loads (signing in and out happen there), and when
-// a browser window comes to the front
-const SAVE_MENUS = ['save-tab', 'save-link', 'save-window'];
+// The menu's items (all but connecting to a server), greyed out while tabcat needs the server's account
+// first: looked at again on connecting and disconnecting, when a page of the server loads (signing in and out
+// happen there), and when a browser window comes to the front
+const GATED_MENUS = MENUS.map(([id]) => id);
 let gating = null;
 function gateMenus() {
   gating ||= (async () => {
     const gate = await serverGate();
-    for (const id of SAVE_MENUS) chrome.contextMenus.update(id, { enabled: !gate }, () => void chrome.runtime.lastError);
+    for (const id of GATED_MENUS) chrome.contextMenus.update(id, { enabled: !gate }, () => void chrome.runtime.lastError);
   })().finally(() => { gating = null; });
   return gating;
 }
@@ -588,7 +589,7 @@ chrome.windows.onFocusChanged.addListener(async (id) => {
   if (id !== chrome.windows.WINDOW_ID_NONE && (await S.loadSettings()).server) gateMenus();
 });
 
-// Saving from the menu or a shortcut while that's needed: the server's page for it opens instead
+// Anything of tabcat's from the menu or a shortcut while that's needed: the server's page for it opens instead
 async function blockedSave() {
   const gate = await serverGate();
   if (!gate) return false;

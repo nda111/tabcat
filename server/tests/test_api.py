@@ -17,7 +17,7 @@ c = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50000))  # (on 
 remote = TestClient(app, follow_redirects=False, client=('203.0.113.9', 50000))
 
 # setting it up: only from the server's own computer (a forwarded address from elsewhere counts for nothing)
-check(b'setupHereTitle' in remote.get('/setup').content, 'from elsewhere, /setup says to set it up on its computer')
+check(b'setupHereTitle' in remote.get('/setup').content, 'from elsewhere, /setup says the server is not set up yet')
 check(remote.post('/api/setup', json={'username': 'evil', 'password': '12345678'}, headers={'X-Forwarded-For': '127.0.0.1'}).status_code == 403, 'and refuses it there, a forged X-Forwarded-For too')
 J = lambda **kw: kw
 
