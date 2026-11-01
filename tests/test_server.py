@@ -5,15 +5,11 @@
 # (The browser's "allow" prompt can't be clicked here: the test copy of the extension is allowed already.)
 from harness import *
 
-SERVER = f'http://myserver.test:{8765}'
+SERVER = 'http://tabcat.localhost:8765'  # (any *.localhost is this computer, and a secure context: as a server over https)
 serve()
 errors = []
 with sync_playwright() as p:
-    # (served over plain http here, the page has no navigator.userAgentData: it goes by the user agent,
-    # which headless Chromium marks as such; over https, as a server is, it needn't)
-    ctx, sw = launch(p, manifest={'host_permissions': ['http://myserver.test/*']},
-                     extra_args=['--host-resolver-rules=MAP myserver.test 127.0.0.1'],
-                     user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36')
+    ctx, sw = launch(p, manifest={'host_permissions': ['http://tabcat.localhost/*']})
     menu = lambda: sw.evaluate("new Promise(r => chrome.contextMenus.update('server', {}, () => r(!chrome.runtime.lastError)))")
     check(menu(), 'the toolbar button has the server item')
     # the connect window
