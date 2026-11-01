@@ -839,7 +839,8 @@ dialog .field-label { display: block; font-weight: 600; }
 .trash-none { margin: 4px 0 0; }
 #trash menu .menu-gap { flex: 1; }
 #trash-clear { color: var(--danger); }
-#trash-clear:disabled { color: var(--muted); }
+#trash-clear { transition: background-color .16s ease, color .16s ease, border-color .16s ease, opacity .24s ease, visibility .24s; }
+#trash-clear.gone { opacity: 0; visibility: hidden; }
 .shortcut-missing { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--accent-soft); font-size: 12px; }
 .shortcut-missing[hidden] { display: none; }
 .shortcut-missing .btn { flex: none; margin-left: auto; }

@@ -3607,6 +3607,8 @@ async function renderTrash() {
   list.replaceChildren(...trashEntries.map((e) => keep.get(e.id) || trashRow(e)));
   for (const li of list.children) li.querySelector('.trash-when').textContent = timeAgo(trashEntries.find((e) => e.id === li.dataset.id).deletedAt);
   none.hidden = trashEntries.length > 0;
+  // nothing to empty: no Empty button (it fades out when the last one goes; see app.css)
+  $('#trash-clear').classList.toggle('gone', !trashEntries.length);
   $('#trash-clear').disabled = !trashEntries.length;
   if (!from) return;
   const to = dlg.getBoundingClientRect().height;
