@@ -53,7 +53,7 @@ function buildMenus() {
 // Closes tabs (or a whole window), remembered: undo opens them again where they were. Returns the
 // history entry's id (for the dashboard's toast), or true when there was nothing to remember.
 async function closeTabs(tabs, what, close = () => chrome.tabs.remove(tabs.map((t) => t.id))) {
-  const keep = tabs.filter((t) => (t.url || t.pendingUrl) && !A.isDashboard(t.url || t.pendingUrl));
+  const keep = tabs.filter((t) => (t.url || t.pendingUrl) && !A.isDashboard(t.url || t.pendingUrl) && !A.isNewTab(t.url || t.pendingUrl)); // (a new tab: nothing to bring back)
   const closed = await A.tabInfos(keep);
   await close();
   if (!closed.length) return true;
@@ -172,7 +172,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 /* ================= the dashboard ================= */
 
-const isDashTab = (t) => A.isDashboard(t.url || t.pendingUrl || '') && !/newtab/.test(t.url || t.pendingUrl || '');
+const isDashTab = (t) => A.isDashboard(t.url || t.pendingUrl || '');
 
 // The pinned dashboard (a setting until 0.2.11) is gone: the dashboard opens as an app window or a tab
 // when wanted. Ones pinned before go once: the one a window is showing becomes a plain tab.
@@ -258,7 +258,6 @@ async function openDashboard() {
 // visit: from when the browser starts or the extension is installed, and as tabs open; a tab opened
 // straight onto the dashboard counts as a new one. Not known: it goes back if it can, else closes.)
 const SHOWN = 'tabcat:tabUrls';
-const NEW_TAB = /^($|about:(blank|newtab)|[a-z-]+:\/\/(newtab|new-tab-page)\b)/;
 let shownChain = Promise.resolve();
 chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
   if (!change.url) return;
@@ -272,7 +271,7 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
     // (pinned: it is the dashboard already, e.g. the one dashboardHere just opened; or the app window)
     if (tab.pinned || (await chrome.windows.get(tab.windowId)).type !== 'normal') return;
     const others = (await chrome.tabs.query({ windowType: 'normal' })).filter((t) => t.id !== tabId && isDashTab(t));
-    const wasNew = before == null ? !others.length : NEW_TAB.test(before); // (not known: see above)
+    const wasNew = before == null ? !others.length : A.isNewTab(before); // (not known: see above)
     if (wasNew && !others.length) { // this new tab becomes the dashboard
       await chrome.tabs.update(tabId, { pinned: true });
       await chrome.tabs.move(tabId, { index: 0 });
