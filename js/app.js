@@ -1297,9 +1297,12 @@ async function closeWindow(w, others) {
     }))) return;
   }
   const urls = w.tabs.map((x) => x.url).filter(Boolean);
-  await run(B.call('closeWindow', { windowId: w.id }));
-  // (another window: Undo opens its tabs again in a new window; closing this one closes the dashboard too)
-  if (!own && urls.length) toast(t('toast.windowClosed', { n: urls.length }), t('common.undo'), () => run(B.call('openUrls', { urls, newWindow: true })));
+  const closed = await run(B.call('closeWindow', { windowId: w.id }));
+  // (another window: Undo opens its tabs again in a new window; closing this one closes the dashboard too.
+  // The extension keeps it in the shared history (Ctrl+Z too, tab groups and all); an older one can't.)
+  if (own || !urls.length || !closed) return;
+  toast(t('toast.windowClosed', { n: urls.length }), t('common.undo'),
+    canUndoClose() ? () => undo(closed, true) : () => run(B.call('openUrls', { urls, newWindow: true })));
 }
 
 // Labelled action buttons, or icons only as soon as the labelled row would not fit (measured on an
@@ -1382,6 +1385,7 @@ document.addEventListener('pointerdown', (e) => {
 // extension refuses to store it)
 const canWake = () => extFeatures.has('wakeTabs');
 const canLogoSymbol = () => extFeatures.has('logoSymbol');
+const canUndoClose = () => extFeatures.has('closeHistory');
 async function wakeTabs(ids) {
   const n = await run(B.call('wakeTabs', { tabIds: ids }));
   if (n) toast(t('toast.woken', { n }));
@@ -1391,9 +1395,12 @@ async function closePickedTabs(ids) {
   const closing = (lastTabs?.windows || []).flatMap((w) => w.tabs).filter((x) => ids.includes(x.id) && x.url);
   clearTabs();
   dropTabRows(ids);
-  if (!(await run(B.call('closeTabs', { tabIds: ids })))) return;
-  // Undo opens them again, each in its window if that is still open (at its end)
-  if (closing.length) toast(t('toast.tabsClosed', { n: closing.length }), t('common.undo'), async () => {
+  const closed = await run(B.call('closeTabs', { tabIds: ids }));
+  if (!closed || !closing.length) return;
+  // Undo opens them again, each in its window if that is still open (where they were, in their tab
+  // groups, by the extension; an older one: at the window's end)
+  if (canUndoClose()) toast(t('toast.tabsClosed', { n: closing.length }), t('common.undo'), () => undo(closed, true));
+  else toast(t('toast.tabsClosed', { n: closing.length }), t('common.undo'), async () => {
     const open = new Set(((await run(B.call('getTabs'))) || { windows: [] }).windows.map((w) => w.id));
     for (const [win, tabs] of Map.groupBy(closing, (x) => (open.has(x.windowId) ? x.windowId : null))) {
       await run(B.call('openUrls', { urls: tabs.map((x) => x.url), ...(win ? { windowId: win } : {}) }));
