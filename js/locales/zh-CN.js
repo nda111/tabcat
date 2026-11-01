@@ -17,7 +17,7 @@ export default {
   'browser.open': '请在受支持的浏览器中使用 tabcat。',
   'noext.old': 'tabcat 扩展程序 ({version}) 低于此仪表板所需的版本 ({min})，请重新加载或更新。',
   'side.workspaces': '工作区', 'side.info': '关于', 'side.help': '帮助', 'side.settings': '设置',
-  'side.install': '安装为应用', 'install.hide': '隐藏（仍可在设置中安装）', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
+  'side.install': '安装为应用', 'install.hide': '隐藏（可在设置中重新显示）', 'settings.installSide': '在侧边栏显示“安装为应用”', 'settings.app': '应用', 'toast.installed': '已将 tabcat 安装为应用',
   'help.sample': '添加示例工作区', 'help.tour': '开始导览', 'tour.skip': '跳过', 'tour.prev': '上一步', 'tour.next': '下一步', 'tour.done': '完成', 'tour.count': '{i} / {n}',
   'tour.offer.title': '要快速浏览一下 tabcat 吗？', 'tour.offer.text': '用一分钟依次介绍主要功能。之后也可以从帮助开始。', 'tour.offer.ok': '开始导览', 'tour.offer.later': '以后再说',
   'tour.welcome.title': '你好 {logo}', 'tour.welcome.text': '把标签页作为链接保存在分组里，需要时随时再打开。',

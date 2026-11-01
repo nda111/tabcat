@@ -19,7 +19,7 @@ export default {
   'browser.open': 'Bitte nutze tabcat in einem unterstützten Browser.',
   'noext.old': 'Die tabcat-Erweiterung ({version}) ist älter, als dieses Dashboard braucht ({min}): Lade sie neu oder aktualisiere sie.',
   'side.workspaces': 'Arbeitsbereiche', 'side.info': 'Info', 'side.help': 'Hilfe', 'side.settings': 'Einstellungen',
-  'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen weiterhin installierbar)', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
+  'side.install': 'Als App installieren', 'install.hide': 'Ausblenden (in den Einstellungen wieder einblendbar)', 'settings.installSide': '„Als App installieren“ in der Seitenleiste zeigen', 'settings.app': 'App', 'toast.installed': 'tabcat als App installiert',
   'help.sample': 'Beispiele hinzufügen', 'help.tour': 'Tour starten', 'tour.skip': 'Überspringen', 'tour.prev': 'Zurück', 'tour.next': 'Weiter', 'tour.done': 'Fertig', 'tour.count': '{i} von {n}',
   'tour.offer.title': 'Eine kurze Tour durch tabcat?', 'tour.offer.text': 'Eine Minute, Schritt für Schritt durch das Wichtigste. Du kannst sie auch später über die Hilfe starten.', 'tour.offer.ok': 'Tour starten', 'tour.offer.later': 'Später',
   'tour.welcome.title': 'Hallo {logo}', 'tour.welcome.text': 'Speichere Tabs als Links in Gruppen und öffne sie wieder, wann immer du sie brauchst.',

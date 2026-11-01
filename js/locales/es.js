@@ -19,7 +19,7 @@ export default {
   'browser.open': 'Usa tabcat en un navegador compatible.',
   'noext.old': 'La extensión tabcat ({version}) es más antigua de lo que necesita este panel ({min}): vuelve a cargarla o actualízala.',
   'side.workspaces': 'Espacios de trabajo', 'side.info': 'Información', 'side.help': 'Ayuda', 'side.settings': 'Ajustes',
-  'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes instalarla desde Ajustes)', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
+  'side.install': 'Instalar como app', 'install.hide': 'Ocultar (puedes volver a mostrarlo en Ajustes)', 'settings.installSide': 'Mostrar «Instalar como app» en la barra lateral', 'settings.app': 'App', 'toast.installed': 'tabcat se instaló como app.',
   'help.sample': 'Añadir ejemplos', 'help.tour': 'Hacer el recorrido', 'tour.skip': 'Omitir', 'tour.prev': 'Atrás', 'tour.next': 'Siguiente', 'tour.done': 'Listo', 'tour.count': '{i} de {n}',
   'tour.offer.title': '¿Quieres un recorrido rápido por tabcat?', 'tour.offer.text': 'Un minuto, paso a paso, por las partes principales. También puedes empezarlo luego desde Ayuda.', 'tour.offer.ok': 'Hacer el recorrido', 'tour.offer.later': 'Más tarde',
   'tour.welcome.title': 'Hola {logo}', 'tour.welcome.text': 'Guarda pestañas como enlaces en grupos y vuelve a abrirlas cuando las necesites.',

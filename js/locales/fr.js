@@ -19,7 +19,7 @@ export default {
   'browser.open': 'Utilisez tabcat dans un navigateur pris en charge.',
   'noext.old': 'L’extension tabcat ({version}) est plus ancienne que ce qu’exige ce tableau de bord ({min}) : rechargez-la ou mettez-la à jour.',
   'side.workspaces': 'Espaces de travail', 'side.info': 'À propos', 'side.help': 'Aide', 'side.settings': 'Paramètres',
-  'side.install': 'Installer l’app', 'install.hide': 'Masquer (installable depuis les paramètres)', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
+  'side.install': 'Installer l’app', 'install.hide': 'Masquer (réaffichable depuis les paramètres)', 'settings.installSide': 'Afficher « Installer l’app » dans la barre latérale', 'settings.app': 'App', 'toast.installed': 'tabcat installé comme app',
   'help.sample': 'Ajouter des exemples', 'help.tour': 'Faire la visite', 'tour.skip': 'Passer', 'tour.prev': 'Retour', 'tour.next': 'Suivant', 'tour.done': 'Terminé', 'tour.count': '{i} sur {n}',
   'tour.offer.title': 'Faire une visite rapide de tabcat ?', 'tour.offer.text': 'Une minute, pas à pas, pour l’essentiel. Vous pourrez aussi la lancer plus tard depuis l’aide.', 'tour.offer.ok': 'Faire la visite', 'tour.offer.later': 'Plus tard',
   'tour.welcome.title': 'Bonjour {logo}', 'tour.welcome.text': 'Enregistrez des onglets comme liens dans des groupes et rouvrez-les quand vous en avez besoin.',

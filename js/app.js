@@ -3287,6 +3287,7 @@ function openSettings() {
 
 $('#settings-form').addEventListener('change', async (e) => {
   if (e.target.type === 'file') return; // the import pickers (their own handlers save what they read)
+  if (e.target.id === 'install-side') return; // (kept on this device, not in the extension's settings)
   const f = e.currentTarget;
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
@@ -4148,7 +4149,7 @@ $('#no-ext-retry').addEventListener('click', () => location.reload());
 
 // Installed, the dashboard opens in its own window (no tab bar), from the taskbar / dock or Ctrl+Shift+C.
 // Chrome says when it can install it (beforeinstallprompt: not when installed, or opened as the app);
-// then the sidebar offers it (until hidden with its ×) and Settings > General does too.
+// then the sidebar offers it (until hidden with its ×, or in Settings, which can show it again) and Settings > General does too.
 // Chrome makes its offer a few seconds after the page loads; one it made before is remembered, so the
 // button is there from the start (pressed before the offer comes, it waits for it). Installed since in
 // some other way, no offer comes: after a while the button goes.
@@ -4165,6 +4166,8 @@ function showInstall(animate = true) {
   const offered = !!installPrompt || installKnown;
   fold($('#btn-install'), offered && store.get(INSTALL_HIDDEN) !== '1', animate);
   fold($('#install-row'), offered, animate);
+  fold($('#install-side-row'), offered, animate);
+  $('#install-side').checked = store.get(INSTALL_HIDDEN) !== '1';
 }
 function fold(el, show, animate) {
   const shown = !el.hidden && el.dataset.folding !== 'shut';
@@ -4219,6 +4222,11 @@ $('#btn-install').addEventListener('click', (e) => {
   showInstall();
 });
 $('#settings-install').addEventListener('click', install);
+// (hidden with its ×, Settings shows it again; remembered on this device, like the ×)
+$('#install-side').addEventListener('change', (e) => {
+  store.set(INSTALL_HIDDEN, e.target.checked ? null : '1');
+  showInstall();
+});
 showInstall(false);
 
 /* ---------- tour ---------- */

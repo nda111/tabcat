@@ -17,7 +17,7 @@ export default {
   'browser.open': '지원되는 브라우저로 tabcat을 사용해 주세요.',
   'noext.old': 'tabcat 확장 프로그램({version})이 이 대시보드에 필요한 버전({min})보다 오래되었습니다. 새로고침하거나 업데이트하세요.',
   'side.workspaces': '워크스페이스', 'side.info': '정보', 'side.help': '도움말', 'side.settings': '설정',
-  'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 설치할 수 있습니다)', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
+  'side.install': '앱으로 설치', 'install.hide': '숨기기 (설정에서 다시 표시할 수 있습니다)', 'settings.installSide': '사이드바에 ‘앱으로 설치’ 버튼 표시', 'settings.app': '앱', 'toast.installed': 'tabcat을 앱으로 설치했습니다.',
   'help.sample': '샘플 워크스페이스 추가', 'help.tour': '둘러보기 시작', 'tour.skip': '건너뛰기', 'tour.prev': '이전', 'tour.next': '다음', 'tour.done': '완료', 'tour.count': '{i} / {n}',
   'tour.offer.title': 'tabcat을 둘러보시겠어요?', 'tour.offer.text': '주요 기능을 1분 안에 차례로 보여 드릴게요. 나중에 도움말에서도 시작할 수 있어요.', 'tour.offer.ok': '둘러보기', 'tour.offer.later': '나중에',
   'tour.welcome.title': '안녕하세요 {logo}', 'tour.welcome.text': '탭을 그룹 속 링크로 저장해 두고, 필요할 때 다시 열어볼 수 있어요.',

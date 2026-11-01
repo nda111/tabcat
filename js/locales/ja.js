@@ -17,7 +17,7 @@ export default {
   'browser.open': '対応しているブラウザで tabcat をご利用ください。',
   'noext.old': 'tabcat 拡張機能 ({version}) は、このダッシュボードに必要なバージョン ({min}) より古いです。再読み込みするか更新してください。',
   'side.workspaces': 'ワークスペース', 'side.info': '情報', 'side.help': 'ヘルプ', 'side.settings': '設定',
-  'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定からインストールできます）', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
+  'side.install': 'アプリとしてインストール', 'install.hide': '非表示（設定から再表示できます）', 'settings.installSide': 'サイドバーに「アプリとしてインストール」を表示', 'settings.app': 'アプリ', 'toast.installed': 'tabcat をアプリとしてインストールしました。',
   'help.sample': 'サンプルを追加', 'help.tour': 'ツアーを始める', 'tour.skip': 'スキップ', 'tour.prev': '戻る', 'tour.next': '次へ', 'tour.done': '完了', 'tour.count': '{i} / {n}',
   'tour.offer.title': 'tabcat のツアーを見ますか？', 'tour.offer.text': '主な機能を 1 分ほどで順に紹介します。あとからヘルプでも始められます。', 'tour.offer.ok': 'ツアーを見る', 'tour.offer.later': 'あとで',
   'tour.welcome.title': 'こんにちは {logo}', 'tour.welcome.text': 'タブをグループの中のリンクとして保存して、必要なときにまた開けます。',
