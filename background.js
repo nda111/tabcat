@@ -359,7 +359,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           const ours = ['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(u.hostname);
           if (/^https?:$/.test(u.protocol) && !ours && /^tabcat\b/.test(tab.title || '')) address = u.origin;
         } catch { /* no page */ }
-        await chrome.windows.create({ url: `connect.html${address ? `?address=${encodeURIComponent(address)}` : ''}`, type: 'popup', width: 440, height: 300, focused: true });
+        // (and the look, to show from its first paint: see connect-look.js)
+        const { theme, accent } = await S.loadSettings();
+        const q = new URLSearchParams({ theme, accent, hue: S.ACCENT_HUES[accent] ?? '' });
+        if (address) q.set('address', address);
+        await chrome.windows.create({ url: `connect.html?${q}`, type: 'popup', width: 440, height: 250, focused: true }); // (it then fits its content)
       }
       break;
   }

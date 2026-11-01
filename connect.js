@@ -20,6 +20,18 @@ else if (hue != null && settings.accent !== 'orange') {
 document.title = `tabcat · ${t('connectTitle')}`;
 $('#address').focus();
 
+// The window fits what it holds, in this language (opened as a small window: not when it's a tab)
+(async () => {
+  const w = await chrome.windows.getCurrent().catch(() => null);
+  if (w?.type !== 'popup') return;
+  await document.fonts.ready; // (the line breaks are the fonts')
+  const frame = window.outerHeight - window.innerHeight;
+  const need = Math.ceil(document.body.getBoundingClientRect().height) + frame;
+  if (Math.abs(w.height - need) > 1) await chrome.windows.update(w.id, { height: need }).catch(() => {});
+})();
+// Esc closes it, as Cancel does
+addEventListener('keydown', (e) => { if (e.key === 'Escape') window.close(); });
+
 const say = (key, error = false) => { $('#msg').textContent = key ? t(key) : ''; $('#msg').classList.toggle('error', error); };
 
 // what was typed, as the origins to try: as typed, or, with no http:// or https://, https first, then http

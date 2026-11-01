@@ -4,7 +4,8 @@
 import io, json, os, shutil, subprocess, zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FILES = ['manifest.json', 'background.js', 'content.js', 'popup.html', 'popup.css', 'popup.js', 'lib', 'fonts',
+FILES = ['manifest.json', 'background.js', 'content.js', 'popup.html', 'popup.css', 'popup.js',
+         'connect.html', 'connect.css', 'connect.js', 'connect-look.js', 'lib', 'fonts',
          'icons/logo.svg', 'icons/icon16.png', 'icons/icon32.png', 'icons/icon48.png', 'icons/icon128.png',
          '_locales', 'README.md', 'LICENSE']
 LOCAL = ('http://localhost/', 'http://127.0.0.1/')
