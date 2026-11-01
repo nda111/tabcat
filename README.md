@@ -81,8 +81,9 @@ Close duplicate tabs in one click, and close tabs as you save them if you like.
 
 **Find anything.** <kbd>Ctrl</kbd>+<kbd>F</kbd> searches links, folders, groups and notes.
 
-**Change your mind.** <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes deleting, moving, saving and closing duplicates,
-in every open dashboard.
+**Change your mind.** <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes deleting, moving, saving and closing tabs and windows,
+in every open dashboard; closed tabs come back where they were, tab groups and all.
+What you delete stays in **Recently deleted** for 30 days, to put back any time.
 
 **Make it yours.** Light and dark themes, accent colours, and 8 languages
 (English, 한국어, 日本語, 简体中文, Deutsch, Español, Français, Português).

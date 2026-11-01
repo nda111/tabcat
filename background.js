@@ -62,6 +62,91 @@ async function closeTabs(tabs, what, close = () => chrome.tabs.remove(tabs.map((
   return id;
 }
 
+/* ================= recently deleted ================= */
+
+// What was deleted from the board (links, folders, groups, categories, workspaces), kept 30 days to be
+// put back one by one, or deleted for good. Newest first, each { id, node, parentId, index, trail,
+// deletedAt }: the node as it was, its place, and its ancestors then ({ id, type, name, symbol },
+// outermost first). An entry whose node is on the board again (an undo or Restore put it back) isn't
+// listed, but stays, so undoing that brings it back to the list; deleted again, a new entry replaces it.
+const TRASH_KEY = 'tabcat:trash';
+const TRASH_DAYS = 30;
+let trashChain = Promise.resolve();
+function withTrash(fn) { // serialized; `fn` may change the list in place (entries past 30 days: gone)
+  const run = trashChain.then(async () => {
+    const since = Date.now() - TRASH_DAYS * 864e5;
+    const list = ((await chrome.storage.local.get(TRASH_KEY))[TRASH_KEY] || []).filter((e) => e.deletedAt >= since);
+    const out = await fn(list);
+    await chrome.storage.local.set({ [TRASH_KEY]: list });
+    return out;
+  });
+  trashChain = run.catch(() => {});
+  return run;
+}
+function trashEntry(state, id) {
+  const r = S.locate(state, id);
+  if (!r) return null;
+  return {
+    id: S.uid(), node: structuredClone(r.node), parentId: r.parent?.id ?? null, index: r.index, deletedAt: Date.now(),
+    trail: r.ancestors.map(({ id: aid, type, name, symbol }) => ({ id: aid, type, name: name || '', symbol: symbol || '' })),
+  };
+}
+async function addToTrash(entries) {
+  // (one inside another deleted at the same time is in that one already)
+  const ids = new Set(entries.map((e) => e.node.id));
+  const add = entries.filter((e) => !e.trail.some((a) => ids.has(a.id)));
+  await withTrash((list) => {
+    const again = new Set(add.map((e) => e.node.id));
+    list.splice(0, list.length, ...add.reverse(), ...list.filter((e) => !again.has(e.node.id)));
+  });
+  broadcast('trash');
+}
+// Puts a deleted node back in its place; that gone, into the nearest of its old ancestors still there
+// (into its first group, say, for a link whose group is gone, keeping it in its workspace); failing all
+// of them, the first group (the Inbox), category or workspace there is.
+function putBack(state, e) {
+  const node = structuredClone(e.node);
+  if (S.insertNode(state, e.parentId, node, e.index)) return true;
+  // the first place under `n` that can hold the node, going down by first children
+  const into = (n) => {
+    for (let c = n; c; c = S.children(c)?.[0]) if (S.ACCEPTS[c.type]?.includes(node.type)) return c;
+    return null;
+  };
+  for (const a of e.trail.slice(0, -1).reverse()) {
+    const r = S.locate(state, a.id);
+    const at = r && into(r.node);
+    if (at && S.insertNode(state, at.id, node, at.id === a.id ? null : 0)) return true;
+  }
+  if (node.type === 'workspace') return S.insertNode(state, null, node, e.index);
+  S.ensureGroup(state, null);
+  const at = into(state.workspaces[0]);
+  return !!at && S.insertNode(state, at.id, node, 0);
+}
+const trashHandlers = {
+  // the entries not on the board again, newest first
+  getTrash: () => withTrash(async (list) => {
+    const state = await S.load();
+    return list.filter((e) => !S.locate(state, e.node.id));
+  }),
+  // puts entry `id` back (remembered, for undo); returns the node's id, or null
+  restoreTrash: ({ id }) => withTrash(async (list) => {
+    const e = list.find((x) => x.id === id);
+    if (!e) return null;
+    const before = await S.load();
+    if (S.locate(before, e.node.id)) return null;
+    if (!(await S.update((state) => putBack(state, e)))) return null;
+    await withHistory(async (h) => pushChange(h, { id: await snap(before), data: true, what: { verb: 'restore', type: e.node.type, n: 1 } }));
+    broadcast('trash');
+    return e.node.id;
+  }),
+  // deletes entry `id` for good, or every one (`id` left out)
+  async emptyTrash({ id } = {}) {
+    await withTrash((list) => { list.splice(0, list.length, ...(id == null ? [] : list.filter((e) => e.id !== id))); });
+    broadcast('trash');
+    return true;
+  },
+};
+
 chrome.runtime.onStartup.addListener(init);
 init();
 chrome.runtime.onInstalled.addListener(retirePinnedDashboards);
@@ -477,8 +562,18 @@ const handlers = {
   getState: () => S.load(),
   getSettings: () => S.loadSettings(),
   saveSettings: (patch) => S.saveSettings(patch),
-  // ops: array of store ops, applied atomically; returns array of results
-  apply: (ops) => S.update((state) => S.applyOps(state, ops)),
+  // ops: array of store ops, applied atomically; returns array of results. A remove marked `trash` (a
+  // delete) keeps what it removed in Recently deleted.
+  async apply(ops) {
+    const gone = [];
+    const results = await S.update((state) => {
+      for (const o of ops) if (o.op === 'remove' && o.trash) gone.push(trashEntry(state, o.id));
+      return S.applyOps(state, ops);
+    });
+    if (gone.some(Boolean)) await addToTrash(gone.filter(Boolean));
+    return results;
+  },
+  ...trashHandlers,
 
   async getTabs(_args, senderTab) {
     const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
