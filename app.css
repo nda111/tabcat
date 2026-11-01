@@ -54,6 +54,12 @@
     .ctx-menu button, .resizer, .add-group, .emoji-grid button, .pick-row, .picker-item, .search-btn) {
   transition: background-color .16s ease, color .16s ease, border-color .16s ease, opacity .16s ease;
 }
+/* under the pointer they answer at once; leaving, they fade back as before (rules of their own that come
+   later, with motion of their own, keep theirs: those that hover too are sped up below, by name) */
+:is(.btn, .icon-btn, .side-btn, .panel-toggle, .ws-item, .ws-add, .cat-tab, .link-row, .folder-head, .tab-row, .result,
+    .ctx-menu button, .resizer, .add-group, .emoji-grid button, .pick-row, .picker-item, .search-btn):is(:hover, .hover) {
+  transition-duration: .05s;
+}
 html, body { height: 100%; margin: 0; }
 html { background: var(--bg); }
 html.booting body { visibility: hidden; } /* until the saved language, panels and look are applied (see index.html) */
@@ -246,6 +252,7 @@ body.ws-collapsed .ws-add { display: flex; }
   transition: background-color .16s ease, color .16s ease, width .35s cubic-bezier(.22, 1, .36, 1), height .35s cubic-bezier(.22, 1, .36, 1),
     padding .35s cubic-bezier(.22, 1, .36, 1), margin .35s cubic-bezier(.22, 1, .36, 1);
 }
+#sidebar .side-btn:is(:hover, .hover) { transition-duration: .05s, .05s, .35s, .35s, .35s, .35s; }
 /* their icons a little larger and bolder than the 15px default (they read thin), larger still in the rail */
 .side-btn .sym svg { width: 17px; height: 17px; stroke-width: 2.2; transition: width .35s cubic-bezier(.22, 1, .36, 1), height .35s cubic-bezier(.22, 1, .36, 1); }
 .side-btn:hover, .side-btn.hover { background: var(--hover); color: var(--text); }
@@ -535,6 +542,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
   /* the rail's flat icon buttons and the full panel's outlined ones turn into each other */
   transition: background-color .2s ease, color .16s ease, border-color .2s ease, opacity .16s ease, padding .3s cubic-bezier(.22, 1, .36, 1);
 }
+.panel-actions .btn:is(:hover, .hover) { transition-duration: .05s, .05s, .05s, .16s, .3s; }
 .data-row .btn { display: inline-flex; gap: 5px; align-items: center; }
 /* a narrow open-tabs panel shows the action buttons as icons only (labels stay in the tooltips) */
 /* labels slide away (rather than vanish) when the panel gets narrow, and slide back when it widens */
@@ -960,6 +968,7 @@ body.ws-collapsed :is(#ws-toggle, .brand-logo) { transition: opacity .28s ease; 
 
 /* links / folders picked inside a group */
 #board .item > :is(.link-row, .folder-head) { box-shadow: inset 0 0 0 1.5px transparent; transition: background-color .16s ease, color .16s ease, box-shadow .16s ease; }
+#board .item > :is(.link-row, .folder-head):is(:hover, .hover) { transition-duration: .05s, .05s, .16s; }
 #board .item.picked > :is(.link-row, .folder-head) { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 /* open tabs picked with Shift */
