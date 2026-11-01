@@ -1664,7 +1664,8 @@ function saveNote(id, before, after) {
   const ta = document.querySelector(`.group[data-id="${CSS.escape(id)}"] .note-edit`);
   noteMorph = ta ? { id, height: ta.getBoundingClientRect().height, ghost: noteGhost(ta),
     body: ta.closest('.group-body').getBoundingClientRect().height } : null;
-  if (after !== (before || '')) apply({ op: 'patch', id, fields: { note: after } });
+  const g = T.locate(state, id)?.node;
+  if (g && after !== (before || '')) patchRemembered(g, { note: after });
   else render();
 }
 
@@ -2092,7 +2093,7 @@ const LIVE_EDIT = new Set(['group', 'folder', 'link']);
 async function editNode(node) {
   if (!LIVE_EDIT.has(node.type)) {
     const v = await openEditor(node.type, node);
-    if (v) apply({ op: 'patch', id: node.id, fields: v });
+    if (v) patchRemembered(node, v);
     return;
   }
   // a group, folder or link shows its edits on the board while the editor is open: Save keeps them,
@@ -2102,7 +2103,7 @@ async function editNode(node) {
   if (!v) return showPreview(node.id, null);
   showPreview(node.id, v);
   const seq = stateSeq;
-  const ok = await apply({ op: 'patch', id: node.id, fields: v });
+  const ok = await patchRemembered(node, v);
   // the saved state comes as its own message, maybe after the reply: hold the preview (which shows
   // the same) until it is here, so the card never flicks back to the old values in between
   if (ok && stateSeq === seq) await Promise.race([nextState(), new Promise((r) => setTimeout(r, 1500))]);
@@ -2203,8 +2204,9 @@ async function addWorkspace() {
   const v = await openEditor('workspace', {}, t('new.workspace'));
   if (!v) return;
   const node = { type: 'workspace', ...v, symbol: v.symbol || randomSymbol(), categories: [{ type: 'category', name: t('def.category') }] };
+  const before = structuredClone(state);
   const [id] = (await apply({ op: 'create', parentId: null, node })) || [];
-  if (id) select(id);
+  if (id) { remember(before, whatOf('add', [node])); select(id); }
 }
 // A new workspace left without a symbol gets one of these, preferring one no workspace has yet.
 const WS_SYMBOLS = ['💼', '📚', '🏠', '✈️', '🎨', '🧪', '🎮', '🎵', '🌱', '🍳', '🏃', '📷', '🧭', '🛠️', '💡', '🚀', '🌙', '☕', '🐱', '📝', '🎬', '🧩', '🌊', '🍀'];
@@ -2218,18 +2220,35 @@ function randomSymbol() {
 async function addCategory(ws) {
   const v = await openEditor('category', {}, t('new.category'));
   if (!v) return;
+  const before = structuredClone(state);
   const [id] = (await apply({ op: 'create', parentId: ws.id, node: { type: 'category', ...v } })) || [];
-  if (id) select(ws.id, id);
+  if (id) { remember(before, whatOf('add', [{ type: 'category' }])); select(ws.id, id); }
 }
 
 async function addNode(type, parentId, title, extra = {}) {
   const v = await openEditor(type, {}, title);
-  if (v) apply({ op: 'create', parentId, node: { type, ...extra, ...v } });
+  if (v) createRemembered({ op: 'create', parentId, node: { type, ...extra, ...v } });
 }
 // A new group in `column`: before group `beforeId`, or at the end of that column.
 async function addGroup(cat, column = null, { beforeId = null, afterId = null } = {}) {
   const v = await openEditor('group', {}, t('new.group'));
-  if (v) apply({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId, afterId }), node: { type: 'group', column, ...v } });
+  if (v) createRemembered({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId, afterId }), node: { type: 'group', column, ...v } });
+}
+// Adding and editing go into the undo history like deletes and moves (an edit only when it changed something)
+async function createRemembered(...ops) {
+  const before = structuredClone(state);
+  const ids = await apply(...ops);
+  const made = ops.filter((o) => o.op === 'create').map((o) => o.node);
+  if (ids && made.length) remember(before, whatOf('add', made));
+  return ids;
+}
+const changes = (node, fields) => Object.entries(fields).some(([k, x]) => (node[k] ?? '') !== (x ?? ''));
+async function patchRemembered(node, fields) {
+  if (!changes(node, fields)) return apply({ op: 'patch', id: node.id, fields });
+  const before = structuredClone(state);
+  const ok = await apply({ op: 'patch', id: node.id, fields });
+  if (ok) remember(before, whatOf('edit', [node]));
+  return ok;
 }
 const addLink = (parentId) => addNode('link', parentId, t('new.link'));
 const addFolder = (parentId) => addNode('folder', parentId, t('new.folder'));
@@ -2913,7 +2932,7 @@ async function dropInto(d, t, e) {
     const url = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '')
       .split(/\r?\n/).map((s) => s.trim()).find((s) => s && !s.startsWith('#'));
     if (!url || !/^[a-z][a-z0-9+.-]*:/i.test(url)) return;
-    await apply(...pre, { op: 'create', parentId, index: t.index, node: { type: 'link', url, name: url } });
+    await createRemembered(...pre, { op: 'create', parentId, index: t.index, node: { type: 'link', url, name: url } });
     return;
   }
   // open tabs or a whole window
