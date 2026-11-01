@@ -79,8 +79,15 @@ $('#form').addEventListener('submit', async (e) => {
     if (!settings.server || new URL(settings.server).hostname !== new URL(origins[0]).hostname) await chrome.permissions.remove({ origins: patterns }).catch(() => {});
     return say(reached ? 'connectNotTabcat' : 'connectUnreachable', true);
   }
-  const r = await chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin } });
-  if (r?.error) { $('#go').disabled = false; return say(/allowed/.test(r.error) ? 'connectDenied' : 'connectNotTabcat', true); } // (rare: e.g. the leave taken back meanwhile)
+  // the extension links up with it: should that fail (rarely: the leave taken back meanwhile, the extension
+  // reloaded under this window…), each in its own words
+  let r;
+  try { r = await chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin } }); } catch (err) { r = { error: String(err?.message || err) }; }
+  if (!r || r.error) {
+    $('#go').disabled = false;
+    const e = r?.error || '';
+    return say(e === 'not-allowed' ? 'connectDenied' : e === 'bad-origin' ? 'connectBadUrl' : 'connectFailed', true);
+  }
   window.close();
 });
 $('#cancel').addEventListener('click', () => window.close());

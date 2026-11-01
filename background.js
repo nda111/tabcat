@@ -813,8 +813,8 @@ async function reloadDashboards(also) {
 }
 async function connectServer({ origin }) {
   const u = new URL(origin);
-  if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('not an origin');
-  if (!(await chrome.permissions.contains({ origins: hostPatterns(origin) }))) throw new Error('not allowed');
+  if (!/^https?:$/.test(u.protocol) || u.origin !== origin) throw new Error('bad-origin');
+  if (!(await chrome.permissions.contains({ origins: hostPatterns(origin) }))) throw new Error('not-allowed');
   const before = (await S.loadSettings()).server;
   if (before === origin) { await openDashboard(); return true; }
   if (before && new URL(before).hostname !== new URL(origin).hostname) await chrome.permissions.remove({ origins: hostPatterns(before) }).catch(() => {});

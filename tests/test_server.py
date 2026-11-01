@@ -60,6 +60,11 @@ with sync_playwright() as p:
     check("['https', 'http'].map((p) => `${p}://" in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'connect.js')).read(), '(connect.js asks in that form)')
     c.fill('#address', 'not a url ://'); c.click('#go'); time.sleep(.3)
     check('error' in c.get_attribute('#msg', 'class'), f"a bad address is refused ({c.inner_text('#msg')!r})")
+    # the extension's own refusals, which connect.html words as its own messages
+    nope = c.evaluate("chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin: 'http://nope.localhost:9' } })")
+    bad = c.evaluate("chrome.runtime.sendMessage({ cmd: 'connectServer', args: { origin: 'http://tabcat.localhost:8765/x' } })")
+    check(nope.get('error') == 'not-allowed' and bad.get('error') == 'bad-origin', f"the extension's refusals: not allowed there, not an address ({nope}, {bad})")
+    check(all(k in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'connect.js')).read() for k in ("'not-allowed'", "'bad-origin'", "'connectFailed'")), '(connect.js words each)')
     # connect (as the form does once allowed): the open server dashboard loads again and links up
     r = c.evaluate(f"chrome.runtime.sendMessage({{ cmd: 'connectServer', args: {{ origin: '{SERVER}' }} }})")
     check(r and r.get('result') is True, f'connected ({r})')
