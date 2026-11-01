@@ -814,6 +814,9 @@ dialog .field-label { display: block; font-weight: 600; }
   display: flex; gap: 12px; align-items: center; box-shadow: 0 6px 24px rgba(0,0,0,.16); pointer-events: auto;
 }
 #toast button { background: transparent; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; }
+/* a click puts it away (see toast): pressed, it gives a little first */
+.toast-item { cursor: pointer; transition: scale .12s ease; }
+.toast-item:active:not(:has(button:active)) { scale: .97; }
 
 .flash { animation: flash 1.2s ease-out; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: var(--shadow); } }

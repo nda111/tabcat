@@ -34,6 +34,7 @@ let editingNoteId = null;
 let drag = null;            // { kind:'node', id, type } | { kind:'tab', tabIds } | { kind:'window', windowId } | { kind:'external' }
 let pendingRender = false;
 let pendingTabsRender = false;
+let movingTabs = false; // (tabs dropped in the open tabs panel, being moved)
 let currentWindowId = null; // browser window that hosts this dashboard
 
 const EMOJIS = ['🐱', '📁', '📂', '📌', '⭐', '🔥', '💡', '📚', '🧪', '💼', '🏠', '🎮', '🎵', '🎬', '🛒', '✈️',
@@ -208,7 +209,8 @@ function toast(msg, actionLabel, action) {
   const stack = $('#toast');
   stack.hidden = false;
   const before = toastRects();
-  const item = h('div', { class: 'toast-item' }, h('span', {}, msg));
+  // (clicked anywhere but its button, it goes: it shrinks away)
+  const item = h('div', { class: 'toast-item', onclick: (e) => { if (!e.target.closest('button')) dismissToast(item, true); } }, h('span', {}, msg));
   if (actionLabel) item.append(h('button', { onclick: () => { dismissToast(item); action(); } }, actionLabel));
   stack.append(item);
   const live = [...stack.children].filter((el) => !el.classList.contains('leaving'));
@@ -245,13 +247,15 @@ function pushOutToast(el, was, pusher) {
     { duration: 300, easing: SPRING, fill: 'forwards' }).finished.catch(() => {}).then(() => el.remove());
 }
 
-// Timed out (or acted on): fade out where it is, then the ones above close the gap.
-function dismissToast(el) {
+// Timed out (or acted on): fade out where it is, then the ones above close the gap. Clicked away
+// (`clicked`), it shrinks into itself instead.
+function dismissToast(el, clicked = false) {
   if (el.classList.contains('leaving')) return;
   clearTimeout(el.timer);
   el.classList.add('leaving');
-  el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }],
-    { duration: 160, easing: 'ease-in', fill: 'forwards' })
+  el.animate([{ opacity: 1, transform: getComputedStyle(el).transform === 'none' ? 'none' : getComputedStyle(el).transform },
+    clicked ? { opacity: 0, transform: 'scale(.9)' } : { opacity: 0, transform: 'translateY(8px)' }],
+  { duration: clicked ? 180 : 160, easing: clicked ? 'cubic-bezier(.4, 0, .6, 1)' : 'ease-in', fill: 'forwards' })
     .finished.catch(() => {}).then(() => {
       const before = toastRects();
       el.remove();
@@ -1119,7 +1123,7 @@ function reveal(node, anc) {
 
 let lastTabs = null; // the windows and tabs last drawn (what closing tabs can open again)
 async function renderTabs() {
-  if (drag) { pendingTabsRender = true; return; }
+  if (drag || movingTabs) { pendingTabsRender = true; return; } // (a move under way: its rows are placed already)
   pendingTabsRender = false;
   const seq = ++tabsRenderSeq;
   const data = await run(B.call('getTabs'));
@@ -1158,7 +1162,7 @@ async function renderTabs() {
         noTip(btn(icon('close'), t('win.close'), () => closeWindow(w, others)))),
       !collapsed && h('div', { class: 'win-tabs' }, w.tabs.map((t) => h('div', {
         class: 'tab-row' + (t.active ? ' active' : '') + (t.discarded ? ' discarded' : '') + (pickedTabs.has(t.id) ? ' picked' : ''),
-        draggable: 'true', dataset: { tab: t.id, url: t.url },
+        draggable: 'true', dataset: { tab: t.id, url: t.url, index: t.index ?? '' },
         title: [t.title || t.url, t.url, t.discarded ? tr('tab.suspended') : ''].filter(Boolean).join('\n'),
         onclick: (e) => {
           if (e.shiftKey) return void toggleTab(t.id); // Shift-click selects instead of switching
@@ -2770,6 +2774,34 @@ function resolveDrop(e, d) {
   return null;
 }
 
+// Open tabs dragged within the open tabs panel move there (the browser's own tabs too): between two rows,
+// or onto a window's header to its end. (The extension puts them into, or out of, tab groups by where they
+// land; older ones can't move tabs: then tabs dropped there do nothing, as before.)
+const canMoveTabs = () => extFeatures.has('moveTabs');
+function tabMoveTarget(e, el, win) {
+  const windowId = +win.dataset.window;
+  const row = el.closest('.tab-row');
+  if (!row || row.dataset.index === '') return { action: 'moveTabs', windowId, index: -1, el: win.querySelector('.win-head') };
+  const r = row.getBoundingClientRect(), before = e.clientY < r.top + r.height / 2;
+  return { action: 'moveTabs', windowId, index: +row.dataset.index + (before ? 0 : 1), line: hLine(r, before) };
+}
+
+// The dropped rows go to their new place at once, the others making room (each glides from where it was)
+function moveRowsNow(ids, t) {
+  const box = document.querySelector(`#windows .win[data-window="${t.windowId}"] > .win-tabs`);
+  const rows = ids.map((id) => document.querySelector(`#windows .tab-row[data-tab="${id}"]`)).filter(Boolean);
+  if (!box || !rows.length) return;
+  const all = [...document.querySelectorAll('#windows .tab-row')];
+  const was = new Map(all.map((r) => [r, r.getBoundingClientRect()]));
+  const anchor = t.index < 0 ? null : [...box.children].find((r) => !rows.includes(r) && +r.dataset.index >= t.index) || null;
+  for (const r of rows) box.insertBefore(r, anchor);
+  for (const r of all) {
+    const a = was.get(r), b = r.getBoundingClientRect();
+    const dx = a.left - b.left, dy = a.top - b.top;
+    if (Math.abs(dx) + Math.abs(dy) > .5) r.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 260, easing: GLIDE });
+  }
+}
+
 function insideDragged(el, d) {
   return d.kind === 'node' && (d.ids || [d.id]).some((id) => el.closest(`[data-id="${CSS.escape(id)}"]`));
 }
@@ -2777,6 +2809,7 @@ function insideDragged(el, d) {
 function resolveItemDrop(e, el, d) {
   // saved links dragged back to the open tabs panel are opened in that window
   const win = el.closest('.win');
+  if (win && d.kind === 'tab' && canMoveTabs()) return tabMoveTarget(e, el, win);
   if (win) return d.kind === 'node' ? { action: 'open', el: win, windowId: +win.dataset.window } : null;
   if (el.closest('#tabs-panel')) return null;
 
@@ -2959,6 +2992,13 @@ async function performDrop(d, t, e) {
   if (before && done && moved.length) remember(before, whatOf('move', moved));
 }
 async function dropInto(d, t, e) {
+  if (t.action === 'moveTabs') {
+    moveRowsNow(d.tabIds, t); // (the rows move as they're dropped; the browser's tabs follow)
+    movingTabs = true;
+    try { await run(B.call('moveTabs', { tabIds: d.tabIds, windowId: t.windowId, index: t.index })); } finally { movingTabs = false; }
+    clearTimeout(tabsTimer);
+    return renderTabs(); // (at once: not waiting for the change to be announced)
+  }
   if (t.action === 'open') {
     const urls = (d.ids || [d.id]).flatMap((id) => { const r = T.locate(state, id); return r ? T.collectLinks(r.node).map((l) => l.url) : []; });
     if (urls.length) await run(B.call('openUrls', { urls, windowId: t.windowId }));
@@ -3110,7 +3150,7 @@ document.addEventListener('dragover', (e) => {
   showIndicator(t);
   if (t) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = d.kind === 'node' && t.action !== 'open' ? 'move' : 'copy';
+    e.dataTransfer.dropEffect = (d.kind === 'node' && t.action !== 'open') || t.action === 'moveTabs' ? 'move' : 'copy';
   }
 });
 
