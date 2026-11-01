@@ -8,6 +8,11 @@ Tabs you're not using are put to sleep to keep things light.
 </p>
 
 <p align="center">
+<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib"><img src="https://img.shields.io/chrome-web-store/v/ojkddimicblompbmfelkfocpgmeflaib?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white" alt="Chrome Web Store version"></a>
+<a href="https://github.com/nda111/tabcat/releases/latest"><img src="https://img.shields.io/github/v/release/nda111/tabcat?label=GitHub%20release" alt="Latest GitHub release"></a>
+</p>
+
+<p align="center">
 <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib"><b>Chrome Web Store</b></a> ·
 <a href="https://tabcat.ghyeok.com/"><b>Dashboard</b></a> ·
 <a href="https://github.com/nda111/tabcat/issues">Report a problem</a>
