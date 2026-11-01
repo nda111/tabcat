@@ -49,6 +49,36 @@ Then run it with the dashboard from `web/` and its data in `.tabcat-server/` (bo
 
 and open <http://tabcat.localhost:8090> (any `*.localhost` is your computer, and counts as a server for the extension).
 
+## Keep it running
+
+tabcat-server is one process with one database file, so it needs no workers or launcher of its own: what
+keeps it up is whatever starts services on your machine. Pick one:
+
+- **Docker** (any OS): `docker compose up -d` in this folder (see `compose.yaml`). It starts again after
+  a crash or a reboot.
+- **Linux, systemd**: a unit such as
+
+  ```ini
+  # /etc/systemd/system/tabcat-server.service
+  [Unit]
+  Description=tabcat server
+  After=network-online.target
+
+  [Service]
+  ExecStart=/opt/tabcat/.venv/bin/tabcat-server --data-dir /var/lib/tabcat-server
+  Restart=on-failure
+  User=tabcat
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+
+  then `sudo systemctl enable --now tabcat-server`.
+- **Windows**: Task Scheduler, a task "At startup" running `…\.venv\Scripts\tabcat-server.exe` with
+  "Restart if the task fails" on; or a service wrapper such as NSSM.
+
+While working on the server, `--reload` starts it again whenever its code changes.
+
 ## Settings
 
 Set before it starts, on the command line, in the environment, or in `config.toml` in the data folder:

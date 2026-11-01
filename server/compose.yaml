@@ -1,0 +1,9 @@
+# docker compose up -d: tabcat-server, started again after a crash or a reboot, its data in a volume
+services:
+  tabcat:
+    build: .
+    restart: unless-stopped
+    ports: ["127.0.0.1:8080:8080"]   # (only this computer: put HTTPS in front for others)
+    volumes: [tabcat-data:/data]
+volumes:
+  tabcat-data:
