@@ -28,6 +28,27 @@ with sync_playwright() as p:
     pp = d.evaluate('__p')
     check(min(pp) < -5 and pp[-1] == 0, f'trackpad momentum into the end bounces and settles while it still comes ({min(pp)}, {pp[-1]})')
     time.sleep(.5)
+    # momentum that starts a moment after the finger lifts, stronger: still one bounce, not two
+    def bounces(pp):
+        n, out = 0, False
+        for x in pp:
+            if x < -3 and not out: n, out = n + 1, True
+            elif x >= -1: out = False
+        return n
+    wheel = lambda dy: cdp0.send('Input.dispatchMouseEvent', {'type': 'mouseWheel', 'x': 600, 'y': 300, 'deltaX': 0, 'deltaY': dy})
+    d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=b.scrollHeight-b.clientHeight-200;})()"); time.sleep(.5)
+    d.evaluate(PULL, '#board')
+    for x in [30] * 12: wheel(x)
+    time.sleep(.2)
+    for x in [50 * 0.94 ** i for i in range(50)]: wheel(x)
+    time.sleep(1)
+    pp = d.evaluate('__p')
+    check(bounces(pp) == 1 and pp[-1] == 0, f'momentum after a pause bounces once, not twice ({bounces(pp)})')
+    # after a quiet moment, pushing at the end pulls again
+    time.sleep(.5)
+    for x in [4] * 15: wheel(x)
+    check(d.evaluate("parseFloat((document.querySelector('#board').style.translate||'0 0').split(' ')[1])||0") < -5, 'after a quiet moment, pushing at the end pulls again')
+    time.sleep(1)
     th = d.locator('#main > .sf-thumb.y')
     check(th.evaluate("e=>e.classList.contains('show')") and d.evaluate("getComputedStyle(document.querySelector('#board')).scrollbarWidth") == 'none',
           "a slim scrollbar shows over the board in place of the browser's")
