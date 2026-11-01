@@ -3227,13 +3227,19 @@ langSelect.addEventListener('change', () => {
   langSlide = box;
   langSelect.classList.add('sliding');
   const ease = { duration: 380, easing: GLIDE, fill: 'both' };
-  old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 100}%)`, opacity: 0 }], ease);
-  now.animate([{ transform: `translateY(${dir * 100}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], ease).finished.then(() => {
+  const out = old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 100}%)`, opacity: 0 }], ease);
+  const into = now.animate([{ transform: `translateY(${dir * 100}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], ease);
+  into.finished.then(() => {
     if (langSlide !== box) return;
     box.remove();
     langSlide = null;
     langSelect.classList.remove('sliding');
   }, () => {});
+  // together with the page's change of language: the slide waits for it to start, and it starts now,
+  // not after the setting's round trip through the extension (whose answer then finds it done)
+  out.pause(); into.pause();
+  onLangStart = () => { const at = document.timeline.currentTime; out.startTime = at; into.startTime = at; }; // (from this frame, as the change's own animations)
+  switchLang(langSelect.value);
 });
 
 // Number fields: − / + beside the value instead of the browser's spinners. A step slides the new
@@ -3350,12 +3356,14 @@ function switchTheme(s) {
 // when it changes. The setting is also kept on this device, so the next visit starts in it.
 let langShown = 'en';
 let langWanted = null; // the setting last asked for (our own save and its push both ask)
+let onLangStart = null; // (run as the change shows: the language field's slide goes with it)
+const langStarted = () => { const f = onLangStart; onLangStart = null; f?.(); };
 async function switchLang(setting = 'auto', fade = true) {
-  if (setting === langWanted) return;
+  if (setting === langWanted) return langStarted();
   langWanted = setting;
   try { localStorage.setItem('tabcat:lang', setting); } catch { /* storage unavailable */ }
   const code = await setLang(setting);
-  if (code === langShown) return;
+  if (code === langShown) return langStarted();
   langShown = code;
   const swap = async () => {
     applyText();
@@ -3363,7 +3371,7 @@ async function switchLang(setting = 'auto', fade = true) {
     renderSidebar(); renderHead(); renderCats(); renderBoard();
     await renderTabs();
   };
-  if (!fade || !document.startViewTransition) return swap();
+  if (!fade || !document.startViewTransition) { langStarted(); return swap(); }
   // An open Settings dialog moves with a spring instead: its boxes (the dialog, each fieldset) are
   // pictured empty and stretch to their new size, and everything in them moves the same way at its own
   // size, so nothing shifts against the box it sits in; only the text itself cross-fades.
@@ -3374,7 +3382,7 @@ async function switchLang(setting = 'auto', fade = true) {
   if (dlg.open) named.push([langWrap, 'settings-part', 'settings-lang']);
   named.forEach(([el, cls, name], i) => { el.style.viewTransitionName = name || `settings-${i}`; el.style.viewTransitionClass = cls; });
   const vt = document.startViewTransition(swap);
-  vt.ready.catch(() => {}); // (cut short by the next one: nothing to handle)
+  vt.ready.then(langStarted, () => { langStarted(); }); // (cut short by the next one: nothing else to handle)
   vt.finished.finally(() => named.forEach(([el]) => {
     el.style.viewTransitionName = '';
     el.style.viewTransitionClass = '';
