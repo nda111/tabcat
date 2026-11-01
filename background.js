@@ -45,11 +45,11 @@ function buildMenus() {
   // chained: two overlapping rebuilds would create the same ids twice
   menus = menus.then(async () => {
     const { server } = await S.loadSettings();
-    // (on the toolbar button: connect to the user's own server, or disconnect from it)
+    // (on the toolbar button: connect to the user's own server, or disconnect from it. The button's menu shows
+    // at most ACTION_MENU_TOP_LEVEL_LIMIT (6) items, separators included: this is the sixth)
     const serverItem = ['server', server ? I.t('menuDisconnect', { host: new URL(server).host }) : I.t('menuConnect'), ['action']];
     await new Promise((done) => chrome.contextMenus.removeAll(() => {
       for (const [id, key, contexts] of MENUS) chrome.contextMenus.create({ id, title: I.t(key), contexts }, () => void chrome.runtime.lastError);
-      chrome.contextMenus.create({ id: 'sep-server', type: 'separator', contexts: ['action'] }, () => void chrome.runtime.lastError);
       chrome.contextMenus.create({ id: serverItem[0], title: serverItem[1], contexts: serverItem[2] }, () => void chrome.runtime.lastError);
       done();
     }));

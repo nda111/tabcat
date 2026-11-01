@@ -12,6 +12,12 @@ with sync_playwright() as p:
     ctx, sw = launch(p, manifest={'host_permissions': ['http://tabcat.localhost/*']})
     menu = lambda: sw.evaluate("new Promise(r => chrome.contextMenus.update('server', {}, () => r(!chrome.runtime.lastError)))")
     check(menu(), 'the toolbar button has the server item')
+    # (the browser shows only the first ACTION_MENU_TOP_LEVEL_LIMIT of the button's items: it must be among them)
+    n = sw.evaluate("Promise.resolve(chrome.contextMenus.ACTION_MENU_TOP_LEVEL_LIMIT)")
+    import os, re
+    src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'background.js')).read()
+    on_button = len(re.findall(r"^\s*\['[\w-]+', '\w+', \[[^\]]*'action'", src, re.M)) + 1 + src.count("type: 'separator', contexts: ['action']")
+    check(on_button <= n, f'the toolbar button has no more items than the browser shows ({on_button} of {n})')
     # the connect window
     ext = sw.url.rsplit('/', 1)[0]
     c = ctx.new_page(); c.on('pageerror', lambda e: errors.append(str(e)))
