@@ -329,6 +329,35 @@ check(codes[:n] == [403] * n and set(codes[n:]) == {429}, f'guessing the current
 check(c.get('/api/admin/events', params={'user': ben_id}).json()['events'][0]['kind'] == 'password_wrong', 'and kept in the record')
 check(c.put('/api/admin/settings', json={'log_days': 3}).status_code == 400 and c.put('/api/admin/settings', json={'log_days': 30}).json()['log_days'] == 30, 'kept 7 to 365 days')
 
+# sync: changes kept in the order they came, each once; a whole copy now and then; each account its own
+sa = TestClient(app, follow_redirects=False, client=('192.0.2.90', 1)); sb = TestClient(app, follow_redirects=False, client=('192.0.2.91', 1))
+sa.post('/api/login', json=J(username='ann', password='annpass99')); sb.post('/api/login', json=J(username='ben', password='benpass99'))
+st0 = sa.get('/api/sync/state').json()
+check(st0 == {'snapshot': None, 'ops': [], 'head': 0}, 'sync: nothing kept yet for a new account')
+check(sa.put('/api/sync/snapshot', json={'seq': 0, 'body': {'state': {'workspaces': []}}}).json()['seq'] == 0, 'the first copy (the browser’s own data to start from)')
+r = sa.post('/api/sync/ops', json={'device': 'd1', 'ops': [{'id': 'a1', 'body': {'op': 'patch'}}, {'id': 'a2', 'body': {'op': 'move'}}]}).json()
+check([a['seq'] for a in r['acked']] == [1, 2] and r['head'] == 2, 'changes numbered in the order they came')
+r = sa.post('/api/sync/ops', json={'device': 'd1', 'ops': [{'id': 'a2', 'body': {'op': 'move'}}, {'id': 'a3', 'body': {'op': 'remove'}}]}).json()
+check([a['seq'] for a in r['acked']] == [2, 3], 'sent again (an answer lost): kept once, its number as before')
+since = sa.get('/api/sync/ops', params={'after': 1}).json()
+check([o['id'] for o in since['ops']] == ['a2', 'a3'] and since['ops'][0]['device'] == 'd1' and since['ops'][1]['body'] == {'op': 'remove'}, 'changes after a number, as sent')
+check(sb.get('/api/sync/state').json()['head'] == 0 and sb.get('/api/sync/ops', params={'after': 0}).json()['ops'] == [], "another account doesn't see them")
+check(sa.put('/api/sync/snapshot', json={'seq': 3, 'body': {'state': {'workspaces': [1]}}}).json()['seq'] == 3 and sa.put('/api/sync/snapshot', json={'seq': 2, 'body': {}}).status_code == 409, 'a newer copy kept; an older one refused')
+check(sa.put('/api/sync/snapshot', json={'seq': 99, 'body': {}}).status_code == 400, 'a copy past the changes kept: refused')
+full = sa.get('/api/sync/state').json()
+check(full['snapshot']['seq'] == 3 and full['snapshot']['body'] == {'state': {'workspaces': [1]}} and full['ops'] == [], 'starting again: the copy, and the changes after it (none)')
+big = {'id': 'big', 'body': {'x': 'y' * 200000}}
+check(sa.post('/api/sync/ops', json={'device': 'd1', 'ops': [big]}).status_code == 200, 'sync takes bigger bodies than the rest of the API (a whole tabcat)')
+check(TestClient(app).get('/api/sync/state').status_code == 401, 'and only signed in')
+import gzip as _gz, json as _js
+packed = _gz.compress(_js.dumps({'device': 'd1', 'ops': [{'id': 'gz1', 'body': {'note': 'z' * 50000}}]}).encode())
+r = sa.post('/api/sync/ops', content=packed, headers={'Content-Type': 'application/json', 'Content-Encoding': 'gzip'})
+check(r.status_code == 200 and r.json()['acked'][0]['id'] == 'gz1' and len(packed) < 2000, f'sent gzipped (as the extension does with what is big): taken ({len(packed)} bytes for 50 KB)')
+bomb = _gz.compress(b'{"device":"x","ops":[{"id":"b","body":"' + b'0' * (9 * 1024 * 1024) + b'"}]}')
+check(sa.post('/api/sync/ops', content=bomb, headers={'Content-Type': 'application/json', 'Content-Encoding': 'gzip'}).status_code == 413, f'a "zip bomb" ({len(bomb)} bytes unpacking past 8 MB): refused')
+r = sa.get('/api/sync/state', headers={'Accept-Encoding': 'gzip'})
+check(r.headers.get('content-encoding') == 'gzip', 'answers worth it come back gzipped')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

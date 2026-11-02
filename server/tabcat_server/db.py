@@ -29,6 +29,24 @@ create table if not exists invites (
   used_at real
 );
 create table if not exists settings (key text primary key, value text not null);
+-- sync (each account's tabcat data, kept here and passed between its browsers): changes in the order they came,
+-- each numbered (seq) and applied once (its id); now and then a whole copy (a snapshot) the older changes fold into
+create table if not exists sync_ops (
+  user_id integer not null references users(id) on delete cascade,
+  seq integer not null,
+  op_id text not null,
+  device text,
+  at real not null,
+  body text not null,
+  primary key (user_id, seq),
+  unique (user_id, op_id)
+);
+create table if not exists sync_snapshots (
+  user_id integer primary key references users(id) on delete cascade,
+  seq integer not null,
+  at real not null,
+  body text not null
+);
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
   id integer primary key,
   at real not null,

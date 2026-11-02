@@ -22,6 +22,8 @@ from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
 MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
+MAX_SYNC_BODY = 8 * 1024 * 1024  # (sync's: a whole copy of someone's tabcat at most)
+SYNC_KEEP_OPS = 5000             # (changes kept past the latest copy, for browsers a little behind)
 API_PER_MINUTE = 240          # (per address)
 NO_STORE = {'Cache-Control': 'no-store'}
 # the admin page's number settings and their ranges (session_days 0: not staying signed in)
@@ -38,6 +40,10 @@ def create_app(config) -> FastAPI:
     throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.config = db, config
+    # Answers gzipped when worth it (over 1 KB) and the browser says it takes them (every browser does): JSON and the
+    # dashboard's files shrink to a fifth or less, for a millisecond's work
+    from starlette.middleware.gzip import GZipMiddleware
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
 
     if config.dashboard == 'auto' and not dashboard.present(config.dashboard_dir):
         try:
@@ -154,16 +160,32 @@ def create_app(config) -> FastAPI:
             auth.end_session(db, t)
         return set_accounts(JSONResponse({'ok': True}), request, [token] + [t for t, _ in rest[:auth.MAX_ACCOUNTS - 1]], keep)
 
+    def limit_for(path: str) -> int:
+        return MAX_SYNC_BODY if path.startswith('/api/sync/') else MAX_BODY
+
     async def body(request: Request) -> dict:
         # (JSON only: a form posted from another site can't send it, nor the cookie's SameSite=Lax POST;
-        # and small: read only up to MAX_BODY, however it's sent)
+        # and small: read only up to MAX_BODY (sync: MAX_SYNC_BODY), however it's sent)
         if request.headers.get('content-type', '').split(';')[0] != 'application/json':
             raise HTTPException(415, 'JSON expected')
+        limit = limit_for(request.url.path)
         raw = bytearray()
         async for chunk in request.stream():
             raw += chunk
-            if len(raw) > MAX_BODY:
+            if len(raw) > limit:
                 raise HTTPException(413, 'too large')
+        # (sent gzipped, as the extension does with what's big: unpacked, but never past the limit, however small
+        # it came: a "zip bomb" stops there)
+        if request.headers.get('content-encoding', '').strip().lower() == 'gzip':
+            import zlib
+            unzip = zlib.decompressobj(16 + zlib.MAX_WBITS)
+            try:
+                out = unzip.decompress(bytes(raw), limit + 1)
+            except zlib.error:
+                raise HTTPException(400, 'bad gzip')
+            if len(out) > limit or unzip.unconsumed_tail:
+                raise HTTPException(413, 'too large')
+            raw = out
         try:
             import json
             data = json.loads(raw or b'{}')
@@ -197,7 +219,7 @@ def create_app(config) -> FastAPI:
     @app.middleware('http')
     async def guard(request: Request, call_next):
         if request.url.path.startswith('/api/'):
-            if int(request.headers.get('content-length') or 0) > MAX_BODY:
+            if int(request.headers.get('content-length') or 0) > limit_for(request.url.path):
                 return JSONResponse({'detail': 'too large'}, 413)
             now, who = time.time(), client(request)
             q = hits.setdefault(who, deque())
@@ -845,6 +867,84 @@ def create_app(config) -> FastAPI:
     def my_events(request: Request, limit: int = 20):
         u = need_user(request)
         return [event(r) for r in db.q('select * from events where user_id = ? order by id desc limit ?', u['id'], min(max(limit, 1), 100))]
+
+    # ---------- sync: each account's tabcat data, kept here, passed between its browsers ----------
+    # The server keeps what the browsers send in the order it came (numbered: seq) and hands it on; it doesn't
+    # read it (the extension applies changes, the same way in every browser, in this order). A change is
+    # known by its id: sent twice (an answer lost on the way), it's kept once. Now and then a browser sends a
+    # whole copy (a snapshot) up to a number; changes long before it are let go.
+    def sync_head(uid) -> int:
+        r = db.one('select max(seq) n from sync_ops where user_id = ?', uid)
+        snap = db.one('select seq from sync_snapshots where user_id = ?', uid)
+        return max(r['n'] or 0, snap['seq'] if snap else 0)
+
+    def sync_ops_after(uid, after, limit=1000):
+        rows = db.q('select seq, op_id, device, body from sync_ops where user_id = ? and seq > ? order by seq limit ?', uid, after, limit)
+        return [{'seq': r['seq'], 'id': r['op_id'], 'device': r['device'], 'body': json.loads(r['body'])} for r in rows]
+
+    @app.get('/api/sync/state')
+    def sync_state(request: Request):
+        """Everything to start from: the latest copy (none yet: null) and the changes after it."""
+        u = need_user(request)
+        snap = db.one('select seq, body, at from sync_snapshots where user_id = ?', u['id'])
+        after = snap['seq'] if snap else 0
+        return {'snapshot': {'seq': snap['seq'], 'at': snap['at'], 'body': json.loads(snap['body'])} if snap else None,
+                'ops': sync_ops_after(u['id'], after, 100000), 'head': sync_head(u['id'])}
+
+    @app.get('/api/sync/ops')
+    def sync_since(request: Request, after: int = 0):
+        """The changes after a number (`more`: there are yet more after these). Too far behind, before the
+        oldest kept: `reload`, start again from the copy."""
+        u = need_user(request)
+        oldest = db.one('select min(seq) n from sync_ops where user_id = ?', u['id'])['n']
+        snap = db.one('select seq from sync_snapshots where user_id = ?', u['id'])
+        if snap and after < snap['seq'] and (oldest is None or after < oldest - 1):
+            return {'reload': True, 'head': sync_head(u['id'])}
+        ops = sync_ops_after(u['id'], after)
+        return {'ops': ops, 'head': sync_head(u['id']), 'more': len(ops) == 1000}
+
+    @app.post('/api/sync/ops')
+    async def sync_push(request: Request):
+        """Changes from a browser, in its order: each kept once (its id), numbered after the rest. What came
+        back: the numbers each got (a change kept before: its number then)."""
+        u = need_user(request)
+        data = await body(request)
+        device = str(data.get('device', ''))[:64]
+        ops = data.get('ops') if isinstance(data.get('ops'), list) else []
+        acked = []
+        with db.lock:
+            seq = sync_head(u['id'])
+            for o in ops[:2000]:
+                oid = str((o or {}).get('id', ''))[:64]
+                if not oid or 'body' not in o:
+                    continue
+                had = db.one('select seq from sync_ops where user_id = ? and op_id = ?', u['id'], oid)
+                if had:
+                    acked.append({'id': oid, 'seq': had['seq']})
+                    continue
+                seq += 1
+                db.run('insert into sync_ops (user_id, seq, op_id, device, at, body) values (?, ?, ?, ?, ?, ?)',
+                       u['id'], seq, oid, device, time.time(), json.dumps(o['body'], separators=(',', ':')))
+                acked.append({'id': oid, 'seq': seq})
+        return {'acked': acked, 'head': sync_head(u['id'])}
+
+    @app.put('/api/sync/snapshot')
+    async def sync_snapshot(request: Request):
+        """A whole copy, as it stands after change number `seq` (the first, with nothing kept yet: seq 0, the
+        browser's own data to start from). An older one than kept: refused. Changes long before it go."""
+        u = need_user(request)
+        data = await body(request)
+        seq = data.get('seq')
+        if not isinstance(seq, int) or seq < 0 or seq > sync_head(u['id']) or not isinstance(data.get('body'), dict):
+            raise HTTPException(400, 'bad snapshot')
+        with db.lock:
+            have = db.one('select seq from sync_snapshots where user_id = ?', u['id'])
+            if have and seq < have['seq']:
+                raise HTTPException(409, 'an older copy than kept')
+            db.run('insert into sync_snapshots (user_id, seq, at, body) values (?, ?, ?, ?) on conflict(user_id) do update set seq = excluded.seq, at = excluded.at, body = excluded.body',
+                   u['id'], seq, time.time(), json.dumps(data['body'], separators=(',', ':')))
+            db.run('delete from sync_ops where user_id = ? and seq <= ?', u['id'], seq - SYNC_KEEP_OPS)
+        return {'ok': True, 'seq': seq}
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):
