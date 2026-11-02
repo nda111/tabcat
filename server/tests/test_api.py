@@ -218,6 +218,18 @@ check(c.put('/api/me/name', json={'name': ''}).json()['name'] == '', 'and cleare
 r = c.post('/api/admin/users', json=J(username='named1', password='named1pass', name='Named One'))
 check(r.json()['name'] == 'Named One', 'an admin adds a user with a name')
 
+# where this account is signed in: each device, its address, since when; signing out of one from here
+d1 = TestClient(app, follow_redirects=False, client=('192.0.2.40', 1), headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36'})
+d2 = TestClient(app, follow_redirects=False, client=('192.0.2.41', 1), headers={'User-Agent': 'Mozilla/5.0 (iPhone) Version/18 Mobile Safari/604.1'})
+d1.post('/api/login', json=J(username='ann', password='annpass99')); d2.post('/api/login', json=J(username='ann', password='annpass99'))
+ss = d1.get('/api/me/sessions').json()
+mine = [x for x in ss if x['current']]
+other = next(x for x in ss if x['ip'] == '192.0.2.41')
+check(len(mine) == 1 and mine[0]['ip'] == '192.0.2.40' and 'Windows' in mine[0]['agent'] and other['created_at'] > 0, f'the sessions: this one, the other device, with their addresses ({len(ss)})')
+check(d1.delete(f"/api/me/sessions/{mine[0]['id']}").status_code == 400, 'this one is signed out of by signing out, not from the list')
+check(d1.delete(f"/api/me/sessions/{other['id']}").status_code == 200 and d2.get('/api/me').status_code == 401, 'the other device signed out of from here')
+check(d1.get('/api/me').status_code == 200, 'this one still signed in')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

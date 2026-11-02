@@ -40,7 +40,7 @@ def create_app(config) -> FastAPI:
     # ---------- who is asking ----------
 
     def user_of(request: Request):
-        return auth.session_user(db, request.cookies.get(auth.COOKIE))
+        return auth.session_user(db, request.cookies.get(auth.COOKIE), ip=client(request))
 
     def need_user(request: Request):
         u = user_of(request)
@@ -114,7 +114,7 @@ def create_app(config) -> FastAPI:
         return rest or None
 
     def sign_in(request: Request, user_id: int) -> Response:
-        token = auth.new_session(db, user_id, request.headers.get('user-agent', ''))
+        token = auth.new_session(db, user_id, request.headers.get('user-agent', ''), client(request))
         # (the accounts already here stay, but for this one's old session: one each; the oldest go past the limit)
         rest = [(t, u) for t, u in accounts_of(request) if u and u['id'] != user_id]
         for t, _ in rest[auth.MAX_ACCOUNTS - 1:]:
@@ -395,6 +395,25 @@ def create_app(config) -> FastAPI:
         import base64
         # (its address changes with it: kept a long while)
         return Response(base64.b64decode(data), media_type=head[5:].split(';')[0], headers={'Cache-Control': 'private, max-age=31536000, immutable'})
+
+    # Where this account is signed in: each sign-in (device), from where, since when, last used; one can be
+    # signed out of from here (this one: by signing out)
+    @app.get('/api/me/sessions')
+    def my_sessions(request: Request):
+        u = need_user(request)
+        mine = auth.token_hash(request.cookies.get(auth.COOKIE, ''))
+        rows = db.q('select * from sessions where user_id = ? and expires_at > ? order by coalesce(last_seen, created_at) desc', u['id'], time.time())
+        return [{'id': r['token'][:16], 'current': r['token'] == mine, 'agent': r['agent'] or '', 'ip': r['ip'] or '',
+                 'created_at': r['created_at'], 'last_seen': r['last_seen'] or r['created_at']} for r in rows]
+
+    @app.delete('/api/me/sessions/{sid}')
+    def end_my_session(sid: str, request: Request):
+        u = need_user(request)
+        mine = auth.token_hash(request.cookies.get(auth.COOKIE, ''))
+        if len(sid) != 16 or mine.startswith(sid):
+            raise HTTPException(400, 'not that one')
+        db.run('delete from sessions where user_id = ? and substr(token, 1, 16) = ?', u['id'], sid)
+        return {'ok': True}
 
     @app.post('/api/me/logout-others')
     def logout_others(request: Request):

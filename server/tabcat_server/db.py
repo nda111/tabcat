@@ -53,6 +53,11 @@ class DB:
                 self.conn.execute('update users set space = cast(id as text)')
             # (a profile photo: a small image as a data: URL, and when it was set, for its address to change with it)
             cols = [r['name'] for r in self.conn.execute('pragma table_info(users)')]
+            # (each sign-in's address and when it was last used: the account page lists them)
+            scols = [r['name'] for r in self.conn.execute('pragma table_info(sessions)')]
+            if 'ip' not in scols:
+                self.conn.execute('alter table sessions add column ip text')
+                self.conn.execute('alter table sessions add column last_seen real')
             if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
                 self.conn.execute('alter table users add column name text')
             if 'avatar' not in cols:

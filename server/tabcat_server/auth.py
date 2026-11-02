@@ -31,11 +31,11 @@ def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def new_session(db, user_id: int, agent: str = '') -> str:
+def new_session(db, user_id: int, agent: str = '', ip: str = '') -> str:
     token = secrets.token_urlsafe(32)
     now = time.time()
-    db.run('insert into sessions (token, user_id, created_at, expires_at, agent) values (?, ?, ?, ?, ?)',
-           token_hash(token), user_id, now, now + session_seconds(db), agent[:200])
+    db.run('insert into sessions (token, user_id, created_at, expires_at, agent, ip, last_seen) values (?, ?, ?, ?, ?, ?, ?)',
+           token_hash(token), user_id, now, now + session_seconds(db), agent[:200], ip[:64], now)
     return token
 
 
@@ -46,13 +46,17 @@ def session_seconds(db) -> float:
     return (days or 1) * 86400
 
 
-def session_user(db, token, touch=True):
+def session_user(db, token, touch=True, ip=None):
     if not token:
         return None
-    row = db.one('''select u.* from sessions s join users u on u.id = s.user_id
-                    where s.token = ? and s.expires_at > ? and u.disabled = 0''', token_hash(token), time.time())
+    now = time.time()
+    row = db.one('''select u.*, s.last_seen session_seen, s.ip session_ip from sessions s join users u on u.id = s.user_id
+                    where s.token = ? and s.expires_at > ? and u.disabled = 0''', token_hash(token), now)
     if row and touch:
-        db.run('update users set last_seen = ? where id = ?', time.time(), row['id'])
+        db.run('update users set last_seen = ? where id = ?', now, row['id'])
+        # (the sign-in's own: when last used, from where; a minute apart is enough, or a new address)
+        if now - (row['session_seen'] or 0) > 60 or (ip and ip != row['session_ip']):
+            db.run('update sessions set last_seen = ?, ip = coalesce(?, ip) where token = ?', now, ip, token_hash(token))
     return row
 
 

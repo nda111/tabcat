@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, date, flip, h, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -86,9 +86,60 @@ $('#photo-remove').addEventListener('click', async () => {
   catch (err) { toast(err.message); }
 });
 $('#logout').addEventListener('click', async () => { await api('logout', { method: 'POST' }); location.replace('/login'); });
+// ---------- signed-in devices ----------
+// The device, read from the browser's own description of itself: "Chrome on Windows"
+function deviceName(agent) {
+  const browser = /Edg\//.test(agent) ? 'Edge' : /Whale\//.test(agent) ? 'Whale' : /OPR\//.test(agent) ? 'Opera' : /SamsungBrowser/.test(agent) ? 'Samsung Internet'
+    : /Firefox\//.test(agent) ? 'Firefox' : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : '';
+  const os = /Windows/.test(agent) ? 'Windows' : /iPhone|iPad/.test(agent) ? 'iOS' : /Android/.test(agent) ? 'Android'
+    : /Mac OS X|Macintosh/.test(agent) ? 'macOS' : /CrOS/.test(agent) ? 'ChromeOS' : /Linux/.test(agent) ? 'Linux' : '';
+  return browser && os ? t('deviceOn', { browser, os }) : browser || os || t('unknownDevice');
+}
+// signing out of one: two clicks, the first opening it into a red "Sign out" in place (as the dashboard's accounts)
+function outButton(onOut) {
+  const b = h('button', { type: 'button', class: 'btn small device-out' }, t('chooseSignOut'));
+  let timer = 0;
+  const disarm = () => { clearTimeout(timer); b.classList.remove('armed'); };
+  b.addEventListener('click', () => {
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); b.animate([{ scale: .94 }, { scale: 1 }], { duration: 220, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); timer = setTimeout(disarm, 3000); return; }
+    disarm();
+    onOut();
+  });
+  b.addEventListener('pointerleave', disarm);
+  return b;
+}
+// A row going: it fades aside, then folds shut, what's below gliding up with it (not the box jumping after)
+async function collapse(row) {
+  await row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(14px)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' }).finished;
+  const cs = getComputedStyle(row);
+  row.style.overflow = 'hidden';
+  await row.animate([{ height: `${row.offsetHeight}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, borderBottomWidth: cs.borderBottomWidth },
+    { height: '0px', paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished;
+  row.remove();
+}
+async function devices() {
+  const list = await api('me/sessions');
+  await flip($('#devices'), () => $('#devices').replaceChildren(...list.map((d) => {
+    const row = h('div', { class: 'device', 'data-key': d.id },
+      h('div', { class: 'device-text' },
+        h('div', { class: 'device-name' }, deviceName(d.agent), d.current ? h('span', { class: 'tag accent' }, t('thisDevice')) : null),
+        h('div', { class: 'muted small' }, [d.ip, t('firstSignIn', { date: date(d.created_at) }), t('lastSeenAt', { date: date(d.last_seen) })].filter(Boolean).join(' · '))),
+      d.current ? null : outButton(async () => {
+        await api(`me/sessions/${d.id}`, { method: 'DELETE' });
+        await collapse(row);
+        toast(t('deviceSignedOut'));
+        devices();
+      }));
+    return row;
+  })));
+  $('#others').disabled = list.length < 2;
+}
+await devices();
 $('#others').addEventListener('click', async () => {
   await api('me/logout-others', { method: 'POST' });
-  say($('#others-msg'), t('othersOut'), 'ok');
+  toast(t('othersOut'));
+  await Promise.all([...$('#devices').children].filter((r) => r.querySelector('.device-out')).map(collapse));
+  devices();
 });
 $('#pw-form').addEventListener('submit', async (e) => {
   e.preventDefault();

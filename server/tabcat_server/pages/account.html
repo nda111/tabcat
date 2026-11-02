@@ -47,7 +47,10 @@
         <div class="row end"><button type="submit" class="btn primary" data-t="change">Change</button></div>
       </form>
       <hr>
-      <div class="row"><button type="button" class="btn" id="others" data-t="signOutOthers">Sign out of other devices</button><span class="msg" id="others-msg"></span></div>
+      <!-- where this account is signed in: each device, from where, since when, last used; sign out of any other -->
+      <h2 data-t="devices">Signed-in devices</h2>
+      <div class="devices" id="devices"></div>
+      <div class="row"><button type="button" class="btn" id="others" data-t="signOutOthers">Sign out of other devices</button></div>
       <hr>
       <h2 data-t="deleteAccount">Delete account</h2>
       <p class="muted small" data-t="deleteAccountNote"></p>
