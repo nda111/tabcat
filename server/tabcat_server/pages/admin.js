@@ -265,6 +265,7 @@ async function events(more = false) {
   if (r.events.length) evOldest = r.events[r.events.length - 1].id;
   // (nothing kept for the account chosen, or anyone: nothing to export; the button fades still, and back)
   if (!more && !$('#ev-export').classList.contains('busy')) $('#ev-export').disabled = !r.events.length;
+  if (!more) $('#ev-cols').hidden = !r.events.length; // (the column heads: over rows only)
   $('#ev-more').hidden = r.events.length < 30;
 }
 $('#ev-more').addEventListener('click', () => { $('#ev-more').dataset.opened = '1'; events(true); });

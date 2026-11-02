@@ -481,11 +481,13 @@ dd.crossfade > * { grid-area: 1 / 1; }
 .events { display: flex; flex-direction: column; margin: 0 0 8px; }
 .event { display: grid; grid-template-columns: 150px minmax(120px, 1fr) minmax(100px, .8fr) minmax(140px, 1fr); gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .event:last-child { border-bottom: 0; }
+/* the record's column heads: as the rows lay out, quieter */
+.ev-cols { padding: 4px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
 .event.bad .ev-what { color: var(--danger); }
 .ev-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event.mine { grid-template-columns: 1fr auto; row-gap: 0; }
 .event.mine .ev-where { grid-column: 1 / -1; }
-@media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } .ev-cols { display: none; } }
 
 /* drop-downs, as the dashboard's: a chevron instead of the native arrow; where the browser lets the list be
    styled (appearance: base-select), it drops in from the field, the chevron flips, the chosen one in the accent */

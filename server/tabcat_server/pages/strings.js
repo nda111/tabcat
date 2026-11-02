@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    evColWhere: 'Where from',
     csvCode: 'Event code', csvDetailCode: 'Detail code',
     ev_rate_limited: 'Too many requests: held off', evdHeld: '{n} turned away',
     evNoAccount: '(no such account)', evTried: 'tried “{name}”', csvTried: 'Username tried', ev_password_wrong: 'Wrong current password',
@@ -60,11 +61,12 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    evColWhere: '접속 정보',
     csvCode: '코드', csvDetailCode: '세부 코드',
     ev_rate_limited: '요청 과다로 차단', evdHeld: '{n}번 막힘',
-    evNoAccount: '(없는 계정)', evTried: '시도한 아이디: {name}', csvTried: '시도한 아이디', ev_password_wrong: '현재 비밀번호 틀림',
+    evNoAccount: '(가상 계정)', evTried: '시도한 아이디: {name}', csvTried: '시도한 아이디', ev_password_wrong: '현재 비밀번호 틀림',
     eventsExport: 'CSV로 내보내기', eventsExported: '기록 {n}개를 내보냈습니다.', csvWhen: '시간', csvAccount: '계정', csvWhat: '내용', csvDetail: '세부', csvIp: 'IP 주소', csvDevice: '기기', csvAgent: '브라우저 정보 (원문)', csvAdmin: '관리자',
-    evdUnknown: '없는 계정', evdSuspended: '정지됨', evd2fa: '2FA 사용', evdInvite: '초대로 가입', evdAdmin: '관리자로', evdUser: '사용자로', evdOn: '켬', evdOff: '끔', evdLeft: '코드 {n}개 남음', evdDays: '{n}일',
+    evdUnknown: '가상 계정', evdSuspended: '정지됨', evd2fa: '2FA 사용', evdInvite: '초대로 가입', evdAdmin: '관리자로', evdUser: '사용자로', evdOn: '켬', evdOff: '끔', evdLeft: '코드 {n}개 남음', evdDays: '{n}일',
     ev_login_ok: '로그인', ev_login_fail: '비밀번호 틀림', ev_login_locked: '로그인 시도 제한', ev_login_refused: '정지된 계정으로 로그인 시도', ev_twofa_fail: '2FA 코드 틀림', ev_recovery_used: '복구 코드로 로그인', ev_logout: '로그아웃', ev_signup: '계정 만들기', ev_setup: '서버 설정 (최초 관리자)', ev_password_changed: '비밀번호 변경', ev_account_deleted: '계정 삭제', ev_twofa_on: '2FA 켬', ev_twofa_off: '2FA 끔', ev_recovery_new: '복구 코드 다시 만듦', ev_session_ended: '기기 로그아웃', ev_logout_others: '다른 기기 모두 로그아웃', ev_user_added: '계정 추가', ev_role_changed: '역할 변경', ev_suspended: '계정 정지', ev_unsuspended: '정지 해제', ev_twofa_reset: '관리자가 2FA 해제', ev_password_reset: '비밀번호 재설정', ev_user_deleted: '관리자가 계정 삭제', ev_settings_changed: '설정 변경', ev_logout_all: '모든 사용자 로그아웃', ev_invite_created: '초대 링크 만듦', ev_invite_deleted: '초대 링크 삭제', ev_db_moved: '데이터베이스 옮김', ev_server_updated: '서버 업데이트', ev_tailscale_serve: 'Tailscale 공개 변경', eventsTitle: '보안 기록', eventsMore: '더 보기', eventsNone: '아직 기록이 없습니다.', eventsAll: '모든 계정', fails24h: '최근 24시간 실패·과다 요청:', failsAt: '{ip} ({n}회)', byAdmin: '관리자 {name}', logDays: '보안 기록 보관 기간 (일)', myEvents: '최근 보안 활동',
     goBack: '돌아가기',
     tsHttpsOff: 'Tailscale 계정에서 HTTPS가 꺼져 있습니다.', tsHttpsHow: '{link}에서 HTTPS 인증서를 켠 뒤 새로고침하세요.', tsAdminDns: '관리 콘솔의 DNS 설정', tsEnableHow: '{link}에서 허용한 뒤 다시 켜세요.', tsEnablePage: 'Tailscale 허용 페이지',
@@ -119,6 +121,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    evColWhere: '接続元',
     csvCode: 'コード', csvDetailCode: '詳細コード',
     ev_rate_limited: 'リクエスト過多で遮断', evdHeld: '{n} 回遮断',
     evNoAccount: '（存在しないアカウント）', evTried: '試したユーザー名: {name}', csvTried: '試したユーザー名', ev_password_wrong: '現在のパスワード間違い',
@@ -178,6 +181,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    evColWhere: '来源',
     csvCode: '代码', csvDetailCode: '详情代码',
     ev_rate_limited: '请求过多被拦截', evdHeld: '拦截 {n} 次',
     evNoAccount: '（账号不存在）', evTried: '尝试的用户名：{name}', csvTried: '尝试的用户名', ev_password_wrong: '当前密码错误',
@@ -237,6 +241,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    evColWhere: 'Desde',
     csvCode: 'Código', csvDetailCode: 'Código de detalle',
     ev_rate_limited: 'Demasiadas solicitudes: bloqueado', evdHeld: '{n} rechazadas',
     evNoAccount: '(cuenta inexistente)', evTried: 'intentó “{name}”', csvTried: 'Usuario intentado', ev_password_wrong: 'Contraseña actual errónea',
@@ -296,6 +301,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    evColWhere: 'Von wo',
     csvCode: 'Code', csvDetailCode: 'Detail-Code',
     ev_rate_limited: 'Zu viele Anfragen: abgewiesen', evdHeld: '{n}-mal abgewiesen',
     evNoAccount: '(kein solches Konto)', evTried: 'versucht: „{name}“', csvTried: 'Versuchter Benutzername', ev_password_wrong: 'Falsches aktuelles Passwort',
@@ -355,6 +361,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    evColWhere: 'Provenance',
     csvCode: 'Code', csvDetailCode: 'Code du détail',
     ev_rate_limited: 'Trop de requêtes : bloqué', evdHeld: '{n} refusées',
     evNoAccount: '(compte inexistant)', evTried: 'a essayé « {name} »', csvTried: 'Identifiant essayé', ev_password_wrong: 'Mauvais mot de passe actuel',
@@ -414,6 +421,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    evColWhere: 'De onde',
     csvCode: 'Código', csvDetailCode: 'Código do detalhe',
     ev_rate_limited: 'Solicitações demais: bloqueado', evdHeld: '{n} recusadas',
     evNoAccount: '(conta inexistente)', evTried: 'tentou “{name}”', csvTried: 'Usuário tentado', ev_password_wrong: 'Senha atual errada',

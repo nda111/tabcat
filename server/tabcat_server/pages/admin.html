@@ -78,6 +78,7 @@
         <!-- the security record: sign-ins and failures, changes, admins' doings; one account's, or everyone's -->
         <div class="row ev-head"><h2 data-t="eventsTitle">Security record</h2><span class="grow"></span><select id="ev-user" aria-label="Account"></select><button type="button" class="btn small" id="ev-export" disabled data-t="eventsExport">Export as CSV</button></div>
         <div id="ev-fails"></div>
+        <div class="event ev-cols" id="ev-cols" aria-hidden="true"><span data-t="csvWhen">Time</span><span data-t="csvWhat">Event</span><span data-t="csvAccount">Account</span><span data-t="evColWhere">Where from</span></div>
         <div class="events" id="events"></div>
         <div class="row end"><button type="button" class="btn small" id="ev-more" hidden data-t="eventsMore">More</button></div>
       </section>
