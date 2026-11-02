@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { live, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -445,15 +445,22 @@ $('#update').addEventListener('click', async (e) => {
 try { await Promise.all([users(), settings(), invites(), info(), eventAccounts().then(() => events())]); } finally { await showPage(); }
 // Kept up to date while it's looked at: every few seconds, and on coming back to it; not while a dialog's open
 // or something's being typed (what changed moves as it does when done here)
-let refreshing = false;
+// (live: told at once by the server, see live in pages.js; held off meanwhile: once that's over)
+let refreshing = false, missed = null;
 async function refresh() {
-  if (refreshing || document.hidden || document.querySelector('dialog.modal') || document.activeElement?.matches('input, textarea')) return;
+  if (document.hidden) return; // (on coming back: see below)
+  if (refreshing || document.querySelector('dialog.modal') || document.activeElement?.matches('input, textarea')) {
+    clearTimeout(missed); missed = setTimeout(refresh, 1000); return;
+  }
+  clearTimeout(missed);
   refreshing = true;
   // (the record: its newest page, unless older ones have been opened)
-  try { await Promise.all([users(), invites(), info(), ...($('#ev-more').dataset.opened ? [] : [events()])]); } catch { /* (the server away for a moment: next time) */ }
+  try { await Promise.all([users(), settings(), invites(), info(), ...($('#ev-more').dataset.opened ? [] : [events()])]); } catch { /* (the server away for a moment: next time) */ }
   refreshing = false;
 }
-setInterval(refresh, 12000);
+setInterval(refresh, 60000); // (and now and then anyway)
+// (this admin no longer one, or signed out, meanwhile: their own page, or signing in)
+live({ admin: refresh, me: async () => { if (!(await api('me')).admin) location.replace('/account'); } });
 addEventListener('focus', refresh);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 tailscaleView(); // (after: asking the computer takes a moment)

@@ -408,3 +408,39 @@ export function randomPassword(n = 14) {
   const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return [...crypto.getRandomValues(new Uint32Array(n))].map((x) => abc[x % abc.length]).join('');
 }
+
+// Live: the server says at once when what the page shows has changed (see /api/live). `on`: { kind: fn }, each
+// run a moment later (what this page did itself has come back by then), one at a time, again after if more came
+// meanwhile, and not while something on the page is still moving. Back after a break (the server started
+// again): all of them, for what was missed. Signed out meanwhile (here or elsewhere): `gone`.
+export function live(on, gone = () => location.replace('/login')) {
+  if (typeof EventSource === 'undefined') return;
+  const runner = (fn) => {
+    let timer = null, busy = false, again = false;
+    const go = async () => {
+      if (busy) { again = true; return; }
+      if (document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity)) { timer = setTimeout(go, 300); return; }
+      busy = true;
+      try { await fn(); } catch (e) { if (e?.status === 401) { es.close(); gone(); return; } /* (else: next time) */ }
+      busy = false;
+      if (again) { again = false; soon(); }
+    };
+    const soon = () => { clearTimeout(timer); timer = setTimeout(go, 250); };
+    return soon;
+  };
+  const fns = Object.fromEntries(Object.entries(on).map(([k, fn]) => [k, runner(fn)]));
+  let es = null, opened = false;
+  const open = () => {
+    es = new EventSource('/api/live');
+    for (const k of Object.keys(fns)) es.addEventListener(k, () => fns[k]());
+    es.addEventListener('open', () => { if (opened) Object.values(fns).forEach((f) => f()); opened = true; });
+    es.addEventListener('error', async () => { // (refused, signed out; or the server away a moment: it tries again)
+      const r = await fetch('/api/me', { credentials: 'same-origin' }).catch(() => null);
+      if (r?.status === 401) { es.close(); gone(); }
+    });
+  };
+  open();
+  // (not held in the back/forward cache: again on coming back, catching up)
+  addEventListener('pagehide', (e) => { if (e.persisted) { es.close(); opened = true; } });
+  addEventListener('pageshow', (e) => { if (e.persisted) open(); });
+}

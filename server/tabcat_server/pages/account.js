@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -50,6 +50,7 @@ $('#admin-link').hidden = !me.admin;
 // ---------- the profile photo ----------
 // shown: the photo, or the name's first letter; a new one springs in
 function showAvatar(user, animate = false) {
+  current = { ...current, avatar: user.avatar }; // (what's shown: see refreshMe)
   const el = $('#avatar');
   el.replaceChildren(user.avatar ? Object.assign(document.createElement('img'), { src: user.avatar, alt: '' }) : [...user.username][0].toUpperCase());
   el.classList.toggle('has-photo', !!user.avatar);
@@ -205,8 +206,12 @@ async function collapse(row) {
 // (more than five: five a page, ‹ › below; a page slides in from the side it's on)
 const PER_PAGE = 5;
 let page = 0, all = [];
-async function devices() {
-  all = (await api('me/sessions')).sort((a, b) => b.current - a.current); // (this one first, the rest by last use)
+let shownDevices = '';
+async function devices(onlyChanged = false) {
+  const now = (await api('me/sessions')).sort((a, b) => b.current - a.current); // (this one first, the rest by last use)
+  if (onlyChanged && JSON.stringify(now) === shownDevices) return;
+  shownDevices = JSON.stringify(now);
+  all = now;
   page = Math.min(page, Math.max(0, Math.ceil(all.length / PER_PAGE) - 1));
   drawDevices();
 }
@@ -253,12 +258,21 @@ async function drawDevices(dir = 0) {
 await devices();
 
 // ---------- recent security activity: this account's own record, the latest ten ----------
-const mine = await api('me/events?limit=10').catch(() => []);
-$('#my-events').replaceChildren(...(mine.length ? mine.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}` },
-  h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
-  h('span', { class: 'ev-when muted small' }, date(e.at)),
-  h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · '))))
-  : [h('p', { class: 'muted small' }, t('eventsNone'))]));
+let shownEvents = '';
+async function myEvents() {
+  const mine = await api('me/events?limit=10').catch(() => []);
+  if (JSON.stringify(mine) === shownEvents) return;
+  const first = !shownEvents;
+  shownEvents = JSON.stringify(mine);
+  const box = $('#my-events');
+  const draw = () => box.replaceChildren(...(mine.length ? mine.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
+    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
+    h('span', { class: 'ev-when muted small' }, date(e.at)),
+    h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · '))))
+    : [h('p', { class: 'muted small' }, t('eventsNone'))]));
+  if (first) draw(); else await flip(box, draw);
+}
+await myEvents();
 $('#others').addEventListener('click', async () => {
   await api('me/logout-others', { method: 'POST' });
   toast(t('othersOut'));
@@ -283,4 +297,22 @@ $('#delete-me').addEventListener('click', async () => {
     location.replace('/login');
   } catch (err) { say($('#delete-msg'), err.message, 'error'); }
 });
+// ---------- live: changed elsewhere (another browser, an admin), shown here at once ----------
+async function refreshMe() {
+  const now = await api('me');
+  if (now.name !== current.name && $('#name-input').hidden && !saving) { current = { ...current, name: now.name }; showName(true); }
+  if ((now.avatar || null) !== (current.avatar || null)) { current = { ...current, avatar: now.avatar }; showAvatar(now, true); }
+  $('#admin-link').hidden = !now.admin;
+  // (2FA turned on or off elsewhere: not while it's being set up here, or its codes are showing)
+  if (!!now.twofa !== twofaOn && !$('.twofa-setup:not([hidden])') && !$('#twofa .codes')) {
+    twofaOn = !!now.twofa;
+    const box = $('#twofa'), from = box.offsetHeight;
+    twofaView();
+    box.style.overflow = 'hidden';
+    box.animate([{ height: `${from}px` }, { height: `${box.offsetHeight}px` }], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; });
+    for (const el of box.children) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: 60, fill: 'backwards' });
+  }
+  await Promise.all([devices(true), myEvents()]);
+}
+live({ me: refreshMe });
 reveal(); // (shown now its name's in: see reveal)

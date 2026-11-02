@@ -54,7 +54,17 @@ def create_app(config) -> FastAPI:
     # ---------- who is asking ----------
 
     def user_of(request: Request):
-        return auth.session_user(db, request.cookies.get(auth.COOKIE), ip=client(request))
+        u = auth.session_user(db, request.cookies.get(auth.COOKIE), ip=client(request))
+        if u:
+            touched(request).add(u['id'])  # (live: see notify)
+        return u
+
+    def touched(request: Request) -> set:
+        """The accounts a request has to do with (whoever asks, whoever signs in or is changed), whose open pages
+        are told once it's done (see notify)."""
+        if not hasattr(request.state, 'touched'):
+            request.state.touched = set()
+        return request.state.touched
 
     def need_user(request: Request):
         u = user_of(request)
@@ -153,6 +163,7 @@ def create_app(config) -> FastAPI:
         for t, u in found:
             if u and u['id'] == user_id:
                 auth.end_session(db, t)
+        touched(request).add(user_id)
         token = auth.new_session(db, user_id, request.headers.get('user-agent', ''), client(request), keep)
         # (the accounts already here stay; the oldest go past the limit)
         rest = [(t, u) for t, u in found if u and u['id'] != user_id]
@@ -709,6 +720,7 @@ def create_app(config) -> FastAPI:
         me_ = need_admin(request)
         db.run('delete from sessions where token != ?', auth.token_hash(request.cookies.get(auth.COOKIE, '')))
         log('logout_all', request, actor=me_)
+        request.state.everyone = True
         return {'ok': True}
 
     @app.get('/api/admin/invites')
@@ -868,6 +880,83 @@ def create_app(config) -> FastAPI:
         u = need_user(request)
         return [event(r) for r in db.q('select * from events where user_id = ? order by id desc limit ?', u['id'], min(max(limit, 1), 100))]
 
+    # ---------- live: open pages told at once when what they show changes ----------
+    # Server-sent events, one connection a page: `head` (the account's latest sync change, for the dashboard's
+    # extension to take), `me` (the account itself: its name, photo, 2FA, devices, record: for its account page
+    # and the dashboard's Account dialog) and, to admins, `admin` (accounts, invites, settings, the record).
+    # After any change through the API (not sync's own), the accounts it had to do with hear `me`, and admins
+    # `admin`. Each listener a queue; at most so many an account.
+    listeners: dict[int, set] = {}
+    LISTENERS = 20
+
+    def notify(uids, kind, data=None):
+        for uid in uids:
+            for q in list(listeners.get(uid, ())):
+                try:
+                    q.put_nowait((kind, data))
+                except Exception:
+                    pass  # (full: far behind anyway)
+
+    def notify_admins():
+        admins = {r['id'] for r in db.q('select id from users where admin = 1')}
+        notify([uid for uid in listeners if uid in admins], 'admin')
+
+    @app.middleware('http')
+    async def live(request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if request.method in ('POST', 'PUT', 'PATCH', 'DELETE') and path.startswith('/api/') and not path.startswith('/api/sync/'):
+            uids = set(getattr(request.state, 'touched', ()))
+            if m := re.match(r'^/api/admin/users/(\d+)', path):
+                uids.add(int(m.group(1)))
+            if getattr(request.state, 'everyone', False):
+                uids = set(listeners)
+            notify(uids, 'me')
+            notify_admins()
+        return response
+
+    async def live_events(request: Request):
+        """The stream: `head` at once (and whenever it moves on), `me` and `admin` as they come; a comment now and
+        then, so nothing on the way closes it for being quiet. Closed after a few minutes, or once signed out
+        (the browser connects again by itself; signed out, it's refused, and the page finds out)."""
+        import asyncio
+        u = need_user(request)
+        mine = listeners.setdefault(u['id'], set())
+        if len(mine) >= LISTENERS:
+            raise HTTPException(429, 'too many listening')
+        q = asyncio.Queue(maxsize=50)
+        mine.add(q)
+
+        def line(kind, data=None):
+            return f'event: {kind}\ndata: {json.dumps(data if data is not None else {})}\n\n'
+
+        async def stream():
+            try:
+                yield 'retry: 3000\n' + line('head', {'head': sync_head(u['id'])})
+                end = time.time() + 300
+                while time.time() < end:
+                    try:
+                        items = [await asyncio.wait_for(q.get(), 20)]
+                        while not q.empty():
+                            items.append(q.get_nowait())
+                        # (several at once: each kind once, the latest)
+                        latest = {kind: data for kind, data in items}
+                        for kind, data in latest.items():
+                            if kind == 'admin' and not db.one('select admin from users where id = ?', u['id'])['admin']:
+                                continue
+                            yield line(kind, {'head': data} if kind == 'head' else None)
+                    except asyncio.TimeoutError:
+                        if await request.is_disconnected() or not user_of(request):
+                            break
+                        yield ': still here\n\n'
+            finally:
+                mine.discard(q)
+
+        return StreamingResponse(stream(), media_type='text/event-stream', headers={**NO_STORE, 'X-Accel-Buffering': 'no'})
+
+    app.get('/api/live')(live_events)
+    app.get('/api/sync/events')(live_events)  # (as the dashboard first asked for it)
+
     # ---------- sync: each account's tabcat data, kept here, passed between its browsers ----------
     # The server keeps what the browsers send in the order it came (numbered: seq) and hands it on; it doesn't
     # read it (the extension applies changes, the same way in every browser, in this order). A change is
@@ -886,19 +975,6 @@ def create_app(config) -> FastAPI:
         if want is not None and want != str(u['space'] or u['id']):
             raise HTTPException(409, 'another account is signed in')
         return u
-
-    # Live: an open dashboard listens (server-sent events) and is told at once when its account has new changes
-    # (the number of the latest), for its extension to take them. Each listener, a queue; at most so many an account.
-    listeners: dict[int, set] = {}
-    SYNC_LISTENERS = 20
-
-    def sync_changed(uid):
-        head = sync_head(uid)
-        for q in list(listeners.get(uid, ())):
-            try:
-                q.put_nowait(head)
-            except Exception:
-                pass  # (full: it's behind anyway, and will ask)
 
     def sync_ops_after(uid, after, limit=1000):
         rows = db.q('select seq, op_id, device, body from sync_ops where user_id = ? and seq > ? order by seq limit ?', uid, after, limit)
@@ -948,7 +1024,7 @@ def create_app(config) -> FastAPI:
                 db.run('insert into sync_ops (user_id, seq, op_id, device, at, body) values (?, ?, ?, ?, ?, ?)',
                        u['id'], seq, oid, device, time.time(), json.dumps(o['body'], separators=(',', ':')))
                 acked.append({'id': oid, 'seq': seq})
-        sync_changed(u['id'])
+        notify([u['id']], 'head', sync_head(u['id']))
         return {'acked': acked, 'head': sync_head(u['id'])}
 
     @app.put('/api/sync/snapshot')
@@ -972,40 +1048,8 @@ def create_app(config) -> FastAPI:
                    u['id'], seq, time.time(), json.dumps(data['body'], separators=(',', ':')))
             db.run('delete from sync_ops where user_id = ? and seq <= ?', u['id'], seq - SYNC_KEEP_OPS)
         if data.get('first'):
-            sync_changed(u['id'])
+            notify([u['id']], 'head', sync_head(u['id']))
         return {'ok': True, 'seq': seq}
-
-    @app.get('/api/sync/events')
-    async def sync_events(request: Request):
-        """Server-sent events: `head` (the latest change's number) on connecting and whenever it moves on; a
-        comment now and then, so nothing on the way closes it for being quiet. Closed after a few minutes, or
-        once signed out (the browser connects again by itself)."""
-        import asyncio
-        u = sync_user(request)
-        mine = listeners.setdefault(u['id'], set())
-        if len(mine) >= SYNC_LISTENERS:
-            raise HTTPException(429, 'too many listening')
-        q = asyncio.Queue(maxsize=50)
-        mine.add(q)
-
-        async def stream():
-            try:
-                yield f'retry: 3000\nevent: head\ndata: {json.dumps({"head": sync_head(u["id"])})}\n\n'
-                end = time.time() + 300
-                while time.time() < end:
-                    try:
-                        head = await asyncio.wait_for(q.get(), 20)
-                        while not q.empty():
-                            head = q.get_nowait()
-                        yield f'event: head\ndata: {json.dumps({"head": head})}\n\n'
-                    except asyncio.TimeoutError:
-                        if await request.is_disconnected() or not user_of(request):
-                            break
-                        yield ': still here\n\n'
-            finally:
-                mine.discard(q)
-
-        return StreamingResponse(stream(), media_type='text/event-stream', headers={**NO_STORE, 'X-Accel-Buffering': 'no'})
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):
