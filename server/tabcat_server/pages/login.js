@@ -19,6 +19,8 @@ async function main() {
   const invite = info.signup === 'invite' ? params.get('invite') || '' : '';
   const canSignUp = info.signup === 'open' || info.signup === 'invite';
   let signingUp = !!invite;
+  // (adding another account, from the dashboard's Account: the way back to it)
+  $('#back').hidden = !params.get('add');
   $('#invite').value = invite;
 
   function mode() {

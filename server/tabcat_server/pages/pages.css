@@ -276,6 +276,7 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 
 /* (signing in: who to ask, should the password be forgotten) */
 .forgot { margin: 14px 0 0; text-align: center; }
+#back + .forgot { margin-top: 6px; }
 
 /* the dashboard's loading spinner, shown on the way to it (see go in pages.js): the same as the dashboard's own,
    in the same place */

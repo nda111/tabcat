@@ -8,6 +8,8 @@ import time
 
 N, R, P = 2 ** 14, 8, 1
 COOKIE = 'tabcat_session'
+MORE = 'tabcat_more'  # (the other accounts signed in in this browser: their tokens, comma-separated; see app.py)
+MAX_ACCOUNTS = 5
 
 
 def hash_password(password: str) -> str:
@@ -44,12 +46,12 @@ def session_seconds(db) -> float:
     return (days or 1) * 86400
 
 
-def session_user(db, token):
+def session_user(db, token, touch=True):
     if not token:
         return None
     row = db.one('''select u.* from sessions s join users u on u.id = s.user_id
                     where s.token = ? and s.expires_at > ? and u.disabled = 0''', token_hash(token), time.time())
-    if row:
+    if row and touch:
         db.run('update users set last_seen = ? where id = ?', time.time(), row['id'])
     return row
 

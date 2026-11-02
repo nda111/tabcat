@@ -64,15 +64,46 @@ def create_app(config) -> FastAPI:
                 'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None,
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
+    # Several accounts at once in one browser: the one in use (auth.COOKIE) and the others (auth.MORE), each a
+    # session of its own. Signing in again adds an account (the one in use joins the others); switching swaps
+    # one of them in; signing out ends the one in use, and the next takes over.
+    def accounts_of(request: Request):
+        """The browser's accounts: [(token, user)], the one in use first; ended sessions dropped."""
+        out, seen = [], set()
+        tokens = [request.cookies.get(auth.COOKIE, '')] + request.cookies.get(auth.MORE, '').split(',')
+        for i, tok in enumerate(tokens):
+            u = auth.session_user(db, tok, touch=False) if tok else None
+            if u and u['id'] not in seen:
+                seen.add(u['id'])
+                out.append((tok, u))
+            elif i == 0:
+                out.append((None, None))  # (none in use)
+        return out
+
+    def set_accounts(r: Response, request: Request, tokens: list):
+        """Cookies for these tokens, the first in use (none: signed out)."""
+        secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
+        # (staying signed in off: cookies for as long as the browser's open)
+        keep = int(db.setting('session_days')) > 0
+        opts = dict(httponly=True, samesite='lax', secure=secure, max_age=int(auth.session_seconds(db)) if keep else None, path='/')
+        tokens = [t for t in tokens if t]
+        if tokens:
+            r.set_cookie(auth.COOKIE, tokens[0], **opts)
+        elif auth.COOKIE in request.cookies:
+            r.delete_cookie(auth.COOKIE, path='/')
+        if tokens[1:]:
+            r.set_cookie(auth.MORE, ','.join(tokens[1:]), **opts)
+        elif auth.MORE in request.cookies:  # (only when there was one to take away)
+            r.delete_cookie(auth.MORE, path='/')
+        return r
+
     def sign_in(request: Request, user_id: int) -> Response:
         token = auth.new_session(db, user_id, request.headers.get('user-agent', ''))
-        r = JSONResponse({'ok': True})
-        secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
-        # (staying signed in off: a cookie for as long as the browser's open)
-        keep = int(db.setting('session_days')) > 0
-        r.set_cookie(auth.COOKIE, token, httponly=True, samesite='lax', secure=secure,
-                     max_age=int(auth.session_seconds(db)) if keep else None, path='/')
-        return r
+        # (the accounts already here stay, but for this one's old session: one each; the oldest go past the limit)
+        rest = [(t, u) for t, u in accounts_of(request) if u and u['id'] != user_id]
+        for t, _ in rest[auth.MAX_ACCOUNTS - 1:]:
+            auth.end_session(db, t)
+        return set_accounts(JSONResponse({'ok': True}), request, [token] + [t for t, _ in rest[:auth.MAX_ACCOUNTS - 1]])
 
     async def body(request: Request) -> dict:
         # (JSON only: a form posted from another site can't send it, nor the cookie's SameSite=Lax POST;
@@ -235,10 +266,38 @@ def create_app(config) -> FastAPI:
 
     @app.post('/api/logout')
     def logout(request: Request):
+        # (the account in use goes; the next one signed in here, if any, takes over)
         auth.end_session(db, request.cookies.get(auth.COOKIE))
-        r = JSONResponse({'ok': True})
-        r.delete_cookie(auth.COOKIE, path='/')
-        return r
+        rest = [(t, u) for t, u in accounts_of(request)[1:] if u]
+        return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
+
+    # The accounts signed in in this browser (the one in use first), and switching to another of them
+    @app.get('/api/accounts')
+    def accounts(request: Request):
+        need_user(request)
+        return {'max': auth.MAX_ACCOUNTS, 'accounts': [{**public(u), 'current': i == 0} for i, (_, u) in enumerate(accounts_of(request)) if u]}
+
+    # Signing out of another of them (to make room, say: there are so many at most), the one in use staying
+    @app.post('/api/accounts/logout')
+    async def logout_account(request: Request):
+        need_user(request)
+        uid = (await body(request)).get('id')
+        found = accounts_of(request)
+        tok = next((t for t, u in found[1:] if u and u['id'] == uid), None)
+        if not tok:
+            raise HTTPException(404, 'that account is not signed in here')
+        auth.end_session(db, tok)
+        return set_accounts(JSONResponse({'ok': True}), request, [t for t, u in found if u and t != tok])
+
+    @app.post('/api/accounts/switch')
+    async def switch_account(request: Request):
+        need_user(request)
+        uid = (await body(request)).get('id')
+        found = accounts_of(request)
+        pick = next((t for t, u in found[1:] if u and u['id'] == uid), None)
+        if not pick:
+            raise HTTPException(404, 'that account is not signed in here')
+        return set_accounts(JSONResponse({'ok': True}), request, [pick] + [t for t, u in found if u and t != pick])
 
     @app.get('/api/me')
     def me(request: Request):
@@ -267,10 +326,10 @@ def create_app(config) -> FastAPI:
             raise HTTPException(400, 'not confirmed')
         if u['admin'] and admins() == 1:
             raise HTTPException(409, 'the last admin stays')
+        rest = [(t, x) for t, x in accounts_of(request)[1:] if x]
         db.run('delete from users where id = ?', u['id'])
-        r = JSONResponse({'ok': True})
-        r.delete_cookie(auth.COOKIE, path='/')
-        return r
+        # (signed out of it; another account signed in here takes over)
+        return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
 
     # A profile photo: a small image (the page makes it 256 px square) as a data: URL; shown to who's signed in
     AVATAR = re.compile(r'^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$')

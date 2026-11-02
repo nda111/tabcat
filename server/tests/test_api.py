@@ -170,6 +170,28 @@ check(r.status_code == 200 and url.startswith('/api/users/') and c.get(url).head
 check(TestClient(app, client=('192.0.2.9', 1)).get(url).status_code == 401, 'not to anyone signed out')
 check(c.delete('/api/me/avatar').json()['avatar'] is None and c.get(url).status_code == 404, 'removed: gone')
 
+# several accounts in one browser: signing in again adds one; switching; signing out goes to the next
+m = TestClient(app, follow_redirects=False, client=('192.0.2.20', 1))
+c.post('/api/admin/users', json=J(username='ann', password='annpass99')); c.post('/api/admin/users', json=J(username='ben', password='benpass99'))
+m.post('/api/login', json=J(username='ann', password='annpass99'))
+m.post('/api/login', json=J(username='ben', password='benpass99'))
+acc = m.get('/api/accounts').json()['accounts']
+check([a['username'] for a in acc] == ['ben', 'ann'] and acc[0]['current'] and not acc[1]['current'], f'signed in twice: both accounts, the newest in use ({[a["username"] for a in acc]})')
+m.post('/api/login', json=J(username='ann', password='annpass99'))
+check([a['username'] for a in m.get('/api/accounts').json()['accounts']] == ['ann', 'ben'] and m.get('/api/accounts').json()['max'] == 5, 'the same one again: still one each, it in use')
+ann_id = next(a['id'] for a in acc if a['username'] == 'ann'); ben_id = next(a['id'] for a in acc if a['username'] == 'ben')
+check(m.post('/api/accounts/switch', json={'id': ben_id}).status_code == 200 and m.get('/api/me').json()['username'] == 'ben', 'switching: ben in use')
+check(m.post('/api/accounts/switch', json={'id': 99999}).status_code == 404, 'an account not signed in here: no switching to it')
+c.post('/api/admin/users', json=J(username='cal', password='calpass99'))
+m.post('/api/login', json=J(username='cal', password='calpass99'))
+cal_id = m.get('/api/me').json()['id']
+check(m.post('/api/accounts/logout', json={'id': ann_id}).status_code == 200 and [a['username'] for a in m.get('/api/accounts').json()['accounts']] == ['cal', 'ben'], 'signing out of another account: it goes, the one in use stays')
+m.post('/api/accounts/switch', json={'id': ben_id}); m.post('/api/accounts/logout', json={'id': cal_id})
+m.post('/api/login', json=J(username='ann', password='annpass99')); m.post('/api/accounts/switch', json={'id': ben_id})
+r = m.post('/api/logout')
+check(r.json()['next'] == 'ann' and m.get('/api/me').json()['username'] == 'ann', 'signing out of ben: ann takes over')
+check(m.post('/api/logout').json()['next'] is None and m.get('/api/me').status_code == 401, 'and signing out of ann: signed out')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
