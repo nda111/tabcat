@@ -271,6 +271,12 @@ export function modal({ title, text = '', ok, danger = false, input = null, pass
       h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: () => close(false) }, t('cancel')), go));
     const dlg = h('dialog', { class: 'modal' }, form);
     const ready = () => { go.disabled = (phrase && phrase.value.trim() !== input) || (pass && !pass.value); };
+    // (a letter typed in small where the phrase has it capital comes out capital: "2fa" → "2FA")
+    phrase?.addEventListener('input', () => {
+      const v = phrase.value, at = phrase.selectionStart;
+      const fixed = [...v].map((c, i) => (input[i] && c !== input[i] && c.toUpperCase() === input[i] ? input[i] : c)).join('');
+      if (fixed !== v) { phrase.value = fixed; phrase.setSelectionRange(at, at); }
+    });
     for (const f of [phrase, pass]) f?.addEventListener('input', ready);
     form.addEventListener('submit', (e) => { e.preventDefault(); if (!go.disabled) close(true); });
     dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(false); });

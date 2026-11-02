@@ -114,16 +114,20 @@ async function startTwofa(setup, button) {
     const msg = h('p', { class: 'msg' });
     const qr = h('div', { class: 'qr' }); qr.innerHTML = s.qr;
     setup.replaceChildren(
-      h('p', { class: 'small' }, t('twofaSteps')),
+      h('ol', { class: 'steps twofa-steps' }, h('li', {}, t('twofaStep1')), h('li', {}, t('twofaStep2'))),
       h('div', { class: 'twofa-qr' }, qr, h('div', {}, h('div', { class: 'muted small' }, t('twofaKey')), h('code', { class: 'secret' }, s.secret.replace(/(.{4})/g, '$1 ').trim()))),
       h('form', { class: 'row', onsubmit: async (e) => {
         e.preventDefault();
         try {
           const { recovery } = await api('me/2fa/confirm', { method: 'POST', body: { code: code.value } });
           twofaOn = true;
-          await fold(setup, false);
+          // (from the setup straight to on, its recovery codes below: the box goes from one size to the other at once)
+          const box = $('#twofa'), from = box.offsetHeight;
           twofaView();
-          showCodes(recovery);
+          showCodes(recovery, false);
+          box.style.overflow = 'hidden';
+          box.animate([{ height: `${from}px` }, { height: `${box.offsetHeight}px` }], { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; });
+          for (const el of box.children) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 60, fill: 'backwards' });
           toast(t('twofaTurnedOn'));
         } catch (err) { say(msg, err.message, 'error'); }
       } }, code, h('button', { type: 'submit', class: 'btn primary' }, t('twofaConfirm')),
@@ -136,15 +140,16 @@ async function startTwofa(setup, button) {
   } catch (err) { toast(err.message); button.disabled = false; }
 }
 // recovery codes, once: to keep somewhere safe (copy all)
-function showCodes(codes) {
-  const box = h('div', { class: 'codes', hidden: true },
+function showCodes(codes, unfold = true) {
+  const box = h('div', { class: 'codes', hidden: unfold },
+    h('h3', {}, t('twofaCodesTitle')),
     h('p', { class: 'small' }, t('twofaCodesText')),
     h('div', { class: 'code-grid' }, ...codes.map((c) => h('code', {}, c))),
     h('div', { class: 'row' },
       h('button', { type: 'button', class: 'btn small', onclick: async () => { await navigator.clipboard?.writeText(codes.join('\n')); toast(t('twofaCodesCopied')); } }, t('twofaCopyCodes')),
       h('button', { type: 'button', class: 'btn small', onclick: () => fold(box, false).then(() => box.remove()) }, t('twofaCodesDone'))));
   $('#twofa').append(box);
-  fold(box, true);
+  if (unfold) fold(box, true);
 }
 async function newCodes() {
   const password = await modal({ title: t('twofaNewCodes'), text: t('twofaNewCodesText'), ok: t('twofaNewCodes'), password: true });

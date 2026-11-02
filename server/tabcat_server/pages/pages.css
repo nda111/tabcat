@@ -384,6 +384,7 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .code-input { width: 140px !important; flex: none; font-variant-numeric: tabular-nums; letter-spacing: .2em; text-align: center; font-size: 16px !important; margin: 0 !important; }
 .twofa-state { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .codes { margin-top: 12px; padding: 12px; border: 1px dashed var(--accent); border-radius: 10px; }
+.codes h3 { font-size: 14px; margin: 0 0 4px; }
 .code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 12px; margin: 6px 0 10px; }
 .code-grid code { font-size: 13.5px; }
 
@@ -407,3 +408,6 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .pager-btn:hover:not(:disabled) { background: var(--hover); transition-duration: .05s; }
 .pager-btn:active:not(:disabled) { scale: .92; }
 .pager-btn:disabled { opacity: .35; cursor: default; }
+
+.twofa-steps { margin: 0 0 4px; font-size: 13px; }
+.twofa-steps li { margin-bottom: 2px; }

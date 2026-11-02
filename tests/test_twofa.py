@@ -43,7 +43,11 @@ with sync_playwright() as p:
     check(d.is_visible('.qr svg') and len(secret) >= 32, 'turning it on: the QR code and its key')
     d.fill('.code-input', '000000'); d.click('.twofa-setup button[type=submit]'); time.sleep(.5)
     check('isn’t right' in d.inner_text('.twofa-setup .msg') or 'not right' in d.inner_text('.twofa-setup .msg'), f"a wrong code: it says so ({d.inner_text('.twofa-setup .msg')})")
-    d.fill('.code-input', code_at(secret)); d.click('.twofa-setup button[type=submit]'); d.wait_for_selector('.code-grid code', timeout=5000); time.sleep(.5)
+    d.evaluate("window.__hs = []; (function f(){ __hs.push(Math.round(document.querySelector('#twofa').offsetHeight)); if (__hs.length < 50) requestAnimationFrame(f); })(); 0")
+    d.fill('.code-input', code_at(secret)); d.click('.twofa-setup button[type=submit]'); d.wait_for_selector('.code-grid code', timeout=5000); time.sleep(.9)
+    hs = [h for i, h in enumerate(d.evaluate('__hs')) if i == 0 or h != d.evaluate('__hs')[i - 1]]
+    ups = sum(1 for a, b in zip(hs, hs[1:]) if b > a); downs = sum(1 for a, b in zip(hs, hs[1:]) if b < a)
+    check(not (ups and downs), f'turned on: the box goes from one size to the other in one go, not shrinking first ({hs[0]} -> {hs[-1]})')
     codes = d.locator('.code-grid code').all_inner_texts()
     check(len(codes) == 10 and d.is_visible('#twofa .tag.accent'), 'the right code: on, ten recovery codes shown')
 
@@ -75,7 +79,9 @@ with sync_playwright() as p:
     go = 'dialog.modal button[type=submit]'
     d.fill('dialog.modal input[type=text]', '2FA'); d.fill('dialog.modal input[type=password]', 'correct horse')
     check(d.is_disabled(go), 'turning it off: not until the phrase is typed out')
-    d.fill('dialog.modal input[type=text]', d.get_attribute('dialog.modal input[type=text]', 'placeholder')); time.sleep(.1)
+    want = d.get_attribute('dialog.modal input[type=text]', 'placeholder')
+    d.fill('dialog.modal input[type=text]', ''); d.type('dialog.modal input[type=text]', want.lower()); time.sleep(.1)
+    check(d.input_value('dialog.modal input[type=text]') == want, f"letters typed small come out capital where the phrase has them so ({d.input_value('dialog.modal input[type=text]')!r})")
     check(d.is_enabled(go), 'the phrase and the password: it can go')
     d.click(go); time.sleep(1)
     check(d.is_visible('#twofa .btn') and not d.locator('#twofa .tag.accent').count(), 'off again')
