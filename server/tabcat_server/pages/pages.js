@@ -230,10 +230,15 @@ document.addEventListener('click', (e) => {
   go('/');
 });
 // (back here, the browser may show the page as it was left: faded)
+// Back or forward to a page the browser kept as it was: it rises in again, as when it first came (not faded, as
+// it was left for the dashboard; no spinner)
 addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   for (const a of document.querySelector('.wrap')?.getAnimations() || []) a.cancel();
   document.querySelector('body > .boot')?.remove();
+  [...document.querySelectorAll('.wrap > *')].forEach((el, i) => el.animate(
+    [{ opacity: 0, transform: 'translateY(10px) scale(.99)' }, { opacity: 1, transform: 'none' }],
+    { duration: 420, delay: Math.min(i, 5) * 50, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'backwards' }));
 });
 
 // The page shows (rising in) only once what it shows is there: its data (each page's script calls this when it
