@@ -1,3 +1,4 @@
+import { liveStream } from './live.js';
 // What the server's pages share: the language and look the dashboard last used on this server (it keeps
 // them in this origin's storage), the text in it, and calling the server's API.
 import { STRINGS } from './strings.js';
@@ -128,6 +129,26 @@ export function morph(el, change, duration = 280) {
   change();
   const to = el.getBoundingClientRect().width;
   if (Math.abs(from - to) > .5) el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+}
+
+// Changed in place (elsewhere, say): the new rises in where the old was
+export const freshen = (el) => el?.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+
+// Something in a row of them that comes and goes (a button, a tag): it grows from nothing, what's beside it making
+// room, or shrinks away and is gone
+export function appear(el, show) {
+  if (show === !el.hidden) return Promise.resolve();
+  el.getAnimations().forEach((a) => a.cancel());
+  el.hidden = false;
+  const cs = getComputedStyle(el), w = el.getBoundingClientRect().width;
+  const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
+  const full = { width: `${w}px`, opacity: 1, transform: 'none', ...Object.fromEntries(sides.map((k) => [k, cs[k]])) };
+  const none = { width: '0px', opacity: 0, transform: 'scale(.85)', ...Object.fromEntries(sides.map((k) => [k, '0px'])) };
+  Object.assign(el.style, { overflow: 'hidden', whiteSpace: 'nowrap' });
+  const a = el.animate(show ? [none, full] : [full, none], show ? { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' } : { duration: 200, easing: 'ease-in' });
+  const end = () => { Object.assign(el.style, { overflow: '', whiteSpace: '' }); if (!show && !a.cancelled) el.hidden = true; };
+  a.oncancel = () => { a.cancelled = true; };
+  return a.finished.then(end, end);
 }
 
 // The device, read from the browser's own description of itself: "Chrome on Windows"
@@ -409,19 +430,20 @@ export function randomPassword(n = 14) {
   return [...crypto.getRandomValues(new Uint32Array(n))].map((x) => abc[x % abc.length]).join('');
 }
 
-// Live: the server says at once when what the page shows has changed (see /api/live). `on`: { kind: fn }, each
-// run a moment later (what this page did itself has come back by then), one at a time, again after if more came
-// meanwhile, and not while something on the page is still moving. Back after a break (the server started
-// again): all of them, for what was missed. Signed out meanwhile (here or elsewhere): `gone`.
+// Live: the server says at once when what the page shows has changed (see /api/live; one stream shared by all
+// of the server's pages open: live.js). `on`: { kind: fn }, each run a moment later (what this page did itself has
+// come back by then), one at a time, again after if more came meanwhile, and not while something on the page is
+// still moving. (Re)connected: all of them, for what was missed. Signed out meanwhile (here or elsewhere): `gone`.
 export function live(on, gone = () => location.replace('/login')) {
-  if (typeof EventSource === 'undefined') return;
+  let left = false;
+  const leave = () => { if (left) return; left = true; stream.stop(); gone(); };
   const runner = (fn) => {
     let timer = null, busy = false, again = false;
     const go = async () => {
       if (busy) { again = true; return; }
       if (document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity)) { timer = setTimeout(go, 300); return; }
       busy = true;
-      try { await fn(); } catch (e) { if (e?.status === 401) { es.close(); gone(); return; } /* (else: next time) */ }
+      try { await fn(); } catch (e) { if (e?.status === 401) { leave(); return; } /* (else: next time) */ }
       busy = false;
       if (again) { again = false; soon(); }
     };
@@ -429,18 +451,13 @@ export function live(on, gone = () => location.replace('/login')) {
     return soon;
   };
   const fns = Object.fromEntries(Object.entries(on).map(([k, fn]) => [k, runner(fn)]));
-  let es = null, opened = false;
-  const open = () => {
-    es = new EventSource('/api/live');
-    for (const k of Object.keys(fns)) es.addEventListener(k, () => fns[k]());
-    es.addEventListener('open', () => { if (opened) Object.values(fns).forEach((f) => f()); opened = true; });
-    es.addEventListener('error', async () => { // (refused, signed out; or the server away a moment: it tries again)
-      const r = await fetch('/api/me', { credentials: 'same-origin' }).catch(() => null);
-      if (r?.status === 401) { es.close(); gone(); }
-    });
-  };
-  open();
+  const stream = liveStream((kind) => {
+    if (kind === 'gone') return leave();
+    // (not just as the page opens, having just asked for everything itself)
+    if (kind === 'open') { if (performance.now() > 3000) Object.values(fns).forEach((f) => f()); return; }
+    fns[kind]?.();
+  });
   // (not held in the back/forward cache: again on coming back, catching up)
-  addEventListener('pagehide', (e) => { if (e.persisted) { es.close(); opened = true; } });
-  addEventListener('pageshow', (e) => { if (e.persisted) open(); });
+  addEventListener('pagehide', (e) => { if (e.persisted) stream.stop(); });
+  addEventListener('pageshow', (e) => { if (e.persisted) { stream.start(); Object.values(fns).forEach((f) => f()); } });
 }

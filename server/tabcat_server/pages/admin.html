@@ -80,7 +80,11 @@
         <div id="ev-fails"></div>
         <div class="event ev-cols" id="ev-cols" aria-hidden="true"><span data-t="csvWhen">Time</span><span data-t="csvWhat">Event</span><span data-t="csvAccount">Account</span><span data-t="evColWhere">Where from</span></div>
         <div class="events" id="events"></div>
-        <div class="row end"><button type="button" class="btn small" id="ev-more" hidden data-t="eventsMore">More</button></div>
+        <div class="ev-pager" id="ev-pager" hidden>
+          <button type="button" class="btn small" id="ev-prev" data-t-title="evPrev">‹</button>
+          <span class="ev-page"><input type="number" id="ev-page" min="1" step="1" inputmode="numeric" data-t-title="evPage"><span class="muted">/</span><span id="ev-pages"></span></span>
+          <button type="button" class="btn small" id="ev-next" data-t-title="evNext">›</button>
+        </div>
       </section>
     </div>
 

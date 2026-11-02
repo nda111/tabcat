@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    evPrev: 'Previous page', evNext: 'Next page', evPage: 'Page',
     evColWhere: 'Where from',
     csvCode: 'Event code', csvDetailCode: 'Detail code',
     ev_rate_limited: 'Too many requests: held off', evdHeld: '{n} turned away',
@@ -61,6 +62,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    evPrev: '이전 페이지', evNext: '다음 페이지', evPage: '페이지',
     evColWhere: '접속 정보',
     csvCode: '코드', csvDetailCode: '세부 코드',
     ev_rate_limited: '요청 과다로 차단', evdHeld: '{n}번 막힘',
@@ -121,6 +123,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    evPrev: '前のページ', evNext: '次のページ', evPage: 'ページ',
     evColWhere: '接続元',
     csvCode: 'コード', csvDetailCode: '詳細コード',
     ev_rate_limited: 'リクエスト過多で遮断', evdHeld: '{n} 回遮断',
@@ -181,6 +184,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    evPrev: '上一页', evNext: '下一页', evPage: '页码',
     evColWhere: '来源',
     csvCode: '代码', csvDetailCode: '详情代码',
     ev_rate_limited: '请求过多被拦截', evdHeld: '拦截 {n} 次',
@@ -241,6 +245,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    evPrev: 'Página anterior', evNext: 'Página siguiente', evPage: 'Página',
     evColWhere: 'Desde',
     csvCode: 'Código', csvDetailCode: 'Código de detalle',
     ev_rate_limited: 'Demasiadas solicitudes: bloqueado', evdHeld: '{n} rechazadas',
@@ -301,6 +306,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    evPrev: 'Vorherige Seite', evNext: 'Nächste Seite', evPage: 'Seite',
     evColWhere: 'Von wo',
     csvCode: 'Code', csvDetailCode: 'Detail-Code',
     ev_rate_limited: 'Zu viele Anfragen: abgewiesen', evdHeld: '{n}-mal abgewiesen',
@@ -361,6 +367,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    evPrev: 'Page précédente', evNext: 'Page suivante', evPage: 'Page',
     evColWhere: 'Provenance',
     csvCode: 'Code', csvDetailCode: 'Code du détail',
     ev_rate_limited: 'Trop de requêtes : bloqué', evdHeld: '{n} refusées',
@@ -421,6 +428,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    evPrev: 'Página anterior', evNext: 'Próxima página', evPage: 'Página',
     evColWhere: 'De onde',
     csvCode: 'Código', csvDetailCode: 'Código do detalhe',
     ev_rate_limited: 'Solicitações demais: bloqueado', evdHeld: '{n} recusadas',

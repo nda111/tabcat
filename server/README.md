@@ -4,8 +4,8 @@ Your own tabcat server, for your own computers: it hosts the tabcat dashboard at
 accounts (each with its own data) and an admin page. tabcat works without one; this is for when you want it.
 
 Signed in to the same account in several browsers, each keeps the same tabcat: your workspaces (with
-everything in them), Recently deleted, and the look (theme and accent). Settings of each computer's own
-(auto-suspend, columns…) and the undo history stay with that browser. Changes made offline wait in the
+everything in them), Recently deleted, and the settings (the look, the language, the columns, auto-suspend…).
+What's about that computer alone (the panels, the workspace on screen) and the undo history stay with that browser. Changes made offline wait in the
 browser and go once the server can be reached; none are lost. The browser's own tabcat (what
 tabcat.ghyeok.com shows) is never sent: an account new to the server starts from a copy of it, and an
 account that has data there already brings that data instead.

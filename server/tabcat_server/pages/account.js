@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, appear, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -302,7 +302,7 @@ async function refreshMe() {
   const now = await api('me');
   if (now.name !== current.name && $('#name-input').hidden && !saving) { current = { ...current, name: now.name }; showName(true); }
   if ((now.avatar || null) !== (current.avatar || null)) { current = { ...current, avatar: now.avatar }; showAvatar(now, true); }
-  $('#admin-link').hidden = !now.admin;
+  appear($('#admin-link'), !!now.admin); // (made an admin, or no longer: the button comes, or goes)
   // (2FA turned on or off elsewhere: not while it's being set up here, or its codes are showing)
   if (!!now.twofa !== twofaOn && !$('.twofa-setup:not([hidden])') && !$('#twofa .codes')) {
     twofaOn = !!now.twofa;

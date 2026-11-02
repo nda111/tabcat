@@ -863,17 +863,20 @@ def create_app(config) -> FastAPI:
     # The security record: for the admin page (everyone's, or one account's; older pages after `before`), and each
     # account's own on its account page
     @app.get('/api/admin/events')
-    def admin_events(request: Request, user: int | None = None, before: int | None = None, limit: int = 50):
+    def admin_events(request: Request, user: int | None = None, before: int | None = None, limit: int = 50, offset: int = 0):
+        """Newest first: `limit` of them, after `offset` (a page of them) or older than `before` (going on from
+        one); `total`: how many there are (for the account, or everyone)."""
         need_admin(request)
-        q, args = 'select * from events where 1 = 1', []
+        q, args = ' from events where 1 = 1', []
         if user is not None:
             q += ' and user_id = ?'; args.append(user)
+        total = db.one('select count(*) n' + q, *args)['n']
         if before:
             q += ' and id < ?'; args.append(before)
-        rows = db.q(q + ' order by id desc limit ?', *args, min(max(limit, 1), 200))
+        rows = db.q('select *' + q + ' order by id desc limit ? offset ?', *args, min(max(limit, 1), 200), max(offset, 0))
         day = time.time() - 86400
         fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked', 'password_wrong', 'rate_limited') and at > ? group by ip order by n desc limit 5", day)
-        return {'events': [event(r) for r in rows], 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
+        return {'events': [event(r) for r in rows], 'total': total, 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
 
     @app.get('/api/me/events')
     def my_events(request: Request, limit: int = 20):

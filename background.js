@@ -862,14 +862,15 @@ function switchSpace(from, to) {
       else if (k === SYNC_KEY) gone.push(k); // (never synced: sync starts it)
       else out[k] = k === S.KEY ? S.defaultState() : k === TRASH_KEY ? [] : {};
     }
-    // the look (Settings > Appearance) is each space's own too: this one's kept, the next one's taken up; one that
-    // never set it gets the defaults (kept apart, not swapped: settings stay where the rest of tabcat reads them)
+    // the settings (the dashboard's Settings: the look, the language...) are each space's own too: this one's kept,
+    // the next one's taken up; one that never set them gets the defaults (kept apart, not swapped: settings stay where
+    // the rest of tabcat reads them). (Kept from before only the look was: the rest as they are now.)
     const settings = await S.loadSettings();
     const keyOf = named(LOOK_KEY, to), localKey = named(LOOK_KEY, 'local');
     const stored = await chrome.storage.local.get([keyOf, localKey]);
     const look = stored[keyOf] || (fresh && (from === 'local' ? settings : stored[localKey])) || {};
     out[named(LOOK_KEY, from)] = Object.fromEntries(LOOK.map((k) => [k, settings[k]]));
-    out[S.SETTINGS_KEY] = { ...settings, ...Object.fromEntries(LOOK.map((k) => [k, look[k] ?? S.DEFAULT_SETTINGS[k]])) };
+    out[S.SETTINGS_KEY] = { ...settings, ...Object.fromEntries(LOOK.map((k) => [k, look[k] ?? (Object.keys(look).length ? settings[k] : S.DEFAULT_SETTINGS[k])])) };
     await chrome.storage.local.remove(gone.filter((k) => !(k in out)));
     await chrome.storage.local.set(out);
     await withHistory(async (h) => { await dropSnaps([...h.undo, ...h.redo]); h.undo = []; h.redo = []; });

@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { live, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { appear, freshen, live, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -13,14 +13,25 @@ const leave = (el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 
 // Each row is drawn anew when anything changes; what changed in it (the role, suspended, a new password) moves
 // from how it was, kept here by user
 const was = new Map();
+let adminCount = 0;
 async function users() {
   // (you first, then the other admins, then everyone else, each as they were made)
   const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
   const list = (await api('admin/users')).sort((a, b) => rank(a) - rank(b));
+  adminCount = list.filter((u) => u.admin).length;
   // (gone since, another admin's doing say: they fade aside first, the rest gliding up after)
   const ids = new Set(list.map((u) => String(u.id)));
   await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
+  // (each row's cells as they read before: what reads otherwise now comes in, see below)
+  const read = (tr) => [...tr.cells].map((td) => td.textContent + '|' + td.querySelectorAll('button, .tag').length);
+  const before = new Map([...$('#users').children].map((tr) => [tr.dataset.key, read(tr)]));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
+  for (const tr of $('#users').children) {
+    const old = before.get(tr.dataset.key), now = read(tr);
+    if (!old) continue;
+    // (the name, 2FA's chip, last seen, a button come or gone: not the role, suspending, a new password, done below)
+    now.forEach((x, i) => { if (x !== old[i] && ![2, 3, 4].includes(i)) [...tr.cells[i].children].forEach(freshen); if (x !== old[i] && i === 1) freshen(tr.cells[i]); });
+  }
   for (const u of list) {
     const tr = $(`#users tr[data-key="${u.id}"]`), before = was.get(u.id);
     const now = { admin: u.admin, disabled: u.disabled, pw: newPasswords.has(u.id) };
@@ -61,6 +72,8 @@ function row(u) {
     onclick: async () => {
       if (u.admin === admin) return;
       if (!(self && !admin)) return edit({ admin });
+      // (the only admin: it can't be done, said at once, not asked first and refused after)
+      if (adminCount <= 1) return fail(new Error(t('errLastAdmin')));
       // (yourself to a user: the username typed out first; then this page isn't yours any more, so your account's)
       if (!(await modal({ title: t('selfDemoteTitle'), text: t('selfDemoteText', { name: u.username }), input: u.username, ok: t('selfDemoteOk'), danger: true }))) return;
       try { await api(`admin/users/${u.id}`, { method: 'PATCH', body: { admin: false } }); location.assign('/account'); }
@@ -131,12 +144,30 @@ const steppers = {
   login_lock_minutes: stepper($('#login-lock')),
   log_days: stepper($('#log-days')),
 };
+// (changed elsewhere, by another admin: the new choice springs in, a number rises in; not one being typed in)
+let settingsShown = false;
 async function settings() {
   const s = await api('admin/settings');
+  const shown = settingsShown;
+  settingsShown = true;
   dashAuto = s.dashboard_auto;
   if ($('#dash-auto')) $('#dash-auto').checked = dashAuto;
-  for (const r of document.querySelectorAll('input[name=signup]')) r.checked = r.value === s.signup;
-  for (const [k, sel] of Object.entries(NUMBERS)) { $(sel).value = s[k]; steppers[k].sync(); }
+  for (const r of document.querySelectorAll('input[name=signup]')) {
+    const on = r.value === s.signup;
+    if (r.checked === on) continue;
+    r.checked = on;
+    if (shown && on) {
+      r.animate([{ transform: 'scale(.6)' }, { transform: 'none' }], { duration: 340, easing: SPRING });
+      freshen(r.nextElementSibling);
+    }
+  }
+  for (const [k, sel] of Object.entries(NUMBERS)) {
+    const input = $(sel);
+    if (input.value === String(s[k]) || document.activeElement === input) continue;
+    input.value = s[k];
+    steppers[k].sync();
+    if (shown) freshen(input.parentElement.classList.contains('zero') ? input.parentElement.querySelector('.step-zero') : input);
+  }
 }
 // (saved: said a while where it's kept room for, then it fades)
 const fades = new Map();
@@ -237,8 +268,9 @@ async function updateServer() {
 
 // ---------- the security record ----------
 // Newest first: when, what (a failure in red), whose, from where (and the admin who did it); one account's, or
-// everyone's; More for older ones. Failures in the last day, by address, over it.
-let evOldest = null;
+// everyone's; a page of them at a time (‹ › or a page's number typed). Failures in the last day, by address, over it.
+const PER_PAGE = 15;
+let evPage = 1;
 function eventRow(e) {
   return h('div', { class: `event${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
     h('span', { class: 'ev-when muted small' }, date(e.at)),
@@ -247,32 +279,67 @@ function eventRow(e) {
     h('span', { class: 'ev-who' }, e.username || h('span', { class: 'muted no-account' }, t('evNoAccount')), e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
     h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · ')));
 }
-async function events(more = false) {
-  const q = new URLSearchParams({ limit: '30' });
+// `to`: another page (its rows slide in from the side it's on); none: this one again, as it now is
+async function events(to = null) {
+  const page = Math.max(1, to ?? evPage);
+  const q = new URLSearchParams({ limit: String(PER_PAGE), offset: String((page - 1) * PER_PAGE) });
   if ($('#ev-user').value) q.set('user', $('#ev-user').value);
-  if (more && evOldest) q.set('before', evOldest);
   const r = await api(`admin/events?${q}`);
+  const pages = Math.max(1, Math.ceil(r.total / PER_PAGE));
+  if (page > pages && r.total) return events(pages); // (fewer now: the last there is)
+  const dir = Math.sign(page - evPage);
+  evPage = page;
   const list = $('#events');
-  if (more) {
-    const rows = r.events.map(eventRow);
-    list.append(...rows);
-    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 220, delay: i * 15, easing: 'ease-out', fill: 'backwards' }));
-  } else {
-    await flip(list, () => list.replaceChildren(...(r.events.length ? r.events.map(eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))])));
-    $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
-      ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
+  const rows = r.events.length ? r.events.map(eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
+  if (!dir) await flip(list, () => list.replaceChildren(...rows));
+  else {
+    // (another page: the box glides to its height, its rows slide in from the side it's on)
+    const card = list.closest('.card'), from = card.offsetHeight;
+    list.replaceChildren(...rows);
+    const h2 = card.offsetHeight;
+    if (Math.abs(from - h2) > .5) {
+      card.style.overflow = 'clip';
+      card.animate([{ height: `${from}px` }, { height: `${h2}px` }], { duration: 300, easing: GLIDE }).finished.finally(() => { card.style.overflow = ''; }).catch(() => {});
+    }
+    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: `translateX(${dir * 18}px)` }, { opacity: 1, transform: 'none' }],
+      { duration: 260, delay: i * 12, easing: GLIDE, fill: 'backwards' }));
   }
-  if (r.events.length) evOldest = r.events[r.events.length - 1].id;
+  $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
+    ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
   // (nothing kept for the account chosen, or anyone: nothing to export; the button fades still, and back)
-  if (!more && !$('#ev-export').classList.contains('busy')) $('#ev-export').disabled = !r.events.length;
-  if (!more) $('#ev-cols').hidden = !r.events.length; // (the column heads: over rows only)
-  $('#ev-more').hidden = r.events.length < 30;
+  if (!$('#ev-export').classList.contains('busy')) $('#ev-export').disabled = !r.total;
+  $('#ev-cols').hidden = !r.events.length; // (the column heads: over rows only)
+  // the pages: shown once there's more than one
+  const input = $('#ev-page');
+  if (document.activeElement !== input) input.value = page;
+  input.max = pages;
+  if ($('#ev-pages').textContent !== String(pages)) {
+    $('#ev-pages').textContent = pages;
+    if (!$('#ev-pager').hidden) $('#ev-pages').animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: GLIDE });
+  }
+  input.style.width = `${String(pages).length + 3.2}ch`;
+  $('#ev-prev').disabled = page <= 1;
+  $('#ev-next').disabled = page >= pages;
+  const pager = $('#ev-pager');
+  if (pager.hidden !== (pages <= 1)) fold(pager, pages > 1);
 }
-$('#ev-more').addEventListener('click', () => { $('#ev-more').dataset.opened = '1'; events(true); });
+$('#ev-prev').addEventListener('click', () => events(evPage - 1));
+$('#ev-next').addEventListener('click', () => events(evPage + 1));
+// (a page's number: gone to on Enter, or leaving the field; past the last, the last)
+const goPage = () => {
+  const input = $('#ev-page'), n = Math.round(+input.value);
+  if (!input.value || !Number.isFinite(n)) { input.value = evPage; return; }
+  const to = Math.min(Math.max(1, n), +input.max || 1);
+  input.value = to;
+  if (to !== evPage) events(to);
+};
+$('#ev-page').addEventListener('change', goPage);
+$('#ev-page').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); goPage(); e.target.select(); } });
+$('#ev-page').addEventListener('focus', (e) => e.target.select());
 $('#ev-user').addEventListener('change', (e) => {
   // (the chosen one fades in over the field, as the record below changes to it)
   e.target.animate([{ color: 'transparent' }, { color: getComputedStyle(e.target).color }], { duration: 220, easing: 'ease-out' });
-  evOldest = null; delete $('#ev-more').dataset.opened; events();
+  evPage = 1; events();
 });
 // Export: the record kept (for the account chosen, or everyone), as a CSV file in the page's language. Excel
 // reads it as UTF-8 (the byte-order mark); a cell starting like a formula is kept as text (it may hold what a
@@ -450,13 +517,13 @@ try { await Promise.all([users(), settings(), invites(), info(), eventAccounts()
 let refreshing = false, missed = null;
 async function refresh() {
   if (document.hidden) return; // (on coming back: see below)
-  if (refreshing || document.querySelector('dialog.modal') || document.activeElement?.matches('input, textarea')) {
+  if (refreshing || document.querySelector('dialog.modal') || document.activeElement?.matches('input:not([type=radio], [type=checkbox]), textarea')) {
     clearTimeout(missed); missed = setTimeout(refresh, 1000); return;
   }
   clearTimeout(missed);
   refreshing = true;
-  // (the record: its newest page, unless older ones have been opened)
-  try { await Promise.all([users(), settings(), invites(), info(), ...($('#ev-more').dataset.opened ? [] : [events()])]); } catch { /* (the server away for a moment: next time) */ }
+  // (the record: the page open, as it now is)
+  try { await Promise.all([users(), settings(), invites(), info(), events()]); } catch { /* (the server away for a moment: next time) */ }
   refreshing = false;
 }
 setInterval(refresh, 60000); // (and now and then anyway)
