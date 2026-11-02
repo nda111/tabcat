@@ -24,6 +24,11 @@
       <label><span data-t="username">Username</span><span class="field-row"><input type="text" id="username" maxlength="14" autocomplete="username" autocapitalize="off" spellcheck="false" required><button type="button" class="btn check-btn" id="check-name" hidden><span class="lbl" data-t="checkUsername">Check</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></span></label>
       <label id="name-row" hidden><span data-t="displayName">Name</span> <span class="muted small" data-t="optional">(optional)</span><input type="text" id="name" autocomplete="name" maxlength="12" spellcheck="false"></label>
       <label><span data-t="password">Password</span><input type="password" id="password" autocomplete="current-password" required></label>
+      <!-- signing in: the username kept for next time; staying signed in (when the server lets one) -->
+      <div class="row login-opts" id="login-opts">
+        <label class="check"><input type="checkbox" id="remember-id"><span data-t="rememberId">Remember my username</span></label>
+        <label class="check" id="keep-row"><input type="checkbox" id="keep" checked><span data-t="staySignedIn">Stay signed in</span></label>
+      </div>
       <label id="again-row" hidden><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>
       <label id="invite-row" hidden><span data-t="invite">Invitation code</span><input type="text" id="invite" autocomplete="off" spellcheck="false"></label>
       <!-- two-step sign-in: after the password, the authenticator app's code (or a recovery code) -->

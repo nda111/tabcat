@@ -9,7 +9,7 @@ const linked = await connected(() => location.reload());
 if (!linked) showNotConnected($('#form'));
 else await main();
 await reveal();
-if (linked) $('#username').focus(); // (once shown: a hidden field can't take focus)
+if (linked) ($('#username').value && !$('#username').closest('label').hidden ? $('#password') : $('#username')).focus(); // (once shown: a hidden field can't take focus; a remembered username: the password next)
 
 async function main() {
   const params = new URLSearchParams(location.search);
@@ -19,6 +19,13 @@ async function main() {
   const invite = info.signup === 'invite' ? params.get('invite') || '' : '';
   const canSignUp = info.signup === 'open' || info.signup === 'invite';
   let signingUp = !!invite;
+  // the username remembered from last time (this browser, this server): filled in, the password next
+  const REMEMBER = 'tabcat:rememberId';
+  const store = { get: () => { try { return localStorage.getItem(REMEMBER); } catch { return null; } },
+    set: (v) => { try { if (v) localStorage.setItem(REMEMBER, v); else localStorage.removeItem(REMEMBER); } catch { /* storage unavailable */ } } };
+  const remembered = store.get();
+  if (remembered && !signingUp) { $('#username').value = remembered; $('#remember-id').checked = true; }
+  $('#keep-row').hidden = !info.keep; // (the server keeps no one signed in: nothing to offer)
   // (adding another account, from the dashboard's Account: the way back to it)
   $('#back').hidden = !params.get('add');
   $('#invite').value = invite;
@@ -35,6 +42,7 @@ async function main() {
     $('#password').autocomplete = signingUp ? 'new-password' : 'current-password';
     $('#check-name').hidden = !signingUp;
     $('#forgot').hidden = signingUp;
+    $('#login-opts').hidden = signingUp;
     checked('', false);
     // (the message line keeps the room the hints take: a message in their place doesn't change the box's size)
     $('#msg').style.minHeight = '';
@@ -120,7 +128,7 @@ async function main() {
   let ticket = null, recovery = false;
   function codeStep(on) {
     const card = $('#form'), from = card.offsetHeight;
-    for (const el of [$('#username').closest('label'), $('#password').closest('label'), $('#forgot')]) el.hidden = on;
+    for (const el of [$('#username').closest('label'), $('#password').closest('label'), $('#forgot'), $('#login-opts')]) el.hidden = on;
     $('#other').hidden = on || !canSignUp;
     $('#code-step').hidden = !on;
     $('#title').textContent = t(on ? 'codeTitle' : 'signInTitle');
@@ -167,7 +175,8 @@ async function main() {
         await api('login/code', { method: 'POST', body: { ticket, code: $('#code').value } });
         return go(next, true);
       }
-      const r = await api('login', { method: 'POST', body: { username, password } });
+      store.set($('#remember-id').checked ? username : null);
+      const r = await api('login', { method: 'POST', body: { username, password, keep: info.keep && $('#keep').checked } });
       if (r?.need === 'code') { still(false); ticket = r.ticket; return codeStep(true); }
       go(next, true);
     } catch (err) {

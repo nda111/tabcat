@@ -17,9 +17,11 @@ function editName() {
   const v = $('#name-view'), input = $('#name-input');
   input.value = current.name || '';
   input.placeholder = current.username;
+  // (in the heading's own place and height: nothing below moves; its outline and ground fade in)
+  input.style.height = `${v.offsetHeight}px`;
   v.hidden = true; input.hidden = false;
   input.focus(); input.select();
-  input.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 160 });
+  input.animate([{ borderColor: 'transparent', backgroundColor: 'transparent' }, { borderColor: getComputedStyle(input).borderColor, backgroundColor: getComputedStyle(input).backgroundColor }], { duration: 220, easing: 'ease-out' });
 }
 let saving = false;
 async function doneName(save) {
@@ -33,6 +35,7 @@ async function doneName(save) {
   }
   input.hidden = true; v.hidden = false;
   showName(true);
+  v.animate([{ backgroundColor: getComputedStyle(input).backgroundColor }, { backgroundColor: 'transparent' }], { duration: 220, easing: 'ease-out' });
 }
 $('#name-view').addEventListener('click', editName);
 $('#name-view').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editName(); } });

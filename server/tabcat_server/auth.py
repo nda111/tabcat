@@ -8,6 +8,7 @@ import time
 
 N, R, P = 2 ** 14, 8, 1
 COOKIE = 'tabcat_session'
+KEEP = 'tabcat_keep'  # ("stay signed in" as the last sign-in here asked: '0' not)
 MORE = 'tabcat_more'  # (the other accounts signed in in this browser: their tokens, comma-separated; see app.py)
 MAX_ACCOUNTS = 5
 
@@ -31,11 +32,12 @@ def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def new_session(db, user_id: int, agent: str = '', ip: str = '') -> str:
+def new_session(db, user_id: int, agent: str = '', ip: str = '', keep: bool = True) -> str:
     token = secrets.token_urlsafe(32)
     now = time.time()
+    # (not kept, "stay signed in" unticked: a day at most on the server; the cookie goes as the browser closes)
     db.run('insert into sessions (token, user_id, created_at, expires_at, agent, ip, last_seen) values (?, ?, ?, ?, ?, ?, ?)',
-           token_hash(token), user_id, now, now + session_seconds(db), agent[:200], ip[:64], now)
+           token_hash(token), user_id, now, now + (session_seconds(db) if keep else 86400), agent[:200], ip[:64], now)
     return token
 
 

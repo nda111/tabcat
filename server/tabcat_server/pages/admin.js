@@ -231,6 +231,50 @@ async function updateServer() {
   } catch (err) { toast(err.message); b.disabled = false; b.classList.remove('busy'); }
 }
 
+// ---------- Tailscale ----------
+// On the server's computer: there or not, signed in or not; its name and addresses; serving this server at its
+// HTTPS address (a switch, on that computer only)
+$('#ts-info').replaceChildren(h('b', {}, t('tsInfoTitle')), h('ul', {}, ...['tsInfo1', 'tsInfo2', 'tsInfo3'].map((k) => h('li', {}, t(k)))));
+async function tailscaleView(ts) {
+  ts ||= await api('admin/tailscale').catch(() => null);
+  const box = $('#tailscale'), from = box.offsetHeight;
+  // (not there, signed out or stopped: so said, with a way to look again)
+  const again = () => h('button', { type: 'button', class: 'btn small', onclick: async (e) => { e.currentTarget.classList.add('busy'); await tailscaleView(); } }, t('tsRefresh'));
+  if (!ts?.installed) {
+    const [before, after] = t('tsDownload').split('{link}');
+    box.replaceChildren(h('div', { class: 'ts-state' }, h('p', { class: 'muted small' }, t('tsNone'), ' ', before,
+      h('a', { href: 'https://tailscale.com/download', target: '_blank', rel: 'noopener' }, t('tsOfficial')), after), again()));
+  } else if (ts.state !== 'Running') {
+    box.replaceChildren(h('div', { class: 'ts-state' }, h('p', { class: 'muted small' }, t(ts.state === 'NeedsLogin' ? 'tsSignedOut' : 'tsStopped')), again()));
+  } else {
+    const https = h('dd', {});
+    const showHttps = (serving, url) => https.replaceChildren(serving ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('code', {}, url)) : h('span', { class: 'muted' }, t('tsOff')));
+    showHttps(ts.serving, ts.url);
+    // (turned on or off: the switch stays, only the address beside it changes, fading over)
+    const sw = h('input', { type: 'checkbox', class: 'switch', id: 'ts-serve', checked: ts.serving, disabled: !ts.here });
+    sw.addEventListener('change', async () => {
+      sw.classList.add('waiting');
+      try {
+        const next = await api('admin/tailscale/serve', { method: 'POST', body: { on: sw.checked } });
+        sw.checked = next.serving;
+        showHttps(next.serving, next.url || ts.url);
+        https.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+        toast(t(next.serving ? 'tsServing' : 'tsNotServing'));
+      } catch (err) { toast(err.message); sw.checked = !sw.checked; }
+      sw.classList.remove('waiting');
+    });
+    box.replaceChildren(
+      h('dl', {},
+        h('dt', {}, t('tsDevice')), h('dd', {}, h('code', {}, ts.name || '—')),
+        h('dt', {}, t('tsAddress')), h('dd', {}, h('code', {}, (ts.ips || []).join(', ') || '—')),
+        h('dt', {}, t('tsHttps')), https),
+      h('label', { class: 'check' }, sw, h('span', {}, t('tsServe'))),
+      ...(ts.here ? [] : [h('p', { class: 'muted small' }, t('dbOnlyHere'))]));
+  }
+  // (what it found glides to its height)
+  if (Math.abs(box.offsetHeight - from) > .5) box.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${box.offsetHeight}px`, overflow: 'hidden' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+}
+
 // ---------- moving the database ----------
 // "Change…": the operating system's Save dialog, on the server's computer (where this page is: see the server);
 // chosen, the database moves there. No dialog there (a server with no screen): a field to type the path in.
@@ -284,3 +328,4 @@ $('#update').addEventListener('click', async (e) => {
 
 // (shown once all of it's here: see reveal in pages.js)
 try { await Promise.all([users(), settings(), invites(), info()]); } finally { await showPage(); }
+tailscaleView(); // (after: asking the computer takes a moment)

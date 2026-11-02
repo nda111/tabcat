@@ -1,7 +1,7 @@
 """The server's API, without a browser: first account, signing in, accounts, sign-up modes, invitations,
 the admin's limits, and the dashboard behind the sign-in. Run: python tests/test_api.py"""
 import os, sys, tempfile
-os.environ.setdefault('TABCAT_NO_UPDATES', '1'); os.environ.setdefault('TABCAT_NO_DIALOG', '1')
+os.environ.setdefault('TABCAT_NO_UPDATES', '1'); os.environ.setdefault('TABCAT_NO_DIALOG', '1'); os.environ.setdefault('TABCAT_NO_TAILSCALE', '1')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from fastapi.testclient import TestClient
 from tabcat_server import config as C
@@ -280,6 +280,23 @@ rel = c.get('/api/admin/info').json()['release']
 check(rel['latest'] == 'v9.9.9' and rel['newer'] is True and rel['install'] in ('pip', 'checkout', 'docker'), f'info says a newer release is out, and how this server was installed ({rel})')
 check(U.newer('v1.1.0') and not U.newer('v1.0.9'), '1.1.0.dev0 is before 1.1.0, after 1.0.9')
 check(c.post('/api/admin/server/update').status_code in (409, 502) and a3.post('/api/admin/server/update').status_code == 403, 'updating the server: only on its computer, and not a working copy (this one)')
+
+# "stay signed in" unticked: a cookie for as long as the browser's open, a day at most on the server
+k1 = TestClient(app, follow_redirects=False, client=('192.0.2.70', 1))
+r = k1.post('/api/login', json=J(username='ann', password='annpass99', keep=False))
+sc = r.headers.get('set-cookie', '').lower()
+check(r.status_code == 200 and 'tabcat_session=' in sc and 'max-age' not in sc.split('tabcat_session=')[1].split(',')[0], 'not staying signed in: the sign-in cookie lasts as long as the browser')
+row = app.state.db.one('select expires_at - created_at d from sessions order by created_at desc limit 1')
+check(row['d'] <= 86400 + 1, 'and a day at most on the server')
+check(c.get('/api/server').json()['keep'] is True, 'the sign-in page is told it may offer staying signed in')
+
+# Tailscale on the server's computer (none here: the tests don't touch it); serving only from there
+check(c.get('/api/admin/tailscale').json() == {'installed': False, 'here': True}, 'Tailscale: what the server computer has (none here)')
+from tabcat_server import tailscale as TS
+calls = []
+TS.serve = lambda on, port: calls.append((on, port)); TS.status = lambda port: {'installed': True, 'serving': bool(calls and calls[-1][0])}
+check(c.post('/api/admin/tailscale/serve', json={'on': True}).json()['serving'] is True and calls[-1][0] is True, 'serving at its HTTPS address, turned on')
+check(a3.post('/api/admin/tailscale/serve', json={'on': False}).status_code == 403, 'and only from the server computer')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

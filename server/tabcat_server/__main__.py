@@ -76,7 +76,7 @@ def main(argv=None):
                   limit_concurrency=200, timeout_keep_alive=5)  # (so many connections at once; idle ones closed soon)
     if a.reload:  # (working on the server: it starts again when its code changes)
         import os
-        os.environ.update(TABCAT_DATA=str(cfg.data_dir), TABCAT_DASHBOARD=cfg.dashboard, TABCAT_SETUP_FROM=','.join(cfg.setup_from),
+        os.environ.update(TABCAT_DATA=str(cfg.data_dir), TABCAT_HOST=cfg.host, TABCAT_PORT=str(cfg.port), TABCAT_DASHBOARD=cfg.dashboard, TABCAT_SETUP_FROM=','.join(cfg.setup_from),
                           TABCAT_ADMIN_FROM=','.join(cfg.admin_from), TABCAT_TRUSTED_PROXIES=','.join(cfg.trusted_proxies))
         uvicorn.run('tabcat_server.app:from_env', factory=True, reload=True, reload_dirs=[os.path.dirname(__file__)], **common)
     else:

@@ -17,7 +17,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
-from . import __version__, auth, dashboard, totp, updates
+from . import __version__, auth, dashboard, tailscale, totp, updates
 from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
@@ -95,12 +95,16 @@ def create_app(config) -> FastAPI:
                 out.append((None, None))  # (none in use)
         return out
 
-    def set_accounts(r: Response, request: Request, tokens: list):
-        """Cookies for these tokens, the first in use (none: signed out)."""
+    def set_accounts(r: Response, request: Request, tokens: list, keep: bool | None = None):
+        """Cookies for these tokens, the first in use (none: signed out). `keep`: as signing in asked ("stay signed
+        in"); left out, as the cookies were."""
         secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
-        # (staying signed in off: cookies for as long as the browser's open)
-        keep = int(db.setting('session_days')) > 0
-        opts = dict(httponly=True, samesite='lax', secure=secure, max_age=int(auth.session_seconds(db)) if keep else None, path='/')
+        if keep is None:
+            keep = request.cookies.get(auth.KEEP) != '0'
+        # (staying signed in off, here or for the whole server: cookies for as long as the browser's open)
+        persist = keep and int(db.setting('session_days')) > 0
+        opts = dict(httponly=True, samesite='lax', secure=secure, max_age=int(auth.session_seconds(db)) if persist else None, path='/')
+        r.set_cookie(auth.KEEP, '1' if keep else '0', **opts)
         tokens = [t for t in tokens if t]
         if tokens:
             r.set_cookie(auth.COOKIE, tokens[0], **opts)
@@ -121,19 +125,19 @@ def create_app(config) -> FastAPI:
         rest = [t for t, u in found[1:] if u]
         return rest or None
 
-    def sign_in(request: Request, user_id: int) -> Response:
+    def sign_in(request: Request, user_id: int, keep: bool = True) -> Response:
         db.purge_sessions()
         found = accounts_of(request)
         # (signed in again here: this browser's old sign-in for the account ends, not left over as another device)
         for t, u in found:
             if u and u['id'] == user_id:
                 auth.end_session(db, t)
-        token = auth.new_session(db, user_id, request.headers.get('user-agent', ''), client(request))
+        token = auth.new_session(db, user_id, request.headers.get('user-agent', ''), client(request), keep)
         # (the accounts already here stay; the oldest go past the limit)
         rest = [(t, u) for t, u in found if u and u['id'] != user_id]
         for t, _ in rest[auth.MAX_ACCOUNTS - 1:]:
             auth.end_session(db, t)
-        return set_accounts(JSONResponse({'ok': True}), request, [token] + [t for t, _ in rest[:auth.MAX_ACCOUNTS - 1]])
+        return set_accounts(JSONResponse({'ok': True}), request, [token] + [t for t, _ in rest[:auth.MAX_ACCOUNTS - 1]], keep)
 
     async def body(request: Request) -> dict:
         # (JSON only: a form posted from another site can't send it, nor the cookie's SameSite=Lax POST;
@@ -240,7 +244,8 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/server')
     def server_info():
-        return {'tabcat': True, 'version': __version__, 'signup': db.setting('signup'), 'setup': no_users()}
+        return {'tabcat': True, 'version': __version__, 'signup': db.setting('signup'), 'setup': no_users(),
+                'keep': int(db.setting('session_days')) > 0}  # (staying signed in possible: the sign-in page offers it)
 
     # Is a username free? (for signing up: 'valid' and 'free'; asked as often as the API's limit lets)
     @app.get('/api/username')
@@ -274,15 +279,16 @@ def create_app(config) -> FastAPI:
         if u['disabled']:
             raise HTTPException(403, 'this account is turned off')
         throttle.clear(who)
+        keep = data.get('keep', True) is not False  # ("stay signed in": ticked unless said otherwise)
         # (two-step sign-in on: not yet; a ticket for a few minutes, to come back with a code)
         if u['totp_secret']:
             now = time.time()
-            for k in [k for k, (_, exp) in tickets.items() if exp < now]:
+            for k in [k for k, (_, exp, _k) in tickets.items() if exp < now]:
                 tickets.pop(k, None)
             ticket = secrets.token_urlsafe(24)
-            tickets[ticket] = (u['id'], now + 300)
+            tickets[ticket] = (u['id'], now + 300, keep)
             return {'need': 'code', 'ticket': ticket}
-        return sign_in(request, u['id'])
+        return sign_in(request, u['id'], keep)
 
     # The second step: the authenticator app's code, or one of the recovery codes (each good once)
     @app.post('/api/login/code')
@@ -291,7 +297,7 @@ def create_app(config) -> FastAPI:
         who = client(request)
         if throttle.blocked(who):
             raise HTTPException(429, 'too many tries: wait a few minutes')
-        uid, exp = tickets.get(str(data.get('ticket', '')), (None, 0))
+        uid, exp, keep = tickets.get(str(data.get('ticket', '')), (None, 0, True))
         if not uid or exp < time.time():
             raise HTTPException(401, 'start again: the sign-in took too long')
         u = db.one('select * from users where id = ? and disabled = 0', uid)
@@ -311,7 +317,7 @@ def create_app(config) -> FastAPI:
             db.run('update users set recovery = ? where id = ?', json.dumps(hashes), uid)
         tickets.pop(str(data.get('ticket')), None)
         throttle.clear(who)
-        return sign_in(request, uid)
+        return sign_in(request, uid, keep)
 
     @app.post('/api/signup')
     async def signup(request: Request):
@@ -719,6 +725,27 @@ def create_app(config) -> FastAPI:
             raise HTTPException(502, f'could not update: {e}')
         updates.restart()
         return {'ok': True, 'version': tag}
+
+    # Tailscale on the server's computer: its state, and serving this server at its HTTPS address (on its own
+    # computer only: that changes the computer's settings)
+    @app.get('/api/admin/tailscale')
+    async def tailscale_status(request: Request):
+        need_admin(request)
+        import asyncio
+        return {**(await asyncio.to_thread(tailscale.status, config.port)), 'here': allowed(request, config.setup_from)}
+
+    @app.post('/api/admin/tailscale/serve')
+    async def tailscale_serve(request: Request):
+        need_admin(request)
+        if not allowed(request, config.setup_from):
+            raise HTTPException(403, 'only on the server computer')
+        on = bool((await body(request)).get('on'))
+        import asyncio
+        try:
+            await asyncio.to_thread(tailscale.serve, on, config.port)
+        except Exception as e:
+            raise HTTPException(502, f'tailscale: {e}')
+        return await asyncio.to_thread(tailscale.status, config.port)
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):

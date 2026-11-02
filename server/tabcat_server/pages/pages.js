@@ -255,6 +255,18 @@ export async function reveal(cap = 600) {
 }
 if (document.body.hasAttribute('data-auto-reveal')) reveal(); // (a page with nothing to fetch)
 
+// A round (i) beside a heading: under the pointer, what it explains shows; a click or a tap opens it too (for
+// touch, which has no pointer to rest), again or anywhere else, or Esc, closes it
+document.addEventListener('click', (e) => {
+  const dot = e.target.closest?.('.info-dot');
+  for (const d of document.querySelectorAll('.info-dot.open')) if (d !== dot) d.classList.remove('open');
+  if (dot && !e.target.closest('.info-tip')) dot.classList.toggle('open');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') for (const d of document.querySelectorAll('.info-dot.open')) d.classList.remove('open');
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList?.contains('info-dot')) { e.preventDefault(); e.target.classList.toggle('open'); }
+});
+
 // ---------- the dashboard's feel ----------
 
 // Scrolling with give at the ends and a slim scrollbar: the dashboard's own (its file, on this server)
