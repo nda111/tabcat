@@ -24,6 +24,9 @@
       else if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
     } catch { /* storage unavailable */ }
     document.documentElement.classList.add('booting');
+    // (reloaded: the browser holds the page as it was until this one draws; it then comes as it ends up, not
+    // opening from nothing, which would blink. See show in app.js.)
+    if (performance.getEntriesByType?.('navigation')[0]?.type === 'reload') document.documentElement.classList.add('reloaded');
     // (come from the server's own pages, which showed the spinner on the way: it shows at once, not after a moment)
     // (kept, not taken: every dashboard tab loading meanwhile, the extension's reloads too, shows it at once)
     try { if (Date.now() - +localStorage.getItem('tabcat:bootNow') < 5000) document.documentElement.classList.add('boot-now'); } catch { /* storage unavailable */ }

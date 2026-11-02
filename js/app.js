@@ -4249,8 +4249,10 @@ async function init() {
     const root = document.documentElement, boot = $('#boot');
     const spun = +getComputedStyle(boot).opacity;
     root.classList.remove('booting');
-    root.classList.add('opening');
-    setTimeout(() => root.classList.remove('opening'), 700);
+    if (!root.classList.contains('reloaded')) { // (reloaded: no opening, see index.html)
+      root.classList.add('opening');
+      setTimeout(() => root.classList.remove('opening'), 700);
+    }
     if (spun > 0) {
       boot.style.cssText = `display: flex; position: fixed; inset: 0; z-index: 400; align-items: center; justify-content: center; flex-direction: column; background: transparent; opacity: ${spun}`;
       boot.animate([{ opacity: spun }, { opacity: 0, transform: 'scale(.96)' }], { duration: 220, easing: 'ease-in', fill: 'forwards' })
@@ -4307,14 +4309,6 @@ for (const a of document.querySelectorAll('#account-row a[href^="/"]')) {
     leaveFor(() => location.assign(a.href));
   });
 }
-// Reloading from the keyboard (F5, Ctrl+R / ⌘R): it fades out first, then opens again. (The browser's reload
-// button can't be waited on; a hard reload, with Shift, is left to the browser.)
-addEventListener('keydown', (e) => {
-  const reload = (e.key === 'F5' && !e.ctrlKey && !e.metaKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'r');
-  if (!reload || e.shiftKey || e.repeat || document.documentElement.classList.contains('leaving')) return;
-  e.preventDefault();
-  leaveFor(() => location.reload());
-}, true);
 // (back here from there, the browser may show this page as it was left: faded)
 addEventListener('pageshow', (e) => { if (e.persisted) document.documentElement.classList.remove('leaving'); });
 

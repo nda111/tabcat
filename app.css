@@ -85,6 +85,7 @@ html.booting #boot {
   visibility: visible; position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: var(--bg); opacity: 0; animation: boot-in .3s ease .2s forwards;
 }
+html.reloaded.booting #boot { animation-delay: .8s; } /* (reloaded: the page as it was stays meanwhile; the spinner only if it's slow) */
 html.boot-now.booting #boot { animation: none; opacity: 1; } /* (the spinner was up already on the page before: see index.html) */
 /* the logo inside a ring whose arc runs round, growing and shrinking as it goes (r 46: 289 around) */
 .boot-ring { position: relative; width: 132px; height: 132px; display: grid; place-items: center; }
