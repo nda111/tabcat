@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { $, api, bytes, date, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -17,6 +17,9 @@ async function users() {
   // (you first, then the other admins, then everyone else, each as they were made)
   const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
   const list = (await api('admin/users')).sort((a, b) => rank(a) - rank(b));
+  // (gone since, another admin's doing say: they fade aside first, the rest gliding up after)
+  const ids = new Set(list.map((u) => String(u.id)));
+  await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
   for (const u of list) {
     const tr = $(`#users tr[data-key="${u.id}"]`), before = was.get(u.id);
@@ -121,11 +124,12 @@ $('#add-form').addEventListener('submit', async (e) => {
 });
 
 // ---------- settings: sign-up, security ----------
-const NUMBERS = { session_days: '#session-days', login_tries: '#login-tries', login_lock_minutes: '#login-lock' };
+const NUMBERS = { session_days: '#session-days', login_tries: '#login-tries', login_lock_minutes: '#login-lock', log_days: '#log-days' };
 const steppers = {
   session_days: stepper($('#session-days'), { zero: t('sessionOff') }),
   login_tries: stepper($('#login-tries')),
   login_lock_minutes: stepper($('#login-lock')),
+  log_days: stepper($('#log-days')),
 };
 async function settings() {
   const s = await api('admin/settings');
@@ -229,6 +233,44 @@ async function updateServer() {
     }
     location.reload();
   } catch (err) { toast(err.message); b.disabled = false; b.classList.remove('busy'); }
+}
+
+// ---------- the security record ----------
+// Newest first: when, what (a failure in red), whose, from where (and the admin who did it); one account's, or
+// everyone's; More for older ones. Failures in the last day, by address, over it.
+let evOldest = null;
+function eventRow(e) {
+  return h('div', { class: `event${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
+    h('span', { class: 'ev-when muted small' }, date(e.at)),
+    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null),
+    h('span', { class: 'ev-who' }, e.username || '—', e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
+    h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · ')));
+}
+async function events(more = false) {
+  const q = new URLSearchParams({ limit: '30' });
+  if ($('#ev-user').value) q.set('user', $('#ev-user').value);
+  if (more && evOldest) q.set('before', evOldest);
+  const r = await api(`admin/events?${q}`);
+  const list = $('#events');
+  if (more) {
+    const rows = r.events.map(eventRow);
+    list.append(...rows);
+    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 220, delay: i * 15, easing: 'ease-out', fill: 'backwards' }));
+  } else {
+    await flip(list, () => list.replaceChildren(...(r.events.length ? r.events.map(eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))])));
+    $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
+      ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
+  }
+  if (r.events.length) evOldest = r.events[r.events.length - 1].id;
+  $('#ev-more').hidden = r.events.length < 30;
+}
+$('#ev-more').addEventListener('click', () => { $('#ev-more').dataset.opened = '1'; events(true); });
+$('#ev-user').addEventListener('change', () => { evOldest = null; delete $('#ev-more').dataset.opened; events(); });
+async function eventAccounts() {
+  const list = await api('admin/users');
+  const keep = $('#ev-user').value;
+  $('#ev-user').replaceChildren(h('option', { value: '' }, t('eventsAll')), ...list.map((u) => h('option', { value: u.id }, u.name ? `${u.name} (${u.username})` : u.username)));
+  $('#ev-user').value = keep;
 }
 
 // ---------- Tailscale ----------
@@ -356,5 +398,18 @@ $('#update').addEventListener('click', async (e) => {
 });
 
 // (shown once all of it's here: see reveal in pages.js)
-try { await Promise.all([users(), settings(), invites(), info()]); } finally { await showPage(); }
+try { await Promise.all([users(), settings(), invites(), info(), eventAccounts().then(() => events())]); } finally { await showPage(); }
+// Kept up to date while it's looked at: every few seconds, and on coming back to it; not while a dialog's open
+// or something's being typed (what changed moves as it does when done here)
+let refreshing = false;
+async function refresh() {
+  if (refreshing || document.hidden || document.querySelector('dialog.modal') || document.activeElement?.matches('input, textarea')) return;
+  refreshing = true;
+  // (the record: its newest page, unless older ones have been opened)
+  try { await Promise.all([users(), invites(), info(), ...($('#ev-more').dataset.opened ? [] : [events()])]); } catch { /* (the server away for a moment: next time) */ }
+  refreshing = false;
+}
+setInterval(refresh, 12000);
+addEventListener('focus', refresh);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 tailscaleView(); // (after: asking the computer takes a moment)

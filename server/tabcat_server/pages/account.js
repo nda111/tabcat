@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, date, flip, fold, h, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -180,14 +180,6 @@ async function twofaOffNow() {
 twofaView();
 
 // ---------- signed-in devices ----------
-// The device, read from the browser's own description of itself: "Chrome on Windows"
-function deviceName(agent) {
-  const browser = /Edg\//.test(agent) ? 'Edge' : /Whale\//.test(agent) ? 'Whale' : /OPR\//.test(agent) ? 'Opera' : /SamsungBrowser/.test(agent) ? 'Samsung Internet'
-    : /Firefox\//.test(agent) ? 'Firefox' : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : '';
-  const os = /Windows/.test(agent) ? 'Windows' : /iPhone|iPad/.test(agent) ? 'iOS' : /Android/.test(agent) ? 'Android'
-    : /Mac OS X|Macintosh/.test(agent) ? 'macOS' : /CrOS/.test(agent) ? 'ChromeOS' : /Linux/.test(agent) ? 'Linux' : '';
-  return browser && os ? t('deviceOn', { browser, os }) : browser || os || t('unknownDevice');
-}
 // signing out of one: two clicks, the first opening it into a red "Sign out" in place (as the dashboard's accounts)
 function outButton(onOut) {
   const b = h('button', { type: 'button', class: 'btn small device-out' }, t('chooseSignOut'));
@@ -259,6 +251,14 @@ async function drawDevices(dir = 0) {
   $('#others').disabled = all.length < 2;
 }
 await devices();
+
+// ---------- recent security activity: this account's own record, the latest ten ----------
+const mine = await api('me/events?limit=10').catch(() => []);
+$('#my-events').replaceChildren(...(mine.length ? mine.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}` },
+  h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
+  h('span', { class: 'ev-when muted small' }, date(e.at)),
+  h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · '))))
+  : [h('p', { class: 'muted small' }, t('eventsNone'))]));
 $('#others').addEventListener('click', async () => {
   await api('me/logout-others', { method: 'POST' });
   toast(t('othersOut'));

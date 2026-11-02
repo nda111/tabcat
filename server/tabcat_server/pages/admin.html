@@ -63,12 +63,23 @@
           <label><span data-t="sessionDays">Stay signed in for (days)</span><input type="number" id="session-days" min="0" max="365"></label>
           <label><span data-t="loginTries">Wrong passwords before a wait</span><input type="number" id="login-tries" min="3" max="50"></label>
           <label><span data-t="loginLock">The wait (minutes)</span><input type="number" id="login-lock" min="1" max="1440"></label>
+          <label><span data-t="logDays">Keep the security record (days)</span><input type="number" id="log-days" min="7" max="365"></label>
         </div>
         <p class="msg keep" id="security-msg"></p>
         <dl id="sessions"></dl>
         <p class="muted small" data-t="startupNote">Set when the server starts:</p>
         <dl id="startup"></dl>
         <div class="row"><button type="button" class="btn danger" id="logout-all" data-t="logoutAll">Sign everyone out…</button></div>
+      </section>
+    </div>
+
+    <div class="card wide">
+      <section>
+        <!-- the security record: sign-ins and failures, changes, admins' doings; one account's, or everyone's -->
+        <div class="row ev-head"><h2 data-t="eventsTitle">Security record</h2><span class="grow"></span><select id="ev-user" aria-label="Account"></select></div>
+        <div id="ev-fails"></div>
+        <div class="events" id="events"></div>
+        <div class="row end"><button type="button" class="btn small" id="ev-more" hidden data-t="eventsMore">More</button></div>
       </section>
     </div>
 

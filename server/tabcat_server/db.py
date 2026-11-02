@@ -29,9 +29,22 @@ create table if not exists invites (
   used_at real
 );
 create table if not exists settings (key text primary key, value text not null);
+create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
+  id integer primary key,
+  at real not null,
+  user_id integer,                 -- (the account it's about; kept after the account goes, by name)
+  username text,
+  kind text not null,
+  ip text,
+  agent text,
+  actor text,                      -- (an admin's doing: whose)
+  detail text
+);
+create index if not exists events_at on events(at);
+create index if not exists events_user on events(user_id, at);
 '''
 
-DEFAULTS = {'signup': 'closed', 'session_days': '30', 'login_tries': '5', 'login_lock_minutes': '10', 'dashboard_auto': '1'}  # signup: closed | invite | open
+DEFAULTS = {'signup': 'closed', 'session_days': '30', 'login_tries': '5', 'login_lock_minutes': '10', 'dashboard_auto': '1', 'log_days': '90'}  # signup: closed | invite | open
 
 
 class DB:
@@ -113,6 +126,9 @@ class DB:
             self.conn.execute('pragma journal_mode = wal')
             for suffix in ('', '-wal', '-shm'):
                 old.with_name(old.name + suffix).unlink(missing_ok=True)
+
+    def purge_events(self):
+        self.run('delete from events where at < ?', time.time() - float(self.setting('log_days') or 90) * 86400)
 
     def purge_sessions(self):
         self.run('delete from sessions where expires_at < ?', time.time())

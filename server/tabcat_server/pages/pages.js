@@ -130,6 +130,25 @@ export function morph(el, change, duration = 280) {
   if (Math.abs(from - to) > .5) el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
 }
 
+// The device, read from the browser's own description of itself: "Chrome on Windows"
+export function deviceName(agent) {
+  const browser = /Edg\//.test(agent) ? 'Edge' : /Whale\//.test(agent) ? 'Whale' : /OPR\//.test(agent) ? 'Opera' : /SamsungBrowser/.test(agent) ? 'Samsung Internet'
+    : /Firefox\//.test(agent) ? 'Firefox' : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : '';
+  const os = /Windows/.test(agent) ? 'Windows' : /iPhone|iPad/.test(agent) ? 'iOS' : /Android/.test(agent) ? 'Android'
+    : /Mac OS X|Macintosh/.test(agent) ? 'macOS' : /CrOS/.test(agent) ? 'ChromeOS' : /Linux/.test(agent) ? 'Linux' : '';
+  return browser && os ? t('deviceOn', { browser, os }) : browser || os || t('unknownDevice');
+}
+
+// A record of the security record: what happened, said in words; a failure marked
+export const eventLabel = (e) => t(`ev_${e.kind}`);
+// (its detail, said in words where it's a known one: an unknown account, by 2FA, how many codes are left…)
+export function eventDetail(e) {
+  const [k, v] = (e.detail || '').split(':');
+  const known = { unknown: 'evdUnknown', suspended: 'evdSuspended', '2fa': 'evd2fa', invite: 'evdInvite', admin: 'evdAdmin', user: 'evdUser', on: 'evdOn', off: 'evdOff', left: 'evdLeft', days: 'evdDays' };
+  return known[k] ? t(known[k], { n: v }) : (e.kind === 'settings_changed' || e.kind === 'db_moved' || e.kind === 'session_ended' || e.kind === 'server_updated' ? e.detail : '');
+}
+export const eventBad = (e) => ['login_fail', 'login_locked', 'login_refused', 'twofa_fail'].includes(e.kind);
+
 export const date = (s) => s ? new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s * 1000)) : t('never');
 export const bytes = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 

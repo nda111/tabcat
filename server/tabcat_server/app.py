@@ -25,12 +25,13 @@ MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
 API_PER_MINUTE = 240          # (per address)
 NO_STORE = {'Cache-Control': 'no-store'}
 # the admin page's number settings and their ranges (session_days 0: not staying signed in)
-NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes': (1, 1440)}
+NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes': (1, 1440), 'log_days': (7, 365)}
 
 
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
     db.purge_sessions()  # (ended sign-ins go: on starting, and on each new one, see sign_in)
+    db.purge_events()    # (the security record's old entries too)
     if not os.environ.get('TABCAT_NO_UPDATES'):  # (tests: no looking things up on GitHub)
         updates.keep_up(db, config, dashboard)
     tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when); see login)
@@ -62,6 +63,19 @@ def create_app(config) -> FastAPI:
         if not allowed(request, config.admin_from):
             raise HTTPException(403, 'the admin page is not open to this address')
         return u
+
+    # ---------- the security record ----------
+    # What happened to whom, from where: signing in (and failing), changes to an account, an admin's doings. What
+    # tabcat holds for anyone (links, groups) is never in it. Kept log_days days (the admin page's).
+    def log(kind, request=None, user=None, username=None, actor=None, detail=''):
+        db.run('insert into events (at, user_id, username, kind, ip, agent, actor, detail) values (?, ?, ?, ?, ?, ?, ?, ?)',
+               time.time(), user['id'] if user else None, user['username'] if user else username, kind,
+               client(request) if request else None, (request.headers.get('user-agent', '') if request else '')[:200],
+               actor['username'] if actor else None, str(detail)[:200])
+
+    def event(r) -> dict:
+        return {'id': r['id'], 'at': r['at'], 'user_id': r['user_id'], 'username': r['username'], 'kind': r['kind'],
+                'ip': r['ip'] or '', 'agent': r['agent'] or '', 'actor': r['actor'], 'detail': r['detail'] or ''}
 
     def clean_name(v) -> str:
         """A name to go by: up to auth.NAME_MAX characters (as many as show whole), spaces tidied; empty: none."""
@@ -127,6 +141,7 @@ def create_app(config) -> FastAPI:
 
     def sign_in(request: Request, user_id: int, keep: bool = True) -> Response:
         db.purge_sessions()
+        db.purge_events()
         found = accounts_of(request)
         # (signed in again here: this browser's old sign-in for the account ends, not left over as another device)
         for t, u in found:
@@ -264,19 +279,24 @@ def create_app(config) -> FastAPI:
         if not auth.valid_username(name) or not auth.valid_password(pw):
             raise HTTPException(400, 'bad username or password')
         uid = db.run('insert into users (username, password, admin, created_at, name) values (?, ?, 1, ?, ?)', name, auth.hash_password(pw), time.time(), clean_name(data.get('name')))
+        log('setup', request, user=db.one('select * from users where id = ?', uid))
         return sign_in(request, uid)
 
     @app.post('/api/login')
     async def login(request: Request):
         data = await body(request)
         who = client(request)
+        tried = str(data.get('username', ''))[:40]
         if throttle.blocked(who):
+            log('login_locked', request, username=tried)
             raise HTTPException(429, 'too many tries: wait a few minutes')
-        u = db.one('select * from users where username = ?', str(data.get('username', '')))
+        u = db.one('select * from users where username = ?', tried)
         if not u or not auth.check_password(str(data.get('password', '')), u['password']):
             throttle.failed(who)
+            log('login_fail', request, user=u, username=tried, detail='' if u else 'unknown')
             raise HTTPException(401, 'wrong username or password')
         if u['disabled']:
+            log('login_refused', request, user=u, detail='suspended')
             raise HTTPException(403, 'this account is turned off')
         throttle.clear(who)
         keep = data.get('keep', True) is not False  # ("stay signed in": ticked unless said otherwise)
@@ -288,6 +308,7 @@ def create_app(config) -> FastAPI:
             ticket = secrets.token_urlsafe(24)
             tickets[ticket] = (u['id'], now + 300, keep)
             return {'need': 'code', 'ticket': ticket}
+        log('login_ok', request, user=u)
         return sign_in(request, u['id'], keep)
 
     # The second step: the authenticator app's code, or one of the recovery codes (each good once)
@@ -312,11 +333,14 @@ def create_app(config) -> FastAPI:
             h = totp.hash_code(code)
             if h not in hashes:
                 throttle.failed(who)
+                log('twofa_fail', request, user=u)
                 raise HTTPException(401, 'wrong code')
             hashes.remove(h)
             db.run('update users set recovery = ? where id = ?', json.dumps(hashes), uid)
+            log('recovery_used', request, user=u, detail=f'left:{len(hashes)}')
         tickets.pop(str(data.get('ticket')), None)
         throttle.clear(who)
+        log('login_ok', request, user=u, detail='2fa')
         return sign_in(request, uid, keep)
 
     @app.post('/api/signup')
@@ -338,12 +362,15 @@ def create_app(config) -> FastAPI:
         uid = db.run('insert into users (username, password, created_at, name) values (?, ?, ?, ?)', name, auth.hash_password(pw), time.time(), clean_name(data.get('name')))
         if invite:
             db.run('update invites set used_by = ?, used_at = ? where code = ?', uid, time.time(), code)
+        log('signup', request, user=db.one('select * from users where id = ?', uid), detail='invite' if invite else '')
         # (not signed in: the sign-in page takes it from here, the new username filled in)
         return {'ok': True, 'username': name}
 
     @app.post('/api/logout')
     def logout(request: Request):
         # (the account in use goes; the next one signed in here, if any, takes over)
+        if gone := user_of(request):
+            log('logout', request, user=gone)
         auth.end_session(db, request.cookies.get(auth.COOKIE))
         rest = [(t, u) for t, u in accounts_of(request)[1:] if u]
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
@@ -368,6 +395,7 @@ def create_app(config) -> FastAPI:
         tok = next((t for t, u in found if u and u['id'] == uid), None)
         if not tok:
             raise HTTPException(404, 'that account is not signed in here')
+        log('logout', request, user=next(u for t, u in found if t == tok))
         auth.end_session(db, tok)
         return set_accounts(JSONResponse({'ok': True}), request, [t for t, u in found if u and t != tok])
 
@@ -398,6 +426,7 @@ def create_app(config) -> FastAPI:
         if not auth.valid_password(data.get('new', '')):
             raise HTTPException(400, 'the new password is too short')
         db.run('update users set password = ? where id = ?', auth.hash_password(data['new']), u['id'])
+        log('password_changed', request, user=u)
         # (signed out everywhere else)
         db.run('delete from sessions where user_id = ? and token != ?', u['id'], auth.token_hash(request.cookies.get(auth.COOKIE, '')))
         return {'ok': True}
@@ -413,6 +442,7 @@ def create_app(config) -> FastAPI:
         if u['admin'] and admins() == 1:
             raise HTTPException(409, 'the last admin stays')
         rest = [(t, x) for t, x in accounts_of(request)[1:] if x]
+        log('account_deleted', request, user=u)
         db.run('delete from users where id = ?', u['id'])
         # (signed out of it; another account signed in here takes over)
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
@@ -436,6 +466,7 @@ def create_app(config) -> FastAPI:
         codes = totp.new_recovery()
         db.run('update users set totp_secret = totp_pending, totp_pending = null, totp_step = ?, recovery = ? where id = ?',
                step, json.dumps([totp.hash_code(c) for c in codes]), u['id'])
+        log('twofa_on', request, user=u)
         return {'recovery': codes}
 
     async def with_password(request: Request):
@@ -448,6 +479,7 @@ def create_app(config) -> FastAPI:
     async def twofa_off(request: Request):
         u = await with_password(request)
         db.run('update users set totp_secret = null, totp_pending = null, totp_step = null, recovery = null where id = ?', u['id'])
+        log('twofa_off', request, user=u)
         return {'ok': True}
 
     @app.post('/api/me/2fa/recovery')
@@ -457,6 +489,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, 'two-step sign-in is off')
         codes = totp.new_recovery()
         db.run('update users set recovery = ? where id = ?', json.dumps([totp.hash_code(c) for c in codes]), u['id'])
+        log('recovery_new', request, user=u)
         return {'recovery': codes}
 
     @app.put('/api/me/name')
@@ -511,13 +544,17 @@ def create_app(config) -> FastAPI:
         mine = auth.token_hash(request.cookies.get(auth.COOKIE, ''))
         if len(sid) != 16 or mine.startswith(sid):
             raise HTTPException(400, 'not that one')
+        gone = db.one('select agent, ip from sessions where user_id = ? and substr(token, 1, 16) = ?', u['id'], sid)
         db.run('delete from sessions where user_id = ? and substr(token, 1, 16) = ?', u['id'], sid)
+        if gone:
+            log('session_ended', request, user=u, detail=f"{gone['ip'] or ''} {gone['agent'] or ''}".strip())
         return {'ok': True}
 
     @app.post('/api/me/logout-others')
     def logout_others(request: Request):
         u = need_user(request)
         db.run('delete from sessions where user_id = ? and token != ?', u['id'], auth.token_hash(request.cookies.get(auth.COOKIE, '')))
+        log('logout_others', request, user=u)
         return {'ok': True}
 
     # ---------- the API: the admin page ----------
@@ -532,7 +569,7 @@ def create_app(config) -> FastAPI:
 
     @app.post('/api/admin/users')
     async def add_user(request: Request):
-        need_admin(request)
+        me_ = need_admin(request)
         data = await body(request)
         name, pw = data.get('username', ''), data.get('password', '')
         if not auth.valid_username(name) or not auth.valid_password(pw):
@@ -541,7 +578,9 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, 'that username is taken')
         uid = db.run('insert into users (username, password, admin, created_at, name) values (?, ?, ?, ?, ?)',
                      name, auth.hash_password(pw), 1 if data.get('admin') else 0, time.time(), clean_name(data.get('name')))
-        return public(db.one('select * from users where id = ?', uid))
+        made = db.one('select * from users where id = ?', uid)
+        log('user_added', request, user=made, actor=me_, detail='admin' if made['admin'] else '')
+        return public(made)
 
     @app.patch('/api/admin/users/{uid}')
     async def edit_user(uid: int, request: Request):
@@ -555,14 +594,20 @@ def create_app(config) -> FastAPI:
             if not data['admin'] and last_admin:
                 raise HTTPException(409, 'the last admin stays an admin')
             db.run('update users set admin = ? where id = ?', 1 if data['admin'] else 0, uid)
+            if bool(data['admin']) != bool(u['admin']):
+                log('role_changed', request, user=u, actor=me_, detail='admin' if data['admin'] else 'user')
         if 'disabled' in data:
             if data['disabled'] and (last_admin or uid == me_['id']):
                 raise HTTPException(409, "you can't turn off yourself or the last admin")
             db.run('update users set disabled = ? where id = ?', 1 if data['disabled'] else 0, uid)
+            if bool(data['disabled']) != bool(u['disabled']):
+                log('suspended' if data['disabled'] else 'unsuspended', request, user=u, actor=me_)
             if data['disabled']:
                 db.run('delete from sessions where user_id = ?', uid)
         if data.get('twofa') is False:  # (locked out of it, phone gone and codes lost: an admin turns it off)
             db.run('update users set totp_secret = null, totp_pending = null, totp_step = null, recovery = null where id = ?', uid)
+            if u['totp_secret']:
+                log('twofa_reset', request, user=u, actor=me_)
         if 'password' in data:
             # (your own: on your account page, with the current one; here it would sign you out at once)
             if uid == me_['id']:
@@ -571,6 +616,7 @@ def create_app(config) -> FastAPI:
                 raise HTTPException(400, 'the password is too short')
             db.run('update users set password = ? where id = ?', auth.hash_password(data['password']), uid)
             db.run('delete from sessions where user_id = ?', uid)
+            log('password_reset', request, user=u, actor=me_)
         return public(db.one('select * from users where id = ?', uid))
 
     @app.delete('/api/admin/users/{uid}')
@@ -581,6 +627,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(404)
         if uid == me_['id'] or (u['admin'] and admins() == 1):
             raise HTTPException(409, "you can't delete yourself or the last admin")
+        log('user_deleted', request, user=u, actor=me_)
         db.run('delete from users where id = ?', uid)
         return {'ok': True}
 
@@ -591,8 +638,9 @@ def create_app(config) -> FastAPI:
 
     @app.put('/api/admin/settings')
     async def put_settings(request: Request):
-        need_admin(request)
+        me_ = need_admin(request)
         data = await body(request)
+        before = {k: db.setting(k) for k in ['signup', 'dashboard_auto', *NUMBERS]}
         if 'signup' in data:
             if data['signup'] not in ('closed', 'invite', 'open'):
                 raise HTTPException(400, 'signup: closed, invite or open')
@@ -608,13 +656,17 @@ def create_app(config) -> FastAPI:
                 if not lo <= n <= hi:
                     raise HTTPException(400, f'{key}: {lo} to {hi}')
                 db.set_setting(key, n)
+        changed = [f'{k}={db.setting(k)}' for k, v in before.items() if db.setting(k) != v]
+        if changed:
+            log('settings_changed', request, actor=me_, detail=', '.join(changed))
         return get_settings(request)
 
     # Signing everyone out (but you): after a leak, or to make a changed setting count for everyone
     @app.post('/api/admin/logout-all')
     def logout_all(request: Request):
-        need_admin(request)
+        me_ = need_admin(request)
         db.run('delete from sessions where token != ?', auth.token_hash(request.cookies.get(auth.COOKIE, '')))
+        log('logout_all', request, actor=me_)
         return {'ok': True}
 
     @app.get('/api/admin/invites')
@@ -634,12 +686,14 @@ def create_app(config) -> FastAPI:
         days = data.get('days')
         expires = time.time() + float(days) * 86400 if days else None
         db.run('insert into invites (code, created_by, created_at, expires_at) values (?, ?, ?, ?)', code, u['id'], time.time(), expires)
+        log('invite_created', request, actor=u, detail=f'days:{days}' if days else '')
         return {'code': code, 'expires_at': expires}
 
     @app.delete('/api/admin/invites/{code}')
     def delete_invite(code: str, request: Request):
-        need_admin(request)
+        me_ = need_admin(request)
         db.run('delete from invites where code = ?', code)
+        log('invite_deleted', request, actor=me_)
         return {'ok': True}
 
     @app.get('/api/admin/info')
@@ -687,6 +741,7 @@ def create_app(config) -> FastAPI:
         except OSError as e:
             raise HTTPException(400, f'not a usable path: {e.strerror or e}')
         config.database = str(dest)
+        log('db_moved', request, actor=user_of(request), detail=str(dest))
         from .config import save_setting
         save_setting(config.data_dir, 'database', str(dest))
         return {'db_path': str(dest)}
@@ -723,6 +778,7 @@ def create_app(config) -> FastAPI:
             await asyncio.to_thread(updates.upgrade, tag)
         except Exception as e:
             raise HTTPException(502, f'could not update: {e}')
+        log('server_updated', request, actor=user_of(request), detail=tag)
         updates.restart()
         return {'ok': True, 'version': tag}
 
@@ -747,7 +803,28 @@ def create_app(config) -> FastAPI:
             return JSONResponse({'detail': 'turn on HTTPS for the tailnet', 'enable': e.url}, 409)
         except Exception as e:
             raise HTTPException(502, f'tailscale: {e}')
+        log('tailscale_serve', request, actor=user_of(request), detail='on' if on else 'off')
         return await asyncio.to_thread(tailscale.status, config.port)
+
+    # The security record: for the admin page (everyone's, or one account's; older pages after `before`), and each
+    # account's own on its account page
+    @app.get('/api/admin/events')
+    def admin_events(request: Request, user: int | None = None, before: int | None = None, limit: int = 50):
+        need_admin(request)
+        q, args = 'select * from events where 1 = 1', []
+        if user is not None:
+            q += ' and user_id = ?'; args.append(user)
+        if before:
+            q += ' and id < ?'; args.append(before)
+        rows = db.q(q + ' order by id desc limit ?', *args, min(max(limit, 1), 200))
+        day = time.time() - 86400
+        fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked') and at > ? group by ip order by n desc limit 5", day)
+        return {'events': [event(r) for r in rows], 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
+
+    @app.get('/api/me/events')
+    def my_events(request: Request, limit: int = 20):
+        u = need_user(request)
+        return [event(r) for r in db.q('select * from events where user_id = ? order by id desc limit ?', u['id'], min(max(limit, 1), 100))]
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):

@@ -96,6 +96,10 @@ Set before it starts, on the command line, in the environment, or in `config.tom
 The lists take addresses or networks, comma-separated (`192.168.0.0/16,10.1.2.3`). Behind a proxy on another
 computer, add it to the trusted proxies, or every visitor looks like the proxy.
 
+The admin page also keeps a security record: sign-ins and failed attempts (when, from which address, which browser),
+changes to accounts and what admins did, kept 90 days unless set otherwise; each account sees its own on its account
+page. What anyone keeps in tabcat is never in it.
+
 Everything else (accounts, sign-up and invitations, how long sign-ins last and how many wrong passwords before a wait, signing everyone out, updating the dashboard, backups) is on the admin page, at `/admin`.
 
 ## Back it up

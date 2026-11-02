@@ -302,6 +302,24 @@ TS.serve = _needs
 r = c.post('/api/admin/tailscale/serve', json={'on': True})
 check(r.status_code == 409 and r.json()['enable'].endswith('/admin/dns'), 'the tailnet’s HTTPS off: it says where to turn it on')
 
+# the security record: sign-ins and failures, changes, an admin's doings; each account sees its own
+e1 = TestClient(app, follow_redirects=False, client=('192.0.2.80', 1), headers={'User-Agent': 'TestAgent/1'})
+e1.post('/api/login', json=J(username='ann', password='nope nope'))
+e1.post('/api/login', json=J(username='ghost', password='nope nope'))
+e1.post('/api/login', json=J(username='ann', password='annpass99'))
+ev = c.get('/api/admin/events').json()
+kinds = [(e['kind'], e['username']) for e in ev['events'][:3]]
+check(kinds == [('login_ok', 'ann'), ('login_fail', 'ghost'), ('login_fail', 'ann')] and ev['events'][0]['ip'] == '192.0.2.80' and ev['events'][0]['agent'] == 'TestAgent/1', f'signing in and failing are kept, with where from ({kinds})')
+check(any(f['ip'] == '192.0.2.80' and f['count'] >= 2 for f in ev['failures_24h']), 'failures in the last day, by address')
+ann_ev = c.get('/api/admin/events', params={'user': ann_id}).json()['events']
+check(ann_ev and all(e['user_id'] == ann_id for e in ann_ev), "one account's record only")
+c.patch(f'/api/admin/users/{ann_id}', json={'disabled': True}); c.patch(f'/api/admin/users/{ann_id}', json={'disabled': False})
+top = c.get('/api/admin/events').json()['events'][:2]
+check([e['kind'] for e in top] == ['unsuspended', 'suspended'] and top[0]['actor'] == 'boss', "an admin's doings, and whose")
+mine = e1.post('/api/login', json=J(username='ann', password='annpass99')) and e1.get('/api/me/events').json()
+check(mine and all(e['user_id'] == ann_id for e in mine) and mine[0]['kind'] == 'login_ok', 'each account sees its own record')
+check(c.put('/api/admin/settings', json={'log_days': 3}).status_code == 400 and c.put('/api/admin/settings', json={'log_days': 30}).json()['log_days'] == 30, 'kept 7 to 365 days')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
