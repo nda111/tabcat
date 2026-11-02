@@ -4316,6 +4316,7 @@ async function showAccount() {
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
   $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
   if (me.avatar) btn.querySelector('.sym').replaceChildren(Object.assign(photo(), { className: 'side-photo' }));
+  // (under the name: the username, then the role)
   $('#account-role').textContent = [me.name && me.username, t(me.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
   $('#account-admin').hidden = !me.admin;
   // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
@@ -4356,7 +4357,7 @@ async function openAccountList() {
       h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
         accountPhoto(a, 'account-avatar small'),
         h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.name || a.username),
-          h('span', { class: 'account-role' }, [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ')))),
+          a.name ? h('span', { class: 'account-role' }, a.username) : null)),
       outButton(a))),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
