@@ -322,9 +322,10 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .avatar-wrap { position: relative; flex: none; }
 .avatar-edit {
   position: absolute; right: -3px; bottom: -3px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; padding: 0;
-  border: 2px solid var(--panel); background: var(--accent); color: var(--on-accent); cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: scale .12s ease, filter .12s ease;
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.14); transition: scale .12s ease, color .16s ease, border-color .16s ease;
 }
-.avatar-edit:hover { filter: brightness(1.08); scale: 1.06; }
+/* (the panel's colour: white in the light theme, dark in the dark one; the icon grey, the accent under the pointer) */
+.avatar-edit:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); scale: 1.06; }
 .avatar-edit:active { scale: .94; }
 .avatar-edit:focus-visible { outline-offset: 2px; }
