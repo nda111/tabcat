@@ -839,6 +839,7 @@ async function linkServer(origin) {
 // puts the one in use away under its space's name and takes out the server's (new: a fresh start), and
 // disconnecting does the reverse. The undo history starts over. (The server keeps its copy in step: later.)
 const SPACE_KEYS = [S.KEY, TRASH_KEY, 'tabcat:tabGroupLinks'];
+const LOOK_KEY = 'tabcat:look', LOOK = ['theme', 'accent']; // (each space's look: see switchSpace)
 async function switchSpace(from, to) {
   const named = (k, space) => `${k}@${space}`;
   const now = await chrome.storage.local.get(SPACE_KEYS);
@@ -848,6 +849,12 @@ async function switchSpace(from, to) {
     if (now[k] !== undefined) out[named(k, from)] = now[k];
     out[k] = next[named(k, to)] ?? (k === S.KEY ? S.defaultState() : k === TRASH_KEY ? [] : {});
   }
+  // the look (Settings > Appearance) is each space's own too: this one's kept, the next one's taken up; one that
+  // never set it gets the defaults (kept apart, not swapped: settings stay where the rest of tabcat reads them)
+  const settings = await S.loadSettings();
+  const look = (await chrome.storage.local.get(named(LOOK_KEY, to)))[named(LOOK_KEY, to)] || {};
+  out[named(LOOK_KEY, from)] = Object.fromEntries(LOOK.map((k) => [k, settings[k]]));
+  out[S.SETTINGS_KEY] = { ...settings, ...Object.fromEntries(LOOK.map((k) => [k, look[k] ?? S.DEFAULT_SETTINGS[k]])) };
   await chrome.storage.local.set(out);
   await chrome.storage.local.remove(SPACE_KEYS.map((k) => named(k, to)));
   await withHistory(async (h) => { await dropSnaps([...h.undo, ...h.redo]); h.undo = []; h.redo = []; });
