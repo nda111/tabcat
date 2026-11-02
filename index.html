@@ -262,7 +262,10 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
       <div class="account-card">
         <span class="account-avatar" id="account-avatar" aria-hidden="true"></span>
         <span class="account-who"><span id="account-name" class="account-name"></span><span class="account-role" id="account-role"></span></span>
+        <button type="button" class="icon-btn account-more" id="account-more" aria-expanded="false" title="Switch account" data-i18n-attr="title:account.switch"><span data-icon="chevron" data-size="18"></span></button>
       </div>
+      <!-- the other accounts signed in in this browser: switch to one, sign out of one; add another -->
+      <div class="account-list" id="account-list" hidden></div>
       <div class="account-links">
         <a class="btn" href="/account" data-i18n="account.manage">Your account</a>
         <a class="btn" href="/admin" id="account-admin" hidden data-i18n="account.admin">Server admin</a>

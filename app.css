@@ -1144,5 +1144,27 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .side-photo { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; display: block; }
 .account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 16px; }
 .account-role { color: var(--muted); font-size: 12.5px; }
+.account-card .account-who { flex: 1; }
+/* (the whole of it opens the other accounts, the arrow too) */
+#account .account-card { cursor: pointer; border-radius: 10px; padding: 6px; margin: 0 -6px 8px; transition: background-color .16s ease; }
+#account .account-card:hover { background: var(--hover); transition-duration: .05s; }
+/* the arrow to the other accounts: at the card's right end, in its middle; it turns as the list opens */
+.account-more { flex: none; align-self: center; width: 32px; height: 32px; border-radius: 50%; }
+.account-more svg { transition: rotate .28s cubic-bezier(.22, 1, .36, 1); }
+.account-more[aria-expanded="true"] svg { rotate: 180deg; }
+.account-list { margin: 0 0 14px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2, var(--bg)); }
+.account-other { display: flex; align-items: center; gap: 4px; }
+.account-pick, .account-add {
+  flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .16s ease;
+}
+.account-pick:hover, .account-add:hover:not(:disabled) { background: var(--hover); transition-duration: .05s; }
+.account-add { width: 100%; color: var(--muted); }
+.account-add:disabled { opacity: .5; cursor: default; }
+.account-avatar.small { width: 30px; height: 30px; font-size: 13px; }
+.account-avatar.add { background: transparent; border: 1.5px dashed var(--border); color: var(--muted); }
+.account-other .account-name { font-size: 14px; }
+.account-out { flex: none; }
+.account-full { margin: 4px 8px 2px; font-size: 12px; color: var(--muted); }
 .account-links { display: flex; gap: 8px; flex-wrap: wrap; }
 .account-links a.btn { text-decoration: none; color: inherit; flex: 1; text-align: center; }

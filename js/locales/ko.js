@@ -9,7 +9,7 @@ export default {
   'noext.store.html': '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 웹 스토어에서 tabcat</a>을 설치하세요.',
   'noext.manual.html': '또는 직접 설치할 수도 있습니다. <a href="chrome://extensions" data-copy>chrome://extensions</a>를 열고 <b>개발자 모드</b>를 켠 뒤, <b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 익스텐션</a> 폴더를 설치하세요.',
   'noext.step3': '이 페이지를 새로고침하세요.',
-  'noext.retry': '다시 시도', 'elsewhere.title': '서버에 연결되어 있습니다.', 'elsewhere.text': '지금 tabcat은 {server}에 연결되어 있습니다. 여기서 쓰려면 tabcat 툴바 버튼의 메뉴에서 서버 연결을 끊으세요.', 'elsewhere.open': '{host} 열기', 'noext.connect': 'tabcat 툴바 버튼을 우클릭하고 서버에 연결해 주세요.', 'noext.serverTitle': 'tabcat 서버에 연결되지 않았습니다.', 'settings.account': '계정', 'account.manage': '내 계정', 'account.admin': '서버 관리', 'account.signOut': '로그아웃', 'account.roleAdmin': '관리자', 'account.roleUser': '사용자',
+  'noext.retry': '다시 시도', 'elsewhere.title': '서버에 연결되어 있습니다.', 'elsewhere.text': '지금 tabcat은 {server}에 연결되어 있습니다. 여기서 쓰려면 tabcat 툴바 버튼의 메뉴에서 서버 연결을 끊으세요.', 'elsewhere.open': '{host} 열기', 'noext.connect': 'tabcat 툴바 버튼을 우클릭하고 서버에 연결해 주세요.', 'noext.serverTitle': 'tabcat 서버에 연결되지 않았습니다.', 'settings.account': '계정', 'account.manage': '내 계정', 'account.admin': '서버 관리', 'account.signOut': '로그아웃', 'account.roleAdmin': '관리자', 'account.roleUser': '사용자', 'account.switch': '계정 전환', 'account.signOutOf': '{name} 로그아웃', 'account.add': '다른 계정 추가', 'account.full': '최대 {n}개까지입니다. 계정 하나를 로그아웃한 뒤 추가하세요.', 'account.switchFailed': '계정을 전환하지 못했습니다.',
   'noext.copied': '주소를 복사했습니다. 새 탭의 주소창에 붙여 넣으세요.',
   'boot.loading': '불러오는 중…',
   'browser.title': '지원하지 않는 브라우저입니다.',

@@ -4320,6 +4320,7 @@ async function showAccount() {
 }
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
+  // (another account signed in here takes over, if there is one: the dashboard opens again as it)
   await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
   leaveFor(() => location.reload());
 });
@@ -4330,7 +4331,56 @@ function leaveFor(go) {
   root.classList.add('leaving');
   setTimeout(go, 200);
 }
-$('#btn-account').addEventListener('click', () => $('#account').showModal());
+$('#btn-account').addEventListener('click', () => { closeAccountList(false); $('#account').style.margin = ''; $('#account').showModal(); });
+
+// The other accounts signed in in this browser (as many as the server lets): the arrow beside who's signed in
+// folds them open (it turns); one picked, the dashboard fades out and opens again as that account, with its
+// data and look (the extension changes over as it links up). Each can be signed out of; at the limit, another
+// can't be added until one is.
+const accountPhoto = (a, cls = 'account-avatar') => h('span', { class: cls, 'aria-hidden': 'true' },
+  a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase());
+async function openAccountList() {
+  const data = await fetch('/api/accounts', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
+  if (!data) return;
+  const others = data.accounts.filter((a) => !a.current), full = data.accounts.length >= data.max;
+  const list = $('#account-list');
+  list.replaceChildren(
+    ...others.map((a) => h('div', { class: 'account-other' },
+      h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
+        accountPhoto(a, 'account-avatar small'),
+        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.username), h('span', { class: 'account-role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')))),
+      h('button', { type: 'button', class: 'icon-btn account-out', title: t('account.signOutOf', { name: a.username }), 'aria-label': t('account.signOutOf', { name: a.username }), onclick: () => signOutOf(a) }, icon('close', 14)))),
+    h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
+      h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
+    ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
+  // (the dialog keeps its top where it is: the list opens downwards only, not the box growing both ways)
+  const dlg = $('#account');
+  dlg.style.margin = `${dlg.getBoundingClientRect().top}px auto auto`;
+  $('#account-more').setAttribute('aria-expanded', 'true');
+  fold(list, true, true);
+}
+function closeAccountList(animate = true) {
+  $('#account-more').setAttribute('aria-expanded', 'false');
+  fold($('#account-list'), false, animate);
+}
+// (anywhere on who's signed in, the photo to the arrow, opens or closes the list)
+const toggleAccounts = () => ($('#account-more').getAttribute('aria-expanded') === 'true' ? closeAccountList() : openAccountList());
+$('#account .account-card').addEventListener('click', toggleAccounts);
+$('#account').addEventListener('close', () => { $('#account').style.margin = ''; });
+async function switchAccount(a) {
+  const r = await fetch('/api/accounts/switch', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
+  if (!r?.ok) return toast(t('account.switchFailed'));
+  $('#account').close();
+  leaveFor(() => location.reload());
+}
+async function signOutOf(a) {
+  const r = await fetch('/api/accounts/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
+  if (!r?.ok) return;
+  // (its row folds away; the list is drawn again, Add back when there's room)
+  const list = $('#account-list'), from = list.offsetHeight;
+  await openAccountList();
+  list.animate([{ height: `${from}px` }, { height: `${list.offsetHeight}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+}
 for (const a of document.querySelectorAll('#account a[href^="/"]')) {
   a.addEventListener('click', (e) => {
     if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // (a new tab or window: this stays)
