@@ -161,6 +161,15 @@ dialogs.save_file = lambda title, start: False
 check(c.post('/api/admin/database/pick', json={}).status_code == 501, 'no dialog on the server computer: 501')
 check(a3.post('/api/admin/database/pick', json={}).status_code == 403, 'and from elsewhere: refused')
 
+# profile photos: a small image as a data: URL; shown to who's signed in; removed again
+PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+check(c.put('/api/me/avatar', json={'image': 'data:text/html;base64,PHNjcmlwdD4='}).status_code == 400 and c.put('/api/me/avatar', json={'image': 'data:image/png;base64,' + 'A' * 70000}).status_code in (400, 413), 'a profile photo that is not a small image: refused')
+r = c.put('/api/me/avatar', json={'image': PNG})
+url = r.json()['avatar']
+check(r.status_code == 200 and url.startswith('/api/users/') and c.get(url).headers['content-type'] == 'image/png' and c.get(url).content[:4] == b'\x89PNG', f'a photo is set and served as an image ({url})')
+check(TestClient(app, client=('192.0.2.9', 1)).get(url).status_code == 401, 'not to anyone signed out')
+check(c.delete('/api/me/avatar').json()['avatar'] is None and c.get(url).status_code == 404, 'removed: gone')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

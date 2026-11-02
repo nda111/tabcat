@@ -296,7 +296,8 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 @keyframes boot-bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.04); } }
 
 /* where the database is, and the button to move it (see admin.js), on one line as long as there's room */
-.db-where { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.db-where { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.db-where code { margin-right: 2px; }
 #db-move { margin: 0 0 14px; }
 #db-move .msg:not(:empty) { margin: 8px 0 0; }
 
@@ -304,3 +305,26 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 @keyframes breathe { 50% { opacity: .55; } }
 .btn.busy { animation: breathe 1.2s ease-in-out infinite; }
 dd > * { min-width: 0; overflow-wrap: anywhere; }
+
+/* the profile photo, or the name's first letter in the accent colour, in a circle */
+.avatar {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); font-weight: 600; font-size: 14px; user-select: none;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.big { width: 64px; height: 64px; font-size: 26px; }
+.profile { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.profile-text { min-width: 0; }
+.profile-text h1 { margin-bottom: 2px; }
+.profile-text p { margin-bottom: 8px; }
+
+/* the photo's edit button: a small round one over its lower right edge */
+.avatar-wrap { position: relative; flex: none; }
+.avatar-edit {
+  position: absolute; right: -3px; bottom: -3px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; padding: 0;
+  border: 2px solid var(--panel); background: var(--accent); color: var(--on-accent); cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: scale .12s ease, filter .12s ease;
+}
+.avatar-edit:hover { filter: brightness(1.08); scale: 1.06; }
+.avatar-edit:active { scale: .94; }
+.avatar-edit:focus-visible { outline-offset: 2px; }

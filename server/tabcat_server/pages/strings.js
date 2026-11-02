@@ -1,6 +1,8 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    backupShort: 'Back up',
+    photoChange: 'Change photo', photoRemove: 'Remove photo', photoSaved: 'Profile photo changed.', photoRemoved: 'Profile photo removed.', errPhoto: 'That image can’t be used.',
     dbLocation: 'Database file', dbChange: 'Change…', dbMove: 'Move', dbPathHint: 'A folder or a .db file on the server computer', dbMoved: 'The database is moved.', dbOnlyHere: 'Only on the server computer.', errDbExists: 'There’s a file there already.', errDbPath: 'That path can’t be used.', errDbSame: 'The database is there already.',
     accountMade: 'Your account is made. Enter your password to sign in.',
     resetTitle: 'Reset {name}’s password?', resetText: 'A new password is made and shown here to pass on. The current one stops working, and the account is signed out everywhere.', resetOk: 'Reset', forgotHint: 'Forgot your password? Ask your server’s admin.',
@@ -34,6 +36,8 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    backupShort: '백업',
+    photoChange: '사진 변경', photoRemove: '사진 삭제', photoSaved: '프로필 사진을 바꿨습니다.', photoRemoved: '프로필 사진을 지웠습니다.', errPhoto: '쓸 수 없는 이미지입니다.',
     dbLocation: '데이터베이스 파일', dbChange: '변경…', dbMove: '옮기기', dbPathHint: '서버 컴퓨터의 폴더나 .db 파일 경로', dbMoved: '데이터베이스를 옮겼습니다.', dbOnlyHere: '서버 컴퓨터에서만 바꿀 수 있습니다.', errDbExists: '그 위치에 이미 파일이 있습니다.', errDbPath: '쓸 수 없는 경로입니다.', errDbSame: '이미 그 위치에 있습니다.',
     accountMade: '계정을 만들었습니다. 비밀번호를 입력해 로그인하세요.',
     resetTitle: '{name}의 비밀번호를 재설정할까요?', resetText: '새 비밀번호를 만들어 여기에 보여줍니다. 지금 비밀번호는 더 이상 쓸 수 없고, 이 계정은 모든 기기에서 로그아웃됩니다.', resetOk: '재설정', forgotHint: '비밀번호를 잊으셨나요? 서버 관리자에게 문의하세요.',
@@ -67,6 +71,8 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    backupShort: 'バックアップ',
+    photoChange: '写真を変更', photoRemove: '写真を削除', photoSaved: 'プロフィール写真を変更しました。', photoRemoved: 'プロフィール写真を削除しました。', errPhoto: 'その画像は使えません。',
     dbLocation: 'データベースファイル', dbChange: '変更…', dbMove: '移動', dbPathHint: 'サーバーのコンピューター上のフォルダーか .db ファイル', dbMoved: 'データベースを移動しました。', dbOnlyHere: 'サーバーのコンピューターでのみ変更できます。', errDbExists: 'その場所にはすでにファイルがあります。', errDbPath: 'そのパスは使えません。', errDbSame: 'すでにその場所にあります。',
     accountMade: 'アカウントを作成しました。パスワードを入力してログインしてください。',
     resetTitle: '{name} のパスワードをリセットしますか？', resetText: '新しいパスワードを作ってここに表示します。今のパスワードは使えなくなり、このアカウントはすべての端末でログアウトされます。', resetOk: 'リセット', forgotHint: 'パスワードを忘れた場合は、サーバーの管理者に連絡してください。',
@@ -100,6 +106,8 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    backupShort: '备份',
+    photoChange: '更换头像', photoRemove: '删除头像', photoSaved: '已更换头像。', photoRemoved: '已删除头像。', errPhoto: '无法使用该图片。',
     dbLocation: '数据库文件', dbChange: '更改…', dbMove: '移动', dbPathHint: '服务器电脑上的文件夹或 .db 文件', dbMoved: '数据库已移动。', dbOnlyHere: '只能在服务器电脑上更改。', errDbExists: '那里已经有文件了。', errDbPath: '无法使用该路径。', errDbSame: '数据库已经在那里了。',
     accountMade: '账号已创建。输入密码即可登录。',
     resetTitle: '重置 {name} 的密码？', resetText: '将生成新密码并显示在这里。当前密码将失效，该账号会在所有设备上退出登录。', resetOk: '重置', forgotHint: '忘记密码？请联系服务器管理员。',
@@ -133,6 +141,8 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    backupShort: 'Copia',
+    photoChange: 'Cambiar foto', photoRemove: 'Quitar foto', photoSaved: 'Foto de perfil cambiada.', photoRemoved: 'Foto de perfil quitada.', errPhoto: 'Esa imagen no se puede usar.',
     dbLocation: 'Archivo de la base de datos', dbChange: 'Cambiar…', dbMove: 'Mover', dbPathHint: 'Una carpeta o un archivo .db en el equipo del servidor', dbMoved: 'La base de datos se movió.', dbOnlyHere: 'Solo desde el equipo del servidor.', errDbExists: 'Ya hay un archivo ahí.', errDbPath: 'Esa ruta no se puede usar.', errDbSame: 'La base de datos ya está ahí.',
     accountMade: 'Tu cuenta está creada. Escribe tu contraseña para iniciar sesión.',
     resetTitle: '¿Restablecer la contraseña de {name}?', resetText: 'Se crea una contraseña nueva y se muestra aquí para pasarla. La actual deja de funcionar y la cuenta se cierra en todos los dispositivos.', resetOk: 'Restablecer', forgotHint: '¿Olvidaste tu contraseña? Pregunta al administrador del servidor.',
@@ -166,6 +176,8 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    backupShort: 'Sichern',
+    photoChange: 'Foto ändern', photoRemove: 'Foto entfernen', photoSaved: 'Profilfoto geändert.', photoRemoved: 'Profilfoto entfernt.', errPhoto: 'Dieses Bild geht nicht.',
     dbLocation: 'Datenbankdatei', dbChange: 'Ändern…', dbMove: 'Verschieben', dbPathHint: 'Ein Ordner oder eine .db-Datei auf dem Server-Computer', dbMoved: 'Die Datenbank ist verschoben.', dbOnlyHere: 'Nur am Server-Computer.', errDbExists: 'Dort liegt schon eine Datei.', errDbPath: 'Dieser Pfad geht nicht.', errDbSame: 'Die Datenbank liegt schon dort.',
     accountMade: 'Dein Konto ist erstellt. Gib dein Passwort ein, um dich anzumelden.',
     resetTitle: 'Passwort von {name} zurücksetzen?', resetText: 'Ein neues Passwort wird erstellt und hier zum Weitergeben angezeigt. Das jetzige gilt nicht mehr, und das Konto wird überall abgemeldet.', resetOk: 'Zurücksetzen', forgotHint: 'Passwort vergessen? Frag den Admin deines Servers.',
@@ -199,6 +211,8 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    backupShort: 'Sauvegarder',
+    photoChange: 'Changer de photo', photoRemove: 'Retirer la photo', photoSaved: 'Photo de profil modifiée.', photoRemoved: 'Photo de profil retirée.', errPhoto: 'Cette image ne peut pas être utilisée.',
     dbLocation: 'Fichier de la base de données', dbChange: 'Modifier…', dbMove: 'Déplacer', dbPathHint: 'Un dossier ou un fichier .db sur l’ordinateur du serveur', dbMoved: 'La base de données est déplacée.', dbOnlyHere: 'Seulement depuis l’ordinateur du serveur.', errDbExists: 'Il y a déjà un fichier à cet endroit.', errDbPath: 'Ce chemin ne peut pas être utilisé.', errDbSame: 'La base de données est déjà là.',
     accountMade: 'Votre compte est créé. Saisissez votre mot de passe pour vous connecter.',
     resetTitle: 'Réinitialiser le mot de passe de {name} ?', resetText: 'Un nouveau mot de passe est créé et affiché ici pour le transmettre. L’actuel ne marche plus, et le compte est déconnecté partout.', resetOk: 'Réinitialiser', forgotHint: 'Mot de passe oublié ? Demandez à l’administrateur du serveur.',
@@ -232,6 +246,8 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    backupShort: 'Backup',
+    photoChange: 'Trocar foto', photoRemove: 'Remover foto', photoSaved: 'Foto de perfil trocada.', photoRemoved: 'Foto de perfil removida.', errPhoto: 'Essa imagem não pode ser usada.',
     dbLocation: 'Arquivo do banco de dados', dbChange: 'Alterar…', dbMove: 'Mover', dbPathHint: 'Uma pasta ou um arquivo .db no computador do servidor', dbMoved: 'O banco de dados foi movido.', dbOnlyHere: 'Só no computador do servidor.', errDbExists: 'Já existe um arquivo aí.', errDbPath: 'Esse caminho não pode ser usado.', errDbSame: 'O banco de dados já está aí.',
     accountMade: 'Sua conta foi criada. Digite sua senha para entrar.',
     resetTitle: 'Redefinir a senha de {name}?', resetText: 'Uma nova senha é criada e mostrada aqui para você repassar. A atual deixa de funcionar, e a conta é desconectada em todos os dispositivos.', resetOk: 'Redefinir', forgotHint: 'Esqueceu a senha? Fale com o administrador do servidor.',

@@ -4,6 +4,7 @@ The dashboard's own files are public (they are on GitHub anyway; the extension l
 a tabcat server answers), but the page itself opens only signed in: else the sign-in page (or, with no
 account yet, the page that makes the first one, an admin)."""
 import ipaddress
+import re
 import mimetypes
 import tempfile
 import time
@@ -60,6 +61,7 @@ def create_app(config) -> FastAPI:
 
     def public(u) -> dict:
         return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
+                'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None,
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
     def sign_in(request: Request, user_id: int) -> Response:
@@ -269,6 +271,35 @@ def create_app(config) -> FastAPI:
         r = JSONResponse({'ok': True})
         r.delete_cookie(auth.COOKIE, path='/')
         return r
+
+    # A profile photo: a small image (the page makes it 256 px square) as a data: URL; shown to who's signed in
+    AVATAR = re.compile(r'^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$')
+
+    @app.put('/api/me/avatar')
+    async def set_avatar(request: Request):
+        u = need_user(request)
+        image = str((await body(request)).get('image', ''))
+        if len(image) > 60000 or not AVATAR.match(image):
+            raise HTTPException(400, 'not an image')
+        db.run('update users set avatar = ?, avatar_at = ? where id = ?', image, time.time(), u['id'])
+        return public(db.one('select * from users where id = ?', u['id']))
+
+    @app.delete('/api/me/avatar')
+    def remove_avatar(request: Request):
+        u = need_user(request)
+        db.run('update users set avatar = null, avatar_at = null where id = ?', u['id'])
+        return public(db.one('select * from users where id = ?', u['id']))
+
+    @app.get('/api/users/{uid}/avatar')
+    def avatar(uid: int, request: Request):
+        need_user(request)
+        row = db.one('select avatar from users where id = ?', uid)
+        if not row or not row['avatar']:
+            raise HTTPException(404)
+        head, data = row['avatar'].split(',', 1)
+        import base64
+        # (its address changes with it: kept a long while)
+        return Response(base64.b64decode(data), media_type=head[5:].split(';')[0], headers={'Cache-Control': 'private, max-age=31536000, immutable'})
 
     @app.post('/api/me/logout-others')
     def logout_others(request: Request):

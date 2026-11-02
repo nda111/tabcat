@@ -166,9 +166,11 @@ async function info() {
   const rows = [
     ['version', i.version], ['database', bytes(i.db_bytes)],
     // (where the database is; changed only on the server's own computer)
+    // (a backup: a copy of it, downloaded, from anywhere; moving it: on the server's computer only)
     ['dbLocation', h('span', { class: 'db-where' }, h('code', { id: 'db-where' }, i.db_path),
-      i.here ? h('button', { type: 'button', class: 'btn small', id: 'db-change', onclick: openMove }, t('dbChange'))
-        : h('span', { class: 'muted small' }, t('dbOnlyHere')))],
+      i.here ? h('button', { type: 'button', class: 'btn small', id: 'db-change', onclick: openMove }, t('dbChange')) : null,
+      h('a', { class: 'btn small', href: '/api/admin/backup', download: '', title: t('backup') }, t('backupShort')),
+      i.here ? null : h('span', { class: 'muted small' }, t('dbOnlyHere')))],
     // (where it comes from says itself: GitHub's address, or the folder's; a version only from GitHub)
     ['dashboardSrc', d.source === 'github'
       ? h('a', { href: 'https://github.com/nda111/tabcat/tree/pages', target: '_blank', rel: 'noopener' }, h('code', {}, 'github.com/nda111/tabcat (pages)'))

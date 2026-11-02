@@ -51,6 +51,11 @@ class DB:
             if 'space' not in [r['name'] for r in self.conn.execute('pragma table_info(users)')]:
                 self.conn.execute('alter table users add column space text')
                 self.conn.execute('update users set space = cast(id as text)')
+            # (a profile photo: a small image as a data: URL, and when it was set, for its address to change with it)
+            cols = [r['name'] for r in self.conn.execute('pragma table_info(users)')]
+            if 'avatar' not in cols:
+                self.conn.execute('alter table users add column avatar text')
+                self.conn.execute('alter table users add column avatar_at real')
             self.conn.executescript('''
               create unique index if not exists users_space on users(space);
               create trigger if not exists users_space_new after insert on users when new.space is null
