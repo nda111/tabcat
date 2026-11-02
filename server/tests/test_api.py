@@ -137,6 +137,8 @@ check(r.headers.get('x-frame-options') == 'DENY' and r.headers.get('x-content-ty
 flood = TestClient(create_app(C.load(tempfile.mkdtemp(), dashboard=WEB)), follow_redirects=False, client=('198.51.100.7', 1))
 codes = [flood.get('/api/server').status_code for _ in range(245)]
 check(codes.count(429) >= 5 and codes[0] == 200, f'a flood from one address is turned away after 240 calls a minute ({codes.count(429)} refused)')
+fl = [e for e in flood.app.state.db.q("select * from events where kind = 'rate_limited'")]
+check(len(fl) == 1 and fl[0]['ip'] == '198.51.100.7', f'and kept in the security record once (not once a call): {len(fl)}')
 check(c.get('/api/username', params={'name': 'boss'}).json() == {'valid': True, 'free': False} and c.get('/api/username', params={'name': 'nobody9'}).json()['free'] is True, 'the username check: taken, or free')
 
 # moving the database: only on the server's own computer; nothing may be there already; kept for the next start

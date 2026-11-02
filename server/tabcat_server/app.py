@@ -192,6 +192,7 @@ def create_app(config) -> FastAPI:
     # framing by other sites, no guessing at content types, no full addresses passed on to other sites.
     # (A flood bigger than one computer: for what's in front of it, a proxy or Tailscale, to stop.)
     hits: dict[str, deque] = {}
+    held: dict[str, tuple] = {}  # (an address held off: how many since last kept in the record, and when)
 
     @app.middleware('http')
     async def guard(request: Request, call_next):
@@ -203,6 +204,14 @@ def create_app(config) -> FastAPI:
             while q and now - q[0] > 60:
                 q.popleft()
             if len(q) >= API_PER_MINUTE:
+                # (kept in the security record: the first time, then at most once a minute, with how many since)
+                n, last = held.get(who, (0, 0))
+                n += 1
+                if now - last > 60:
+                    log('rate_limited', request, detail=f'n:{n}')
+                    held[who] = (0, now)
+                else:
+                    held[who] = (n, last)
                 return JSONResponse({'detail': 'too many requests: wait a minute'}, 429, headers={'Retry-After': '60'})
             q.append(now)
             if len(hits) > 10000:  # (forget addresses gone quiet)
@@ -829,7 +838,7 @@ def create_app(config) -> FastAPI:
             q += ' and id < ?'; args.append(before)
         rows = db.q(q + ' order by id desc limit ?', *args, min(max(limit, 1), 200))
         day = time.time() - 86400
-        fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked') and at > ? group by ip order by n desc limit 5", day)
+        fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked', 'password_wrong', 'rate_limited') and at > ? group by ip order by n desc limit 5", day)
         return {'events': [event(r) for r in rows], 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
 
     @app.get('/api/me/events')
