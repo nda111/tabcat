@@ -142,6 +142,20 @@ with sync_playwright() as p:
     check('Live' in names(b) and took < 4, f'live: a change in A shows in B by itself, at once ({took:.1f} s)')
     bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.title.includes('Live'))", timeout=5000)
     check(True, "on B's dashboard too")
+    # as changes made there: what's added springs in, what's deleted leaves (not just there / gone)
+    watch = '''(name) => { window.__seen = { anim: false, leaving: false }; const t0 = performance.now();
+      (function f() { const el = [...document.querySelectorAll('.ws-item')].find((e) => e.title === name);
+        if (el) { if (el.getAnimations().length) __seen.anim = true; if (el.dataset.leaving) __seen.leaving = true; }
+        if (performance.now() - t0 < 8000) requestAnimationFrame(f); })(); }'''
+    bd.bring_to_front(); bd.evaluate(watch, 'Live 2')
+    edit(a, "s.workspaces.push({ id: 'live2', type: 'workspace', name: 'Live 2', symbol: '', description: '', categories: [] })")
+    wait(lambda: bd.evaluate('__seen.anim'), 'sprang in', 8)
+    check(bd.evaluate('__seen.anim'), 'a workspace added in A springs into B\'s list')
+    bd.evaluate(watch, 'Live 2')
+    edit(a, "s.workspaces = s.workspaces.filter(w => w.id !== 'live2')")
+    wait(lambda: bd.evaluate('__seen.leaving'), 'left', 8)
+    check(bd.evaluate('__seen.leaving'), 'deleted in A: it leaves B\'s list as a delete there would')
+    wait(lambda: 'Live 2' not in names(b), 'gone', 8)
 
     check(not errors, f'no page errors {errors}')
     actx.close(); bctx.close()
