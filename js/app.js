@@ -152,16 +152,31 @@ function iconImg(url, icon) {
     if (++at >= tries.length) return;
     setFavSrc(img, tries[at], next);
   };
-  img.addEventListener('error', () => { if (img.dataset.ext !== 'asking') next(); });
+  img.addEventListener('error', () => {
+    if (img.dataset.ext === 'site') { img.dataset.ext = '1'; img.classList.add('fav-blank'); img.src = CLEAR_PIXEL; return; }
+    if (img.dataset.ext !== 'asking') next();
+  });
   img.addEventListener('load', () => {
-    if (!img.dataset.ext || img.src === CLEAR_PIXEL || img.classList.contains('fav-blank')) return;
+    if (!img.dataset.ext || img.dataset.ext === 'site' || img.src === CLEAR_PIXEL || img.classList.contains('fav-blank')) return;
     blankFavicon().then((blank) => {
-      if (blank && img.naturalWidth === blank.w && favSig(img) === blank.sig) { img.classList.add('fav-blank'); img.src = CLEAR_PIXEL; }
+      if (!(blank && img.naturalWidth === blank.w && favSig(img) === blank.sig)) return;
+      // the browser has none for it (Chrome keeps only those of sites visited in it): the site's own, from the
+      // site; failing that, the accent globe
+      const site = siteIcon(url);
+      if (site) { img.dataset.ext = 'site'; img.dataset.want = site; img.removeAttribute('crossorigin'); img.src = site; return; }
+      img.classList.add('fav-blank'); img.src = CLEAR_PIXEL;
     });
   });
   img.retry = (src) => { tries.splice(0, tries.length, ...new Set([src, T.faviconFor(url), T.BLANK_ICON].filter(Boolean))); at = -1; next(); };
   next();
   return img;
+}
+// a site's own icon where sites keep it (/favicon.ico), for a web page
+function siteIcon(url) {
+  try {
+    const u = new URL(url);
+    return /^https?:$/.test(u.protocol) ? `${u.origin}/favicon.ico` : null;
+  } catch { return null; }
 }
 // An image's source, the browser's icons included: straight from the extension, readable (see blankFavicon),
 // or, on a dashboard that may not load them (the user's own server: see content.js), asked of the
