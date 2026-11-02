@@ -1,8 +1,9 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    errOffline: 'The server isn’t answering. Try again in a moment.',
     newVersion: '{version} is out', updateRestart: 'Update and restart', updateRestartText: 'The server installs the new version and starts again; this page waits and loads again.', updateDocker: 'With Docker: docker compose pull, then up -d.', updateCheckout: 'A working copy: git pull, then start it again.', restarting: 'Updated to {version}. Starting again…', dashAuto: 'Updates', dashAutoText: 'Update the dashboard by itself, once a day',
-    selfDemoteTitle: 'Make yourself a user?', selfDemoteText: 'You’ll no longer have the admin page; another admin can make you one again. To go on, type your username “{name}”.', selfDemoteOk: 'Make me a user',
+    selfDemoteTitle: 'Make yourself a user?', selfDemoteText: 'You won’t be able to open the admin page any more. To go on, type “{name}”.', selfDemoteOk: 'Switch to user',
     twofaResetOk: 'Turn off 2FA',
     twofaCodesTitle: 'Recovery codes',
     twofaSteps: 'Open your authenticator app and scan the QR code, or type the key; then enter the 6-digit code it shows.',
@@ -48,8 +49,9 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    errOffline: '서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.',
     newVersion: '새 버전 {version}', updateRestart: '업데이트 후 다시 시작', updateRestartText: '서버가 새 버전을 설치하고 다시 시작합니다. 이 페이지는 기다렸다가 다시 열립니다.', updateDocker: 'Docker: docker compose pull 후 up -d 하세요.', updateCheckout: '개발용 설치: git pull 후 서버를 다시 시작하세요.', restarting: '{version}(으)로 업데이트했습니다. 다시 시작하는 중…', dashAuto: '업데이트', dashAutoText: '매일 자동으로 대시보드 업데이트',
-    selfDemoteTitle: '내 계정을 사용자로 바꿀까요?', selfDemoteText: '더 이상 서버 관리 페이지를 쓸 수 없고, 다른 관리자가 다시 관리자로 지정해야 합니다. 계속하려면 아이디 “{name}”을(를) 입력하세요.', selfDemoteOk: '사용자로 바꾸기',
+    selfDemoteTitle: '내 계정을 사용자로 바꿀까요?', selfDemoteText: '더 이상 서버 관리 페이지에 접속할 수 없습니다. 계속하려면 “{name}”를 입력하세요.', selfDemoteOk: '사용자로 전환',
     twofaResetOk: '2FA 해제',
     twofaCodesTitle: '복구 코드',
     twofaSteps: '인증 앱을 열고 QR 코드를 촬영하거나 6자리 코드를 입력하세요.',
@@ -95,8 +97,9 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    errOffline: 'サーバーが応答しません。少ししてからもう一度お試しください。',
     newVersion: '{version} が出ています', updateRestart: '更新して再起動', updateRestartText: 'サーバーが新しいバージョンを入れて再起動します。このページは待ってから開き直します。', updateDocker: 'Docker: docker compose pull のあと up -d。', updateCheckout: '作業コピー: git pull のあとサーバーを再起動。', restarting: '{version} に更新しました。再起動中…', dashAuto: '更新', dashAutoText: '毎日自動でダッシュボードを更新',
-    selfDemoteTitle: '自分を一般ユーザーにしますか？', selfDemoteText: '管理ページは使えなくなり、ほかの管理者に戻してもらう必要があります。続けるにはユーザー名「{name}」を入力してください。', selfDemoteOk: '一般ユーザーにする',
+    selfDemoteTitle: '自分を一般ユーザーにしますか？', selfDemoteText: '管理ページにはアクセスできなくなります。続けるには「{name}」と入力してください。', selfDemoteOk: '一般ユーザーに切り替え',
     twofaResetOk: '2FA を解除',
     twofaCodesTitle: 'リカバリーコード',
     twofaSteps: '認証アプリを開いて QR コードを読み取るか、6 桁のコードを入力してください。',
@@ -142,8 +145,9 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    errOffline: '服务器没有响应，请稍后再试。',
     newVersion: '新版本 {version}', updateRestart: '更新并重启', updateRestartText: '服务器会安装新版本并重启；此页面会等待后重新打开。', updateDocker: 'Docker：docker compose pull，然后 up -d。', updateCheckout: '开发副本：git pull 后重启服务器。', restarting: '已更新到 {version}，正在重启…', dashAuto: '更新', dashAutoText: '每天自动更新看板',
-    selfDemoteTitle: '把自己改为普通用户？', selfDemoteText: '你将无法再使用管理页面，需要其他管理员重新指定。要继续，请输入用户名“{name}”。', selfDemoteOk: '改为用户',
+    selfDemoteTitle: '把自己改为普通用户？', selfDemoteText: '你将无法再访问管理页面。要继续，请输入“{name}”。', selfDemoteOk: '切换为用户',
     twofaResetOk: '解除 2FA',
     twofaCodesTitle: '恢复码',
     twofaSteps: '打开验证器应用扫描二维码，或输入 6 位验证码。',
@@ -189,8 +193,9 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    errOffline: 'El servidor no responde. Inténtalo de nuevo en un momento.',
     newVersion: 'Ya salió {version}', updateRestart: 'Actualizar y reiniciar', updateRestartText: 'El servidor instala la versión nueva y se reinicia; esta página espera y se vuelve a abrir.', updateDocker: 'Con Docker: docker compose pull y luego up -d.', updateCheckout: 'Copia de trabajo: git pull y reinicia el servidor.', restarting: 'Actualizado a {version}. Reiniciando…', dashAuto: 'Actualizaciones', dashAutoText: 'Actualizar el panel solo, una vez al día',
-    selfDemoteTitle: '¿Hacerte usuario?', selfDemoteText: 'Ya no tendrás la página de administración; otro administrador puede devolvértela. Para seguir, escribe tu usuario “{name}”.', selfDemoteOk: 'Hacerme usuario',
+    selfDemoteTitle: '¿Hacerte usuario?', selfDemoteText: 'Ya no podrás abrir la página de administración. Para seguir, escribe “{name}”.', selfDemoteOk: 'Cambiar a usuario',
     twofaResetOk: 'Quitar 2FA',
     twofaCodesTitle: 'Códigos de recuperación',
     twofaSteps: 'Abre tu app de autenticación y escanea el código QR, o escribe el código de 6 dígitos.',
@@ -236,8 +241,9 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    errOffline: 'Der Server antwortet nicht. Versuch es gleich noch einmal.',
     newVersion: '{version} ist da', updateRestart: 'Aktualisieren und neu starten', updateRestartText: 'Der Server installiert die neue Version und startet neu; diese Seite wartet und lädt neu.', updateDocker: 'Mit Docker: docker compose pull, dann up -d.', updateCheckout: 'Arbeitskopie: git pull, dann neu starten.', restarting: 'Auf {version} aktualisiert. Startet neu…', dashAuto: 'Aktualisierung', dashAutoText: 'Das Dashboard täglich selbst aktualisieren',
-    selfDemoteTitle: 'Dich selbst zum Benutzer machen?', selfDemoteText: 'Die Admin-Seite steht dir dann nicht mehr offen; ein anderer Admin kann dich wieder dazu machen. Gib zum Fortfahren deinen Benutzernamen „{name}“ ein.', selfDemoteOk: 'Zum Benutzer machen',
+    selfDemoteTitle: 'Dich selbst zum Benutzer machen?', selfDemoteText: 'Die Admin-Seite steht dir dann nicht mehr offen. Gib zum Fortfahren „{name}“ ein.', selfDemoteOk: 'Zum Benutzer wechseln',
     twofaResetOk: '2FA aufheben',
     twofaCodesTitle: 'Wiederherstellungscodes',
     twofaSteps: 'Öffne deine Authenticator-App und scanne den QR-Code oder gib den 6-stelligen Code ein.',
@@ -283,8 +289,9 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    errOffline: 'Le serveur ne répond pas. Réessayez dans un instant.',
     newVersion: '{version} est sortie', updateRestart: 'Mettre à jour et redémarrer', updateRestartText: 'Le serveur installe la nouvelle version et redémarre ; cette page attend puis se recharge.', updateDocker: 'Avec Docker : docker compose pull, puis up -d.', updateCheckout: 'Copie de travail : git pull, puis redémarrez.', restarting: 'Mis à jour en {version}. Redémarrage…', dashAuto: 'Mises à jour', dashAutoText: 'Mettre à jour le tableau de bord tout seul, une fois par jour',
-    selfDemoteTitle: 'Vous faire utilisateur ?', selfDemoteText: 'Vous n’aurez plus la page d’administration ; un autre administrateur pourra vous la rendre. Pour continuer, saisissez votre identifiant « {name} ».', selfDemoteOk: 'Me faire utilisateur',
+    selfDemoteTitle: 'Vous faire utilisateur ?', selfDemoteText: 'Vous ne pourrez plus ouvrir la page d’administration. Pour continuer, saisissez « {name} ».', selfDemoteOk: 'Passer en utilisateur',
     twofaResetOk: 'Retirer la 2FA',
     twofaCodesTitle: 'Codes de récupération',
     twofaSteps: 'Ouvrez votre application d’authentification et scannez le code QR, ou saisissez le code à 6 chiffres.',
@@ -330,8 +337,9 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    errOffline: 'O servidor não responde. Tente de novo em instantes.',
     newVersion: 'Saiu a {version}', updateRestart: 'Atualizar e reiniciar', updateRestartText: 'O servidor instala a versão nova e reinicia; esta página espera e abre de novo.', updateDocker: 'Com Docker: docker compose pull e depois up -d.', updateCheckout: 'Cópia de trabalho: git pull e reinicie.', restarting: 'Atualizado para {version}. Reiniciando…', dashAuto: 'Atualizações', dashAutoText: 'Atualizar o painel sozinho, uma vez por dia',
-    selfDemoteTitle: 'Tornar-se usuário?', selfDemoteText: 'Você não terá mais a página de administração; outro administrador pode devolvê-la. Para continuar, digite seu usuário “{name}”.', selfDemoteOk: 'Tornar-me usuário',
+    selfDemoteTitle: 'Tornar-se usuário?', selfDemoteText: 'Você não poderá mais abrir a página de administração. Para continuar, digite “{name}”.', selfDemoteOk: 'Mudar para usuário',
     twofaResetOk: 'Remover 2FA',
     twofaCodesTitle: 'Códigos de recuperação',
     twofaSteps: 'Abra seu app autenticador e escaneie o código QR, ou digite o código de 6 dígitos.',

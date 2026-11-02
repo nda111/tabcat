@@ -43,11 +43,12 @@ export const h = (tag, attrs = {}, ...kids) => {
 // The API: JSON both ways; a failure is an Error carrying the status, its message in the page's language
 const KNOWN = { 401: 'errWrong', 429: 'errMany' };
 export async function api(path, { method = 'GET', body } = {}) {
+  // (no answer at all: the server unreachable, or starting again; said so, not left silent)
   const r = await fetch(`/api/${path}`, {
     method, credentials: 'same-origin',
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  }).catch(() => { throw Object.assign(new Error(t('errOffline')), { status: 0 }); });
   const data = r.headers.get('content-type')?.includes('json') ? await r.json().catch(() => null) : null;
   if (!r.ok) {
     const detail = data?.detail || r.statusText;
