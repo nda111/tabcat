@@ -4309,13 +4309,14 @@ async function showAccount() {
   // (the sidebar's Account button, between About and Settings: its tooltip says who; it opens the Account dialog)
   const btn = $('#btn-account');
   btn.hidden = false;
-  btn.title = me.username;
-  $('#account-name').textContent = me.username;
+  // (the name to go by, if there's one, then the username: in the tooltip, and in the dialog under the name)
+  btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
+  $('#account-name').textContent = me.name || me.username;
   // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
   $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
   if (me.avatar) btn.querySelector('.sym').replaceChildren(Object.assign(photo(), { className: 'side-photo' }));
-  $('#account-role').textContent = t(me.admin ? 'account.roleAdmin' : 'account.roleUser');
+  $('#account-role').textContent = [me.name && me.username, t(me.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
   $('#account-admin').hidden = !me.admin;
   // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
   if (new URLSearchParams(location.search).has('switched')) {
@@ -4354,7 +4355,8 @@ async function openAccountList() {
     ...others.map((a) => h('div', { class: 'account-other' },
       h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
         accountPhoto(a, 'account-avatar small'),
-        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.username), h('span', { class: 'account-role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')))),
+        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.name || a.username),
+          h('span', { class: 'account-role' }, [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ')))),
       outButton(a))),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),

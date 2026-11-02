@@ -1180,4 +1180,4 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .account-out.armed .out-label { display: inline; }
 .account-full { margin: 4px 8px 2px; font-size: 12px; color: var(--muted); }
 .account-links { display: flex; gap: 8px; flex-wrap: wrap; }
-.account-links a.btn { text-decoration: none; color: inherit; flex: 1; text-align: center; }
+.account-links a.btn { text-decoration: none; color: inherit; flex: 1; display: inline-flex; align-items: center; justify-content: center; }
