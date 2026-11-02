@@ -26,8 +26,10 @@ async function main() {
   const remembered = store.get();
   if (remembered && !signingUp) { $('#username').value = remembered; $('#remember-id').checked = true; }
   $('#keep-row').hidden = !info.keep; // (the server keeps no one signed in: nothing to offer)
-  // (adding another account, from the dashboard's Account: Back beside Sign in, to it; not signing up from here)
-  const adding = !!params.get('add');
+  // (adding another account, from the dashboard's Account: Back beside Sign in, to it; not signing up from here.
+  // Only with an account signed in here already: the address alone, signed out, is the plain sign-in page)
+  const signedInHere = (await api('accounts/here').catch(() => null))?.accounts?.length > 0;
+  const adding = !!params.get('add') && signedInHere;
   $('#back-btn').hidden = !adding;
   $('#back-btn').addEventListener('click', () => go('/'));
   $('#invite').value = invite;

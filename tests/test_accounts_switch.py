@@ -87,6 +87,8 @@ with sync_playwright() as p:
         try: d.wait_for_url('**/login', timeout=4000); break
         except Exception: d.wait_for_selector('.ws-item', timeout=15000); time.sleep(.8); d.click('#btn-account'); time.sleep(.3); d.click('#account-signout')
     check(d.url.endswith('/login'), 'signing out, one by one, to the sign-in page')
+    d.goto(SERVER + '/login?add=1'); d.wait_for_selector('#username:visible'); time.sleep(.4)
+    check(d.is_hidden('#back-btn'), 'the adding address, signed out: the plain sign-in page (no Back to nowhere)')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 srv.should_exit = True
