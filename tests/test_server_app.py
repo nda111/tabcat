@@ -89,6 +89,9 @@ with sync_playwright() as p:
     d = dash
     check(d.evaluate("document.querySelector('#no-ext').hidden"), 'connected: the board')
     check(d.is_visible('#btn-account') and d.get_attribute('#btn-account', 'title') == 'The Boss\nboss', "the sidebar's Account button, its tooltip saying who (the name, the username)")
+    d.click('#ws-toggle'); time.sleep(.5)
+    check(d.get_attribute('#btn-account', 'title') == 'The Boss\nboss', f"collapsed too: the name and username, not the word Account ({d.get_attribute('#btn-account', 'title')!r})")
+    d.click('#ws-toggle'); time.sleep(.5)
     d.click('#btn-settings'); time.sleep(.4)
     check(not d.locator('#settings #account-name').count(), 'Settings has no account part any more')
     d.keyboard.press('Escape'); time.sleep(.3)
