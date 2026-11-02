@@ -205,6 +205,7 @@ dialog.modal .row { justify-content: flex-end; }
 .field-msg.ok { color: var(--accent); }
 .field-msg.error { color: var(--danger); }
 #add-form { margin-top: 12px; }
+#add-msg:not(:empty) { margin: 10px 0 0; }
 
 /* two things in one place, as wide as the wider, one shown (the suspend button's two labels; reset and the new
    password it made) */
@@ -272,3 +273,21 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 
 /* (signing in: who to ask, should the password be forgotten) */
 .forgot { margin: 14px 0 0; text-align: center; }
+
+/* the dashboard's loading spinner, shown on the way to it (see go in pages.js): the same as the dashboard's own,
+   in the same place */
+.boot { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.boot-ring { position: relative; width: 132px; height: 132px; display: grid; place-items: center; }
+.boot-ring svg { position: absolute; inset: 0; animation: boot-turn 2s linear infinite; }
+.boot-ring circle { fill: none; stroke-width: 4; }
+.boot-ring .arc { stroke-width: 6; }
+.boot-ring .track { stroke: color-mix(in srgb, var(--accent) 16%, transparent); }
+.boot-ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 1 289; transform-origin: center; animation: boot-arc 1.5s ease-in-out infinite; }
+.boot-ring .logo { width: 72px; height: 72px; animation: boot-bob 1.5s ease-in-out infinite; }
+@keyframes boot-turn { to { transform: rotate(1turn); } }
+@keyframes boot-arc {
+  0% { stroke-dasharray: 1 289; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 150 289; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 150 289; stroke-dashoffset: -288; }
+}
+@keyframes boot-bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.04); } }

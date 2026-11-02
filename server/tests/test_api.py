@@ -72,7 +72,10 @@ c.put('/api/admin/settings', json=J(signup='invite'))
 n2 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n2.post('/api/signup', json=J(username='new2', password='12345678')).status_code == 403, 'by invitation: none, refused')
 code = c.post('/api/admin/invites', json=J(days=7)).json()['code']
-check(n2.post('/api/signup', json=J(username='new2', password='12345678', invite=code)).status_code == 200, 'with one, signs up')
+r = n2.post('/api/signup', json=J(username='new2', password='12345678', invite=code))
+check(r.status_code == 200 and 'set-cookie' not in r.headers and n2.get('/api/me').status_code == 401, 'with one, signs up (not signed in: the sign-in page follows)')
+n2.post('/api/login', json=J(username='new2', password='12345678'))
+space2 = n2.get('/api/me').json()['space']
 n3 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite=code)).status_code == 403, 'an invitation is used once')
 check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()], 'the admin sees who used it')
@@ -80,6 +83,20 @@ check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()], 'the
 # deleting your own account (the last admin can't)
 check(n2.request('DELETE', '/api/me', json={'confirm': True}).status_code == 200 and n2.get('/api/me').status_code == 401, 'a user deletes their own account, and is signed out')
 check(n2.post('/api/login', json=J(username='new2', password='12345678')).status_code == 401, 'it is gone')
+c.put('/api/admin/settings', json=J(signup='open'))
+n4 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50007))
+n4.post('/api/signup', json=J(username='new2', password='12345678')); n4.post('/api/login', json=J(username='new2', password='12345678'))
+me4 = n4.get('/api/me').json()
+check(me4['space'] != space2 and len(me4['space']) == 24, f'made again under the same name: a data key of its own, not the deleted one\'s ({space2} → {me4["space"]})')
+c.put('/api/admin/settings', json=J(signup='invite'))
+# accounts from before the data keys keep their id as theirs (their data stays where it was)
+import sqlite3, pathlib
+old_dir = pathlib.Path(tempfile.mkdtemp())
+con = sqlite3.connect(old_dir / 'tabcat.db')
+con.executescript("create table users (id integer primary key, username text not null unique collate nocase, password text not null, admin integer not null default 0, disabled integer not null default 0, created_at real not null, last_seen real); insert into users (username, password, admin, created_at) values ('old', 'x', 1, 0);")
+con.commit(); con.close()
+from tabcat_server.db import DB
+check(DB(old_dir / 'tabcat.db').one("select space from users where username = 'old'")['space'] == '1', 'an account from before keeps its id as its data key')
 check(c.request('DELETE', '/api/me', json={'confirm': True}).status_code == 409, 'the last admin can’t delete themselves')
 
 # throttling

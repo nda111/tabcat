@@ -91,14 +91,15 @@ function row(u) {
   tr.parts = { pill, chip: chipEl, suspend, newpw };
   return tr;
 }
+$('#add-form').addEventListener('input', () => say($('#add-msg'), '')); // (typed again: the error goes)
 $('#add-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
     await api('admin/users', { method: 'POST', body: { username: $('#add-name').value.trim(), password: $('#add-pw').value, admin: $('#add-admin').checked } });
     e.target.reset();
-    say($('#users-msg'), '');
+    say($('#add-msg'), '');
     await users();
-  } catch (err) { say($('#users-msg'), err.message, 'error'); }
+  } catch (err) { say($('#add-msg'), err.message, 'error'); } // (under the fields it's about)
 });
 
 // ---------- settings: sign-up, security ----------

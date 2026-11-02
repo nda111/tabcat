@@ -75,11 +75,12 @@ async function main() {
   mode();
 
   // From signing in to signing up, or back: the box grows or shrinks to fit, what comes fades in
-  $('#other').addEventListener('click', () => {
+  $('#other').addEventListener('click', () => { switchTo(!signingUp); $('#username').focus(); });
+  function switchTo(up) {
     const card = $('#form'), from = card.offsetHeight;
     const rows = [...card.querySelectorAll('label, .msg, .forgot')];
     const hiddenBefore = new Set(rows.filter((el) => el.hidden));
-    signingUp = !signingUp;
+    signingUp = up;
     mode();
     const to = card.offsetHeight;
     card.style.overflow = 'clip';
@@ -87,8 +88,7 @@ async function main() {
       .then(() => { card.style.overflow = ''; }, () => {});
     for (const el of rows) if (hiddenBefore.has(el) && !el.hidden) el.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 60, easing: GLIDE, fill: 'backwards' });
     for (const el of [$('#title'), $('#go'), $('#other')]) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
-    $('#username').focus();
-  });
+  }
 
   // Sending: the fields and buttons go still (fading) until the answer; nothing to read meanwhile
   const still = (on) => { for (const el of $('#form').querySelectorAll('input, button')) el.disabled = on; };
@@ -98,8 +98,17 @@ async function main() {
     if (signingUp && password !== $('#again').value) return say($('#msg'), t('mismatch'), 'error');
     still(true);
     try {
-      if (signingUp) await api('signup', { method: 'POST', body: { username, password, invite: $('#invite').value.trim() } });
-      else await api('login', { method: 'POST', body: { username, password } });
+      if (signingUp) {
+        // made: not signed in yet. Signing in follows here, the new username in place, the password to type
+        await api('signup', { method: 'POST', body: { username, password, invite: $('#invite').value.trim() } });
+        still(false);
+        for (const id of ['#password', '#again', '#invite']) $(id).value = '';
+        switchTo(false);
+        say($('#msg'), t('accountMade'), 'ok');
+        $('#password').focus();
+        return;
+      }
+      await api('login', { method: 'POST', body: { username, password } });
       go(next, true);
     } catch (err) {
       still(false);

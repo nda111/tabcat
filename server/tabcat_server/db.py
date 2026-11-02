@@ -45,6 +45,17 @@ class DB:
             self.conn.execute('pragma foreign_keys = on')
             self.conn.execute('pragma journal_mode = wal')
             self.conn.executescript(SCHEMA)
+            # Each account's key for its data in the browser (see the extension's spaceName): random and its own,
+            # never another's (ids come round again once the newest account goes: one made after would get its
+            # data). Accounts from before keep their id as theirs, their data staying where it is.
+            if 'space' not in [r['name'] for r in self.conn.execute('pragma table_info(users)')]:
+                self.conn.execute('alter table users add column space text')
+                self.conn.execute('update users set space = cast(id as text)')
+            self.conn.executescript('''
+              create unique index if not exists users_space on users(space);
+              create trigger if not exists users_space_new after insert on users when new.space is null
+              begin update users set space = lower(hex(randomblob(12))) where id = new.id; end;
+            ''')
 
     def q(self, sql, *args):
         with self.lock:

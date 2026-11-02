@@ -202,9 +202,23 @@ passwordToggles();
 
 // Going to the dashboard: the page fades out first, and the dashboard opens in its own way (between the server's
 // own pages, the browser fades them: see pages.css). `replace`: in place of this page in the history.
+// The dashboard takes a moment to come (its files, then the extension's data): meanwhile its loading spinner
+// (the logo in a running ring) shows here at once, and the dashboard shows its own in the same place without
+// its usual wait (told so through this origin's storage, for a few seconds: the extension may open it in a tab of its own), so one spinner seems to stay up until the board comes.
+const RING = '<div class="boot-ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="46"/><circle class="arc" cx="50" cy="50" r="46"/></svg><span class="logo"></span></div>';
 export function go(url, replace = false) {
   const wrap = document.querySelector('.wrap');
-  const nav = () => (replace ? location.replace(url) : location.assign(url));
+  const toDashboard = new URL(url, location.href).pathname === '/';
+  const nav = () => {
+    if (toDashboard) {
+      try { localStorage.setItem('tabcat:bootNow', String(Date.now())); } catch { /* storage unavailable: it waits as usual */ }
+      const boot = h('div', { class: 'boot', role: 'status' });
+      boot.innerHTML = RING;
+      document.body.append(boot);
+      boot.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
+    }
+    if (replace) location.replace(url); else location.assign(url);
+  };
   if (!wrap) return nav();
   wrap.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
     .finished.then(nav, nav);
@@ -216,7 +230,11 @@ document.addEventListener('click', (e) => {
   go('/');
 });
 // (back here, the browser may show the page as it was left: faded)
-addEventListener('pageshow', (e) => { if (e.persisted) for (const a of document.querySelector('.wrap')?.getAnimations() || []) a.cancel(); });
+addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  for (const a of document.querySelector('.wrap')?.getAnimations() || []) a.cancel();
+  document.querySelector('body > .boot')?.remove();
+});
 
 // ---------- the dashboard's feel ----------
 

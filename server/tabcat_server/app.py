@@ -59,7 +59,7 @@ def create_app(config) -> FastAPI:
         return db.one('select count(*) n from users')['n'] == 0
 
     def public(u) -> dict:
-        return {'id': u['id'], 'username': u['username'], 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
+        return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
     def sign_in(request: Request, user_id: int) -> Response:
@@ -228,7 +228,8 @@ def create_app(config) -> FastAPI:
         uid = db.run('insert into users (username, password, created_at) values (?, ?, ?)', name, auth.hash_password(pw), time.time())
         if invite:
             db.run('update invites set used_by = ?, used_at = ? where code = ?', uid, time.time(), code)
-        return sign_in(request, uid)
+        # (not signed in: the sign-in page takes it from here, the new username filled in)
+        return {'ok': True, 'username': name}
 
     @app.post('/api/logout')
     def logout(request: Request):

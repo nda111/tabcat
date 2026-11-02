@@ -877,7 +877,9 @@ function ensureAccount() {
       if (!r.ok) return false;
       me = await r.json();
     } catch { return false; }
-    const user = me?.id != null ? String(me.id) : null;
+    // (the account's own key for its data: never another's, even one deleted under the same name; a server
+    // from before keys gave only its id)
+    const user = me?.space ? String(me.space) : me?.id != null ? String(me.id) : null;
     if (!user || user === (s.serverUser ?? null)) return false;
     await switchSpace(spaceName(s.server, s.serverUser), spaceName(s.server, user));
     await S.saveSettings({ serverUser: user });
