@@ -351,12 +351,17 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .choose-row:hover:not(:disabled) .choose-out { color: var(--danger); }
 
 /* the account page's heading: the name, to click and change in place (a pencil shows under the pointer) */
-.name-edit { cursor: text; border-radius: 6px; margin: 0 -6px 2px; padding: 0 6px; transition: background-color .16s ease; display: block; width: calc(100% + 12px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name-edit { cursor: text; border-radius: 6px; margin: 0 -6px 2px; padding: 0 6px; transition: background-color .16s ease; display: block; width: calc(100% + 12px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; padding-right: 30px; }
 .name-edit:hover { background: var(--hover); transition-duration: .05s; }
 .name-edit::after {
-  content: ''; display: inline-block; width: 14px; height: 14px; margin-left: 8px; vertical-align: -1px; background: var(--muted); opacity: 0; transition: opacity .16s ease;
+  content: ''; position: absolute; right: 8px; top: 50%; translate: 0 -50%; width: 14px; height: 14px; background: var(--muted); opacity: 0; transition: opacity .16s ease;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .name-edit:hover::after, .name-edit:focus-visible::after { opacity: 1; }
 .name-edit.unnamed { color: var(--muted); }
-.name-input { font-size: 20px !important; font-weight: 700; padding: 2px 6px !important; margin: 0 -6px 2px !important; width: calc(100% + 12px) !important; }
+.name-input {
+  font-size: 20px !important; font-weight: 700 !important; padding: 2px 30px 2px 6px !important; margin: 0 -6px 2px !important; width: calc(100% + 12px) !important;
+  /* (the pencil at its right end while editing too, in the accent colour) */
+  background-repeat: no-repeat !important; background-position: right 8px center !important; background-size: 14px 14px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a958f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E") !important;
+}
