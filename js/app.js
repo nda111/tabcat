@@ -4321,7 +4321,8 @@ async function showAccount() {
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
   // (another account signed in here takes over, if there is one: the dashboard opens again as it)
-  await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+  const r = await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).then((x) => x.json(), () => null);
+  if (r?.next) { $('#account').close(); return reloadAs(); }
   leaveFor(() => location.reload());
 });
 // Going to the server's own pages (the account, the admin page): the dashboard fades out first, and the page
@@ -4349,7 +4350,7 @@ async function openAccountList() {
       h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
         accountPhoto(a, 'account-avatar small'),
         h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.username), h('span', { class: 'account-role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')))),
-      h('button', { type: 'button', class: 'icon-btn account-out', title: t('account.signOutOf', { name: a.username }), 'aria-label': t('account.signOutOf', { name: a.username }), onclick: () => signOutOf(a) }, icon('close', 14)))),
+      h('button', { type: 'button', class: 'account-out', title: t('account.signOut'), 'aria-label': t('account.signOutOf', { name: a.username }), onclick: () => signOutOf(a) }, icon('close', 14)))),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
@@ -4371,7 +4372,19 @@ async function switchAccount(a) {
   const r = await fetch('/api/accounts/switch', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
   if (!r?.ok) return toast(t('account.switchFailed'));
   $('#account').close();
-  leaveFor(() => location.reload());
+  reloadAs();
+}
+// Opening again as another account: the dashboard fades out, the spinner comes up (in this account's colours,
+// turning to the next one's as it loads: see index.html and app.css)
+function reloadAs() {
+  try { sessionStorage.setItem('tabcat:switching', '1'); } catch { /* storage unavailable */ }
+  leaveFor(() => {
+    const root = document.documentElement;
+    root.classList.add('boot-now', 'booting');
+    root.classList.remove('leaving');
+    $('#boot').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
+    setTimeout(() => location.reload(), 150);
+  });
 }
 async function signOutOf(a) {
   const r = await fetch('/api/accounts/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);

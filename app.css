@@ -80,7 +80,7 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 @keyframes page-out { to { opacity: 0; } }
 /* leaving for the server's pages: all of it fades away, a little up */
 @keyframes leave-out { to { opacity: 0; translate: 0 -8px; } }
-html.leaving body > :not(#toast) { animation: leave-out .2s ease-in forwards; }
+html.leaving body > :not(#toast, #boot) { animation: leave-out .2s ease-in forwards; }
 /* (an open dialog's dimmed backdrop too: it lightens back to the page's colour, not snapping as the page goes) */
 @keyframes backdrop-out { to { opacity: 0; } }
 html.leaving dialog::backdrop { animation: backdrop-out .2s ease-in forwards; }
@@ -1153,7 +1153,11 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .account-more svg { transition: rotate .28s cubic-bezier(.22, 1, .36, 1); }
 .account-more[aria-expanded="true"] svg { rotate: 180deg; }
 .account-list { margin: 0 0 14px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2, var(--bg)); }
-.account-other { display: flex; align-items: center; gap: 4px; }
+/* another account: one row, its sign-out inside it (the row lights up under the pointer; the sign-out only
+   turns its icon the accent) */
+.account-other { display: flex; align-items: center; gap: 4px; border-radius: 8px; padding-right: 6px; transition: background-color .16s ease; }
+.account-other:hover { background: var(--hover); transition-duration: .05s; }
+.account-other .account-pick:hover { background: transparent; }
 .account-pick, .account-add {
   flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent;
   color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .16s ease;
@@ -1164,7 +1168,11 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .account-avatar.small { width: 30px; height: 30px; font-size: 13px; }
 .account-avatar.add { background: transparent; border: 1.5px dashed var(--border); color: var(--muted); }
 .account-other .account-name { font-size: 14px; }
-.account-out { flex: none; }
+.account-out {
+  flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: color .16s ease;
+}
+.account-out:hover { color: var(--accent); transition-duration: .05s; }
 .account-full { margin: 4px 8px 2px; font-size: 12px; color: var(--muted); }
 .account-links { display: flex; gap: 8px; flex-wrap: wrap; }
 .account-links a.btn { text-decoration: none; color: inherit; flex: 1; text-align: center; }
