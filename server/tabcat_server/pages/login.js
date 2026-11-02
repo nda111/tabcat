@@ -1,15 +1,14 @@
 // Sign in, or (when the server lets anyone, or this link has an invitation in it) make an account
-import { $, api, connected, go, morph, say, showNotConnected, t } from './pages.js';
+import { $, api, connected, go, morph, say, showNotConnected, t, reveal } from './pages.js';
 
 const GLIDE = 'cubic-bezier(.22, 1, .36, 1)';
 
 // only with the extension connected to this server: else, how to connect
 const linked = await connected(() => location.reload());
 // (the page shows once it's known which, in its fonts if they come soon: nothing shifts after; the box comes up)
-await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 300))]);
 if (!linked) showNotConnected($('#form'));
 else await main();
-document.body.removeAttribute('data-checking');
+await reveal();
 if (linked) $('#username').focus(); // (once shown: a hidden field can't take focus)
 
 async function main() {

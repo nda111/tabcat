@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { $, api, bytes, date, flip, h, modal, randomPassword, say, stepper, t, toast } from './pages.js';
+import { $, api, bytes, date, flip, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -182,4 +182,5 @@ $('#update').addEventListener('click', async (e) => {
   e.target.disabled = false;
 });
 
-await Promise.all([users(), settings(), invites(), info()]);
+// (shown once all of it's here: see reveal in pages.js)
+try { await Promise.all([users(), settings(), invites(), info()]); } finally { await showPage(); }

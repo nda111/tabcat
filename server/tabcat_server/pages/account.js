@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, modal, say, t } from './pages.js';
+import { $, api, modal, reveal, say, t } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -28,3 +28,4 @@ $('#delete-me').addEventListener('click', async () => {
     location.replace('/login');
   } catch (err) { say($('#delete-msg'), err.message, 'error'); }
 });
+reveal(); // (shown now its name's in: see reveal)

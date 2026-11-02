@@ -236,6 +236,17 @@ addEventListener('pageshow', (e) => {
   document.querySelector('body > .boot')?.remove();
 });
 
+// The page shows (rising in) only once what it shows is there: its data (each page's script calls this when it
+// has it) and its fonts. The web fonts' stylesheet comes without holding the page up, so it's waited for first,
+// then the fonts it brings: else they'd swap in mid-way, the text jumping. Not more than `cap` ms, though.
+export async function reveal(cap = 600) {
+  const link = document.querySelector('link[href*="fonts.googleapis"]');
+  const sheet = link && link.media !== 'all' ? new Promise((r) => { link.addEventListener('load', r, { once: true }); link.addEventListener('error', r, { once: true }); }) : null;
+  await Promise.race([(async () => { await sheet; await document.fonts.ready; })(), new Promise((r) => setTimeout(r, cap))]);
+  document.body.removeAttribute('data-checking');
+}
+if (document.body.hasAttribute('data-auto-reveal')) reveal(); // (a page with nothing to fetch)
+
 // ---------- the dashboard's feel ----------
 
 // Scrolling with give at the ends and a slim scrollbar: the dashboard's own (its file, on this server)
@@ -314,6 +325,7 @@ export async function flip(list, change) {
   const before = new Map([...list.children].map((el) => [keyed(el), el.getBoundingClientRect()]));
   const card = list.closest('.card'), from = card?.offsetHeight;
   await change();
+  if (!before.size) return; // (the first rows, as the page loads: they come with it, not one by one after)
   const to = card?.offsetHeight;
   if (card && Math.abs(from - to) > .5) {
     card.style.overflow = 'clip';

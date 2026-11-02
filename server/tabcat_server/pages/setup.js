@@ -1,11 +1,10 @@
 // The first account (an admin), on a server with none yet
-import { $, api, connected, say, showNotConnected, t } from './pages.js';
+import { $, api, connected, say, showNotConnected, t, reveal } from './pages.js';
 
 // only with the extension connected to this server: else, how to connect
 const linked = await connected(() => location.reload());
 // (the page shows once it's known which, in its fonts if they come soon: nothing shifts after)
-await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 300))]);
-document.body.removeAttribute('data-checking');
+await reveal();
 if (linked) await main();
 else showNotConnected($('#form'));
 

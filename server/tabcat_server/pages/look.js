@@ -19,3 +19,6 @@ addEventListener('pageswap', (e) => {
   if (!to || !OWN.includes(new URL(to).pathname)) vt.skipTransition();
 });
 addEventListener('pagereveal', (e) => { const vt = e.viewTransition; if (vt) for (const p of [vt.ready, vt.finished, vt.updateCallbackDone]) p?.catch(() => {}); });
+
+// (should a page's script fail, it shows anyway after a while: see reveal in pages.js)
+setTimeout(() => document.body?.removeAttribute('data-checking'), 4000);
