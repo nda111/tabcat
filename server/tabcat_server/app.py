@@ -56,11 +56,18 @@ def create_app(config) -> FastAPI:
             raise HTTPException(403, 'the admin page is not open to this address')
         return u
 
+    def clean_name(v) -> str:
+        """A name to go by: up to 40 characters, spaces tidied; empty: none (the username shows)."""
+        name = ' '.join(str(v or '').split())
+        if len(name) > 40:
+            raise HTTPException(400, 'the name is too long')
+        return name
+
     def no_users() -> bool:
         return db.one('select count(*) n from users')['n'] == 0
 
     def public(u) -> dict:
-        return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
+        return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'name': u['name'] or '', 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
                 'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None,
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
@@ -237,7 +244,7 @@ def create_app(config) -> FastAPI:
         name, pw = data.get('username', ''), data.get('password', '')
         if not auth.valid_username(name) or not auth.valid_password(pw):
             raise HTTPException(400, 'bad username or password')
-        uid = db.run('insert into users (username, password, admin, created_at) values (?, ?, 1, ?)', name, auth.hash_password(pw), time.time())
+        uid = db.run('insert into users (username, password, admin, created_at, name) values (?, ?, 1, ?, ?)', name, auth.hash_password(pw), time.time(), clean_name(data.get('name')))
         return sign_in(request, uid)
 
     @app.post('/api/login')
@@ -271,7 +278,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(400, 'bad username or password')
         if db.one('select 1 from users where username = ?', name):
             raise HTTPException(409, 'that username is taken')
-        uid = db.run('insert into users (username, password, created_at) values (?, ?, ?)', name, auth.hash_password(pw), time.time())
+        uid = db.run('insert into users (username, password, created_at, name) values (?, ?, ?, ?)', name, auth.hash_password(pw), time.time(), clean_name(data.get('name')))
         if invite:
             db.run('update invites set used_by = ?, used_at = ? where code = ?', uid, time.time(), code)
         # (not signed in: the sign-in page takes it from here, the new username filled in)
@@ -353,6 +360,12 @@ def create_app(config) -> FastAPI:
         # (signed out of it; another account signed in here takes over)
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
 
+    @app.put('/api/me/name')
+    async def set_name(request: Request):
+        u = need_user(request)
+        db.run('update users set name = ? where id = ?', clean_name((await body(request)).get('name')), u['id'])
+        return public(db.one('select * from users where id = ?', u['id']))
+
     # A profile photo: a small image (the page makes it 256 px square) as a data: URL; shown to who's signed in
     AVATAR = re.compile(r'^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$')
 
@@ -408,8 +421,8 @@ def create_app(config) -> FastAPI:
             raise HTTPException(400, 'bad username or password')
         if db.one('select 1 from users where username = ?', name):
             raise HTTPException(409, 'that username is taken')
-        uid = db.run('insert into users (username, password, admin, created_at) values (?, ?, ?, ?)',
-                     name, auth.hash_password(pw), 1 if data.get('admin') else 0, time.time())
+        uid = db.run('insert into users (username, password, admin, created_at, name) values (?, ?, ?, ?, ?)',
+                     name, auth.hash_password(pw), 1 if data.get('admin') else 0, time.time(), clean_name(data.get('name')))
         return public(db.one('select * from users where id = ?', uid))
 
     @app.patch('/api/admin/users/{uid}')

@@ -211,6 +211,13 @@ here = y.get('/api/accounts/here').json()
 check(sorted(a['username'] for a in here['accounts']) == ['ann', 'ben'] and here['max'] == 5, 'the sign-in page sees the accounts signed in here')
 check(y.post('/api/accounts/logout', json={'id': ben_id}).status_code == 200 and [a['username'] for a in y.get('/api/accounts/here').json()['accounts']] == ['ann'], 'and signs out of one of them')
 
+# a name to go by, beside the username
+check(c.put('/api/me/name', json={'name': '  The   Boss '}).json()['name'] == 'The Boss', 'a name is set (its spaces tidied)')
+check(c.put('/api/me/name', json={'name': 'x' * 41}).status_code == 400, 'too long: refused')
+check(c.put('/api/me/name', json={'name': ''}).json()['name'] == '', 'and cleared again')
+r = c.post('/api/admin/users', json=J(username='named1', password='named1pass', name='Named One'))
+check(r.json()['name'] == 'Named One', 'an admin adds a user with a name')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

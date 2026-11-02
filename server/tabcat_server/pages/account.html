@@ -23,13 +23,15 @@
           <button type="button" class="avatar-edit avatar-remove" id="photo-remove" hidden data-t-title="photoRemove" aria-label="Remove photo"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
         </span>
         <div class="profile-text">
-          <h1 data-t="accountTitle">Your account</h1>
+          <!-- the name to go by (or the username): click to change it in place -->
+          <h1 class="name-edit" id="name-view" tabindex="0" role="button" data-t-title="nameEdit"></h1>
+          <input type="text" class="name-input" id="name-input" maxlength="40" autocomplete="name" spellcheck="false" hidden>
           <p class="muted" id="who"></p>
           <input type="file" id="photo-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
         </div>
       </div>
       <div class="row">
-        <a class="btn primary" href="/" data-t="openTabcat">Open tabcat</a>
+        <a class="btn primary" href="/" data-t="openTabcat">Dashboard</a>
         <a class="btn" href="/admin" id="admin-link" hidden data-t="adminPage">Server admin</a>
         <span class="grow"></span>
         <button type="button" class="btn" id="logout" data-t="signOut">Sign out</button>

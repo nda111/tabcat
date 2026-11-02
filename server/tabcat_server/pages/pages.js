@@ -54,7 +54,7 @@ export async function api(path, { method = 'GET', body } = {}) {
     const key = /turned off/.test(detail) ? 'errOff' : /closed/.test(detail) ? 'errClosed' : /invitation/.test(detail) ? 'errInvite'
       : /taken/.test(detail) ? 'errTaken' : /bad username|too short/.test(detail) ? 'errBad' : /last admin/.test(detail) ? 'errLastAdmin'
       : /current password/.test(detail) ? 'errCurrent' : /file there already/.test(detail) ? 'errDbExists' : /not a usable path/.test(detail) ? 'errDbPath'
-      : /where it is/.test(detail) ? 'errDbSame' : /not an image/.test(detail) ? 'errPhoto' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
+      : /where it is/.test(detail) ? 'errDbSame' : /not an image/.test(detail) ? 'errPhoto' : /name is too long/.test(detail) ? 'errNameLong' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
     const err = new Error(key ? t(key) : t('errGeneric', { detail }));
     err.status = r.status;
     throw err;

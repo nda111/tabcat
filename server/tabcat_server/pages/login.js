@@ -30,6 +30,7 @@ async function main() {
     $('#other').hidden = !canSignUp;
     $('#other').textContent = t(signingUp ? 'signIn' : 'signUp');
     $('#again-row').hidden = !signingUp;
+    $('#name-row').hidden = !signingUp;
     $('#invite-row').hidden = !signingUp || info.signup !== 'invite';
     $('#password').autocomplete = signingUp ? 'new-password' : 'current-password';
     $('#check-name').hidden = !signingUp;
@@ -108,7 +109,7 @@ async function main() {
       await fold($('#choose'), false);
       for (const el of fields()) el.disabled = false;
       $('#username').focus();
-    } }, photo(a), h('span', { class: 'choose-name' }, a.username), h('span', { class: 'choose-out' }, t('chooseSignOut')))));
+    } }, photo(a), h('span', { class: 'choose-name' }, a.name || a.username), h('span', { class: 'choose-out' }, t('chooseSignOut')))));
     $('#choose').hidden = false;
   }
 
@@ -122,9 +123,9 @@ async function main() {
     try {
       if (signingUp) {
         // made: not signed in yet. Signing in follows here, the new username in place, the password to type
-        await api('signup', { method: 'POST', body: { username, password, invite: $('#invite').value.trim() } });
+        await api('signup', { method: 'POST', body: { username, password, name: $('#name').value, invite: $('#invite').value.trim() } });
         still(false);
-        for (const id of ['#password', '#again', '#invite']) $(id).value = '';
+        for (const id of ['#password', '#again', '#invite', '#name']) $(id).value = '';
         switchTo(false);
         say($('#msg'), t('accountMade'), 'ok');
         $('#password').focus();

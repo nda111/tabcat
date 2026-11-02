@@ -16,7 +16,7 @@
     <div class="row" style="width:100%;max-width:860px">
       <div class="brand"><span class="logo"></span><span data-t="adminTitle">Server admin</span></div>
       <span class="grow"></span>
-      <a class="btn" href="/" data-t="openTabcat">Open tabcat</a>
+      <a class="btn" href="/" data-t="openTabcat">Dashboard</a>
       <a class="btn" href="/account" data-t="accountTitle">Your account</a>
     </div>
 
@@ -27,6 +27,7 @@
         <p class="msg" id="users-msg"></p>
         <form id="add-form" class="row" novalidate>
           <input type="text" id="add-name" data-t-placeholder="username" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;min-width:140px;margin:0">
+          <input type="text" id="add-display" data-t-placeholder="nameOptional" autocomplete="off" maxlength="40" spellcheck="false" style="flex:1;min-width:120px;margin:0">
           <input type="password" id="add-pw" data-t-placeholder="password" autocomplete="new-password" style="flex:1;min-width:140px;margin:0">
           <label class="check" style="margin:0"><input type="checkbox" id="add-admin"><span data-t="asAdmin">Admin</span></label>
           <button type="submit" class="btn primary" data-t="add">Add</button>

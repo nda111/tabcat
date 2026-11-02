@@ -79,7 +79,9 @@ function row(u) {
   // each kind of button in a column of its own (the same ones under each other, whoever's row): suspend, the
   // role, reset, delete; your own row leaves out what you can't do to yourself
   const tr = h('tr', { 'data-key': u.id },
-    h('td', {}, h('span', { class: 'who' }, h('b', {}, u.username), self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl),
+    // (the name to go by, if any, then the username, smaller)
+    h('td', {}, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
+      self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl),
     h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
     h('td', { class: 'act' }, suspend),
     h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member'))),
@@ -95,7 +97,7 @@ $('#add-form').addEventListener('input', () => say($('#add-msg'), '')); // (type
 $('#add-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try {
-    await api('admin/users', { method: 'POST', body: { username: $('#add-name').value.trim(), password: $('#add-pw').value, admin: $('#add-admin').checked } });
+    await api('admin/users', { method: 'POST', body: { username: $('#add-name').value.trim(), name: $('#add-display').value, password: $('#add-pw').value, admin: $('#add-admin').checked } });
     e.target.reset();
     say($('#add-msg'), '');
     await users();

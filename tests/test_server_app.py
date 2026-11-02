@@ -61,7 +61,7 @@ with sync_playwright() as p:
     check(ring[1] == 'solid' and ring[2] == '1px', f'a focused button: the thin accent ring, as on the dashboard ({ring})')
     eyes.nth(0).click(); time.sleep(.4)
     check(d.evaluate("[...document.querySelectorAll('.pw input')].map(i => i.type)") == ['password', 'password'], 'again: both hidden')
-    d.fill('#username', 'boss'); d.click('#go')
+    d.fill('#username', 'boss'); d.fill('#name', 'The Boss'); d.click('#go')
     d.wait_for_url('**/admin'); d.wait_for_selector('#users tr')
     pop = popup()
     check(not pop[0] and pop[2] and pop[3], f'popup, signed in: all of it as ever {pop}')
@@ -88,12 +88,12 @@ with sync_playwright() as p:
     dash.wait_for_selector('.ws-item', timeout=15000); time.sleep(1)
     d = dash
     check(d.evaluate("document.querySelector('#no-ext').hidden"), 'connected: the board')
-    check(d.is_visible('#btn-account') and d.get_attribute('#btn-account', 'title') == 'boss', "the sidebar's Account button, its tooltip saying who")
+    check(d.is_visible('#btn-account') and d.get_attribute('#btn-account', 'title') == 'The Boss\nboss', "the sidebar's Account button, its tooltip saying who (the name, the username)")
     d.click('#btn-settings'); time.sleep(.4)
     check(not d.locator('#settings #account-name').count(), 'Settings has no account part any more')
     d.keyboard.press('Escape'); time.sleep(.3)
     d.click('#btn-account'); time.sleep(.5)
-    check(d.is_visible('#account') and d.inner_text('#account-name') == 'boss' and d.is_visible('#account-admin'), 'the Account dialog shows the account, and the admin page for an admin')
+    check(d.is_visible('#account') and d.inner_text('#account-name') == 'The Boss' and d.inner_text('#account-role').startswith('boss') and d.is_visible('#account-admin'), 'the Account dialog shows the account (its name, then the username), and the admin page for an admin')
     # boss's look: dark, green (theirs only: see kid below)
     sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => chrome.storage.local.set({'tabcat:settings': {...r['tabcat:settings'], theme: 'dark', accent: 'green'}}))"); time.sleep(.3)
     # something of boss's: theirs only

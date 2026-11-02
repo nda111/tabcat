@@ -3,6 +3,44 @@ import { $, api, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
+// The name to go by, as the page's heading (none: the username, greyed): clicked, it becomes a field in its
+// place; Enter or leaving it saves, Esc puts it back
+let current = me;
+function showName(animate = false) {
+  const v = $('#name-view');
+  v.textContent = current.name || current.username;
+  v.classList.toggle('unnamed', !current.name);
+  if (animate) v.animate([{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+}
+showName();
+function editName() {
+  const v = $('#name-view'), input = $('#name-input');
+  input.value = current.name || '';
+  input.placeholder = current.username;
+  v.hidden = true; input.hidden = false;
+  input.focus(); input.select();
+  input.animate([{ opacity: .4 }, { opacity: 1 }], { duration: 160 });
+}
+let saving = false;
+async function doneName(save) {
+  const v = $('#name-view'), input = $('#name-input');
+  if (input.hidden || saving) return;
+  if (save && input.value.trim() !== (current.name || '')) {
+    saving = true;
+    try { current = await api('me/name', { method: 'PUT', body: { name: input.value } }); toast(t('nameSaved')); }
+    catch (err) { toast(err.message); }
+    saving = false;
+  }
+  input.hidden = true; v.hidden = false;
+  showName(true);
+}
+$('#name-view').addEventListener('click', editName);
+$('#name-view').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editName(); } });
+$('#name-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); doneName(true); }
+  if (e.key === 'Escape') { e.preventDefault(); doneName(false); }
+});
+$('#name-input').addEventListener('blur', () => doneName(true));
 $('#pw-user').value = me.username; // (for password managers: whose password changes)
 $('#admin-link').hidden = !me.admin;
 

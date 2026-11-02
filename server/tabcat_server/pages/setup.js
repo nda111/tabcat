@@ -16,7 +16,7 @@ async function main() {
     if (password !== $('#again').value) return say($('#msg'), t('mismatch'), 'error');
     $('#go').disabled = true;
     try {
-      await api('setup', { method: 'POST', body: { username, password } });
+      await api('setup', { method: 'POST', body: { username, password, name: $('#name').value } });
       location.replace('/admin');
     } catch (err) {
       say($('#msg'), err.message, 'error');
