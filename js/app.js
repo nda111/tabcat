@@ -657,34 +657,37 @@ function restoreHover() {
   for (let el = top; el && !el.matches(HOVER_STOP); el = el.parentElement) el.classList.add('hover');
 }
 
+// what's being edited, as the editor has it now (see showPreview)
+const previewed = (n) => (n && preview?.id === n.id ? { ...n, ...preview.fields } : n);
+
 function renderSidebar() {
   const cur = currentWs();
-  $('#ws-list').replaceChildren(...state.workspaces.map((ws) =>
+  $('#ws-list').replaceChildren(...state.workspaces.map((orig) => [orig, previewed(orig)]).map(([orig, ws]) =>
     h('li', {
-      class: 'ws-item' + (ws === cur ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
+      class: 'ws-item' + (ws.id === cur?.id ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
       title: ws.description ? `${ws.name}\n${ws.description}` : ws.name,
       onclick: () => select(ws.id),
-      ondblclick: () => editNode(ws),
-      oncontextmenu: (e) => nodeMenu(e, ws),
+      ondblclick: () => editNode(orig),
+      oncontextmenu: (e) => nodeMenu(e, orig),
     },
     symbolEl(ws.symbol, '🗃️'),
     h('span', { class: 'name' }, ws.name),
-    h('span', { class: 'count' }, T.countLinks(ws)))),
+    h('span', { class: 'count' }, T.countLinks(orig)))),
     // collapsed rail: "new workspace" sits at the end of the list (expanded, it is beside the heading)
     h('li', { class: 'ws-add', dataset: { railTitle: t('new.workspace') }, onclick: addWorkspace }, icon('plus', 17)));
   applyRailTitles();
 }
 
 function renderHead() {
-  const ws = currentWs();
+  const orig = currentWs(), ws = previewed(orig);
   const head = $('#ws-head');
   if (!ws) { head.replaceChildren(h('h1', {}, t('head.none'))); return; }
   // symbol, name and description together open the workspace's editor; the space beside them is where
   // search opens
-  head.replaceChildren(h('div', { class: 'ws-title', onclick: () => editNode(ws) },
+  head.replaceChildren(h('div', { class: 'ws-title', onclick: () => editNode(orig) },
     h('h1', {}, ws.symbol && symbolEl(ws.symbol), ws.name),
     ws.description && h('span', { class: 'desc' }, ws.description)));
-  head.oncontextmenu = (e) => nodeMenu(e, ws);
+  head.oncontextmenu = (e) => nodeMenu(e, orig);
 }
 
 // Another category picked: its underline slides over from the one picked before (a stand-in line glides
@@ -717,12 +720,12 @@ function renderCats() {
   const from = was && bar.dataset.ws === ws.id && was.dataset.id !== cur?.id && { left: was.offsetLeft, width: was.offsetWidth };
   bar.dataset.ws = ws.id;
   bar.replaceChildren(
-    ...ws.categories.map((c) => h('div', {
-      class: 'cat-tab' + (c === cur ? ' active' : ''), draggable: 'true', dataset: { id: c.id, type: 'category' },
+    ...ws.categories.map((c) => [c, previewed(c)]).map(([orig, c]) => h('div', {
+      class: 'cat-tab' + (orig === cur ? ' active' : ''), draggable: 'true', dataset: { id: c.id, type: 'category' },
       onclick: () => select(ws.id, c.id),
-      ondblclick: () => editNode(c),
-      oncontextmenu: (e) => nodeMenu(e, c),
-    }, c.name, h('span', { class: 'count' }, T.countLinks(c)))),
+      ondblclick: () => editNode(orig),
+      oncontextmenu: (e) => nodeMenu(e, orig),
+    }, c.name, h('span', { class: 'count' }, T.countLinks(orig)))),
     Object.assign(btn(plus(), t('new.category'), () => addCategory(ws)), { className: 'icon-btn cat-add' }));
   if (from) requestAnimationFrame(() => slideCatLine(bar, from)); // (once the column control is back in front)
   // the column stepper sits at the bar's start, so it never moves as tabs come and go
@@ -2137,14 +2140,15 @@ function openEditor(type, data = {}, title, onPreview = null) {
   });
 }
 
-const LIVE_EDIT = new Set(['group', 'folder', 'link']);
+const LIVE_EDIT = new Set(['workspace', 'category', 'group', 'folder', 'link']);
 async function editNode(node) {
   if (!LIVE_EDIT.has(node.type)) {
     const v = await openEditor(node.type, node);
     if (v) patchRemembered(node, v);
     return;
   }
-  // a group, folder or link shows its edits on the board while the editor is open: Save keeps them,
+  // a workspace (in the sidebar and the heading), category (its tab), group, folder or link shows its edits
+  // while the editor is open: Save keeps them,
   // Cancel / Esc puts it back as it was. (Not a link's URL until saved: every keystroke would fetch
   // another favicon.)
   const v = await openEditor(node.type, node, undefined, ({ url, ...fields }) => showPreview(node.id, fields));
@@ -2171,13 +2175,25 @@ function showPreview(id, fields) {
     cardMorph = was && { id, was, look: cardLook(was) };
     const item = document.querySelector(`#board .item[data-id="${CSS.escape(id)}"]`);
     const mark = item && itemMark(item);
+    const wsMarks = wsSymbols(id);
     render();
     cardMorph = null;
+    // a workspace's symbol that changed springs in, in the sidebar and the heading alike
+    const nowWs = wsSymbols(id);
+    for (const k of Object.keys(nowWs)) {
+      if (nowWs[k] && nowWs[k].key !== wsMarks[k]?.key) nowWs[k].el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
+    }
     // a folder's symbol or a link's icon that changed springs in like a group's symbol
     const now = document.querySelector(`#board .item[data-id="${CSS.escape(id)}"]`);
     const el = now && now !== item && itemMark(now);
     if (el && el.key !== mark.key) el.el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
   });
+}
+// a workspace's symbol where it shows (its sidebar row; the heading, when it's the one open), and what it shows
+function wsSymbols(id) {
+  const mark = (el) => el && { el, key: el.className + el.textContent };
+  const head = currentWs()?.id === id ? $('#ws-head h1 > .sym') : null;
+  return { side: mark(document.querySelector(`#ws-list .ws-item[data-id="${CSS.escape(id)}"] > .sym`)), head: mark(head) };
 }
 // the icon of a link row / the symbol of a folder row, and what it shows
 function itemMark(item) {
@@ -4243,10 +4259,14 @@ async function init() {
   // its place, so the board is never glimpsed before a notice.
   // (shown, it opens: see html.opening in app.css. First its fonts, if they come soon: else they'd swap in as it
   // opens, the text jumping. The spinner, if it was up, fades away rather than vanishing.)
+  const look = () => [root.dataset.theme, root.dataset.accent, root.style.getPropertyValue('--hue')].join('|');
+  const root = document.documentElement, lookAtBoot = look();
   const show = async () => {
     await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 500))]);
+    const boot = $('#boot');
+    // (the look changed as it loaded, another account's, with the spinner up: its colours turn first, see app.css)
+    if (+getComputedStyle(boot).opacity > 0 && look() !== lookAtBoot) await new Promise((r) => setTimeout(r, 450));
     void document.body.offsetWidth;
-    const root = document.documentElement, boot = $('#boot');
     const spun = +getComputedStyle(boot).opacity;
     root.classList.remove('booting');
     if (!root.classList.contains('reloaded')) { // (reloaded: no opening, see index.html)

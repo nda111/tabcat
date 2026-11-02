@@ -90,6 +90,9 @@ html.booting #boot {
   visibility: visible; position: fixed; inset: 0; z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: var(--bg); opacity: 0; animation: boot-in .3s ease .2s forwards;
 }
+/* the spinner takes on a new look (another account's, arriving as it loads) gradually, not at a stroke */
+html.booting #boot, html.booting #boot .logo { transition: background-color .45s ease; }
+html.booting #boot circle { transition: stroke .45s ease; }
 html.reloaded.booting #boot { animation-delay: .8s; } /* (reloaded: the page as it was stays meanwhile; the spinner only if it's slow) */
 html.boot-now.booting #boot { animation: none; opacity: 1; } /* (the spinner was up already on the page before: see index.html) */
 /* the logo inside a ring whose arc runs round, growing and shrinking as it goes (r 46: 289 around) */
@@ -775,6 +778,10 @@ dialog input.sym-box.letter { font-weight: 600; color: var(--accent); }
   background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); font-size: .78em; font-weight: 600; line-height: 1; vertical-align: .1em;
 }
 #ws-head h1 { display: flex; align-items: center; gap: 8px; }
+/* the heading's symbol: one width whatever it is (an emoji, a letter's badge, the tabcat logo), so the name
+   starts in the same place */
+#ws-head h1 > .sym { flex: none; width: 28px; text-align: center; }
+#ws-head h1 > .sym-letter { width: 25px; margin-inline: 1.5px; }
 .sym-clear {
   position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
   border: 1px solid var(--border); border-radius: 50%; background: var(--panel); color: var(--muted); cursor: pointer;
