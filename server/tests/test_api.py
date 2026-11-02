@@ -229,6 +229,9 @@ check(len(mine) == 1 and mine[0]['ip'] == '192.0.2.40' and 'Windows' in mine[0][
 check(d1.delete(f"/api/me/sessions/{mine[0]['id']}").status_code == 400, 'this one is signed out of by signing out, not from the list')
 check(d1.delete(f"/api/me/sessions/{other['id']}").status_code == 200 and d2.get('/api/me').status_code == 401, 'the other device signed out of from here')
 check(d1.get('/api/me').status_code == 200, 'this one still signed in')
+n_before = len(d1.get('/api/me/sessions').json())
+d1.post('/api/login', json=J(username='ann', password='annpass99'))
+check(len(d1.get('/api/me/sessions').json()) == n_before, 'signing in again in the same browser: still one sign-in for it, not another device')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

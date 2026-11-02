@@ -114,9 +114,14 @@ def create_app(config) -> FastAPI:
         return rest or None
 
     def sign_in(request: Request, user_id: int) -> Response:
+        found = accounts_of(request)
+        # (signed in again here: this browser's old sign-in for the account ends, not left over as another device)
+        for t, u in found:
+            if u and u['id'] == user_id:
+                auth.end_session(db, t)
         token = auth.new_session(db, user_id, request.headers.get('user-agent', ''), client(request))
-        # (the accounts already here stay, but for this one's old session: one each; the oldest go past the limit)
-        rest = [(t, u) for t, u in accounts_of(request) if u and u['id'] != user_id]
+        # (the accounts already here stay; the oldest go past the limit)
+        rest = [(t, u) for t, u in found if u and u['id'] != user_id]
         for t, _ in rest[auth.MAX_ACCOUNTS - 1:]:
             auth.end_session(db, t)
         return set_accounts(JSONResponse({'ok': True}), request, [token] + [t for t, _ in rest[:auth.MAX_ACCOUNTS - 1]])
