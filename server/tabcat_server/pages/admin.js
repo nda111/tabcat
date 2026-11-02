@@ -238,7 +238,8 @@ $('#ts-info').replaceChildren(h('b', {}, t('tsInfoTitle')), h('ul', {}, ...['tsI
 async function tailscaleView(ts, fade = false) {
   ts ||= await api('admin/tailscale').catch(() => null);
   const box = $('#tailscale');
-  const again = () => h('button', { type: 'button', class: 'btn small', onclick: async (e) => { e.currentTarget.classList.add('busy'); await tailscaleView(null, true); } }, t('tsRefresh'));
+  // (Refresh: still, breathing, until the computer answers; then the box is drawn again, Refresh back)
+  const again = () => h('button', { type: 'button', class: 'btn small', onclick: async (e) => { const b = e.currentTarget; b.disabled = true; b.classList.add('busy'); await tailscaleView(null, true); } }, t('tsRefresh'));
   const linked = (key, url, label) => { const [before, after] = t(key, { link: '{link}' }).split('{link}'); return [before, h('a', { href: url, target: '_blank', rel: 'noopener' }, label), after]; };
   // what it shows, each part keyed: a change animates only the parts that come or go (see below)
   let parts;
