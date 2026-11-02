@@ -457,3 +457,6 @@ input.switch.waiting { pointer-events: none; }
 
 dd.crossfade { display: grid; align-items: center; }
 dd.crossfade > * { grid-area: 1 / 1; }
+
+/* (the Tailscale mark: its nine dots, the T dark, in the heading's colour) */
+.ts-logo { flex: none; margin-right: -2px; }
