@@ -153,6 +153,14 @@ check(r.status_code == 200 and r.json()['db_path'] == moved and os.path.exists(m
 check(c.get('/api/me').status_code == 200 and c.get('/api/admin/users').status_code == 200, 'and the server goes on with it, signed in as before')
 check(C.load(app.state.config.data_dir).db_path == pathlib.Path(moved), 'the next start finds it there (config.toml)')
 
+# the Save dialog on the server's computer (stood in for here): its path, or none there (501: the page asks for one)
+from tabcat_server import dialogs
+dialogs.save_file = lambda title, start: '/picked/tabcat.db'
+check(c.post('/api/admin/database/pick', json={'title': 'x'}).json() == {'path': '/picked/tabcat.db'}, 'picking a place: the dialog’s path')
+dialogs.save_file = lambda title, start: False
+check(c.post('/api/admin/database/pick', json={}).status_code == 501, 'no dialog on the server computer: 501')
+check(a3.post('/api/admin/database/pick', json={}).status_code == 403, 'and from elsewhere: refused')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

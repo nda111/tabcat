@@ -442,6 +442,21 @@ def create_app(config) -> FastAPI:
         save_setting(config.data_dir, 'database', str(dest))
         return {'db_path': str(dest)}
 
+    # The operating system's Save dialog, shown on the server's computer, to pick where the database goes (the
+    # page can't get a path from the browser's): the path chosen, None if cancelled; 501 with no dialog there
+    @app.post('/api/admin/database/pick')
+    async def pick_database(request: Request):
+        need_admin(request)
+        if not allowed(request, config.setup_from):
+            raise HTTPException(403, 'only on the server computer')
+        title = str((await body(request)).get('title', ''))[:100] or 'tabcat'
+        import asyncio
+        from . import dialogs
+        got = await asyncio.to_thread(dialogs.save_file, title, config.db_path)
+        if got is False:
+            raise HTTPException(501, 'no file dialog on the server computer')
+        return {'path': got}
+
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):
         need_admin(request)

@@ -97,7 +97,9 @@ td.act:last-child { padding-right: 6px; }
 .tag.ghost { visibility: hidden; }
 .radios label { font-weight: 400; display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
 .radios label b { font-weight: 600; }
-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 14px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 14px; align-items: center; }
+/* (each row's label and value on one middle line, whatever the value: a path in the code font, a button) */
+dt, dd { min-height: 26px; display: flex; align-items: center; }
 dt { color: var(--muted); }
 dd { margin: 0; overflow-wrap: anywhere; }
 code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
@@ -297,3 +299,8 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
 .db-where { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 #db-move { margin: 0 0 14px; }
 #db-move .msg:not(:empty) { margin: 8px 0 0; }
+
+/* a button waiting on something long (the Save dialog on the server's computer): it breathes */
+@keyframes breathe { 50% { opacity: .55; } }
+.btn.busy { animation: breathe 1.2s ease-in-out infinite; }
+dd > * { min-width: 0; overflow-wrap: anywhere; }

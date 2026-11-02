@@ -169,9 +169,12 @@ async function info() {
     ['dbLocation', h('span', { class: 'db-where' }, h('code', { id: 'db-where' }, i.db_path),
       i.here ? h('button', { type: 'button', class: 'btn small', id: 'db-change', onclick: openMove }, t('dbChange'))
         : h('span', { class: 'muted small' }, t('dbOnlyHere')))],
-    ['dashboardSrc', d.source === 'github' ? t('fromGitHub') : t('fromFolder', { folder: d.folder })],
-    ['dashVersion', d.version ? `${(d.version.commit || '').slice(0, 7)} · ${date(d.version.updated_at)}` : '—'],
-  ];
+    // (where it comes from says itself: GitHub's address, or the folder's; a version only from GitHub)
+    ['dashboardSrc', d.source === 'github'
+      ? h('a', { href: 'https://github.com/nda111/tabcat/tree/pages', target: '_blank', rel: 'noopener' }, h('code', {}, 'github.com/nda111/tabcat (pages)'))
+      : h('code', {}, d.folder)],
+    d.version && ['dashVersion', `${(d.version.commit || '').slice(0, 7)} · ${date(d.version.updated_at)}`],
+  ].filter(Boolean);
   const dl = (el, rows) => el.replaceChildren(...rows.flatMap(([k, v]) => [h('dt', {}, t(k)), h('dd', {}, v)]));
   dl($('#info'), rows);
   dl($('#sessions'), [['activeSessions', t('sessionsCount', { n: i.sessions })]]);
@@ -179,10 +182,31 @@ async function info() {
   $('#update').hidden = d.source !== 'github';
 }
 // ---------- moving the database ----------
-function openMove() {
-  $('#db-path').value = $('#db-where').textContent;
-  say($('#db-msg'), '');
-  fold($('#db-move'), true).then(() => { $('#db-path').focus(); $('#db-path').select(); });
+// "Change…": the operating system's Save dialog, on the server's computer (where this page is: see the server);
+// chosen, the database moves there. No dialog there (a server with no screen): a field to type the path in.
+async function openMove() {
+  const button = $('#db-change');
+  button.disabled = true;
+  button.classList.add('busy');
+  try {
+    const { path } = await api('admin/database/pick', { method: 'POST', body: { title: t('dbLocation') } });
+    if (path) await moveTo(path);
+  } catch (err) {
+    if (err.status !== 501) { toast(err.message); return; }
+    $('#db-path').value = $('#db-where').textContent;
+    say($('#db-msg'), '');
+    fold($('#db-move'), true).then(() => { $('#db-path').focus(); $('#db-path').select(); });
+  } finally {
+    const b = $('#db-change'); // (drawn again if it moved)
+    if (b) { b.disabled = false; b.classList.remove('busy'); }
+  }
+}
+async function moveTo(path) {
+  await api('admin/database', { method: 'POST', body: { path } });
+  await info();
+  // (the new place fades in where the old one was)
+  $('#db-where').animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  toast(t('dbMoved'));
 }
 $('#db-cancel').addEventListener('click', () => fold($('#db-move'), false));
 $('#db-path').addEventListener('input', () => say($('#db-msg'), ''));
@@ -191,10 +215,9 @@ $('#db-form').addEventListener('submit', async (e) => {
   const still = (on) => { for (const el of $('#db-form').querySelectorAll('input, button')) el.disabled = on; };
   still(true);
   try {
-    await api('admin/database', { method: 'POST', body: { path: $('#db-path').value } });
+    await api('admin/database', { method: 'POST', body: { path: $('#db-path').value } }); // (checked first: errors stay by the field)
     await fold($('#db-move'), false);
     await info();
-    // (the new place fades in where the old one was)
     $('#db-where').animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' });
     toast(t('dbMoved'));
   } catch (err) { say($('#db-msg'), err.message, 'error'); }

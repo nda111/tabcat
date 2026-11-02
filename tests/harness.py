@@ -9,6 +9,8 @@ PORT = 8765
 URL = f'http://localhost:{PORT}/'
 
 failures = []
+os.environ.setdefault('TABCAT_NO_DIALOG', '1')  # (servers started by tests never show the OS's file dialog)
+
 def check(cond, msg):
     print(('PASS ' if cond else 'FAIL ') + msg, flush=True)
     if not cond: failures.append(msg)
