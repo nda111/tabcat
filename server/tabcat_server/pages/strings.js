@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    csvCode: 'Event code', csvDetailCode: 'Detail code',
     ev_rate_limited: 'Too many requests: held off', evdHeld: '{n} turned away',
     evNoAccount: '(no such account)', evTried: 'tried “{name}”', csvTried: 'Username tried', ev_password_wrong: 'Wrong current password',
     eventsExport: 'Export as CSV', eventsExported: 'Exported {n} records.', csvWhen: 'Time', csvAccount: 'Account', csvWhat: 'Event', csvDetail: 'Detail', csvIp: 'IP address', csvDevice: 'Device', csvAgent: 'Browser (as it says)', csvAdmin: 'By admin',
@@ -59,6 +60,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    csvCode: '코드', csvDetailCode: '세부 코드',
     ev_rate_limited: '요청 과다로 차단', evdHeld: '{n}번 막힘',
     evNoAccount: '(없는 계정)', evTried: '시도한 아이디: {name}', csvTried: '시도한 아이디', ev_password_wrong: '현재 비밀번호 틀림',
     eventsExport: 'CSV로 내보내기', eventsExported: '기록 {n}개를 내보냈습니다.', csvWhen: '시간', csvAccount: '계정', csvWhat: '내용', csvDetail: '세부', csvIp: 'IP 주소', csvDevice: '기기', csvAgent: '브라우저 정보 (원문)', csvAdmin: '관리자',
@@ -117,6 +119,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    csvCode: 'コード', csvDetailCode: '詳細コード',
     ev_rate_limited: 'リクエスト過多で遮断', evdHeld: '{n} 回遮断',
     evNoAccount: '（存在しないアカウント）', evTried: '試したユーザー名: {name}', csvTried: '試したユーザー名', ev_password_wrong: '現在のパスワード間違い',
     eventsExport: 'CSV で書き出す', eventsExported: '{n} 件を書き出しました。', csvWhen: '日時', csvAccount: 'アカウント', csvWhat: '内容', csvDetail: '詳細', csvIp: 'IP アドレス', csvDevice: 'デバイス', csvAgent: 'ブラウザー情報（原文）', csvAdmin: '管理者',
@@ -175,6 +178,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    csvCode: '代码', csvDetailCode: '详情代码',
     ev_rate_limited: '请求过多被拦截', evdHeld: '拦截 {n} 次',
     evNoAccount: '（账号不存在）', evTried: '尝试的用户名：{name}', csvTried: '尝试的用户名', ev_password_wrong: '当前密码错误',
     eventsExport: '导出为 CSV', eventsExported: '已导出 {n} 条记录。', csvWhen: '时间', csvAccount: '账号', csvWhat: '事件', csvDetail: '详情', csvIp: 'IP 地址', csvDevice: '设备', csvAgent: '浏览器信息（原文）', csvAdmin: '管理员',
@@ -233,6 +237,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    csvCode: 'Código', csvDetailCode: 'Código de detalle',
     ev_rate_limited: 'Demasiadas solicitudes: bloqueado', evdHeld: '{n} rechazadas',
     evNoAccount: '(cuenta inexistente)', evTried: 'intentó “{name}”', csvTried: 'Usuario intentado', ev_password_wrong: 'Contraseña actual errónea',
     eventsExport: 'Exportar como CSV', eventsExported: '{n} registros exportados.', csvWhen: 'Hora', csvAccount: 'Cuenta', csvWhat: 'Evento', csvDetail: 'Detalle', csvIp: 'Dirección IP', csvDevice: 'Dispositivo', csvAgent: 'Navegador (texto original)', csvAdmin: 'Administrador',
@@ -291,6 +296,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    csvCode: 'Code', csvDetailCode: 'Detail-Code',
     ev_rate_limited: 'Zu viele Anfragen: abgewiesen', evdHeld: '{n}-mal abgewiesen',
     evNoAccount: '(kein solches Konto)', evTried: 'versucht: „{name}“', csvTried: 'Versuchter Benutzername', ev_password_wrong: 'Falsches aktuelles Passwort',
     eventsExport: 'Als CSV exportieren', eventsExported: '{n} Einträge exportiert.', csvWhen: 'Zeit', csvAccount: 'Konto', csvWhat: 'Ereignis', csvDetail: 'Detail', csvIp: 'IP-Adresse', csvDevice: 'Gerät', csvAgent: 'Browser (Originaltext)', csvAdmin: 'Admin',
@@ -349,6 +355,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    csvCode: 'Code', csvDetailCode: 'Code du détail',
     ev_rate_limited: 'Trop de requêtes : bloqué', evdHeld: '{n} refusées',
     evNoAccount: '(compte inexistant)', evTried: 'a essayé « {name} »', csvTried: 'Identifiant essayé', ev_password_wrong: 'Mauvais mot de passe actuel',
     eventsExport: 'Exporter en CSV', eventsExported: '{n} entrées exportées.', csvWhen: 'Heure', csvAccount: 'Compte', csvWhat: 'Événement', csvDetail: 'Détail', csvIp: 'Adresse IP', csvDevice: 'Appareil', csvAgent: 'Navigateur (texte brut)', csvAdmin: 'Administrateur',
@@ -407,6 +414,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    csvCode: 'Código', csvDetailCode: 'Código do detalhe',
     ev_rate_limited: 'Solicitações demais: bloqueado', evdHeld: '{n} recusadas',
     evNoAccount: '(conta inexistente)', evTried: 'tentou “{name}”', csvTried: 'Usuário tentado', ev_password_wrong: 'Senha atual errada',
     eventsExport: 'Exportar como CSV', eventsExported: '{n} registros exportados.', csvWhen: 'Hora', csvAccount: 'Conta', csvWhat: 'Evento', csvDetail: 'Detalhe', csvIp: 'Endereço IP', csvDevice: 'Dispositivo', csvAgent: 'Navegador (texto original)', csvAdmin: 'Administrador',

@@ -110,6 +110,45 @@ The database is `tabcat.db` in the data folder. To keep it elsewhere (another di
 admin page, from the server's own computer (the addresses setup is allowed from); the new place is kept in
 `config.toml` as `database`.
 
+## Security record codes
+
+The admin page's security record, and its CSV export, give each entry a code that's the same in every language
+(the CSV's *Event code* and *Detail code* columns). Entries are kept as many days as the admin page says (90 by default).
+
+| Code | What happened | Detail code |
+|---|---|---|
+| `setup` | The server was set up: its first account, an admin | |
+| `signup` | An account was made by signing up | `invite`: with an invitation |
+| `login_ok` | Signed in | `2fa`: with two-step sign-in |
+| `login_fail` | A wrong password (the *Username tried* column says which username) | `unknown`: no account has that username |
+| `login_locked` | Too many wrong tries from that address: held off | |
+| `login_refused` | A sign-in to a suspended account | `suspended` |
+| `twofa_fail` | A wrong two-step sign-in code | |
+| `recovery_used` | Signed in with a recovery code | `left:N`: N codes left |
+| `password_wrong` | A wrong current password (changing it, turning 2FA off, new recovery codes) | |
+| `rate_limited` | That address sent more than 240 API calls in a minute: held off (at most one entry a minute) | `n:N`: N calls turned away since the last entry |
+| `logout` | Signed out | |
+| `password_changed` | Changed their password | |
+| `account_deleted` | Deleted their own account | |
+| `twofa_on` / `twofa_off` | Turned two-step sign-in on / off | |
+| `recovery_new` | Made new recovery codes | |
+| `session_ended` | Signed out of another device from their account page | the device's address and browser |
+| `logout_others` | Signed out of all their other devices | |
+| `user_added` | An admin added the account (the *By admin* column says who) | `admin`: as an admin |
+| `role_changed` | An admin changed the account's role | `admin` / `user`: what it became |
+| `suspended` / `unsuspended` | An admin suspended / unsuspended the account | |
+| `password_reset` | An admin reset the account's password | |
+| `twofa_reset` | An admin turned the account's two-step sign-in off | |
+| `user_deleted` | An admin deleted the account | |
+| `settings_changed` | An admin changed the server's settings | the settings and their new values |
+| `logout_all` | An admin signed everyone else out | |
+| `invite_created` / `invite_deleted` | An admin made / deleted an invitation | `days:N`: it lasts N days |
+| `db_moved` | An admin moved the database | its new place |
+| `server_updated` | An admin updated the server | the version |
+| `tailscale_serve` | An admin turned serving at the Tailscale HTTPS address on or off | `on` / `off` |
+
+What anyone keeps in tabcat (links, groups, notes) is never in the record.
+
 ## Locked out, or starting over
 
 - **Someone forgot their password:** an admin presses **Reset password** on their row of the admin page and

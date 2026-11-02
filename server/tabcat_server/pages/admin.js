@@ -295,9 +295,10 @@ async function exportEvents() {
       if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`;
       return /[",\n\r]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
     };
-    const head = ['csvWhen', 'csvAccount', 'csvTried', 'csvWhat', 'csvDetail', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
+    // (beside what happened in words, its code and the detail as kept: the same in any language; see the server's README)
+    const head = ['csvWhen', 'csvAccount', 'csvTried', 'csvWhat', 'csvCode', 'csvDetail', 'csvDetailCode', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
     const iso = (s) => { const d = new Date(s * 1000), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
-    const rows = all.map((e) => [iso(e.at), e.username || t('evNoAccount'), e.tried || '', eventLabel(e), eventDetail(e), e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
+    const rows = all.map((e) => [iso(e.at), e.username || t('evNoAccount'), e.tried || '', eventLabel(e), e.kind, eventDetail(e), e.detail, e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
     const blob = new Blob(['\ufeff' + [head.map(cell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const day = new Date().toISOString().slice(0, 10);
     const a = h('a', { href: URL.createObjectURL(blob), download: `tabcat-security-${day}.csv` });
