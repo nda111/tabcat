@@ -4,6 +4,7 @@ The dashboard's own files are public (they are on GitHub anyway; the extension l
 a tabcat server answers), but the page itself opens only signed in: else the sign-in page (or, with no
 account yet, the page that makes the first one, an admin)."""
 import ipaddress
+import os
 import json
 import re
 import secrets
@@ -16,7 +17,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
-from . import __version__, auth, dashboard, totp
+from . import __version__, auth, dashboard, totp, updates
 from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
@@ -30,6 +31,8 @@ NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
     db.purge_sessions()  # (ended sign-ins go: on starting, and on each new one, see sign_in)
+    if not os.environ.get('TABCAT_NO_UPDATES'):  # (tests: no looking things up on GitHub)
+        updates.keep_up(db, config, dashboard)
     tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when); see login)
     throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
@@ -61,9 +64,9 @@ def create_app(config) -> FastAPI:
         return u
 
     def clean_name(v) -> str:
-        """A name to go by: up to 40 characters, spaces tidied; empty: none (the username shows)."""
+        """A name to go by: up to auth.NAME_MAX characters (as many as show whole), spaces tidied; empty: none."""
         name = ' '.join(str(v or '').split())
-        if len(name) > 40:
+        if len(name) > auth.NAME_MAX:
             raise HTTPException(400, 'the name is too long')
         return name
 
@@ -578,7 +581,7 @@ def create_app(config) -> FastAPI:
     @app.get('/api/admin/settings')
     def get_settings(request: Request):
         need_admin(request)
-        return {'signup': db.setting('signup'), **{k: int(db.setting(k)) for k in NUMBERS}}
+        return {'signup': db.setting('signup'), 'dashboard_auto': db.setting('dashboard_auto') == '1', **{k: int(db.setting(k)) for k in NUMBERS}}
 
     @app.put('/api/admin/settings')
     async def put_settings(request: Request):
@@ -588,6 +591,8 @@ def create_app(config) -> FastAPI:
             if data['signup'] not in ('closed', 'invite', 'open'):
                 raise HTTPException(400, 'signup: closed, invite or open')
             db.set_setting('signup', data['signup'])
+        if 'dashboard_auto' in data:
+            db.set_setting('dashboard_auto', '1' if data['dashboard_auto'] else '0')
         for key, (lo, hi) in NUMBERS.items():
             if key in data:
                 try:
@@ -641,6 +646,7 @@ def create_app(config) -> FastAPI:
             'db_bytes': config.db_path.stat().st_size if config.db_path.exists() else 0,
             'db_path': str(config.db_path),
             'here': allowed(request, config.setup_from),  # (on the server's own computer: see /api/admin/database)
+            'release': {'latest': (tag := updates.known_release()), 'newer': updates.newer(tag), 'install': updates.install_kind()},
             'dashboard': {'source': 'github' if config.dashboard == 'auto' else 'folder', 'folder': str(folder),
                           'present': dashboard.present(folder), 'version': dashboard.version(folder)},
             'users': db.one('select count(*) n from users')['n'],
@@ -693,6 +699,26 @@ def create_app(config) -> FastAPI:
         if got is False:
             raise HTTPException(501, 'no file dialog on the server computer')
         return {'path': got}
+
+    # Updating the server itself to the newest release: on its own computer, installed with pip; then it starts
+    # again (the page waits for it). Docker and a working copy: their own way (the page says how).
+    @app.post('/api/admin/server/update')
+    async def update_server(request: Request):
+        need_admin(request)
+        if not allowed(request, config.setup_from):
+            raise HTTPException(403, 'only on the server computer')
+        tag = updates.latest_release(max_age=0)
+        if not updates.newer(tag):
+            raise HTTPException(409, 'this is the newest already')
+        if updates.install_kind() != 'pip':
+            raise HTTPException(409, 'update it as it was installed')
+        import asyncio
+        try:
+            await asyncio.to_thread(updates.upgrade, tag)
+        except Exception as e:
+            raise HTTPException(502, f'could not update: {e}')
+        updates.restart()
+        return {'ok': True, 'version': tag}
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):

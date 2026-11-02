@@ -1,6 +1,7 @@
 """The server's API, without a browser: first account, signing in, accounts, sign-up modes, invitations,
 the admin's limits, and the dashboard behind the sign-in. Run: python tests/test_api.py"""
 import os, sys, tempfile
+os.environ.setdefault('TABCAT_NO_UPDATES', '1'); os.environ.setdefault('TABCAT_NO_DIALOG', '1')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from fastapi.testclient import TestClient
 from tabcat_server import config as C
@@ -270,6 +271,15 @@ check(len(z.post('/api/me/2fa/recovery', json={'password': 'zedpass99'}).json()[
 zid = z.get('/api/me').json()['id']
 c.patch(f'/api/admin/users/{zid}', json={'twofa': False})
 check(z.get('/api/me').json()['twofa'] is False, 'an admin turns it off for someone locked out')
+
+# keeping up to date: the dashboard by itself (a setting), the server told of newer releases
+check(c.get('/api/admin/settings').json()['dashboard_auto'] is True and c.put('/api/admin/settings', json={'dashboard_auto': False}).json()['dashboard_auto'] is False, 'the dashboard updates itself unless turned off')
+from tabcat_server import updates as U
+U._cache.update(release='v9.9.9', checked=10**12)
+rel = c.get('/api/admin/info').json()['release']
+check(rel['latest'] == 'v9.9.9' and rel['newer'] is True and rel['install'] in ('pip', 'checkout', 'docker'), f'info says a newer release is out, and how this server was installed ({rel})')
+check(U.newer('v1.1.0') and not U.newer('v1.0.9'), '1.1.0.dev0 is before 1.1.0, after 1.0.9')
+check(c.post('/api/admin/server/update').status_code in (409, 502) and a3.post('/api/admin/server/update').status_code == 403, 'updating the server: only on its computer, and not a working copy (this one)')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

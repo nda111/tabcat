@@ -14,7 +14,9 @@ const leave = (el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 
 // from how it was, kept here by user
 const was = new Map();
 async function users() {
-  const list = await api('admin/users');
+  // (you first, then the other admins, then everyone else, each as they were made)
+  const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
+  const list = (await api('admin/users')).sort((a, b) => rank(a) - rank(b));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
   for (const u of list) {
     const tr = $(`#users tr[data-key="${u.id}"]`), before = was.get(u.id);
@@ -53,7 +55,14 @@ function row(u) {
   const fail = (e) => say($('#users-msg'), e.message, 'error');
   const edit = (patch) => api(`admin/users/${u.id}`, { method: 'PATCH', body: patch }).then(() => { say($('#users-msg'), ''); return users(); }, fail);
   const role = (admin, label) => h('button', { type: 'button', class: u.admin === admin ? 'on' : '', 'aria-pressed': String(u.admin === admin),
-    onclick: () => { if (u.admin !== admin) edit({ admin }); } }, t(label));
+    onclick: async () => {
+      if (u.admin === admin) return;
+      if (!(self && !admin)) return edit({ admin });
+      // (yourself to a user: the username typed out first; then this page isn't yours any more, so your account's)
+      if (!(await modal({ title: t('selfDemoteTitle'), text: t('selfDemoteText', { name: u.username }), input: u.username, ok: t('selfDemoteOk'), danger: true }))) return;
+      try { await api(`admin/users/${u.id}`, { method: 'PATCH', body: { admin: false } }); location.assign('/account'); }
+      catch (e) { fail(e); }
+    } }, t(label));
   const pill = h('span', { class: `seg-pill${u.admin ? '' : ' second'}`, 'aria-hidden': 'true' });
   // (always there, hidden unless suspended: the columns beside it don't move as it comes and goes)
   const chipEl = h('span', { class: `tag off${u.disabled ? '' : ' ghost'}`, 'aria-hidden': String(!u.disabled) }, t('off'));
@@ -82,15 +91,17 @@ function row(u) {
     // (the name to go by, if any, then the username, smaller)
     h('td', {}, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
       self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl,
-      // (two-step sign-in on: so marked; an admin can turn it off for someone locked out of it, not their own)
-      u.twofa ? h('button', { type: 'button', class: 'tag twofa', disabled: self, onclick: async () => {
-        if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaOff'), danger: true }))) return;
-        edit({ twofa: false });
-      } }, t('twofaTag')) : null),
+      // (two-step sign-in on: a blue chip by the name)
+      u.twofa ? h('span', { class: 'tag twofa' }, t('twofaTag')) : null),
     h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
     h('td', { class: 'act' }, suspend),
     h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member'))),
     h('td', { class: 'act' }, self ? null : h('span', { class: `pw-slot${pw ? ' second' : ''}` }, reset, newpw)),
+    // (turning someone's 2FA off, locked out of it: a plain warning first; not your own, that's on your account page)
+    h('td', { class: 'act' }, u.twofa && !self ? h('button', { type: 'button', class: 'btn small', onclick: async () => {
+      if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaResetOk'), danger: true }))) return;
+      edit({ twofa: false });
+    } }, t('twofaResetOk')) : null),
     h('td', { class: 'act' }, self ? null : h('button', { type: 'button', class: 'btn small danger', onclick: async () => {
       if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
       await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
@@ -118,6 +129,8 @@ const steppers = {
 };
 async function settings() {
   const s = await api('admin/settings');
+  dashAuto = s.dashboard_auto;
+  if ($('#dash-auto')) $('#dash-auto').checked = dashAuto;
   for (const r of document.querySelectorAll('input[name=signup]')) r.checked = r.value === s.signup;
   for (const [k, sel] of Object.entries(NUMBERS)) { $(sel).value = s[k]; steppers[k].sync(); }
 }
@@ -171,7 +184,13 @@ async function info() {
   const i = await api('admin/info');
   const d = i.dashboard;
   const rows = [
-    ['version', i.version], ['database', bytes(i.db_bytes)],
+    // (a newer release out: so marked; installed with pip, and here, it updates and starts again from here)
+    ['version', h('span', { class: 'db-where' }, i.version, ...(i.release?.newer ? [
+      h('span', { class: 'tag accent' }, t('newVersion', { version: i.release.latest })),
+      i.release.install === 'pip' && i.here ? h('button', { type: 'button', class: 'btn small', id: 'server-update', onclick: updateServer }, t('updateRestart'))
+        : h('span', { class: 'muted small' }, t(i.release.install === 'docker' ? 'updateDocker' : i.release.install === 'pip' ? 'dbOnlyHere' : 'updateCheckout')),
+    ] : []))],
+    ['database', bytes(i.db_bytes)],
     // (where the database is; changed only on the server's own computer)
     // (a backup: a copy of it, downloaded, from anywhere; moving it: on the server's computer only)
     ['dbLocation', h('span', { class: 'db-where' }, h('code', { id: 'db-where' }, i.db_path),
@@ -183,6 +202,9 @@ async function info() {
       ? h('a', { href: 'https://github.com/nda111/tabcat/tree/pages', target: '_blank', rel: 'noopener' }, h('code', {}, 'github.com/nda111/tabcat (pages)'))
       : h('code', {}, d.folder)],
     d.version && ['dashVersion', `${(d.version.commit || '').slice(0, 7)} · ${date(d.version.updated_at)}`],
+    // (from GitHub: it can update by itself, once a day)
+    d.source === 'github' && ['dashAuto', h('label', { class: 'check', style: 'margin:0' }, h('input', { type: 'checkbox', id: 'dash-auto', checked: dashAuto,
+      onchange: (e) => { dashAuto = e.target.checked; save({ dashboard_auto: dashAuto }, $('#info-msg')); } }), h('span', {}, t('dashAutoText')))],
   ].filter(Boolean);
   const dl = (el, rows) => el.replaceChildren(...rows.flatMap(([k, v]) => [h('dt', {}, t(k)), h('dd', {}, v)]));
   dl($('#info'), rows);
@@ -190,6 +212,25 @@ async function info() {
   dl($('#startup'), [['setupFrom', addresses(i.setup_from)], ['adminFrom', addresses(i.admin_from)], ['trustedProxies', addresses(i.trusted_proxies)]]);
   $('#update').hidden = d.source !== 'github';
 }
+// ---------- updating the server ----------
+let dashAuto = true;
+async function updateServer() {
+  if (!(await modal({ title: t('updateRestart'), text: t('updateRestartText'), ok: t('updateRestart') }))) return;
+  const b = $('#server-update');
+  b.disabled = true; b.classList.add('busy');
+  try {
+    const { version } = await api('admin/server/update', { method: 'POST' });
+    toast(t('restarting', { version }));
+    // (it starts again: once it answers with the new version, this page loads again)
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const v = await fetch('/api/server', { cache: 'no-store' }).then((r) => r.json(), () => null);
+      if (v?.version && `v${v.version}` === version) return location.reload();
+    }
+    location.reload();
+  } catch (err) { toast(err.message); b.disabled = false; b.classList.remove('busy'); }
+}
+
 // ---------- moving the database ----------
 // "Change…": the operating system's Save dialog, on the server's computer (where this page is: see the server);
 // chosen, the database moves there. No dialog there (a server with no screen): a field to type the path in.

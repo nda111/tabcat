@@ -65,9 +65,13 @@ def end_session(db, token):
         db.run('delete from sessions where token = ?', token_hash(token))
 
 
-# A name: letters, digits, . _ - (2–32); a password: 8 characters or more
+# A username: letters, digits, . _ - (2–14: as long as shows whole, as the account page's heading too); a
+# password: 8 characters or more
+USERNAME_MAX, NAME_MAX = 14, 12  # (the name to go by: see app.clean_name)
+
+
 def valid_username(name: str) -> bool:
-    return isinstance(name, str) and 2 <= len(name) <= 32 and all(c.isalnum() or c in '._-' for c in name)
+    return isinstance(name, str) and 2 <= len(name) <= USERNAME_MAX and all(c.isalnum() or c in '._-' for c in name)
 
 
 def valid_password(password: str) -> bool:

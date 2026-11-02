@@ -10,6 +10,7 @@ URL = f'http://localhost:{PORT}/'
 
 failures = []
 os.environ.setdefault('TABCAT_NO_DIALOG', '1')  # (servers started by tests never show the OS's file dialog)
+os.environ.setdefault('TABCAT_NO_UPDATES', '1')  # (nor look for updates on GitHub)
 
 def check(cond, msg):
     print(('PASS ' if cond else 'FAIL ') + msg, flush=True)
