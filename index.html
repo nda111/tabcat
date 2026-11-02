@@ -144,6 +144,15 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
   <dialog id="settings">
     <form method="dialog" id="settings-form">
       <h3 class="logo-title"><span class="logo" role="img" aria-label="tabcat"></span><span data-i18n="settings.title">Settings</span></h3>
+      <fieldset id="account-row" hidden>
+        <legend data-i18n="settings.account">Account</legend>
+        <div class="setting-row">
+          <span id="account-name" class="account-name"></span>
+          <a class="btn" href="/account" data-i18n="account.manage">Your account</a>
+          <a class="btn" href="/admin" id="account-admin" hidden data-i18n="account.admin">Server admin</a>
+          <button type="button" class="btn" id="account-signout" data-i18n="account.signOut">Sign out</button>
+        </div>
+      </fieldset>
       <fieldset>
         <legend data-i18n="settings.general">General</legend>
         <label><span data-i18n="settings.language">Language</span>
@@ -163,15 +172,6 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
           <button type="button" class="btn" id="settings-install"><span data-icon="download"></span><span data-i18n="side.install">Install app</span></button>
         </div>
         <label class="check" id="install-side-row" hidden><input type="checkbox" id="install-side"> <span data-i18n="settings.installSide">Show Install app in the sidebar</span></label>
-      </fieldset>
-      <fieldset id="account-row" hidden>
-        <legend data-i18n="settings.account">Account</legend>
-        <div class="setting-row">
-          <span id="account-name" class="account-name"></span>
-          <a class="btn" href="/account" data-i18n="account.manage">Your account</a>
-          <a class="btn" href="/admin" id="account-admin" hidden data-i18n="account.admin">Server admin</a>
-          <button type="button" class="btn" id="account-signout" data-i18n="account.signOut">Sign out</button>
-        </div>
       </fieldset>
       <fieldset>
         <legend data-i18n="settings.appearance">Appearance</legend>
