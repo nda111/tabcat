@@ -1,5 +1,5 @@
 // Sign in, or (when the server lets anyone, or this link has an invitation in it) make an account
-import { $, api, connected, go, morph, say, showNotConnected, t, reveal } from './pages.js';
+import { $, api, connected, fold, go, h, morph, say, showNotConnected, t, toast, reveal } from './pages.js';
 
 const GLIDE = 'cubic-bezier(.22, 1, .36, 1)';
 
@@ -89,6 +89,27 @@ async function main() {
       .then(() => { card.style.overflow = ''; }, () => {});
     for (const el of rows) if (hiddenBefore.has(el) && !el.hidden) el.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 60, easing: GLIDE, fill: 'backwards' });
     for (const el of [$('#title'), $('#go'), $('#other')]) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+  }
+
+  // As many accounts signed in here as there may be: which one to sign out of first (else the oldest would go
+  // without a word). Until one's picked, the form waits.
+  const fields = () => $('#form').querySelectorAll('input, #go, #other, #check-name, .pw-eye');
+  const here = await api('accounts/here').catch(() => null);
+  if (here && here.accounts.length >= here.max) {
+    for (const el of fields()) el.disabled = true;
+    $('#choose-text').textContent = t('chooseText', { n: here.max });
+    const photo = (a) => h('span', { class: 'avatar' }, a.avatar ? h('img', { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase());
+    $('#choose-list').replaceChildren(...here.accounts.map((a) => h('button', { type: 'button', class: 'choose-row', onclick: async (e) => {
+      const row = e.currentTarget;
+      for (const b of $('#choose-list').children) b.disabled = true;
+      try { await api('accounts/logout', { method: 'POST', body: { id: a.id } }); } catch (err) { toast(err.message); for (const b of $('#choose-list').children) b.disabled = false; return; }
+      row.classList.add('out');
+      toast(t('signedOutOf', { name: a.username }));
+      await fold($('#choose'), false);
+      for (const el of fields()) el.disabled = false;
+      $('#username').focus();
+    } }, photo(a), h('span', { class: 'choose-name' }, a.username), h('span', { class: 'choose-out' }, t('chooseSignOut')))));
+    $('#choose').hidden = false;
   }
 
   // Sending: the fields and buttons go still (fading) until the answer; nothing to read meanwhile

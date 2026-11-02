@@ -97,6 +97,15 @@ def create_app(config) -> FastAPI:
             r.delete_cookie(auth.MORE, path='/')
         return r
 
+    def takeover(request: Request):
+        """The account in use is gone (its sign-in ended, or it was turned off) but others are signed in here:
+        their tokens, the next first, to set (see set_accounts); else None."""
+        found = accounts_of(request)
+        if found[0][1]:
+            return None
+        rest = [t for t, u in found[1:] if u]
+        return rest or None
+
     def sign_in(request: Request, user_id: int) -> Response:
         token = auth.new_session(db, user_id, request.headers.get('user-agent', ''))
         # (the accounts already here stay, but for this one's old session: one each; the oldest go past the limit)
@@ -184,11 +193,15 @@ def create_app(config) -> FastAPI:
 
     @app.get('/account')
     def account_page(request: Request):
+        if not user_of(request) and (rest := takeover(request)):
+            return set_accounts(RedirectResponse('/account'), request, rest)
         return page('account.html') if user_of(request) else RedirectResponse('/login')
 
     @app.get('/admin')
     def admin_page(request: Request):
         u = user_of(request)
+        if not u and (rest := takeover(request)):
+            return set_accounts(RedirectResponse('/admin'), request, rest)
         if not u:
             return RedirectResponse('/login?next=/admin')
         if not u['admin']:
@@ -278,12 +291,17 @@ def create_app(config) -> FastAPI:
         return {'max': auth.MAX_ACCOUNTS, 'accounts': [{**public(u), 'current': i == 0} for i, (_, u) in enumerate(accounts_of(request)) if u]}
 
     # Signing out of another of them (to make room, say: there are so many at most), the one in use staying
+    # The accounts signed in here, for the sign-in page (no account in use needed): at the limit, it asks which
+    # one to sign out of before signing in another
+    @app.get('/api/accounts/here')
+    def accounts_here(request: Request):
+        return {'max': auth.MAX_ACCOUNTS, 'accounts': [public(u) for _, u in accounts_of(request) if u]}
+
     @app.post('/api/accounts/logout')
     async def logout_account(request: Request):
-        need_user(request)
         uid = (await body(request)).get('id')
         found = accounts_of(request)
-        tok = next((t for t, u in found[1:] if u and u['id'] == uid), None)
+        tok = next((t for t, u in found if u and u['id'] == uid), None)
         if not tok:
             raise HTTPException(404, 'that account is not signed in here')
         auth.end_session(db, tok)
@@ -301,6 +319,10 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/me')
     def me(request: Request):
+        # (the account in use gone, another signed in here takes over: as the dashboard's extension asks)
+        if not user_of(request) and (rest := takeover(request)):
+            u = auth.session_user(db, rest[0])
+            return set_accounts(JSONResponse({**public(u), 'switched': True}), request, rest)
         return public(need_user(request))
 
     @app.post('/api/me/password')
@@ -351,7 +373,8 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/users/{uid}/avatar')
     def avatar(uid: int, request: Request):
-        need_user(request)
+        if not any(u for _, u in accounts_of(request)):  # (any account signed in here: the sign-in page shows them)
+            raise HTTPException(401, 'not signed in')
         row = db.one('select avatar from users where id = ?', uid)
         if not row or not row['avatar']:
             raise HTTPException(404)
@@ -577,6 +600,9 @@ def create_app(config) -> FastAPI:
             if no_users():
                 return RedirectResponse('/setup')
             if not user_of(request):
+                # (the account in use gone: another signed in here takes over, the dashboard saying so)
+                if rest := takeover(request):
+                    return set_accounts(RedirectResponse('/?switched=1'), request, rest)
                 return RedirectResponse('/login')
             if not dashboard.present(folder):
                 return page('nodashboard.html')

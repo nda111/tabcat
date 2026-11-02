@@ -334,3 +334,18 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 /* removing the photo: the same little button over its upper right edge, red under the pointer */
 .avatar-remove { top: -3px; bottom: auto; }
 .avatar-remove:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+
+/* the sign-in page at the limit of accounts here: pick one to sign out of first */
+.choose { margin: 10px 0 14px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2); }
+.choose p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+.choose-list { display: flex; flex-direction: column; gap: 2px; }
+.choose-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background-color .16s ease, opacity .2s ease;
+}
+.choose-row:hover:not(:disabled) { background: var(--hover); transition-duration: .05s; }
+.choose-row:disabled { cursor: default; }
+.choose-row.out { opacity: .4; }
+.choose-name { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.choose-out { font-size: 12.5px; color: var(--muted); transition: color .16s ease; }
+.choose-row:hover:not(:disabled) .choose-out { color: var(--danger); }

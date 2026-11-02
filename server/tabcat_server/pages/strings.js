@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    chooseText: '{n} accounts are signed in here already, as many as there can be. Pick one to sign out of first.', chooseSignOut: 'Sign out', signedOutOf: 'Signed out of {name}.',
     backToTabcat: 'Back to tabcat',
     backupShort: 'Back up',
     photoChange: 'Change photo', photoRemove: 'Remove photo', photoSaved: 'Profile photo changed.', photoRemoved: 'Profile photo removed.', errPhoto: 'That image can’t be used.',
@@ -37,6 +38,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    chooseText: '이 브라우저에 이미 계정 {n}개가 로그인돼 있습니다(최대). 먼저 로그아웃할 계정을 고르세요.', chooseSignOut: '로그아웃', signedOutOf: '{name} 계정을 로그아웃했습니다.',
     backToTabcat: 'tabcat으로 돌아가기',
     backupShort: '백업',
     photoChange: '사진 변경', photoRemove: '사진 삭제', photoSaved: '프로필 사진을 바꿨습니다.', photoRemoved: '프로필 사진을 지웠습니다.', errPhoto: '쓸 수 없는 이미지입니다.',
@@ -73,6 +75,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    chooseText: 'このブラウザーではすでに {n} 個のアカウントがログインしています（上限）。先にログアウトするアカウントを選んでください。', chooseSignOut: 'ログアウト', signedOutOf: '{name} からログアウトしました。',
     backToTabcat: 'tabcat に戻る',
     backupShort: 'バックアップ',
     photoChange: '写真を変更', photoRemove: '写真を削除', photoSaved: 'プロフィール写真を変更しました。', photoRemoved: 'プロフィール写真を削除しました。', errPhoto: 'その画像は使えません。',
@@ -109,6 +112,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    chooseText: '此浏览器已登录 {n} 个账号（上限）。请先选择一个要退出的账号。', chooseSignOut: '退出登录', signedOutOf: '已退出 {name}。',
     backToTabcat: '返回 tabcat',
     backupShort: '备份',
     photoChange: '更换头像', photoRemove: '删除头像', photoSaved: '已更换头像。', photoRemoved: '已删除头像。', errPhoto: '无法使用该图片。',
@@ -145,6 +149,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    chooseText: 'Ya hay {n} cuentas con la sesión iniciada aquí, el máximo. Elige primero una para cerrar su sesión.', chooseSignOut: 'Cerrar sesión', signedOutOf: 'Se cerró la sesión de {name}.',
     backToTabcat: 'Volver a tabcat',
     backupShort: 'Copia',
     photoChange: 'Cambiar foto', photoRemove: 'Quitar foto', photoSaved: 'Foto de perfil cambiada.', photoRemoved: 'Foto de perfil quitada.', errPhoto: 'Esa imagen no se puede usar.',
@@ -181,6 +186,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    chooseText: 'Hier sind schon {n} Konten angemeldet, mehr geht nicht. Wähle zuerst eines zum Abmelden.', chooseSignOut: 'Abmelden', signedOutOf: '{name} abgemeldet.',
     backToTabcat: 'Zurück zu tabcat',
     backupShort: 'Sichern',
     photoChange: 'Foto ändern', photoRemove: 'Foto entfernen', photoSaved: 'Profilfoto geändert.', photoRemoved: 'Profilfoto entfernt.', errPhoto: 'Dieses Bild geht nicht.',
@@ -217,6 +223,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    chooseText: '{n} comptes sont déjà connectés ici, le maximum. Choisissez d’abord celui à déconnecter.', chooseSignOut: 'Déconnecter', signedOutOf: '{name} est déconnecté.',
     backToTabcat: 'Revenir à tabcat',
     backupShort: 'Sauvegarder',
     photoChange: 'Changer de photo', photoRemove: 'Retirer la photo', photoSaved: 'Photo de profil modifiée.', photoRemoved: 'Photo de profil retirée.', errPhoto: 'Cette image ne peut pas être utilisée.',
@@ -253,6 +260,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    chooseText: 'Já há {n} contas conectadas aqui, o máximo. Escolha primeiro uma para sair.', chooseSignOut: 'Sair', signedOutOf: 'Você saiu de {name}.',
     backToTabcat: 'Voltar ao tabcat',
     backupShort: 'Backup',
     photoChange: 'Trocar foto', photoRemove: 'Remover foto', photoSaved: 'Foto de perfil trocada.', photoRemoved: 'Foto de perfil removida.', errPhoto: 'Essa imagem não pode ser usada.',

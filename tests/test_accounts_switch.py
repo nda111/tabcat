@@ -12,7 +12,8 @@ from tabcat_server.app import create_app
 PORT = 8767
 SERVER = f'http://tabcat.localhost:{PORT}'
 WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'web')
-srv = uvicorn.Server(uvicorn.Config(create_app(C.load(tempfile.mkdtemp(), dashboard=WEB)), host='127.0.0.1', port=PORT, log_level='warning'))
+APP = create_app(C.load(tempfile.mkdtemp(), dashboard=WEB))
+srv = uvicorn.Server(uvicorn.Config(APP, host='127.0.0.1', port=PORT, log_level='warning'))
 threading.Thread(target=srv.run, daemon=True).start()
 while not srv.started: time.sleep(.05)
 
@@ -61,9 +62,26 @@ with sync_playwright() as p:
     d.click('.account-other .account-out'); time.sleep(.8)
     check(d.locator('.account-other').count() == 0, 'kid signed out of from the list: gone from it')
     d.keyboard.press('Escape'); time.sleep(.3)
+    # the account in use signed out of elsewhere: the next takes over, the dashboard saying so
+    d.evaluate("fetch('/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: 'kid', password: 'kidpass99'})})"); time.sleep(.4)
+    APP.state.db.run("delete from sessions where user_id = (select id from users where username = 'kid')")
+    d.goto(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000); time.sleep(1.2)
+    check('boss' in d.evaluate("document.querySelector('#toast')?.innerText || ''") and 'switched' not in d.url, f"kid's sign-in ended elsewhere: boss takes over, a toast says so ({d.url})")
+    # at the limit: the sign-in page asks which to sign out of first
+    for n in ('u1', 'u2', 'u3', 'u4'):
+        d.evaluate(f"fetch('/api/admin/users', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{username: '{n}', password: 'password99'}})}})"); time.sleep(.2)
+    for n in ('u1', 'u2', 'u3', 'u4'):
+        d.evaluate(f"fetch('/api/login', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{username: '{n}', password: 'password99'}})}})"); time.sleep(.25)
+    d.goto(SERVER + '/login?add=1'); d.wait_for_selector('#choose:visible', timeout=10000); time.sleep(.4)
+    check(d.locator('.choose-row').count() == 5 and d.is_disabled('#username') and d.is_disabled('#go'), 'five signed in: the sign-in page lists them, the form waiting')
+    d.locator('.choose-row').nth(4).click(); time.sleep(.8)
+    check(d.is_hidden('#choose') and d.is_enabled('#username'), 'one picked: signed out of it, the form ready')
+    d.goto(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000); time.sleep(.8)
     d.click('#btn-account'); time.sleep(.3); d.click('#account-signout')
-    d.wait_for_url('**/login', timeout=10000)
-    check(d.url.endswith('/login'), 'signing out of the last one: the sign-in page')
+    for _ in range(6):  # (each sign-out goes on to the next account; the last to the sign-in page)
+        try: d.wait_for_url('**/login', timeout=4000); break
+        except Exception: d.wait_for_selector('.ws-item', timeout=15000); time.sleep(.8); d.click('#btn-account'); time.sleep(.3); d.click('#account-signout')
+    check(d.url.endswith('/login'), 'signing out, one by one, to the sign-in page')
     check(not errors, f'no page errors {errors}')
     ctx.close()
 srv.should_exit = True

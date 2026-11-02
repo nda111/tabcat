@@ -16,6 +16,11 @@
     <div class="brand"><span class="logo"></span>tabcat</div>
     <form class="card intro" id="form" novalidate>
       <h1 id="title" data-t="signInTitle">Sign in</h1>
+      <!-- as many accounts signed in here as there may be: which one to sign out of, first -->
+      <div class="choose" id="choose" hidden>
+        <p id="choose-text"></p>
+        <div class="choose-list" id="choose-list"></div>
+      </div>
       <label><span data-t="username">Username</span><span class="field-row"><input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" required><button type="button" class="btn check-btn" id="check-name" hidden><span class="lbl" data-t="checkUsername">Check</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></span></label>
       <label><span data-t="password">Password</span><input type="password" id="password" autocomplete="current-password" required></label>
       <label id="again-row" hidden><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>

@@ -192,6 +192,25 @@ r = m.post('/api/logout')
 check(r.json()['next'] == 'ann' and m.get('/api/me').json()['username'] == 'ann', 'signing out of ben: ann takes over')
 check(m.post('/api/logout').json()['next'] is None and m.get('/api/me').status_code == 401, 'and signing out of ann: signed out')
 
+# the account in use gone (its sign-in ended): another signed in here takes over; at the limit, the sign-in
+# page can sign out of any of them (no account in use needed)
+x = TestClient(app, follow_redirects=False, client=('192.0.2.30', 1))
+x.post('/api/login', json=J(username='ben', password='benpass99')); x.post('/api/login', json=J(username='ann', password='annpass99'))
+import sqlite3 as _sq
+db_ = app.state.db
+from tabcat_server import auth as _auth
+db_.run('delete from sessions where token = ?', _auth.token_hash(x.cookies.get('tabcat_session')))
+r = x.get('/')
+check(r.status_code in (302, 307) and r.headers['location'] == '/?switched=1', f'ann’s sign-in ended: the dashboard goes on as ben, saying so ({r.headers.get("location")})')
+check(x.get('/api/me').json()['username'] == 'ben', 'ben in use now')
+db_.run('delete from sessions where token = ?', _auth.token_hash(x.cookies.get('tabcat_session')))
+check(x.get('/api/me').status_code == 401, 'and none left: signed out')
+y = TestClient(app, follow_redirects=False, client=('192.0.2.31', 1))
+y.post('/api/login', json=J(username='ben', password='benpass99')); y.post('/api/login', json=J(username='ann', password='annpass99'))
+here = y.get('/api/accounts/here').json()
+check(sorted(a['username'] for a in here['accounts']) == ['ann', 'ben'] and here['max'] == 5, 'the sign-in page sees the accounts signed in here')
+check(y.post('/api/accounts/logout', json={'id': ben_id}).status_code == 200 and [a['username'] for a in y.get('/api/accounts/here').json()['accounts']] == ['ann'], 'and signs out of one of them')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
