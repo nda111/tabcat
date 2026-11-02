@@ -320,13 +320,17 @@ function dismissToast(el, clicked = false) {
 }
 
 // Run an extension call, surfacing failures as a toast.
+// (this page's own change on its way, or just in: a state coming now is its own, see relabel)
+let ownBusy = 0, ownUntil = 0;
+const ownChange = () => ownBusy > 0 || performance.now() < ownUntil;
 async function run(promise) {
+  ownBusy++;
   try { return await promise; } catch (err) {
     // (the extension went away under the page: see reloadWhenIdle, not its own English message)
     if (/extension is not available/.test(err.message)) reloadWhenIdle();
     else if (!elsewhere()) toast(err.message); // (on the server meanwhile: the page says so already)
     return undefined;
-  }
+  } finally { ownBusy--; ownUntil = performance.now() + 800; }
 }
 
 // The extension went away under the page (reloaded or updated: the page's link to it can't come back):
@@ -2057,6 +2061,31 @@ function groupClash(name, symbol, exceptId) {
   return clash;
 }
 
+// The editor open on something, saved meanwhile elsewhere (another browser, through sync; another dashboard): each
+// field not edited here takes what was saved (it fades in); one edited here keeps the edit, saved over it on Save.
+let editorSync = null;
+function followEditor() {
+  const e = editorSync;
+  if (!e || !$('#editor').open) return;
+  const node = T.locate(state, e.id)?.node;
+  if (!node) return;
+  let changed = false;
+  for (const [k, el] of Object.entries(e.inputs)) {
+    let now = node[k] ?? '';
+    if (k === 'color' && OLD_GROUP_COLORS[now]) now = OLD_GROUP_COLORS[now];
+    if (typeof now !== 'string' || now === e.base[k] || el.value !== e.base[k]) continue;
+    e.base[k] = now;
+    el.value = now;
+    changed = true;
+    if (k === 'color') {
+      const radio = $(`#editor input[name=group-color][value="${CSS.escape(now)}"]`);
+      if (radio) radio.checked = true;
+      radio?.closest('.swatch')?.animate([{ transform: 'scale(.8)' }, { transform: 'none' }], { duration: 320, easing: SPRING });
+    } else el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
+    el.dispatchEvent(new Event('input', { bubbles: true })); // (the symbol's grid, the preview, the icon follow)
+  }
+  return changed;
+}
 function openEditor(type, data = {}, title, onPreview = null) {
   const dlg = $('#editor');
   const form = $('#editor-form');
@@ -2104,6 +2133,8 @@ function openEditor(type, data = {}, title, onPreview = null) {
     }
     return h('label', {}, label + (required ? ' *' : ''), input);
   }));
+  // (open on something already there: its fields follow what's saved elsewhere meanwhile, each not edited here)
+  editorSync = data.id ? { id: data.id, inputs, base: Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value])) } : null;
   if (type === 'link') {
     inputs.url.placeholder = 'https://…';
     inputs.url.addEventListener('blur', () => {
@@ -2115,6 +2146,7 @@ function openEditor(type, data = {}, title, onPreview = null) {
     const finish = (v) => {
       if (done) return;
       done = true;
+      editorSync = null;
       form.removeEventListener('submit', onSubmit);
       form.removeEventListener('input', onInput);
       $('#editor-cancel').removeEventListener('click', onCancel);
@@ -4186,7 +4218,36 @@ const nextState = () => new Promise((r) => stateWaiters.push(r));
 // (what's gone without this page taking it out itself, from another dashboard or another browser through sync,
 // an undo: it leaves as a delete here would, then the board closes up; one at a time, in the order they came)
 let stateChain = Promise.resolve(), stateHeld = 0;
-const takeState = (s) => { pinShown(); state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); };
+const takeState = (s) => {
+  const relabelled = state && !ownChange() && !document.hidden ? relabel(state, s) : null;
+  pinShown(); state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r());
+  relabelled?.();
+  followEditor();
+};
+// Renamed, or a new symbol, elsewhere (another browser, through sync; another dashboard): the old name and symbol
+// fade out where they were as the new ones fade in. Called before the new state's drawn, with it: what's to fade,
+// pictured as it is now; the returned function, after, fades it.
+const LABEL = (n) => JSON.stringify([n.name, n.symbol, n.name ? '' : n.url]);
+function relabel(a, b) {
+  const was = new Map();
+  T.walk(a.workspaces, (n) => was.set(n.id, LABEL(n)));
+  const ids = [];
+  T.walk(b.workspaces, (n) => { const w = was.get(n.id); if (w !== undefined && w !== LABEL(n)) ids.push(n.id); });
+  if (!ids.length) return null;
+  const labels = (id) => {
+    const q = CSS.escape(id);
+    const own = [...document.querySelectorAll(`#ws-list [data-id="${q}"], #cat-bar [data-id="${q}"], #board [data-id="${q}"]`)]
+      .flatMap((el) => [...el.querySelectorAll('.name, .sym, .node-sym')].filter((x) => x.closest('[data-id]') === el && !x.parentElement.closest('.sym, .node-sym')));
+    return id === currentWs()?.id ? [...own, ...document.querySelectorAll('#ws-head h1')] : own;
+  };
+  const before = new Map(ids.map((id) => [id, labels(id).map((el) => el.cloneNode(true))]));
+  return () => {
+    for (const [id, olds] of before) {
+      const now = labels(id);
+      now.forEach((el, i) => { if (olds[i] && olds[i].outerHTML !== el.outerHTML) ghostOver(el, olds[i]); });
+    }
+  };
+}
 // (the workspace and category on screen stay on screen, wherever they've moved to: by id, not by place. Shown
 // as the first, nothing picked yet, then moved down elsewhere: still them, not whatever is first now)
 function pinShown() {
@@ -4393,26 +4454,25 @@ async function showAccount() {
   btn.removeAttribute('data-i18n-attr');
   btn.removeAttribute('data-rail-title');
   btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
-  // (changed elsewhere, the dialog open: what's new rises in; the admin page's button comes or goes)
+  // (changed elsewhere, the dialog open: what changed alone, the old fading out as the new fades in; the admin
+  // page's button comes or goes)
   const before = accountShown;
-  accountShown = { who: `${me.name}|${me.username}|${me.twofa}`, avatar: me.avatar || '', role: `${me.name}|${me.admin}` };
+  accountShown = { ...accountLook(me), avatar: `${me.avatar}|${me.accent}` };
   const live = before && $('#account').open;
-  const rise = (el) => live && el.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: GLIDE });
+  const put = (el, was, now, change) => { if (was === now) return; if (live) crossfade(el, change); else change(); };
   // (two-step sign-in on: a blue 2FA chip after the name, as on the admin page)
-  $('#account-name').replaceChildren(me.name || me.username, ...(me.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : []));
-  if (before?.who !== accountShown.who) rise($('#account-name'));
-  // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
+  put($('#account-name'), before?.name, accountShown.name, () => $('#account-name').replaceChildren(...nameLine(me)));
+  // the profile photo (set on the account page), or the name's first letter in the account's colour; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
-  if (before?.avatar !== accountShown.avatar || !before) {
+  put($('#account-avatar'), before?.avatar, accountShown.avatar, () => {
     $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
-    if (live) $('#account-avatar').animate([{ opacity: 0, transform: 'scale(.8)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
-  }
+    ACCENT_TINT($('#account-avatar'), me.accent);
+  });
   const sym = btn.querySelector('.sym');
   sym.plain ||= [...sym.childNodes]; // (the person icon, for when there's no photo again)
-  sym.replaceChildren(...(me.avatar ? [Object.assign(photo(), { className: 'side-photo' })] : sym.plain));
+  if (before?.avatar !== accountShown.avatar) sym.replaceChildren(...(me.avatar ? [Object.assign(photo(), { className: 'side-photo' })] : sym.plain));
   // (under the name: the username, then the role)
-  $('#account-role').textContent = [me.name && me.username, t(me.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
-  if (before?.role !== accountShown.role) rise($('#account-role'));
+  put($('#account-role'), before?.role, accountShown.role, () => { $('#account-role').textContent = accountShown.role; });
   if (live) appear($('#account-admin'), !!me.admin); else $('#account-admin').hidden = !me.admin;
   // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
   if (new URLSearchParams(location.search).has('switched')) {
@@ -4423,7 +4483,7 @@ async function showAccount() {
 // Live sync: the server says at once when the account has new changes (from its other browsers), and the
 // extension takes them (it would anyway, later: this makes it now). One stream for all of the server's pages open
 // in this browser, shared (the server's own live.js: see there why).
-let liveSync = null, meTimer = null;
+let liveSync = null, meTimer = null, listTimer = null;
 async function listenForChanges() {
   if (liveSync) return;
   liveSync = { stop() {}, start() {} };
@@ -4433,6 +4493,8 @@ async function listenForChanges() {
     if (kind === 'head' || kind === 'open') { if (B.info) B.call('syncNow').catch(() => {}); }
     // (the account changed elsewhere: its name, photo, 2FA... the Account dialog as it now is)
     if (kind === 'me' || kind === 'open') { clearTimeout(meTimer); meTimer = setTimeout(showAccount, 250); }
+    // (another account signed in here changed, or this one: the list of them, open, brought up to date)
+    if (kind === 'accounts' || kind === 'open') { clearTimeout(listTimer); listTimer = setTimeout(refreshAccountList, 250); }
   });
 }
 // (not held while in the back/forward cache: listening again on coming back)
@@ -4458,23 +4520,72 @@ $('#btn-account').addEventListener('click', () => { closeAccountList(false); $('
 // folds them open (it turns); one picked, the dashboard fades out and opens again as that account, with its
 // data and look (the extension changes over as it links up). Each can be signed out of; at the limit, another
 // can't be added until one is.
-const accountPhoto = (a, cls = 'account-avatar') => h('span', { class: cls, 'aria-hidden': 'true' },
-  a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase());
-async function openAccountList() {
+// (no photo: the name's first letter, in the account's own accent colour, as its dashboard has it)
+const ACCENT_TINT = (el, accent) => {
+  if (accent === 'orange' || accent === 'mono') { el.dataset.tint = accent; el.style.removeProperty('--hue'); }
+  else { el.dataset.tint = 'hue'; el.style.setProperty('--hue', ACCENTS[accent] ?? ACCENTS.purple); }
+  return el;
+};
+const accountPhoto = (a, cls = 'account-avatar') => ACCENT_TINT(h('span', { class: cls, 'aria-hidden': 'true' },
+  a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase()), a.accent);
+// (under the name: the username, if there's a name, then the role)
+const roleLine = (a) => [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
+const nameLine = (a) => [a.name || a.username, ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])];
+// In place, the old fades out as the new fades in, both at once: the old pictured over it while it goes (in the
+// box it's placed by, with its text's look)
+function ghostOver(el, old) {
+  const box = el.offsetParent;
+  if (!box || !el.getClientRects().length) return;
+  const r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), cs = getComputedStyle(el);
+  old.removeAttribute('id');
+  Object.assign(old.style, {
+    position: 'absolute', margin: '0', pointerEvents: 'none', zIndex: '1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+    left: `${r.left - b.left - box.clientLeft + box.scrollLeft}px`, top: `${r.top - b.top - box.clientTop + box.scrollTop}px`,
+    maxWidth: `${Math.max(r.width, 1)}px`, height: `${r.height}px`, font: cs.font, color: cs.color, lineHeight: cs.lineHeight, letterSpacing: cs.letterSpacing,
+  });
+  box.append(old);
+  old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
+  el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
+}
+function crossfade(el, change) {
+  const old = el.cloneNode(true);
+  change();
+  ghostOver(el, old);
+}
+const accountRow = (a) => h('div', { class: 'account-other', 'data-key': a.id },
+  h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
+    accountPhoto(a, 'account-avatar small'),
+    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, ...nameLine(a)), h('span', { class: 'account-role' }, roleLine(a)))),
+  outButton(a));
+// (each row as it reads: what changed, changes alone)
+const accountLook = (a) => ({ name: JSON.stringify([a.name, a.username, a.twofa]), role: roleLine(a), photo: `${a.avatar}|${a.accent}` });
+async function openAccountList(again = false) {
   const data = await fetch('/api/accounts', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
   if (!data) return;
   const others = data.accounts.filter((a) => !a.current), full = data.accounts.length >= data.max;
   const list = $('#account-list');
+  // (open already, the same accounts: each brought up to date where it changed, the old fading as the new comes)
+  const rows = [...list.querySelectorAll('.account-other')];
+  if (again && rows.map((r) => r.dataset.key).join() === others.map((a) => String(a.id)).join()) {
+    others.forEach((a, i) => {
+      const row = rows[i], now = accountLook(a), was = row.look || {};
+      row.look = now;
+      if (was.name !== now.name) crossfade(row.querySelector('.account-name'), () => row.querySelector('.account-name').replaceChildren(...nameLine(a)));
+      if (was.role !== now.role) crossfade(row.querySelector('.account-role'), () => { row.querySelector('.account-role').textContent = now.role; });
+      if (was.photo !== now.photo) { const old = row.querySelector('.account-avatar'); crossfade(old, () => { const p = accountPhoto(a, 'account-avatar small'); old.replaceChildren(...p.childNodes); ACCENT_TINT(old, a.accent); }); }
+    });
+    return;
+  }
+  const from = list.hidden ? null : list.offsetHeight;
   list.replaceChildren(
-    ...others.map((a) => h('div', { class: 'account-other' },
-      h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
-        accountPhoto(a, 'account-avatar small'),
-        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.name || a.username, ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])),
-          a.name ? h('span', { class: 'account-role' }, a.username) : null)),
-      outButton(a))),
+    ...others.map((a) => Object.assign(accountRow(a), { look: accountLook(a) })),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
+  if (again) {
+    if (from != null) list.animate([{ height: `${from}px` }, { height: `${list.offsetHeight}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    return;
+  }
   // (the dialog keeps its top where it is: the list opens downwards only, not the box growing both ways)
   const dlg = $('#account'), top = dlg.getBoundingClientRect().top;
   dlg.style.margin = `${top}px auto auto`;
@@ -4482,6 +4593,8 @@ async function openAccountList() {
   $('#account-more').setAttribute('aria-expanded', 'true');
   fold(list, true, true);
 }
+// (changed elsewhere, the list open: brought up to date)
+const refreshAccountList = () => { if ($('#account').open && $('#account-more').getAttribute('aria-expanded') === 'true') openAccountList(true); };
 function closeAccountList(animate = true) {
   $('#account-more').setAttribute('aria-expanded', 'false');
   fold($('#account-list'), false, animate);
@@ -4536,9 +4649,7 @@ async function signOutOf(a) {
   const r = await fetch('/api/accounts/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
   if (!r?.ok) return;
   // (its row folds away; the list is drawn again, Add back when there's room)
-  const list = $('#account-list'), from = list.offsetHeight;
-  await openAccountList();
-  list.animate([{ height: `${from}px` }, { height: `${list.offsetHeight}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  await openAccountList(true);
 }
 for (const a of document.querySelectorAll('#account a[href^="/"]')) {
   a.addEventListener('click', (e) => {
