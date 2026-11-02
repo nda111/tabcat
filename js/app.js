@@ -3263,6 +3263,11 @@ for (const dlg of document.querySelectorAll('dialog')) {
     }, () => {});
   };
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); dlg.close(); }); // Esc
+  // Settings and About: a link out of them (a new tab, the server's pages, the browser's shortcut page) closes
+  // them too, going as the page goes rather than staying open behind (after the link's own handling)
+  if (dlg.id === 'settings' || dlg.id === 'info') {
+    dlg.addEventListener('click', (e) => { if (e.target.closest('a[href], #shortcut-set')) setTimeout(() => dlg.close()); });
+  }
   // a <form method="dialog"> submit that nobody handled (Done / Close buttons)
   dlg.addEventListener('submit', (e) => {
     if (!e.defaultPrevented && e.target.method === 'dialog') { e.preventDefault(); dlg.close(); }
@@ -4224,6 +4229,9 @@ const olderThan = (a, b) => {
 
 async function init() {
   hydrateIcons();
+  // (About's privacy link says where it is: this server's page, on someone's own tabcat server, not tabcat.ghyeok.com's)
+  const privacy = $('#info-privacy');
+  if (privacy && !['localhost', '127.0.0.1'].includes(location.hostname)) privacy.textContent = `${location.host}${new URL('privacy', location.href).pathname}`;
   // start in the language of the last visit; the extension's setting follows once connected
   let lang = 'auto';
   try { lang = localStorage.getItem('tabcat:lang') || 'auto'; } catch { /* storage unavailable */ }
@@ -4233,13 +4241,21 @@ async function init() {
   // e.g. the saved panel width doesn't animate in from the default), then show the page. The page stays
   // hidden until we know what to show: the board, or a notice (no supported browser, no extension) in
   // its place, so the board is never glimpsed before a notice.
-  // (shown, it opens: see html.opening in app.css)
-  const show = () => {
+  // (shown, it opens: see html.opening in app.css. First its fonts, if they come soon: else they'd swap in as it
+  // opens, the text jumping. The spinner, if it was up, fades away rather than vanishing.)
+  const show = async () => {
+    await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 500))]);
     void document.body.offsetWidth;
-    const root = document.documentElement;
+    const root = document.documentElement, boot = $('#boot');
+    const spun = +getComputedStyle(boot).opacity;
     root.classList.remove('booting');
     root.classList.add('opening');
     setTimeout(() => root.classList.remove('opening'), 700);
+    if (spun > 0) {
+      boot.style.cssText = `display: flex; position: fixed; inset: 0; z-index: 400; align-items: center; justify-content: center; flex-direction: column; background: transparent; opacity: ${spun}`;
+      boot.animate([{ opacity: spun }, { opacity: 0, transform: 'scale(.96)' }], { duration: 220, easing: 'ease-in', fill: 'forwards' })
+        .finished.then(() => { boot.style.cssText = ''; boot.getAnimations().forEach((a) => a.cancel()); }, () => {});
+    }
   };
   if (!supportedBrowser()) {
     Object.assign($('#browser-url'), { href: location.href, textContent: location.href });
