@@ -235,31 +235,31 @@ async function updateServer() {
 // On the server's computer: there or not, signed in or not; its name and addresses; serving this server at its
 // HTTPS address (a switch, on that computer only)
 $('#ts-info').replaceChildren(h('b', {}, t('tsInfoTitle')), h('ul', {}, ...['tsInfo1', 'tsInfo2', 'tsInfo3'].map((k) => h('li', {}, t(k)))));
-async function tailscaleView(ts) {
+async function tailscaleView(ts, fade = false) {
   ts ||= await api('admin/tailscale').catch(() => null);
-  const box = $('#tailscale'), from = box.offsetHeight;
-  // (not there, signed out or stopped: so said, with a way to look again)
-  const again = () => h('button', { type: 'button', class: 'btn small', onclick: async (e) => { e.currentTarget.classList.add('busy'); await tailscaleView(); } }, t('tsRefresh'));
+  const box = $('#tailscale');
+  const again = () => h('button', { type: 'button', class: 'btn small', onclick: async (e) => { e.currentTarget.classList.add('busy'); await tailscaleView(null, true); } }, t('tsRefresh'));
+  const linked = (key, url, label) => { const [before, after] = t(key, { link: '{link}' }).split('{link}'); return [before, h('a', { href: url, target: '_blank', rel: 'noopener' }, label), after]; };
+  // what it shows, each part keyed: a change animates only the parts that come or go (see below)
+  let parts;
   if (!ts?.installed) {
-    const [before, after] = t('tsDownload').split('{link}');
-    box.replaceChildren(h('div', { class: 'ts-state' }, h('p', { class: 'muted small' }, t('tsNone'), ' ', before,
-      h('a', { href: 'https://tailscale.com/download', target: '_blank', rel: 'noopener' }, t('tsOfficial')), after), again()));
+    parts = [h('div', { class: 'ts-state', 'data-k': 'none' }, h('p', { class: 'muted small' }, t('tsNone'), ' ', ...linked('tsDownload', 'https://tailscale.com/download', t('tsOfficial'))), again())];
   } else if (ts.state !== 'Running') {
-    box.replaceChildren(h('div', { class: 'ts-state' }, h('p', { class: 'muted small' }, t(ts.state === 'NeedsLogin' ? 'tsSignedOut' : 'tsStopped')), again()));
+    parts = [h('div', { class: 'ts-state', 'data-k': 'state' }, h('p', { class: 'muted small' }, t(ts.state === 'NeedsLogin' ? 'tsSignedOut' : 'tsStopped')), again())];
   } else {
-    // (the address or "not served", in one place: a change cross-fades, the old fading out as the new fades in)
-    const https = h('dd', { class: 'crossfade' });
-    const showHttps = (serving, url, fade = false) => {
+    // (HTTPS off for the tailnet: no address to give, nothing to switch; only how to turn it on)
+    const httpsOk = ts.https || ts.serving;
+    const https = h('dd', { class: 'crossfade', 'data-k': 'https' });
+    const showHttps = (serving, url, cross = false) => {
       const next = serving ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('code', {}, url)) : h('span', { class: 'muted' }, t('tsOff'));
       const old = https.firstElementChild;
       https.append(next);
-      if (!fade || !old) { old?.remove(); return; }
+      if (!cross || !old) { old?.remove(); return; }
       const ease = { duration: 240, easing: 'ease-in-out' };
       next.animate([{ opacity: 0 }, { opacity: 1 }], ease);
       old.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, fill: 'forwards' }).finished.then(() => old.remove());
     };
     showHttps(ts.serving, ts.url);
-    // (turned on or off: the switch stays, only the address beside it changes, fading over)
     const sw = h('input', { type: 'checkbox', class: 'switch', id: 'ts-serve', checked: ts.serving, disabled: !ts.here });
     sw.addEventListener('change', async () => {
       sw.classList.add('waiting');
@@ -268,19 +268,39 @@ async function tailscaleView(ts) {
         sw.checked = next.serving;
         showHttps(next.serving, next.url || ts.url, true);
         toast(t(next.serving ? 'tsServing' : 'tsNotServing'));
-      } catch (err) { toast(err.message); sw.checked = !sw.checked; }
+      } catch (err) {
+        sw.checked = !sw.checked;
+        // (not allowed by the tailnet after all, its HTTPS off: the address and the switch go, how to turn it on comes)
+        if (err.data?.enable?.includes('/admin/dns')) return tailscaleView({ ...ts, https: false, serving: false }, true);
+        if (err.data?.enable) toast(t('tsEnableHow', { link: err.data.enable }));
+        else toast(err.message);
+      }
       sw.classList.remove('waiting');
     });
-    box.replaceChildren(
-      h('dl', {},
+    parts = [
+      h('dl', { 'data-k': 'dl' },
         h('dt', {}, t('tsDevice')), h('dd', {}, h('code', {}, ts.name || '—')),
         h('dt', {}, t('tsAddress')), h('dd', {}, h('code', {}, (ts.ips || []).join(', ') || '—')),
-        h('dt', {}, t('tsHttps')), https),
-      h('label', { class: 'check' }, sw, h('span', {}, t('tsServe'))),
-      ...(ts.here ? [] : [h('p', { class: 'muted small' }, t('dbOnlyHere'))]));
+        ...(httpsOk ? [h('dt', { 'data-k': 'https-label' }, t('tsHttps')), https] : [])),
+      ...(httpsOk ? [h('label', { class: 'check', 'data-k': 'switch' }, sw, h('span', {}, t('tsServe')))]
+        : [h('div', { class: 'ts-state ts-note', 'data-k': 'note' }, h('p', { class: 'small' }, h('b', {}, t('tsHttpsOff')), ' ',
+          ...linked('tsHttpsHow', 'https://login.tailscale.com/admin/dns', t('tsAdminDns'))), again())]),
+      ...(ts.here ? [] : [h('p', { class: 'muted small', 'data-k': 'here' }, t('dbOnlyHere'))]),
+    ];
   }
-  // (what it found glides to its height)
-  if (Math.abs(box.offsetHeight - from) > .5) box.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${box.offsetHeight}px`, overflow: 'hidden' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  // Only what comes or goes moves: the parts going fade out where they are, the box glides to its new height,
+  // the parts coming fade in; the rest stays as it was (drawn again the same)
+  const keys = (els) => new Set(els.flatMap((el) => [el, ...el.querySelectorAll('[data-k]')]).map((el) => el.dataset?.k).filter(Boolean));
+  const before = keys([...box.children]), after = keys(parts);
+  if (fade) await Promise.all([...box.querySelectorAll('[data-k]')].filter((el) => !after.has(el.dataset.k))
+    .map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).finished));
+  const from = box.offsetHeight;
+  box.replaceChildren(...parts);
+  if (!fade) return;
+  if (Math.abs(box.offsetHeight - from) > .5) box.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${box.offsetHeight}px`, overflow: 'hidden' }], { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  for (const el of box.querySelectorAll('[data-k]')) {
+    if (!before.has(el.dataset.k)) el.animate([{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: 80, easing: 'ease-out', fill: 'backwards' });
+  }
 }
 
 // ---------- moving the database ----------

@@ -453,10 +453,14 @@ input.switch:disabled { opacity: .5; cursor: default; }
 /* (the switch waiting on the computer: it can't be pressed again meanwhile, and doesn't dim) */
 input.switch.waiting { pointer-events: none; }
 .ts-state { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.ts-state p { margin: 0; }
+.ts-state p { margin: 0; flex: 1; min-width: 200px; }
+.ts-state > .btn { margin-left: auto; flex: none; } /* (Refresh always at the right end) */
 
 dd.crossfade { display: grid; align-items: center; }
 dd.crossfade > * { grid-area: 1 / 1; }
 
 /* (the Tailscale mark: its nine dots, the T dark, in the heading's colour) */
 .ts-logo { flex: none; margin-right: -2px; }
+
+.ts-note { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); }
+.ts-note p { margin: 0; flex: 1; min-width: 200px; }

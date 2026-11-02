@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    tsHttpsOff: 'HTTPS is off for your Tailscale account.', tsHttpsHow: 'Turn on HTTPS certificates in the {link}, then refresh.', tsAdminDns: 'admin console’s DNS settings', tsEnableHow: 'Allow it on {link}, then turn it on again.', tsEnablePage: 'Tailscale’s page',
     tsDownload: 'You can download it from the {link}.', tsOfficial: 'Tailscale website', tsRefresh: 'Refresh',
     tsLooking: 'Looking…', tsInfoTitle: 'Tailscale', tsInfo1: 'Your own devices reach this server from anywhere, away from home too, with no ports opened on the router.', tsInfo2: 'It gets an HTTPS address (…ts.net) with its certificate, made for you.', tsInfo3: 'Only devices on your tailnet can get in.', tsNone: 'Tailscale isn’t installed.', tsGet: 'Get Tailscale', tsSignedOut: 'Tailscale isn’t signed in on this computer.', tsStopped: 'Tailscale isn’t running on this computer.', tsDevice: 'This computer', tsAddress: 'Tailscale address', tsHttps: 'HTTPS address', tsOff: 'Not served', tsServe: 'Serve this server at its HTTPS address (tailscale serve)', tsServing: 'Served at its HTTPS address.', tsNotServing: 'No longer served at its HTTPS address.',
     rememberId: 'Remember my username', staySignedIn: 'Stay signed in',
@@ -52,6 +53,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    tsHttpsOff: 'Tailscale 계정에서 HTTPS가 꺼져 있습니다.', tsHttpsHow: '{link}에서 HTTPS 인증서를 켠 뒤 새로고침하세요.', tsAdminDns: '관리 콘솔의 DNS 설정', tsEnableHow: '{link}에서 허용한 뒤 다시 켜세요.', tsEnablePage: 'Tailscale 허용 페이지',
     tsDownload: '{link}에서 다운로드 받을 수 있습니다.', tsOfficial: 'Tailscale 공식 페이지', tsRefresh: '새로고침',
     tsLooking: '확인하는 중…', tsInfoTitle: 'Tailscale', tsInfo1: '집 밖에서도 내 기기들로 이 서버에 접속할 수 있습니다. 공유기 포트를 열 필요가 없습니다.', tsInfo2: '인증서가 붙은 HTTPS 주소(…ts.net)가 자동으로 생깁니다.', tsInfo3: '내 tailnet에 연결된 기기만 접속할 수 있습니다.', tsNone: 'Tailscale이 설치되지 않았습니다.', tsGet: 'Tailscale 받기', tsSignedOut: '이 컴퓨터의 Tailscale이 로그인되어 있지 않습니다.', tsStopped: '이 컴퓨터에서 Tailscale이 실행 중이 아닙니다.', tsDevice: '이 컴퓨터', tsAddress: 'Tailscale 주소', tsHttps: 'HTTPS 주소', tsOff: '공개 안 함', tsServe: 'HTTPS 주소로 이 서버 공개 (tailscale serve)', tsServing: 'HTTPS 주소로 공개했습니다.', tsNotServing: 'HTTPS 주소 공개를 껐습니다.',
     rememberId: '아이디 기억하기', staySignedIn: '로그인 유지하기',
@@ -103,6 +105,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    tsHttpsOff: 'Tailscale アカウントで HTTPS がオフになっています。', tsHttpsHow: '{link}で HTTPS 証明書をオンにしてから再読み込みしてください。', tsAdminDns: '管理コンソールの DNS 設定', tsEnableHow: '{link}で許可してから、もう一度オンにしてください。', tsEnablePage: 'Tailscale の許可ページ',
     tsDownload: '{link}からダウンロードできます。', tsOfficial: 'Tailscale 公式サイト', tsRefresh: '再読み込み',
     tsLooking: '確認中…', tsInfoTitle: 'Tailscale', tsInfo1: '外出先からでも自分のデバイスでこのサーバーにつながります。ルーターのポートを開ける必要はありません。', tsInfo2: '証明書つきの HTTPS アドレス（…ts.net）が自動でできます。', tsInfo3: '自分の tailnet につながったデバイスだけがアクセスできます。', tsNone: 'Tailscale がインストールされていません。', tsGet: 'Tailscale を入手', tsSignedOut: 'このコンピューターの Tailscale にログインしていません。', tsStopped: 'このコンピューターで Tailscale が動いていません。', tsDevice: 'このコンピューター', tsAddress: 'Tailscale アドレス', tsHttps: 'HTTPS アドレス', tsOff: '公開していません', tsServe: 'HTTPS アドレスでこのサーバーを公開（tailscale serve）', tsServing: 'HTTPS アドレスで公開しました。', tsNotServing: 'HTTPS アドレスでの公開をやめました。',
     rememberId: 'ユーザー名を記憶', staySignedIn: 'ログインしたままにする',
@@ -154,6 +157,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    tsHttpsOff: '你的 Tailscale 账号关闭了 HTTPS。', tsHttpsHow: '请在{link}中开启 HTTPS 证书，然后刷新。', tsAdminDns: '管理控制台的 DNS 设置', tsEnableHow: '请在{link}允许后再开启。', tsEnablePage: 'Tailscale 授权页面',
     tsDownload: '可以在{link}下载。', tsOfficial: 'Tailscale 官网', tsRefresh: '刷新',
     tsLooking: '正在查看…', tsInfoTitle: 'Tailscale', tsInfo1: '在外面也能用自己的设备访问这台服务器，无需在路由器上开放端口。', tsInfo2: '自动获得带证书的 HTTPS 地址（…ts.net）。', tsInfo3: '只有连接到你的 tailnet 的设备才能访问。', tsNone: '未安装 Tailscale。', tsGet: '获取 Tailscale', tsSignedOut: '这台电脑的 Tailscale 未登录。', tsStopped: '这台电脑上的 Tailscale 没有运行。', tsDevice: '这台电脑', tsAddress: 'Tailscale 地址', tsHttps: 'HTTPS 地址', tsOff: '未公开', tsServe: '以 HTTPS 地址公开此服务器（tailscale serve）', tsServing: '已以 HTTPS 地址公开。', tsNotServing: '已停止以 HTTPS 地址公开。',
     rememberId: '记住用户名', staySignedIn: '保持登录',
@@ -205,6 +209,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    tsHttpsOff: 'HTTPS está desactivado en tu cuenta de Tailscale.', tsHttpsHow: 'Activa los certificados HTTPS en la {link} y actualiza.', tsAdminDns: 'configuración de DNS de la consola', tsEnableHow: 'Permítelo en la {link} y vuelve a activarlo.', tsEnablePage: 'página de Tailscale',
     tsDownload: 'Puedes descargarlo en la {link}.', tsOfficial: 'web oficial de Tailscale', tsRefresh: 'Actualizar',
     tsLooking: 'Mirando…', tsInfoTitle: 'Tailscale', tsInfo1: 'Tus dispositivos llegan a este servidor desde cualquier sitio, también fuera de casa, sin abrir puertos en el router.', tsInfo2: 'Tiene una dirección HTTPS (…ts.net) con su certificado, hecha por ti.', tsInfo3: 'Solo entran los dispositivos conectados a tu tailnet.', tsNone: 'Tailscale no está instalado.', tsGet: 'Conseguir Tailscale', tsSignedOut: 'Tailscale no tiene la sesión iniciada en este equipo.', tsStopped: 'Tailscale no está en marcha en este equipo.', tsDevice: 'Este equipo', tsAddress: 'Dirección de Tailscale', tsHttps: 'Dirección HTTPS', tsOff: 'No se sirve', tsServe: 'Servir este servidor en su dirección HTTPS (tailscale serve)', tsServing: 'Servido en su dirección HTTPS.', tsNotServing: 'Ya no se sirve en su dirección HTTPS.',
     rememberId: 'Recordar mi usuario', staySignedIn: 'Mantener la sesión',
@@ -256,6 +261,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    tsHttpsOff: 'HTTPS ist in deinem Tailscale-Konto aus.', tsHttpsHow: 'Schalte HTTPS-Zertifikate in den {link} ein und aktualisiere dann.', tsAdminDns: 'DNS-Einstellungen der Admin-Konsole', tsEnableHow: 'Erlaube es auf der {link} und schalte es dann wieder ein.', tsEnablePage: 'Tailscale-Seite',
     tsDownload: 'Du kannst es auf der {link} herunterladen.', tsOfficial: 'offiziellen Tailscale-Seite', tsRefresh: 'Aktualisieren',
     tsLooking: 'Wird geprüft…', tsInfoTitle: 'Tailscale', tsInfo1: 'Deine Geräte erreichen diesen Server von überall, auch unterwegs, ohne Ports am Router zu öffnen.', tsInfo2: 'Er bekommt eine HTTPS-Adresse (…ts.net) samt Zertifikat, ganz von selbst.', tsInfo3: 'Nur Geräte in deinem tailnet kommen hinein.', tsNone: 'Tailscale ist nicht installiert.', tsGet: 'Tailscale holen', tsSignedOut: 'Tailscale ist auf diesem Computer nicht angemeldet.', tsStopped: 'Tailscale läuft auf diesem Computer nicht.', tsDevice: 'Dieser Computer', tsAddress: 'Tailscale-Adresse', tsHttps: 'HTTPS-Adresse', tsOff: 'Nicht freigegeben', tsServe: 'Diesen Server unter seiner HTTPS-Adresse freigeben (tailscale serve)', tsServing: 'Unter der HTTPS-Adresse freigegeben.', tsNotServing: 'Nicht mehr unter der HTTPS-Adresse freigegeben.',
     rememberId: 'Benutzernamen merken', staySignedIn: 'Angemeldet bleiben',
@@ -307,6 +313,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    tsHttpsOff: 'HTTPS est désactivé dans votre compte Tailscale.', tsHttpsHow: 'Activez les certificats HTTPS dans les {link}, puis actualisez.', tsAdminDns: 'paramètres DNS de la console', tsEnableHow: 'Autorisez-le sur la {link}, puis réactivez-le.', tsEnablePage: 'page de Tailscale',
     tsDownload: 'Vous pouvez le télécharger sur le {link}.', tsOfficial: 'site officiel de Tailscale', tsRefresh: 'Actualiser',
     tsLooking: 'Vérification…', tsInfoTitle: 'Tailscale', tsInfo1: 'Vos appareils joignent ce serveur de partout, même hors de chez vous, sans ouvrir de ports sur la box.', tsInfo2: 'Il obtient une adresse HTTPS (…ts.net) avec son certificat, toute faite.', tsInfo3: 'Seuls les appareils connectés à votre tailnet peuvent entrer.', tsNone: 'Tailscale n’est pas installé.', tsGet: 'Obtenir Tailscale', tsSignedOut: 'Tailscale n’est pas connecté sur cet ordinateur.', tsStopped: 'Tailscale ne tourne pas sur cet ordinateur.', tsDevice: 'Cet ordinateur', tsAddress: 'Adresse Tailscale', tsHttps: 'Adresse HTTPS', tsOff: 'Non servi', tsServe: 'Servir ce serveur à son adresse HTTPS (tailscale serve)', tsServing: 'Servi à son adresse HTTPS.', tsNotServing: 'N’est plus servi à son adresse HTTPS.',
     rememberId: 'Mémoriser mon identifiant', staySignedIn: 'Rester connecté',
@@ -358,6 +365,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    tsHttpsOff: 'O HTTPS está desativado na sua conta do Tailscale.', tsHttpsHow: 'Ative os certificados HTTPS nas {link} e atualize.', tsAdminDns: 'configurações de DNS do console', tsEnableHow: 'Permita na {link} e ative de novo.', tsEnablePage: 'página do Tailscale',
     tsDownload: 'Você pode baixá-lo no {link}.', tsOfficial: 'site oficial do Tailscale', tsRefresh: 'Atualizar',
     tsLooking: 'Verificando…', tsInfoTitle: 'Tailscale', tsInfo1: 'Seus dispositivos acessam este servidor de qualquer lugar, fora de casa também, sem abrir portas no roteador.', tsInfo2: 'Ele ganha um endereço HTTPS (…ts.net) com certificado, feito para você.', tsInfo3: 'Só os dispositivos conectados à sua tailnet podem entrar.', tsNone: 'O Tailscale não está instalado.', tsGet: 'Baixar o Tailscale', tsSignedOut: 'O Tailscale não está conectado neste computador.', tsStopped: 'O Tailscale não está rodando neste computador.', tsDevice: 'Este computador', tsAddress: 'Endereço do Tailscale', tsHttps: 'Endereço HTTPS', tsOff: 'Não servido', tsServe: 'Servir este servidor no endereço HTTPS (tailscale serve)', tsServing: 'Servido no endereço HTTPS.', tsNotServing: 'Não é mais servido no endereço HTTPS.',
     rememberId: 'Lembrar meu usuário', staySignedIn: 'Manter conectado',

@@ -743,6 +743,8 @@ def create_app(config) -> FastAPI:
         import asyncio
         try:
             await asyncio.to_thread(tailscale.serve, on, config.port)
+        except tailscale.NeedsEnabling as e:  # (the tailnet's HTTPS or serving off: where to turn it on)
+            return JSONResponse({'detail': 'turn on HTTPS for the tailnet', 'enable': e.url}, 409)
         except Exception as e:
             raise HTTPException(502, f'tailscale: {e}')
         return await asyncio.to_thread(tailscale.status, config.port)

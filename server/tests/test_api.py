@@ -297,6 +297,10 @@ calls = []
 TS.serve = lambda on, port: calls.append((on, port)); TS.status = lambda port: {'installed': True, 'serving': bool(calls and calls[-1][0])}
 check(c.post('/api/admin/tailscale/serve', json={'on': True}).json()['serving'] is True and calls[-1][0] is True, 'serving at its HTTPS address, turned on')
 check(a3.post('/api/admin/tailscale/serve', json={'on': False}).status_code == 403, 'and only from the server computer')
+def _needs(on, port): raise TS.NeedsEnabling('https://login.tailscale.com/admin/dns')
+TS.serve = _needs
+r = c.post('/api/admin/tailscale/serve', json={'on': True})
+check(r.status_code == 409 and r.json()['enable'].endswith('/admin/dns'), 'the tailnet’s HTTPS off: it says where to turn it on')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

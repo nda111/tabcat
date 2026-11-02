@@ -28,7 +28,7 @@ def status(port: int) -> dict:
     exe = cli()
     if not exe:
         return {'installed': False}
-    out = {'installed': True, 'state': None, 'name': None, 'ips': [], 'url': None, 'serving': False}
+    out = {'installed': True, 'state': None, 'name': None, 'ips': [], 'url': None, 'serving': False, 'https': False}
     try:
         st = json.loads(_run('status', '--json').stdout or '{}')
         out['state'] = st.get('BackendState')
@@ -36,6 +36,8 @@ def status(port: int) -> dict:
         dns = (me.get('DNSName') or '').rstrip('.')
         out['name'] = dns or me.get('HostName')
         out['ips'] = me.get('TailscaleIPs') or []
+        # (HTTPS certificates allowed for the tailnet, in its admin console: then it lists the names they're for)
+        out['https'] = bool(st.get('CertDomains'))
         if dns:
             out['url'] = f'https://{dns}'
             serve = json.loads(_run('serve', 'status', '--json').stdout or '{}')
@@ -49,8 +51,31 @@ def status(port: int) -> dict:
     return out
 
 
+ADMIN_DNS = 'https://login.tailscale.com/admin/dns'
+
+
+class NeedsEnabling(Exception):
+    """The tailnet doesn't allow it yet (HTTPS certificates, or serving, off in its admin console): where to turn it on."""
+    def __init__(self, url):
+        super().__init__(url)
+        self.url = url
+
+
 def serve(on: bool, port: int):
-    """Serve this server at the computer's HTTPS address on the tailnet (in the background, kept), or stop."""
-    r = _run('serve', '--bg', f'http://127.0.0.1:{port}', timeout=30) if on else _run('serve', '--https=443', 'off', timeout=30)
+    """Serve this server at the computer's HTTPS address on the tailnet (in the background, kept), or stop.
+    Not allowed by the tailnet yet: NeedsEnabling, with the page to allow it (tailscale itself would sit
+    waiting for that, link printed)."""
+    import re
+    if on and not status(port).get('https'):
+        raise NeedsEnabling(ADMIN_DNS)
+    try:
+        r = _run('serve', '--bg', f'http://127.0.0.1:{port}', timeout=20) if on else _run('serve', '--https=443', 'off', timeout=20)
+    except subprocess.TimeoutExpired as e:
+        text = (e.stdout or b'').decode(errors='ignore') if isinstance(e.stdout, bytes) else (e.stdout or '')
+        link = re.search(r'https://login\.tailscale\.com/\S+', text)
+        raise NeedsEnabling(link.group(0) if link else ADMIN_DNS)
+    text = (r.stderr or '') + (r.stdout or '')
+    if link := re.search(r'https://login\.tailscale\.com/\S+', text):
+        raise NeedsEnabling(link.group(0))
     if r.returncode:
-        raise RuntimeError((r.stderr or r.stdout).strip().splitlines()[-1] if (r.stderr or r.stdout).strip() else 'tailscale failed')
+        raise RuntimeError(text.strip().splitlines()[-1] if text.strip() else 'tailscale failed')

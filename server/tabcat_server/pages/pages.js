@@ -58,6 +58,7 @@ export async function api(path, { method = 'GET', body } = {}) {
       : /where it is/.test(detail) ? 'errDbSame' : /not an image/.test(detail) ? 'errPhoto' : /name is too long/.test(detail) ? 'errNameLong' : /wrong code/.test(detail) ? 'errCode' : /took too long/.test(detail) ? 'errTicket' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
     const err = new Error(key ? t(key) : t('errGeneric', { detail }));
     err.status = r.status;
+    err.data = data; // (more than a message: e.g. where to turn something on)
     throw err;
   }
   return data;
