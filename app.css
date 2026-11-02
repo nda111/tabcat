@@ -1123,5 +1123,15 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .select-slide-line { position: absolute; inset: 0; display: flex; align-items: center; white-space: nowrap; }
 
 /* the account on the user's own tabcat server (Settings > Account): its links look like the buttons beside them */
-#account-row a.btn { text-decoration: none; color: inherit; }
-.account-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+/* the Account dialog: who's signed in (an initial in the accent colour, the name, the role), then where to go */
+#account { width: 360px; }
+.account-card { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
+.account-avatar {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 19px; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent);
+}
+.account-who { display: flex; flex-direction: column; min-width: 0; }
+.account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 16px; }
+.account-role { color: var(--muted); font-size: 12.5px; }
+.account-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.account-links a.btn { text-decoration: none; color: inherit; flex: 1; text-align: center; }

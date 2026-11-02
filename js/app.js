@@ -3263,9 +3263,9 @@ for (const dlg of document.querySelectorAll('dialog')) {
     }, () => {});
   };
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); dlg.close(); }); // Esc
-  // Settings and About: a link out of them (a new tab, the server's pages, the browser's shortcut page) closes
+  // Settings, About and Account: a link out of them (a new tab, the server's pages, the browser's shortcut page) closes
   // them too, going as the page goes rather than staying open behind (after the link's own handling)
-  if (dlg.id === 'settings' || dlg.id === 'info') {
+  if (dlg.id === 'settings' || dlg.id === 'info' || dlg.id === 'account') {
     dlg.addEventListener('click', (e) => { if (e.target.closest('a[href], #shortcut-set')) setTimeout(() => dlg.close()); });
   }
   // a <form method="dialog"> submit that nobody handled (Done / Close buttons)
@@ -4286,8 +4286,13 @@ async function showAccount() {
   if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
   const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
   if (!me?.username) return;
-  $('#account-row').hidden = false;
+  // (the sidebar's Account button, between About and Settings: its tooltip says who; it opens the Account dialog)
+  const btn = $('#btn-account');
+  btn.hidden = false;
+  btn.title = me.username;
   $('#account-name').textContent = me.username;
+  $('#account-avatar').textContent = [...me.username][0].toUpperCase();
+  $('#account-role').textContent = t(me.admin ? 'account.roleAdmin' : 'account.roleUser');
   $('#account-admin').hidden = !me.admin;
 }
 // (signed out, the server shows its sign-in in the dashboard's place)
@@ -4302,7 +4307,8 @@ function leaveFor(go) {
   root.classList.add('leaving');
   setTimeout(go, 200);
 }
-for (const a of document.querySelectorAll('#account-row a[href^="/"]')) {
+$('#btn-account').addEventListener('click', () => $('#account').showModal());
+for (const a of document.querySelectorAll('#account a[href^="/"]')) {
   a.addEventListener('click', (e) => {
     if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // (a new tab or window: this stays)
     e.preventDefault();

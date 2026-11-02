@@ -9,7 +9,7 @@ export default {
   'noext.store.html': '从 <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 应用商店</a>安装 tabcat。',
   'noext.manual.html': '也可以手动安装：打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。',
   'noext.step3': '请刷新此页面。',
-  'noext.retry': '重试', 'elsewhere.title': 'tabcat 已连接到你的服务器。', 'elsewhere.text': 'tabcat 现在连接的是 {server}。要在这里使用，请在 tabcat 工具栏按钮的菜单中断开与服务器的连接。', 'elsewhere.open': '打开 {host}', 'noext.connect': '右键点击 tabcat 工具栏按钮，连接到服务器。', 'noext.serverTitle': '未连接到 tabcat 服务器。', 'settings.account': '账号', 'account.manage': '你的账号', 'account.admin': '服务器管理', 'account.signOut': '退出登录',
+  'noext.retry': '重试', 'elsewhere.title': 'tabcat 已连接到你的服务器。', 'elsewhere.text': 'tabcat 现在连接的是 {server}。要在这里使用，请在 tabcat 工具栏按钮的菜单中断开与服务器的连接。', 'elsewhere.open': '打开 {host}', 'noext.connect': '右键点击 tabcat 工具栏按钮，连接到服务器。', 'noext.serverTitle': '未连接到 tabcat 服务器。', 'settings.account': '账号', 'account.manage': '你的账号', 'account.admin': '服务器管理', 'account.signOut': '退出登录', 'account.roleAdmin': '管理员', 'account.roleUser': '用户',
   'noext.copied': '地址已复制。请粘贴到新标签页的地址栏中。',
   'boot.loading': '正在加载…',
   'browser.title': '不支持此浏览器。',
