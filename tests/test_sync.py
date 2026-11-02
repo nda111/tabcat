@@ -133,6 +133,16 @@ with sync_playwright() as p:
     check([n for n in names(a) if n.startswith('Offline')] == ['Offline 0', 'Offline 1', 'Offline 2'], f'back online: all of them sent, in order, and in A ({names(a)})')
     check(a.evaluate(TREE) == b.evaluate(TREE), 'both the same again')
 
+    # live: B's dashboard open, nothing asked of it: the server tells it at once
+    time.sleep(2)
+    t0 = time.time()
+    edit(a, "s.workspaces.push({ id: 'live', type: 'workspace', name: 'Live', symbol: '', description: '', categories: [] })")
+    wait(lambda: 'Live' in names(b), 'live', 10)
+    took = time.time() - t0
+    check('Live' in names(b) and took < 4, f'live: a change in A shows in B by itself, at once ({took:.1f} s)')
+    bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.title.includes('Live'))", timeout=5000)
+    check(True, "on B's dashboard too")
+
     check(not errors, f'no page errors {errors}')
     actx.close(); bctx.close()
 srv.should_exit = True

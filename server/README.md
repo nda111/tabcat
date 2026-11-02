@@ -25,8 +25,9 @@ the same thing, the later one wins. Now and then a browser sends a whole copy, a
 | `GET ops?after=N` | the changes after number N (`more`: there are more; `reload`: too far behind, start from `state`) |
 | `POST ops` | `{device, ops: [{id, body}]}`: changes, in order; answers the number each got |
 | `PUT snapshot` | `{seq, body}`: a whole copy as of change `seq` (`first`: the account's first, only while there's nothing) |
+| `GET events` | server-sent events: `head` (the latest change's number) at once whenever it moves on; an open dashboard listens, and its extension takes the changes |
 
-Bodies up to 8 MB, gzipped or not; answers are gzipped when it's worth it.
+A change shows in the account's other browsers within a second or so while their dashboard is open (and within a minute otherwise). Bodies up to 8 MB, gzipped or not; answers are gzipped when it's worth it.
 
 ## Run it
 

@@ -15,7 +15,7 @@ from collections import deque
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
 from . import __version__, auth, dashboard, tailscale, totp, updates
 from .db import DB
@@ -887,6 +887,19 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, 'another account is signed in')
         return u
 
+    # Live: an open dashboard listens (server-sent events) and is told at once when its account has new changes
+    # (the number of the latest), for its extension to take them. Each listener, a queue; at most so many an account.
+    listeners: dict[int, set] = {}
+    SYNC_LISTENERS = 20
+
+    def sync_changed(uid):
+        head = sync_head(uid)
+        for q in list(listeners.get(uid, ())):
+            try:
+                q.put_nowait(head)
+            except Exception:
+                pass  # (full: it's behind anyway, and will ask)
+
     def sync_ops_after(uid, after, limit=1000):
         rows = db.q('select seq, op_id, device, body from sync_ops where user_id = ? and seq > ? order by seq limit ?', uid, after, limit)
         return [{'seq': r['seq'], 'id': r['op_id'], 'device': r['device'], 'body': json.loads(r['body'])} for r in rows]
@@ -935,6 +948,7 @@ def create_app(config) -> FastAPI:
                 db.run('insert into sync_ops (user_id, seq, op_id, device, at, body) values (?, ?, ?, ?, ?, ?)',
                        u['id'], seq, oid, device, time.time(), json.dumps(o['body'], separators=(',', ':')))
                 acked.append({'id': oid, 'seq': seq})
+        sync_changed(u['id'])
         return {'acked': acked, 'head': sync_head(u['id'])}
 
     @app.put('/api/sync/snapshot')
@@ -957,7 +971,41 @@ def create_app(config) -> FastAPI:
             db.run('insert into sync_snapshots (user_id, seq, at, body) values (?, ?, ?, ?) on conflict(user_id) do update set seq = excluded.seq, at = excluded.at, body = excluded.body',
                    u['id'], seq, time.time(), json.dumps(data['body'], separators=(',', ':')))
             db.run('delete from sync_ops where user_id = ? and seq <= ?', u['id'], seq - SYNC_KEEP_OPS)
+        if data.get('first'):
+            sync_changed(u['id'])
         return {'ok': True, 'seq': seq}
+
+    @app.get('/api/sync/events')
+    async def sync_events(request: Request):
+        """Server-sent events: `head` (the latest change's number) on connecting and whenever it moves on; a
+        comment now and then, so nothing on the way closes it for being quiet. Closed after a few minutes, or
+        once signed out (the browser connects again by itself)."""
+        import asyncio
+        u = sync_user(request)
+        mine = listeners.setdefault(u['id'], set())
+        if len(mine) >= SYNC_LISTENERS:
+            raise HTTPException(429, 'too many listening')
+        q = asyncio.Queue(maxsize=50)
+        mine.add(q)
+
+        async def stream():
+            try:
+                yield f'retry: 3000\nevent: head\ndata: {json.dumps({"head": sync_head(u["id"])})}\n\n'
+                end = time.time() + 300
+                while time.time() < end:
+                    try:
+                        head = await asyncio.wait_for(q.get(), 20)
+                        while not q.empty():
+                            head = q.get_nowait()
+                        yield f'event: head\ndata: {json.dumps({"head": head})}\n\n'
+                    except asyncio.TimeoutError:
+                        if await request.is_disconnected() or not user_of(request):
+                            break
+                        yield ': still here\n\n'
+            finally:
+                mine.discard(q)
+
+        return StreamingResponse(stream(), media_type='text/event-stream', headers={**NO_STORE, 'X-Accel-Buffering': 'no'})
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):
