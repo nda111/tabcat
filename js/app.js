@@ -4364,7 +4364,9 @@ async function showAccount() {
   // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
   $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
-  if (me.avatar) btn.querySelector('.sym').replaceChildren(Object.assign(photo(), { className: 'side-photo' }));
+  const sym = btn.querySelector('.sym');
+  sym.plain ||= [...sym.childNodes]; // (the person icon, for when there's no photo again)
+  sym.replaceChildren(...(me.avatar ? [Object.assign(photo(), { className: 'side-photo' })] : sym.plain));
   // (under the name: the username, then the role)
   $('#account-role').textContent = [me.name && me.username, t(me.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
   $('#account-admin').hidden = !me.admin;
@@ -4377,11 +4379,13 @@ async function showAccount() {
 // Live sync: the server says at once when the account has new changes (from its other browsers), and the
 // extension takes them (it would anyway, later: this makes it now). Server-sent events, reconnecting by
 // themselves; one connection for the page.
-let liveSync = null;
+let liveSync = null, meTimer = null;
 function listenForChanges() {
   if (liveSync || typeof EventSource === 'undefined') return;
-  liveSync = new EventSource('/api/sync/events');
+  liveSync = new EventSource('/api/live');
   liveSync.addEventListener('head', () => { if (B.info) B.call('syncNow').catch(() => {}); });
+  // (the account changed elsewhere: its name, photo, 2FA... the Account dialog as it now is)
+  liveSync.addEventListener('me', () => { clearTimeout(meTimer); meTimer = setTimeout(showAccount, 250); });
 }
 // (not held while in the back/forward cache: listening again on coming back)
 window.addEventListener('pagehide', (e) => { if (e.persisted && liveSync) { liveSync.close(); liveSync = null; } });
