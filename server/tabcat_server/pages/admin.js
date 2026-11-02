@@ -67,24 +67,27 @@ function row(u) {
     newpw.animate([{ transform: 'scale(.92)' }, { transform: 'none' }], { duration: 260, easing: SPRING });
     toast(t('copiedPassword'));
   } }, pw || 'x'.repeat(14));
+  // (not your own: that's changed on your account page, with the current one; here it would sign you out)
   const reset = h('button', { type: 'button', class: 'btn small', onclick: async () => {
+    if (!(await modal({ title: t('resetTitle', { name: u.username }), text: t('resetText'), ok: t('resetOk') }))) return;
     const fresh = randomPassword();
     const ok = await api(`admin/users/${u.id}`, { method: 'PATCH', body: { password: fresh } }).then(() => true, (e) => { fail(e); return false; });
     if (!ok) return;
     newPasswords.set(u.id, fresh);
     users();
   } }, t('resetPassword'));
+  // each kind of button in a column of its own (the same ones under each other, whoever's row): suspend, the
+  // role, reset, delete; your own row leaves out what you can't do to yourself
   const tr = h('tr', { 'data-key': u.id },
     h('td', {}, h('span', { class: 'who' }, h('b', {}, u.username), self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl),
     h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
-    h('td', {}, h('div', { class: 'row' },
-      h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member')),
-      suspend,
-      h('span', { class: `pw-slot${pw ? ' second' : ''}` }, reset, newpw),
-      self ? null : h('button', { type: 'button', class: 'btn small danger', onclick: async () => {
-        if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
-        await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
-      } }, t('remove')))));
+    h('td', { class: 'act' }, suspend),
+    h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member'))),
+    h('td', { class: 'act' }, self ? null : h('span', { class: `pw-slot${pw ? ' second' : ''}` }, reset, newpw)),
+    h('td', { class: 'act' }, self ? null : h('button', { type: 'button', class: 'btn small danger', onclick: async () => {
+      if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
+      await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
+    } }, t('remove'))));
   tr.parts = { pill, chip: chipEl, suspend, newpw };
   return tr;
 }
@@ -114,11 +117,11 @@ async function settings() {
 const fades = new Map();
 async function save(patch, msg) {
   clearTimeout(fades.get(msg));
-  try {
-    await api('admin/settings', { method: 'PUT', body: patch });
-    say(msg, t('saved'), 'ok');
-    fades.set(msg, setTimeout(() => msg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 }).finished.then(() => say(msg, '')), 2500));
-  } catch (err) { say(msg, err.message, 'error'); await settings(); }
+  // (said at once, with the click: should the server refuse, the error takes its place)
+  say(msg, t('saved'), 'ok');
+  fades.set(msg, setTimeout(() => msg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 }).finished.then(() => say(msg, '')), 2500));
+  try { await api('admin/settings', { method: 'PUT', body: patch }); }
+  catch (err) { clearTimeout(fades.get(msg)); say(msg, err.message, 'error'); await settings(); }
 }
 $('#signup').addEventListener('change', (e) => save({ signup: e.target.value }, $('#settings-msg')));
 for (const [k, sel] of Object.entries(NUMBERS)) $(sel).addEventListener('change', (e) => save({ [k]: +e.target.value }, $('#security-msg')));

@@ -43,6 +43,7 @@ check(c.post('/api/admin/users', json=J(username='KID', password='kidpass99')).s
 boss = c.get('/api/me').json()['id']
 check(c.patch(f'/api/admin/users/{boss}', json=J(admin=False)).status_code == 409, 'the last admin stays an admin')
 check(c.delete(f'/api/admin/users/{boss}').status_code == 409, "you can't delete yourself")
+check(c.patch(f'/api/admin/users/{boss}', json=J(password='random-one-1')).status_code == 409 and c.get('/api/me').status_code == 200, 'an admin can’t reset their own password there (it signed them out): their account page changes it')
 
 # signing in as someone else
 k = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50001))

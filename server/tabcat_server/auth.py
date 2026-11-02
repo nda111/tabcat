@@ -71,7 +71,7 @@ def valid_password(password: str) -> bool:
 # Too many wrong passwords from one address: it waits a while (in memory: forgotten on restart). How many,
 # and how long: the admin page's 'login_tries' and 'login_lock_minutes', asked each time (see `limits`).
 class Throttle:
-    def __init__(self, limits=lambda: (8, 600)):
+    def __init__(self, limits=lambda: (5, 600)):
         self.limits, self.seen = limits, {}
 
     def blocked(self, key) -> bool:

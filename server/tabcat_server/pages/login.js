@@ -32,6 +32,7 @@ async function main() {
     $('#invite-row').hidden = !signingUp || info.signup !== 'invite';
     $('#password').autocomplete = signingUp ? 'new-password' : 'current-password';
     $('#check-name').hidden = !signingUp;
+    $('#forgot').hidden = signingUp;
     checked('', false);
     // (the message line keeps the room the hints take: a message in their place doesn't change the box's size)
     $('#msg').style.minHeight = '';
@@ -76,7 +77,7 @@ async function main() {
   // From signing in to signing up, or back: the box grows or shrinks to fit, what comes fades in
   $('#other').addEventListener('click', () => {
     const card = $('#form'), from = card.offsetHeight;
-    const rows = [...card.querySelectorAll('label, .msg')];
+    const rows = [...card.querySelectorAll('label, .msg, .forgot')];
     const hiddenBefore = new Set(rows.filter((el) => el.hidden));
     signingUp = !signingUp;
     mode();

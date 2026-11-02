@@ -60,13 +60,36 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// a form's message line (a new message fades in; its room is kept where the line has class 'keep')
+// a form's message line. A new message fades in. Where the line keeps its room (class 'keep'), that's all;
+// elsewhere the line opens to its height as one comes and closes as it goes, what's below gliding with it.
+const BOX = ['height', 'marginTop', 'marginBottom', 'paddingTop', 'paddingBottom'];
+const box = (el) => { const cs = getComputedStyle(el); return Object.fromEntries(BOX.map((k) => [k, cs[k]])); };
+const shut = Object.fromEntries(BOX.map((k) => [k, '0px']));
 export function say(el, text, kind = '') {
+  text = text || '';
   const keep = el.classList.contains('keep') ? ' keep' : '';
-  const changed = el.textContent !== (text || '');
-  el.textContent = text || '';
+  const was = el.textContent;
+  el.closing?.cancel();
+  el.closing = null;
+  if (was === text) { el.className = `msg ${kind}${keep}`; return; }
+  const inRow = !!el.closest('.row');
+  if (!keep && !inRow && was && !text) { // (closing: the old message shrinks away first)
+    const from = box(el);
+    el.style.overflow = 'hidden';
+    const a = el.closing = el.animate([{ ...from, opacity: 1 }, { ...shut, opacity: 0 }], { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' });
+    a.finished.then(() => { el.closing = null; el.textContent = ''; el.className = `msg ${kind}`; el.style.overflow = ''; a.cancel(); }, () => { el.style.overflow = ''; });
+    return;
+  }
+  const from = was ? null : box(el);
+  el.textContent = text;
   el.className = `msg ${kind}${keep}`;
-  if (changed && text) el.animate([{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' });
+  if (!text) return;
+  if (!keep && !inRow && from) { // (opening)
+    const to = box(el);
+    el.style.overflow = 'hidden';
+    el.animate([{ ...shut, opacity: 0 }, { ...to, opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' })
+      .finished.finally(() => { el.style.overflow = ''; }).catch(() => {});
+  } else el.animate([{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' });
 }
 
 // A short note at the bottom (copied, saved): it rises in, and goes after a while or on a click, as the

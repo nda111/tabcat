@@ -317,6 +317,9 @@ def create_app(config) -> FastAPI:
             if data['disabled']:
                 db.run('delete from sessions where user_id = ?', uid)
         if 'password' in data:
+            # (your own: on your account page, with the current one; here it would sign you out at once)
+            if uid == me_['id']:
+                raise HTTPException(409, 'change your own password on your account page')
             if not auth.valid_password(data['password']):
                 raise HTTPException(400, 'the password is too short')
             db.run('update users set password = ? where id = ?', auth.hash_password(data['password']), uid)

@@ -102,4 +102,16 @@ Everything else (accounts, sign-up and invitations, how long sign-ins last and h
 
 The admin page downloads a copy of the database. Or copy `tabcat.db` from the data folder.
 
-Forgot the admin's password? On the server: `tabcat-server reset-password USERNAME`.
+## Locked out, or starting over
+
+- **Someone forgot their password:** an admin presses **Reset password** on their row of the admin page and
+  passes the new password on. They can change it on their account page.
+- **The admin forgot theirs,** or every admin is locked out: on the server's computer, run
+  `tabcat-server reset-password USERNAME` (it asks for the new one, and turns the account back on).
+  `tabcat-server make-admin USERNAME` makes an account an admin again.
+- **Start over:** stop the server and run `tabcat-server reset-server`. Every account, invitation and setting
+  goes (the dashboard and `config.toml` stay); the next visit makes the first account again.
+
+With Docker, run these in the container: `docker compose exec tabcat tabcat-server reset-password USERNAME`;
+to start over, `docker compose stop`, then `docker compose run --rm tabcat tabcat-server reset-server`.
+Add `--data-dir` if the server was started with one.
