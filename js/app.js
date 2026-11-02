@@ -4233,7 +4233,14 @@ async function init() {
   // e.g. the saved panel width doesn't animate in from the default), then show the page. The page stays
   // hidden until we know what to show: the board, or a notice (no supported browser, no extension) in
   // its place, so the board is never glimpsed before a notice.
-  const show = () => { void document.body.offsetWidth; document.documentElement.classList.remove('booting'); };
+  // (shown, it opens: see html.opening in app.css)
+  const show = () => {
+    void document.body.offsetWidth;
+    const root = document.documentElement;
+    root.classList.remove('booting');
+    root.classList.add('opening');
+    setTimeout(() => root.classList.remove('opening'), 700);
+  };
   if (!supportedBrowser()) {
     Object.assign($('#browser-url'), { href: location.href, textContent: location.href });
     $('#no-browser').hidden = false;

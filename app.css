@@ -65,6 +65,14 @@ html { background: var(--bg); }
 html.booting body { visibility: hidden; } /* until the saved language, panels and look are applied (see index.html) */
 /* ...and nothing animates into place meanwhile (e.g. a saved panel width from the default one) */
 html.booting :not(#boot, #boot *), html.booting :not(#boot, #boot *)::before, html.booting :not(#boot, #boot *)::after { transition: none !important; animation: none !important; }
+/* opening (the boot's end: see init in app.js): the side panels slide in from their edges, the board or a notice
+   rises in */
+@keyframes open-from-left { from { opacity: 0; translate: -18px 0; } }
+@keyframes open-from-right { from { opacity: 0; translate: 18px 0; } }
+@keyframes open-rise { from { opacity: 0; translate: 0 14px; scale: .992; } }
+html.opening #sidebar { animation: open-from-left .46s cubic-bezier(.22, 1, .36, 1) both; }
+html.opening #tabs-panel { animation: open-from-right .46s cubic-bezier(.22, 1, .36, 1) .04s both; }
+html.opening :is(#main, #no-ext, #no-browser, #elsewhere) { animation: open-rise .5s cubic-bezier(.22, 1, .36, 1) .06s both; }
 /* while booting: the logo and a spinner in the middle, faded in after a moment (a quick start never shows them) */
 #boot { display: none; }
 html.booting #boot {
