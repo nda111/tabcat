@@ -351,7 +351,7 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .choose-row:hover:not(:disabled) .choose-out { color: var(--danger); }
 
 /* the account page's heading: the name, to click and change in place (a pencil shows under the pointer) */
-.name-edit { cursor: text; border-radius: 6px; margin: 0 -6px 2px; padding: 0 6px; transition: background-color .16s ease; display: inline-block; max-width: calc(100% + 12px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+.name-edit { cursor: text; border-radius: 6px; margin: 0 -6px 2px; padding: 0 6px; transition: background-color .16s ease; display: block; width: calc(100% + 12px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .name-edit:hover { background: var(--hover); transition-duration: .05s; }
 .name-edit::after {
   content: ''; display: inline-block; width: 14px; height: 14px; margin-left: 8px; vertical-align: -1px; background: var(--muted); opacity: 0; transition: opacity .16s ease;
