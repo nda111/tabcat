@@ -4355,7 +4355,7 @@ async function openAccountList() {
       h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
         accountPhoto(a, 'account-avatar small'),
         h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.username), h('span', { class: 'account-role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')))),
-      h('button', { type: 'button', class: 'account-out', title: t('account.signOut'), 'aria-label': t('account.signOutOf', { name: a.username }), onclick: () => signOutOf(a) }, icon('close', 14)))),
+      outButton(a))),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
@@ -4391,6 +4391,30 @@ function reloadAs() {
     $('#boot').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
     setTimeout(() => location.reload(), 150);
   });
+}
+// Signing out of one: two clicks, against a slip beside the row (which switches): the first opens the × into a
+// red "Sign out" in place, the second signs out. The pointer leaving, or a few seconds, closes it again.
+function outButton(a) {
+  const label = h('span', { class: 'out-label' }, t('account.signOut'));
+  // (no tooltip: its look says what it does; screen readers get its name)
+  const b = h('button', { type: 'button', class: 'account-out', 'aria-label': t('account.signOutOf', { name: a.username }), 'data-no-tip': true }, icon('close', 14), label);
+  let timer = 0;
+  const morph = (armed) => {
+    const from = b.offsetWidth;
+    b.classList.toggle('armed', armed);
+    const to = b.offsetWidth;
+    b.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    if (armed) label.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 60, fill: 'backwards' });
+  };
+  const disarm = () => { clearTimeout(timer); if (b.classList.contains('armed')) morph(false); };
+  b.addEventListener('click', () => {
+    if (!b.classList.contains('armed')) { morph(true); timer = setTimeout(disarm, 3000); return; }
+    clearTimeout(timer);
+    signOutOf(a);
+  });
+  b.addEventListener('pointerleave', disarm);
+  b.addEventListener('blur', disarm);
+  return b;
 }
 async function signOutOf(a) {
   const r = await fetch('/api/accounts/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
