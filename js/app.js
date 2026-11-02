@@ -4311,7 +4311,10 @@ async function showAccount() {
   btn.hidden = false;
   btn.title = me.username;
   $('#account-name').textContent = me.username;
-  $('#account-avatar').textContent = [...me.username][0].toUpperCase();
+  // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
+  const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
+  $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
+  if (me.avatar) btn.querySelector('.sym').replaceChildren(Object.assign(photo(), { className: 'side-photo' }));
   $('#account-role').textContent = t(me.admin ? 'account.roleAdmin' : 'account.roleUser');
   $('#account-admin').hidden = !me.admin;
 }
