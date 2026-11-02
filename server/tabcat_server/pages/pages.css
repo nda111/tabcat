@@ -478,7 +478,9 @@ dd.crossfade > * { grid-area: 1 / 1; }
 .ts-note p { margin: 0; flex: 1; min-width: 200px; }
 
 /* the users' rows: the name, the username and its chips on one line, in the row's middle; the date on one line */
-#users td:first-child { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; min-height: 49px; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
+#users .pic { width: 32px; padding-right: 0; }
+#users td.pic { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
+#users td.user { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; min-height: 49px; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
 #users .who { white-space: nowrap; }
 #users .who { display: inline-flex; align-items: baseline; gap: 4px; }
 #users .tag { flex: none; line-height: 18px; }

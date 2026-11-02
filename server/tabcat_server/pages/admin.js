@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { appear, freshen, live, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { appear, freshen, live, tint, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -23,14 +23,19 @@ async function users() {
   const ids = new Set(list.map((u) => String(u.id)));
   await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
   // (each row's cells as they read before: what reads otherwise now comes in, see below)
-  const read = (tr) => [...tr.cells].map((td) => td.textContent + '|' + td.querySelectorAll('button, .tag').length);
+  const read = (tr) => [...tr.cells].map((td) => td.textContent + '|' + td.querySelectorAll('button, .tag').length + '|' + [...td.querySelectorAll('img, [data-tint]')].map((x) => x.src || x.style.cssText + x.dataset.tint).join());
   const before = new Map([...$('#users').children].map((tr) => [tr.dataset.key, read(tr)]));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
   for (const tr of $('#users').children) {
     const old = before.get(tr.dataset.key), now = read(tr);
     if (!old) continue;
     // (the name, 2FA's chip, last seen, a button come or gone: not the role, suspending, a new password, done below)
-    now.forEach((x, i) => { if (x !== old[i] && ![2, 3, 4].includes(i)) [...tr.cells[i].children].forEach(freshen); if (x !== old[i] && i === 1) freshen(tr.cells[i]); });
+    now.forEach((x, i) => {
+      if (x === old[i] || [3, 4, 5].includes(i)) return;
+      if (i === 0) tr.cells[0].firstChild?.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING }); // (a new photo, or colour: it springs in)
+      else if (i === 2) freshen(tr.cells[i]);
+      else [...tr.cells[i].children].forEach(freshen);
+    });
   }
   for (const u of list) {
     const tr = $(`#users tr[data-key="${u.id}"]`), before = was.get(u.id);
@@ -104,8 +109,10 @@ function row(u) {
   // each kind of button in a column of its own (the same ones under each other, whoever's row): suspend, the
   // role, reset, delete; your own row leaves out what you can't do to yourself
   const tr = h('tr', { 'data-key': u.id },
+    // (the profile photo, or the name's first letter in the account's own colour)
+    h('td', { class: 'pic' }, tint(h('span', { class: 'avatar', 'aria-hidden': 'true' }, u.avatar ? h('img', { src: u.avatar, alt: '' }) : [...u.username][0].toUpperCase()), u.accent)),
     // (the name to go by, if any, then the username, smaller)
-    h('td', {}, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
+    h('td', { class: 'user' }, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
       self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl,
       // (two-step sign-in on: a blue chip by the name)
       u.twofa ? h('span', { class: 'tag twofa' }, t('twofaTag')) : null),
