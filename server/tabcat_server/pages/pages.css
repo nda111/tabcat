@@ -473,9 +473,9 @@ dd.crossfade > * { grid-area: 1 / 1; }
 #users td.hide-narrow { min-width: 90px; } /* (the date may take two lines: the row fits its box) */
 
 /* the security record: a row a happening (when, what, whose, from where); failures in red */
-.ev-head { margin-bottom: 8px; }
+.ev-head { margin-bottom: 8px; gap: 8px; }
 .ev-head h2 { margin: 0; }
-.ev-head select { width: auto; margin: 0; padding: 5px 8px; font-size: 13px; }
+.ev-head select { width: auto; margin: 0; padding-top: 5px; padding-bottom: 5px; font-size: 13px; }
 .ev-fails { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
 .ev-fails b { margin-right: 2px; }
 .events { display: flex; flex-direction: column; margin: 0 0 8px; }
@@ -486,3 +486,35 @@ dd.crossfade > * { grid-area: 1 / 1; }
 .event.mine { grid-template-columns: 1fr auto; row-gap: 0; }
 .event.mine .ev-where { grid-column: 1 / -1; }
 @media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } }
+
+/* drop-downs, as the dashboard's: a chevron instead of the native arrow; where the browser lets the list be
+   styled (appearance: base-select), it drops in from the field, the chevron flips, the chosen one in the accent */
+select {
+  appearance: none; padding-right: 30px; cursor: pointer; transition: border-color .16s ease;
+  background: var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;
+}
+select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%); }
+@supports (appearance: base-select) {
+  select, select::picker(select) { appearance: base-select; }
+  select { display: flex; align-items: center; background-image: none; padding-right: 8px; }
+  select:open { border-color: var(--accent); }
+  select::picker-icon {
+    content: ''; width: 16px; height: 16px; margin-left: auto; padding-left: 6px; background: currentColor; color: var(--muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate .26s cubic-bezier(.34, 1.32, .64, 1);
+  }
+  select:open::picker-icon { rotate: 180deg; }
+  select::picker(select) {
+    margin-top: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); color: var(--text);
+    box-shadow: 0 8px 28px rgba(0,0,0,.16); max-height: min(320px, 60vh);
+    opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top center;
+    transition: opacity .16s ease, transform .26s cubic-bezier(.34, 1.32, .64, 1), overlay .26s allow-discrete, display .26s allow-discrete;
+  }
+  select:open::picker(select) { opacity: 1; transform: none; }
+  @starting-style { select:open::picker(select) { opacity: 0; transform: translateY(-6px) scale(.97); } }
+  select option { padding: 6px 8px; border-radius: 6px; font-weight: 400; transition: background-color .12s ease; }
+  select option:is(:hover, :focus-visible) { background: var(--hover); outline: none; }
+  select option:checked { color: var(--accent); font-weight: 600; }
+  select option::checkmark { order: 1; margin-left: auto; padding-left: 10px; color: var(--accent); }
+}
+.ev-head select { min-width: 150px; }

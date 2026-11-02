@@ -265,7 +265,47 @@ async function events(more = false) {
   $('#ev-more').hidden = r.events.length < 30;
 }
 $('#ev-more').addEventListener('click', () => { $('#ev-more').dataset.opened = '1'; events(true); });
-$('#ev-user').addEventListener('change', () => { evOldest = null; delete $('#ev-more').dataset.opened; events(); });
+$('#ev-user').addEventListener('change', (e) => {
+  // (the chosen one fades in over the field, as the record below changes to it)
+  e.target.animate([{ color: 'transparent' }, { color: getComputedStyle(e.target).color }], { duration: 220, easing: 'ease-out' });
+  evOldest = null; delete $('#ev-more').dataset.opened; events();
+});
+// Export: the record kept (for the account chosen, or everyone), as a CSV file in the page's language. Excel
+// reads it as UTF-8 (the byte-order mark); a cell starting like a formula is kept as text (it may hold what a
+// stranger typed, as a username)
+async function exportEvents() {
+  const b = $('#ev-export');
+  b.disabled = true; b.classList.add('busy');
+  try {
+    const all = [];
+    for (let before = null; ;) {
+      const q = new URLSearchParams({ limit: '200' });
+      if ($('#ev-user').value) q.set('user', $('#ev-user').value);
+      if (before) q.set('before', before);
+      const { events: page } = await api(`admin/events?${q}`);
+      all.push(...page);
+      if (page.length < 200) break;
+      before = page[page.length - 1].id;
+    }
+    const cell = (v) => {
+      let x = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`;
+      return /[",\n\r]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
+    };
+    const head = ['csvWhen', 'csvAccount', 'csvWhat', 'csvDetail', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
+    const iso = (s) => { const d = new Date(s * 1000), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+    const rows = all.map((e) => [iso(e.at), e.username, eventLabel(e), eventDetail(e), e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
+    const blob = new Blob(['\ufeff' + [head.map(cell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const day = new Date().toISOString().slice(0, 10);
+    const a = h('a', { href: URL.createObjectURL(blob), download: `tabcat-security-${day}.csv` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    toast(t('eventsExported', { n: all.length }));
+  } catch (err) { toast(err.message); }
+  b.disabled = false; b.classList.remove('busy');
+}
+$('#ev-export').addEventListener('click', exportEvents);
+
 async function eventAccounts() {
   const list = await api('admin/users');
   const keep = $('#ev-user').value;
