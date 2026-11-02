@@ -200,6 +200,24 @@ export function passwordToggles(root = document) {
 }
 passwordToggles();
 
+// Going to the dashboard: the page fades out first, and the dashboard opens in its own way (between the server's
+// own pages, the browser fades them: see pages.css). `replace`: in place of this page in the history.
+export function go(url, replace = false) {
+  const wrap = document.querySelector('.wrap');
+  const nav = () => (replace ? location.replace(url) : location.assign(url));
+  if (!wrap) return nav();
+  wrap.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
+    .finished.then(nav, nav);
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('a[href="/"]');
+  if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  go('/');
+});
+// (back here, the browser may show the page as it was left: faded)
+addEventListener('pageshow', (e) => { if (e.persisted) for (const a of document.querySelector('.wrap')?.getAnimations() || []) a.cancel(); });
+
 // ---------- the dashboard's feel ----------
 
 // Scrolling with give at the ends and a slim scrollbar: the dashboard's own (its file, on this server)
@@ -272,11 +290,18 @@ export function stepper(input, { zero = null } = {}) {
 }
 
 // Rows that come, go and move glide (FLIP): `change` rebuilds `list`'s children; the ones there before move from
-// where they were, new ones grow in
+// where they were, new ones grow in; the box they're in grows or shrinks to fit, rather than jumping
 export async function flip(list, change) {
   const keyed = (el) => el.dataset.key;
   const before = new Map([...list.children].map((el) => [keyed(el), el.getBoundingClientRect()]));
+  const card = list.closest('.card'), from = card?.offsetHeight;
   await change();
+  const to = card?.offsetHeight;
+  if (card && Math.abs(from - to) > .5) {
+    card.style.overflow = 'clip';
+    card.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' })
+      .finished.finally(() => { card.style.overflow = ''; }).catch(() => {});
+  }
   for (const el of list.children) {
     const was = before.get(keyed(el));
     if (!was) { el.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' }); continue; }

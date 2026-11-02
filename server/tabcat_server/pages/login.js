@@ -1,5 +1,5 @@
 // Sign in, or (when the server lets anyone, or this link has an invitation in it) make an account
-import { $, api, connected, morph, say, showNotConnected, t } from './pages.js';
+import { $, api, connected, go, morph, say, showNotConnected, t } from './pages.js';
 
 const GLIDE = 'cubic-bezier(.22, 1, .36, 1)';
 
@@ -100,7 +100,7 @@ async function main() {
     try {
       if (signingUp) await api('signup', { method: 'POST', body: { username, password, invite: $('#invite').value.trim() } });
       else await api('login', { method: 'POST', body: { username, password } });
-      location.replace(next);
+      go(next, true);
     } catch (err) {
       still(false);
       say($('#msg'), err.message, 'error');
