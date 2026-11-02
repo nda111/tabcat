@@ -164,7 +164,7 @@ async function info() {
   const i = await api('admin/info');
   const d = i.dashboard;
   const rows = [
-    ['version', i.version], ['dataFolder', h('code', {}, i.data_dir)], ['database', bytes(i.db_bytes)],
+    ['version', i.version], ['database', bytes(i.db_bytes)],
     // (where the database is; changed only on the server's own computer)
     ['dbLocation', h('span', { class: 'db-where' }, h('code', { id: 'db-where' }, i.db_path),
       i.here ? h('button', { type: 'button', class: 'btn small', id: 'db-change', onclick: openMove }, t('dbChange'))
