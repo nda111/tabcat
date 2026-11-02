@@ -369,9 +369,31 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 /* signed-in devices: one a row, the device and when, a sign-out at its end (red once asked) */
 .devices { display: flex; flex-direction: column; margin: 0 0 12px; }
 .device { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.device:first-child { border-top: 1px solid var(--border); }
 .device:last-child { border-bottom: 0; } /* (nothing between the last and the button under the list) */
 .device-text { flex: 1; min-width: 0; }
 .device-name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .device-out { flex: none; transition: background-color .16s ease, color .16s ease, border-color .16s ease, scale .12s ease; }
 .device-out.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* two-step sign-in: the steps, the QR code (black on white in either theme) beside its secret, the first code */
+.twofa-setup { margin-top: 12px; }
+.twofa-qr { display: flex; align-items: center; gap: 16px; margin: 10px 0 12px; flex-wrap: wrap; }
+.qr { flex: none; width: 152px; height: 152px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #fff; }
+.qr svg { width: 100%; height: 100%; display: block; }
+.secret { font-size: 13px; letter-spacing: .04em; word-break: break-all; }
+.code-input { width: 140px !important; flex: none; font-variant-numeric: tabular-nums; letter-spacing: .2em; text-align: center; font-size: 16px !important; margin: 0 !important; }
+.twofa-state { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.codes { margin-top: 12px; padding: 12px; border: 1px dashed var(--accent); border-radius: 10px; }
+.code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 12px; margin: 6px 0 10px; }
+.code-grid code { font-size: 13.5px; }
+
+/* the sign-in page's second step: its links, as text */
+.code-links { margin: -4px 0 8px; color: var(--muted); }
+.link-btn { border: 0; padding: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }
+#code { font-variant-numeric: tabular-nums; letter-spacing: .12em; }
+
+/* (the admin list: two-step sign-in on, a small mark beside the name; for an admin to turn it off) */
+.tag.twofa { margin-left: 8px; border: 0; font: inherit; font-size: 11.5px; cursor: pointer; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--accent); }
+.tag.twofa:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 14%, var(--panel)); color: var(--danger); }
+.tag.twofa:disabled { cursor: default; }

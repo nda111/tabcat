@@ -26,6 +26,12 @@
       <label><span data-t="password">Password</span><input type="password" id="password" autocomplete="current-password" required></label>
       <label id="again-row" hidden><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>
       <label id="invite-row" hidden><span data-t="invite">Invitation code</span><input type="text" id="invite" autocomplete="off" spellcheck="false"></label>
+      <!-- two-step sign-in: after the password, the authenticator app's code (or a recovery code) -->
+      <div id="code-step" hidden>
+        <p class="muted" id="code-text" data-t="codeText">Enter the 6-digit code from your authenticator app.</p>
+        <label><span id="code-label" data-t="codeLabel">Code</span><input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" autocapitalize="off" spellcheck="false"></label>
+        <p class="small code-links"><button type="button" class="link-btn" id="use-recovery" data-t="useRecovery">Use a recovery code</button> · <button type="button" class="link-btn" id="code-back" data-t="codeBack">Start again</button></p>
+      </div>
       <p class="msg keep" id="msg"></p>
       <div class="row pair"><button type="submit" class="btn primary" id="go" data-t="signIn">Sign in</button><button type="button" class="btn" id="other" hidden></button></div>
       <p class="muted small forgot" id="back" hidden><a href="/" data-t="backToTabcat">Back to tabcat</a></p>

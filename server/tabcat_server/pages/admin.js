@@ -81,7 +81,12 @@ function row(u) {
   const tr = h('tr', { 'data-key': u.id },
     // (the name to go by, if any, then the username, smaller)
     h('td', {}, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
-      self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl),
+      self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl,
+      // (two-step sign-in on: so marked; an admin can turn it off for someone locked out of it, not their own)
+      u.twofa ? h('button', { type: 'button', class: 'tag twofa', disabled: self, onclick: async () => {
+        if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaOff'), danger: true }))) return;
+        edit({ twofa: false });
+      } }, t('twofaTag')) : null),
     h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
     h('td', { class: 'act' }, suspend),
     h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member'))),

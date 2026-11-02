@@ -238,6 +238,39 @@ app.state.db.run("insert into sessions (token, user_id, created_at, expires_at) 
 TestClient(app, client=('192.0.2.50', 1)).post('/api/login', json=J(username='ann', password='annpass99'))
 check(app.state.db.one("select count(*) n from sessions where token = 'oldone'")['n'] == 0, 'an ended sign-in is cleared away when another is made')
 
+# two-step sign-in: optional, per account
+from tabcat_server import totp as T2
+import time as _t
+z = TestClient(app, follow_redirects=False, client=('192.0.2.60', 1))
+c.post('/api/admin/users', json=J(username='zed', password='zedpass99'))
+z.post('/api/login', json=J(username='zed', password='zedpass99'))
+check(z.get('/api/me').json()['twofa'] is False, 'two-step sign-in: off unless turned on')
+st = z.post('/api/me/2fa/start').json()
+check(st['uri'].startswith('otpauth://totp/') and '<svg' in st['qr'], 'turning it on: a secret, its link and QR code')
+check(z.post('/api/me/2fa/confirm', json={'code': '000000'}).status_code == 400, 'a wrong code: not on')
+now = int(_t.time()) // 30
+rc = z.post('/api/me/2fa/confirm', json={'code': T2._code(st['secret'], now)}).json()['recovery']
+check(len(rc) == 10 and z.get('/api/me').json()['twofa'] is True, 'the right code: on, with ten recovery codes')
+z.post('/api/logout')
+r = z.post('/api/login', json=J(username='zed', password='zedpass99'))
+check(r.json().get('need') == 'code' and 'set-cookie' not in r.headers, 'signing in: the password alone is not enough')
+tk = r.json()['ticket']
+check(z.post('/api/login/code', json={'ticket': tk, 'code': T2._code(st['secret'], now)}).status_code == 401, 'a code already used: refused')
+check(z.post('/api/login/code', json={'ticket': tk, 'code': T2._code(st['secret'], now + 1)}).status_code == 200 and z.get('/api/me').json()['username'] == 'zed', 'the next code: signed in')
+z.post('/api/logout')
+tk = z.post('/api/login', json=J(username='zed', password='zedpass99')).json()['ticket']
+check(z.post('/api/login/code', json={'ticket': tk, 'code': rc[0].upper()}).status_code == 200, 'a recovery code signs in too')
+z.post('/api/logout')
+tk = z.post('/api/login', json=J(username='zed', password='zedpass99')).json()['ticket']
+check(z.post('/api/login/code', json={'ticket': tk, 'code': rc[0]}).status_code == 401, 'but only once')
+check(z.post('/api/login/code', json={'ticket': 'made-up', 'code': rc[1]}).status_code == 401, 'no ticket: no signing in')
+z.post('/api/login/code', json={'ticket': tk, 'code': rc[1]})
+check(z.post('/api/me/2fa/off', json={'password': 'nope'}).status_code == 403, 'turning it off needs the password')
+check(len(z.post('/api/me/2fa/recovery', json={'password': 'zedpass99'}).json()['recovery']) == 10, 'new recovery codes (with the password)')
+zid = z.get('/api/me').json()['id']
+c.patch(f'/api/admin/users/{zid}', json={'twofa': False})
+check(z.get('/api/me').json()['twofa'] is False, 'an admin turns it off for someone locked out')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

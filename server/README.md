@@ -113,6 +113,8 @@ admin page, from the server's own computer (the addresses setup is allowed from)
 - **The admin forgot theirs,** or every admin is locked out: on the server's computer, run
   `tabcat-server reset-password USERNAME` (it asks for the new one, and turns the account back on).
   `tabcat-server make-admin USERNAME` makes an account an admin again.
+- **Two-step sign-in (2FA) locked out** (the phone and the recovery codes gone): an admin turns it off from the
+  admin page (the 2FA mark by the name), or, on the server's computer, `tabcat-server reset-2fa USERNAME`.
 - **Start over:** stop the server and run `tabcat-server reset-server`. Every account, invitation and setting
   goes (the dashboard and `config.toml` stay); the next visit makes the first account again.
 

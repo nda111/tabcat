@@ -4,7 +4,9 @@ The dashboard's own files are public (they are on GitHub anyway; the extension l
 a tabcat server answers), but the page itself opens only signed in: else the sign-in page (or, with no
 account yet, the page that makes the first one, an admin)."""
 import ipaddress
+import json
 import re
+import secrets
 import mimetypes
 import tempfile
 import time
@@ -14,7 +16,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
-from . import __version__, auth, dashboard
+from . import __version__, auth, dashboard, totp
 from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
@@ -28,6 +30,7 @@ NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
     db.purge_sessions()  # (ended sign-ins go: on starting, and on each new one, see sign_in)
+    tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when); see login)
     throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.config = db, config
@@ -70,6 +73,7 @@ def create_app(config) -> FastAPI:
     def public(u) -> dict:
         return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'name': u['name'] or '', 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
                 'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None,
+                'twofa': bool(u['totp_secret']),
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
     # Several accounts at once in one browser: the one in use (auth.COOKIE) and the others (auth.MORE), each a
@@ -267,7 +271,44 @@ def create_app(config) -> FastAPI:
         if u['disabled']:
             raise HTTPException(403, 'this account is turned off')
         throttle.clear(who)
+        # (two-step sign-in on: not yet; a ticket for a few minutes, to come back with a code)
+        if u['totp_secret']:
+            now = time.time()
+            for k in [k for k, (_, exp) in tickets.items() if exp < now]:
+                tickets.pop(k, None)
+            ticket = secrets.token_urlsafe(24)
+            tickets[ticket] = (u['id'], now + 300)
+            return {'need': 'code', 'ticket': ticket}
         return sign_in(request, u['id'])
+
+    # The second step: the authenticator app's code, or one of the recovery codes (each good once)
+    @app.post('/api/login/code')
+    async def login_code(request: Request):
+        data = await body(request)
+        who = client(request)
+        if throttle.blocked(who):
+            raise HTTPException(429, 'too many tries: wait a few minutes')
+        uid, exp = tickets.get(str(data.get('ticket', '')), (None, 0))
+        if not uid or exp < time.time():
+            raise HTTPException(401, 'start again: the sign-in took too long')
+        u = db.one('select * from users where id = ? and disabled = 0', uid)
+        if not u or not u['totp_secret']:
+            raise HTTPException(401, 'start again: the sign-in took too long')
+        code = str(data.get('code', ''))
+        step = totp.check(u['totp_secret'], code, u['totp_step'] or 0)
+        if step:
+            db.run('update users set totp_step = ? where id = ?', step, uid)
+        else:
+            hashes = json.loads(u['recovery'] or '[]')
+            h = totp.hash_code(code)
+            if h not in hashes:
+                throttle.failed(who)
+                raise HTTPException(401, 'wrong code')
+            hashes.remove(h)
+            db.run('update users set recovery = ? where id = ?', json.dumps(hashes), uid)
+        tickets.pop(str(data.get('ticket')), None)
+        throttle.clear(who)
+        return sign_in(request, uid)
 
     @app.post('/api/signup')
     async def signup(request: Request):
@@ -366,6 +407,48 @@ def create_app(config) -> FastAPI:
         db.run('delete from users where id = ?', u['id'])
         # (signed out of it; another account signed in here takes over)
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
+
+    # ---------- two-step sign-in (optional: each account turns it on, or not) ----------
+    @app.post('/api/me/2fa/start')
+    def twofa_start(request: Request):
+        u = need_user(request)
+        secret = totp.new_secret()
+        db.run('update users set totp_pending = ? where id = ?', secret, u['id'])
+        issuer = f'tabcat ({request.url.hostname})'
+        link = totp.uri(secret, u['username'], issuer)
+        return {'secret': secret, 'uri': link, 'qr': totp.qr_svg(link)}
+
+    @app.post('/api/me/2fa/confirm')
+    async def twofa_confirm(request: Request):
+        u = need_user(request)
+        step = totp.check(u['totp_pending'], (await body(request)).get('code', ''))
+        if not u['totp_pending'] or not step:
+            raise HTTPException(400, 'wrong code')
+        codes = totp.new_recovery()
+        db.run('update users set totp_secret = totp_pending, totp_pending = null, totp_step = ?, recovery = ? where id = ?',
+               step, json.dumps([totp.hash_code(c) for c in codes]), u['id'])
+        return {'recovery': codes}
+
+    async def with_password(request: Request):
+        u = need_user(request)
+        if not auth.check_password(str((await body(request)).get('password', '')), u['password']):
+            raise HTTPException(403, 'the current password is wrong')
+        return u
+
+    @app.post('/api/me/2fa/off')
+    async def twofa_off(request: Request):
+        u = await with_password(request)
+        db.run('update users set totp_secret = null, totp_pending = null, totp_step = null, recovery = null where id = ?', u['id'])
+        return {'ok': True}
+
+    @app.post('/api/me/2fa/recovery')
+    async def twofa_recovery(request: Request):
+        u = await with_password(request)
+        if not u['totp_secret']:
+            raise HTTPException(409, 'two-step sign-in is off')
+        codes = totp.new_recovery()
+        db.run('update users set recovery = ? where id = ?', json.dumps([totp.hash_code(c) for c in codes]), u['id'])
+        return {'recovery': codes}
 
     @app.put('/api/me/name')
     async def set_name(request: Request):
@@ -469,6 +552,8 @@ def create_app(config) -> FastAPI:
             db.run('update users set disabled = ? where id = ?', 1 if data['disabled'] else 0, uid)
             if data['disabled']:
                 db.run('delete from sessions where user_id = ?', uid)
+        if data.get('twofa') is False:  # (locked out of it, phone gone and codes lost: an admin turns it off)
+            db.run('update users set totp_secret = null, totp_pending = null, totp_step = null, recovery = null where id = ?', uid)
         if 'password' in data:
             # (your own: on your account page, with the current one; here it would sign you out at once)
             if uid == me_['id']:

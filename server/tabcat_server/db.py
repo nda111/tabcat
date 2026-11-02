@@ -58,6 +58,9 @@ class DB:
             if 'ip' not in scols:
                 self.conn.execute('alter table sessions add column ip text')
                 self.conn.execute('alter table sessions add column last_seen real')
+            if 'totp_secret' not in cols:  # (two-step sign-in, when turned on: see totp.py)
+                for col in ('totp_secret text', 'totp_pending text', 'totp_step integer', 'recovery text'):
+                    self.conn.execute(f'alter table users add column {col}')
             if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
                 self.conn.execute('alter table users add column name text')
             if 'avatar' not in cols:

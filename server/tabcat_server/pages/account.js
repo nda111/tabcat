@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, date, flip, h, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, date, flip, fold, h, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -86,6 +86,91 @@ $('#photo-remove').addEventListener('click', async () => {
   catch (err) { toast(err.message); }
 });
 $('#logout').addEventListener('click', async () => { await api('logout', { method: 'POST' }); location.replace('/login'); });
+// ---------- two-step sign-in (optional) ----------
+// Off: what it is, and Turn on (the QR code and its secret unfold, with a field for the first code). On: so it
+// says, a new set of recovery codes, Turn off (both with the password). Recovery codes show once, to copy.
+let twofaOn = !!me.twofa;
+function twofaView() {
+  const box = $('#twofa');
+  if (!twofaOn) {
+    const setup = h('div', { class: 'twofa-setup', hidden: true });
+    box.replaceChildren(
+      h('p', { class: 'muted small' }, t('twofaText')),
+      h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: (e) => startTwofa(setup, e.currentTarget) }, t('twofaOn'))),
+      setup);
+  } else {
+    box.replaceChildren(
+      h('p', { class: 'twofa-state' }, h('span', { class: 'tag accent' }, t('twofaIsOn')), ' ', h('span', { class: 'muted small' }, t('twofaOnText'))),
+      h('div', { class: 'row' },
+        h('button', { type: 'button', class: 'btn', onclick: newCodes }, t('twofaNewCodes')),
+        h('button', { type: 'button', class: 'btn danger', onclick: twofaOffNow }, t('twofaOff'))));
+  }
+}
+async function startTwofa(setup, button) {
+  button.disabled = true;
+  try {
+    const s = await api('me/2fa/start', { method: 'POST' });
+    const code = h('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '6', placeholder: '123456', class: 'code-input' });
+    const msg = h('p', { class: 'msg' });
+    const qr = h('div', { class: 'qr' }); qr.innerHTML = s.qr;
+    setup.replaceChildren(
+      h('p', { class: 'small' }, t('twofaSteps')),
+      h('div', { class: 'twofa-qr' }, qr, h('div', {}, h('div', { class: 'muted small' }, t('twofaKey')), h('code', { class: 'secret' }, s.secret.replace(/(.{4})/g, '$1 ').trim()))),
+      h('form', { class: 'row', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          const { recovery } = await api('me/2fa/confirm', { method: 'POST', body: { code: code.value } });
+          twofaOn = true;
+          await fold(setup, false);
+          twofaView();
+          showCodes(recovery);
+          toast(t('twofaTurnedOn'));
+        } catch (err) { say(msg, err.message, 'error'); }
+      } }, code, h('button', { type: 'submit', class: 'btn primary' }, t('twofaConfirm')),
+        // (not now: it folds away again, Turn on back)
+        h('button', { type: 'button', class: 'btn', onclick: async () => { await fold(setup, false); button.disabled = false; button.focus(); } }, t('cancel'))),
+      msg);
+    code.addEventListener('input', () => say(msg, ''));
+    await fold(setup, true);
+    code.focus();
+  } catch (err) { toast(err.message); button.disabled = false; }
+}
+// recovery codes, once: to keep somewhere safe (copy all)
+function showCodes(codes) {
+  const box = h('div', { class: 'codes', hidden: true },
+    h('p', { class: 'small' }, t('twofaCodesText')),
+    h('div', { class: 'code-grid' }, ...codes.map((c) => h('code', {}, c))),
+    h('div', { class: 'row' },
+      h('button', { type: 'button', class: 'btn small', onclick: async () => { await navigator.clipboard?.writeText(codes.join('\n')); toast(t('twofaCodesCopied')); } }, t('twofaCopyCodes')),
+      h('button', { type: 'button', class: 'btn small', onclick: () => fold(box, false).then(() => box.remove()) }, t('twofaCodesDone'))));
+  $('#twofa').append(box);
+  fold(box, true);
+}
+async function newCodes() {
+  const password = await modal({ title: t('twofaNewCodes'), text: t('twofaNewCodesText'), ok: t('twofaNewCodes'), password: true });
+  if (password == null) return;
+  try {
+    const { recovery } = await api('me/2fa/recovery', { method: 'POST', body: { password } });
+    $('#twofa .codes')?.remove();
+    showCodes(recovery);
+  } catch (err) { toast(err.message); }
+}
+async function twofaOffNow() {
+  // (as deleting the account: the phrase typed out, and the password)
+  const phrase = t('twofaOffPhrase');
+  const password = await modal({ title: t('twofaOff'), text: t('twofaOffText', { phrase }), ok: t('twofaOff'), danger: true, input: phrase, password: true });
+  if (password == null) return;
+  try {
+    await api('me/2fa/off', { method: 'POST', body: { password } });
+    twofaOn = false;
+    const box = $('#twofa'), from = box.offsetHeight;
+    twofaView();
+    box.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${box.offsetHeight}px`, overflow: 'hidden' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    toast(t('twofaTurnedOff'));
+  } catch (err) { toast(err.message); }
+}
+twofaView();
+
 // ---------- signed-in devices ----------
 // The device, read from the browser's own description of itself: "Chrome on Windows"
 function deviceName(agent) {

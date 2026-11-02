@@ -54,7 +54,7 @@ export async function api(path, { method = 'GET', body } = {}) {
     const key = /turned off/.test(detail) ? 'errOff' : /closed/.test(detail) ? 'errClosed' : /invitation/.test(detail) ? 'errInvite'
       : /taken/.test(detail) ? 'errTaken' : /bad username|too short/.test(detail) ? 'errBad' : /last admin/.test(detail) ? 'errLastAdmin'
       : /current password/.test(detail) ? 'errCurrent' : /file there already/.test(detail) ? 'errDbExists' : /not a usable path/.test(detail) ? 'errDbPath'
-      : /where it is/.test(detail) ? 'errDbSame' : /not an image/.test(detail) ? 'errPhoto' : /name is too long/.test(detail) ? 'errNameLong' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
+      : /where it is/.test(detail) ? 'errDbSame' : /not an image/.test(detail) ? 'errPhoto' : /name is too long/.test(detail) ? 'errNameLong' : /wrong code/.test(detail) ? 'errCode' : /took too long/.test(detail) ? 'errTicket' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
     const err = new Error(key ? t(key) : t('errGeneric', { detail }));
     err.status = r.status;
     throw err;
@@ -261,14 +261,17 @@ import('/js/scroll-feel.js').then(({ scrollFeel }) => scrollFeel(document.docume
 
 // A dialog in place of the browser's confirm(): resolves true (OK) or false. `input`: a phrase to type first
 // (OK waits for it). It springs in and fades out.
-export function modal({ title, text = '', ok, danger = false, input = null }) {
+export function modal({ title, text = '', ok, danger = false, input = null, password = false }) {
   return new Promise((done) => {
-    const field = input ? h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', placeholder: input }) : null;
-    const go = h('button', { type: 'submit', class: `btn ${danger ? 'danger' : 'primary'}`, disabled: !!input }, ok);
-    const form = h('form', { method: 'dialog' }, h('h2', {}, title), text ? h('p', {}, text) : null, field,
+    // (`input`: a phrase to type out first; `password`: the password too, which it then resolves with, or null)
+    const phrase = input ? h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', placeholder: input }) : null;
+    const pass = password ? h('input', { type: 'password', autocomplete: 'current-password', placeholder: t('currentPassword') }) : null;
+    const go = h('button', { type: 'submit', class: `btn ${danger ? 'danger' : 'primary'}`, disabled: !!(input || password) }, ok);
+    const form = h('form', { method: 'dialog' }, h('h2', {}, title), text ? h('p', {}, text) : null, phrase, pass,
       h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', onclick: () => close(false) }, t('cancel')), go));
     const dlg = h('dialog', { class: 'modal' }, form);
-    field?.addEventListener('input', () => { go.disabled = field.value.trim() !== input; });
+    const ready = () => { go.disabled = (phrase && phrase.value.trim() !== input) || (pass && !pass.value); };
+    for (const f of [phrase, pass]) f?.addEventListener('input', ready);
     form.addEventListener('submit', (e) => { e.preventDefault(); if (!go.disabled) close(true); });
     dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(false); });
     let closing = false;
@@ -276,12 +279,12 @@ export function modal({ title, text = '', ok, danger = false, input = null }) {
       if (closing) return;
       closing = true;
       dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 140, easing: 'ease-in' })
-        .finished.then(() => { dlg.remove(); done(yes); });
+        .finished.then(() => { dlg.remove(); done(password ? (yes ? pass.value : null) : yes); });
     }
     document.body.append(dlg);
     dlg.showModal();
     dlg.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.34, 1.4, .64, 1)' });
-    (field || go).focus();
+    (phrase || pass || go).focus();
   });
 }
 

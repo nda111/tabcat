@@ -9,7 +9,7 @@ description = "Your own tabcat server: hosts the tabcat dashboard with accounts,
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-dependencies = ["fastapi>=0.110", "uvicorn>=0.27"]
+dependencies = ["fastapi>=0.110", "uvicorn>=0.27", "segno>=1.5"]  # (segno: the two-step sign-in's QR code)
 
 [project.scripts]
 tabcat-server = "tabcat_server.__main__:main"

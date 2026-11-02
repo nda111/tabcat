@@ -115,6 +115,38 @@ async function main() {
 
   // Sending: the fields and buttons go still (fading) until the answer; nothing to read meanwhile
   const still = (on) => { for (const el of $('#form').querySelectorAll('input, button')) el.disabled = on; };
+  // Two-step sign-in on for the account: the password right, the box turns to asking for the code (the app's,
+  // or a recovery code); Start again goes back to the password
+  let ticket = null, recovery = false;
+  function codeStep(on) {
+    const card = $('#form'), from = card.offsetHeight;
+    for (const el of [$('#username').closest('label'), $('#password').closest('label'), $('#forgot')]) el.hidden = on;
+    $('#other').hidden = on || !canSignUp;
+    $('#code-step').hidden = !on;
+    $('#title').textContent = t(on ? 'codeTitle' : 'signInTitle');
+    $('#go').textContent = t(on ? 'codeGo' : 'signIn');
+    say($('#msg'), '');
+    if (!on) { ticket = null; setRecovery(false); }
+    const to = card.offsetHeight;
+    card.style.overflow = 'clip';
+    card.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 340, easing: GLIDE }).finished.then(() => { card.style.overflow = ''; }, () => {});
+    for (const el of [$('#title'), on ? $('#code-step') : $('#username').closest('label')]) el.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: GLIDE });
+    (on ? $('#code') : $('#password')).focus();
+  }
+  function setRecovery(on) {
+    recovery = on;
+    $('#code').value = '';
+    $('#code').inputMode = on ? 'text' : 'numeric';
+    $('#code').placeholder = on ? 'xxxx-xxxx-xxxx' : '123456';
+    $('#code-text').textContent = t(on ? 'recoveryText' : 'codeText');
+    $('#code-label').textContent = t(on ? 'recoveryLabel' : 'codeLabel');
+    $('#use-recovery').textContent = t(on ? 'useApp' : 'useRecovery');
+    $('#code-text').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  }
+  $('#use-recovery').addEventListener('click', () => { setRecovery(!recovery); $('#code').focus(); });
+  $('#code-back').addEventListener('click', () => { $('#password').value = ''; codeStep(false); });
+  $('#code').addEventListener('input', () => say($('#msg'), ''));
+
   $('#form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = $('#username').value.trim(), password = $('#password').value;
@@ -131,7 +163,12 @@ async function main() {
         $('#password').focus();
         return;
       }
-      await api('login', { method: 'POST', body: { username, password } });
+      if (ticket) { // (the second step)
+        await api('login/code', { method: 'POST', body: { ticket, code: $('#code').value } });
+        return go(next, true);
+      }
+      const r = await api('login', { method: 'POST', body: { username, password } });
+      if (r?.need === 'code') { still(false); ticket = r.ticket; return codeStep(true); }
       go(next, true);
     } catch (err) {
       still(false);

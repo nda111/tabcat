@@ -1,6 +1,7 @@
 """tabcat-server [run] [--data-dir D] [--host H] [--port P] [--dashboard auto|FOLDER] [--reload]
 tabcat-server reset-password USERNAME [--data-dir D]   (asks for the new password; turns the account back on)
 tabcat-server make-admin USERNAME [--data-dir D]       (an admin again, and turned on: locked out of the admin page)
+tabcat-server reset-2fa USERNAME [--data-dir D]        (two-step sign-in off: the phone and the recovery codes gone)
 tabcat-server reset-server [--data-dir D]              (every account, invitation and setting gone: set it up again)"""
 import argparse
 import getpass
@@ -9,7 +10,7 @@ import sys
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog='tabcat-server', description='Your own tabcat server.')
-    ap.add_argument('command', nargs='?', default='run', choices=['run', 'reset-password', 'make-admin', 'reset-server'])
+    ap.add_argument('command', nargs='?', default='run', choices=['run', 'reset-password', 'make-admin', 'reset-2fa', 'reset-server'])
     ap.add_argument('username', nargs='?')
     ap.add_argument('--data-dir')
     ap.add_argument('--host')
@@ -44,6 +45,15 @@ def main(argv=None):
             sys.exit('no such user')
         db.run('update users set admin = 1, disabled = 0 where username = ?', a.username)
         print(f'{a.username} is an admin')
+        return
+
+    if a.command == 'reset-2fa':
+        from .db import DB
+        db = DB(cfg.db_path)
+        if not a.username or not db.one('select 1 from users where username = ?', a.username):
+            sys.exit('no such user')
+        db.run('update users set totp_secret = null, totp_pending = null, totp_step = null, recovery = null where username = ?', a.username)
+        print(f'two-step sign-in is off for {a.username}')
         return
 
     if a.command == 'reset-server':
