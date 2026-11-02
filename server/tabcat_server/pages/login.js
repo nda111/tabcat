@@ -26,15 +26,17 @@ async function main() {
   const remembered = store.get();
   if (remembered && !signingUp) { $('#username').value = remembered; $('#remember-id').checked = true; }
   $('#keep-row').hidden = !info.keep; // (the server keeps no one signed in: nothing to offer)
-  // (adding another account, from the dashboard's Account: the way back to it)
-  $('#back').hidden = !params.get('add');
+  // (adding another account, from the dashboard's Account: Back beside Sign in, to it; not signing up from here)
+  const adding = !!params.get('add');
+  $('#back-btn').hidden = !adding;
+  $('#back-btn').addEventListener('click', () => go('/'));
   $('#invite').value = invite;
 
   function mode() {
     $('#title').textContent = t(signingUp ? 'signUpTitle' : 'signInTitle');
     $('#go').textContent = t(signingUp ? 'signUp' : 'signIn');
     // (the other way, beside it: sign up from signing in, or back)
-    $('#other').hidden = !canSignUp;
+    $('#other').hidden = !canSignUp || adding;
     $('#other').textContent = t(signingUp ? 'signIn' : 'signUp');
     $('#again-row').hidden = !signingUp;
     $('#name-row').hidden = !signingUp;
@@ -129,7 +131,7 @@ async function main() {
   function codeStep(on) {
     const card = $('#form'), from = card.offsetHeight;
     for (const el of [$('#username').closest('label'), $('#password').closest('label'), $('#forgot'), $('#login-opts')]) el.hidden = on;
-    $('#other').hidden = on || !canSignUp;
+    $('#other').hidden = on || !canSignUp || adding;
     $('#code-step').hidden = !on;
     $('#title').textContent = t(on ? 'codeTitle' : 'signInTitle');
     $('#go').textContent = t(on ? 'codeGo' : 'signIn');

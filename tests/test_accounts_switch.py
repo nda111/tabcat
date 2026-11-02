@@ -43,7 +43,7 @@ with sync_playwright() as p:
     check(d.is_visible('#account-list') and d.get_attribute('#account-more', 'aria-expanded') == 'true' and d.locator('.account-other').count() == 0 and d.is_enabled('.account-add'),
           'the arrow opens the other accounts: none yet, Add another account')
     d.click('.account-add'); d.wait_for_url('**/login?add=1', timeout=10000); d.wait_for_selector('#username:visible')
-    check(d.is_visible('#back'), 'adding one: the sign-in page, with the way back')
+    check(d.is_visible('#back-btn') and d.is_hidden('#other'), 'adding one: the sign-in page, Back beside Sign in')
     d.fill('#username', 'kid'); d.fill('#password', 'kidpass99'); d.click('#go')
     d.wait_for_url(SERVER + '/'); d.wait_for_selector('.ws-item', timeout=15000); time.sleep(1)
     d.click('#btn-account'); time.sleep(.4)
