@@ -1,7 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
-    devices: 'Signed-in devices', deviceOn: '{browser} on {os}', unknownDevice: 'Unknown device', thisDevice: 'This device', firstSignIn: 'signed in {date}', lastSeenAt: 'last used {date}', deviceSignedOut: 'Signed out of that device.',
+    devices: 'Signed-in devices', deviceOn: '{browser} on {os}', unknownDevice: 'Unknown device', thisDevice: 'This device', firstSignIn: 'signed in {date}', lastSeenAt: 'last used {date}', deviceSignedOut: 'Signed out on {device}.',
     nameEdit: 'Click to change your name',
     displayName: 'Name', optional: '(optional)', nameOptional: 'Name (optional)', nameText: 'What tabcat calls you, beside your username. Empty: your username.', save: 'Save', nameSaved: 'Name saved.', errNameLong: 'The name is too long (40 characters at most).',
     chooseText: '{n} accounts are signed in here already, as many as there can be. Pick one to sign out of first.', chooseSignOut: 'Sign out', signedOutOf: 'Signed out of {name}.',
@@ -41,7 +41,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
-    devices: '로그인된 기기', deviceOn: '{os}의 {browser}', unknownDevice: '알 수 없는 기기', thisDevice: '이 기기', firstSignIn: '처음 로그인 {date}', lastSeenAt: '최근 접속 {date}', deviceSignedOut: '그 기기를 로그아웃했습니다.',
+    devices: '로그인된 기기', deviceOn: '{os}의 {browser}', unknownDevice: '알 수 없는 기기', thisDevice: '이 기기', firstSignIn: '처음 로그인 {date}', lastSeenAt: '최근 접속 {date}', deviceSignedOut: '{device}에서 로그아웃했습니다.',
     nameEdit: '눌러서 이름 바꾸기',
     displayName: '이름', optional: '(선택)', nameOptional: '이름 (선택)', nameText: '아이디와 함께 보여줄 이름입니다. 비워 두면 아이디가 보입니다.', save: '저장', nameSaved: '이름을 저장했습니다.', errNameLong: '이름이 너무 깁니다 (최대 40자).',
     chooseText: '이 브라우저에 이미 계정 {n}개가 로그인돼 있습니다(최대). 먼저 로그아웃할 계정을 고르세요.', chooseSignOut: '로그아웃', signedOutOf: '{name} 계정을 로그아웃했습니다.',
@@ -81,7 +81,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
-    devices: 'ログイン中のデバイス', deviceOn: '{os} の {browser}', unknownDevice: '不明なデバイス', thisDevice: 'このデバイス', firstSignIn: 'ログイン {date}', lastSeenAt: '最終利用 {date}', deviceSignedOut: 'そのデバイスからログアウトしました。',
+    devices: 'ログイン中のデバイス', deviceOn: '{os} の {browser}', unknownDevice: '不明なデバイス', thisDevice: 'このデバイス', firstSignIn: 'ログイン {date}', lastSeenAt: '最終利用 {date}', deviceSignedOut: '{device} でログアウトしました。',
     nameEdit: 'クリックして名前を変更',
     displayName: '名前', optional: '（任意）', nameOptional: '名前（任意）', nameText: 'ユーザー名とあわせて表示する名前です。空欄ならユーザー名が表示されます。', save: '保存', nameSaved: '名前を保存しました。', errNameLong: '名前が長すぎます（最大 40 文字）。',
     chooseText: 'このブラウザーではすでに {n} 個のアカウントがログインしています（上限）。先にログアウトするアカウントを選んでください。', chooseSignOut: 'ログアウト', signedOutOf: '{name} からログアウトしました。',
@@ -121,7 +121,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
-    devices: '已登录的设备', deviceOn: '{os} 上的 {browser}', unknownDevice: '未知设备', thisDevice: '此设备', firstSignIn: '登录于 {date}', lastSeenAt: '最近使用 {date}', deviceSignedOut: '已让该设备退出登录。',
+    devices: '已登录的设备', deviceOn: '{os} 上的 {browser}', unknownDevice: '未知设备', thisDevice: '此设备', firstSignIn: '登录于 {date}', lastSeenAt: '最近使用 {date}', deviceSignedOut: '已在 {device} 上退出登录。',
     nameEdit: '点击修改名称',
     displayName: '名称', optional: '（可选）', nameOptional: '名称（可选）', nameText: '与用户名一同显示的名称。留空则显示用户名。', save: '保存', nameSaved: '名称已保存。', errNameLong: '名称太长（最多 40 个字符）。',
     chooseText: '此浏览器已登录 {n} 个账号（上限）。请先选择一个要退出的账号。', chooseSignOut: '退出登录', signedOutOf: '已退出 {name}。',
@@ -161,7 +161,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
-    devices: 'Dispositivos con la sesión iniciada', deviceOn: '{browser} en {os}', unknownDevice: 'Dispositivo desconocido', thisDevice: 'Este dispositivo', firstSignIn: 'inició sesión {date}', lastSeenAt: 'último uso {date}', deviceSignedOut: 'Se cerró la sesión de ese dispositivo.',
+    devices: 'Dispositivos con la sesión iniciada', deviceOn: '{browser} en {os}', unknownDevice: 'Dispositivo desconocido', thisDevice: 'Este dispositivo', firstSignIn: 'inició sesión {date}', lastSeenAt: 'último uso {date}', deviceSignedOut: 'Se cerró la sesión en {device}.',
     nameEdit: 'Haz clic para cambiar tu nombre',
     displayName: 'Nombre', optional: '(opcional)', nameOptional: 'Nombre (opcional)', nameText: 'Cómo te llama tabcat, junto a tu usuario. Vacío: tu usuario.', save: 'Guardar', nameSaved: 'Nombre guardado.', errNameLong: 'El nombre es demasiado largo (40 caracteres como máximo).',
     chooseText: 'Ya hay {n} cuentas con la sesión iniciada aquí, el máximo. Elige primero una para cerrar su sesión.', chooseSignOut: 'Cerrar sesión', signedOutOf: 'Se cerró la sesión de {name}.',
@@ -201,7 +201,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
-    devices: 'Angemeldete Geräte', deviceOn: '{browser} unter {os}', unknownDevice: 'Unbekanntes Gerät', thisDevice: 'Dieses Gerät', firstSignIn: 'angemeldet {date}', lastSeenAt: 'zuletzt genutzt {date}', deviceSignedOut: 'Das Gerät ist abgemeldet.',
+    devices: 'Angemeldete Geräte', deviceOn: '{browser} unter {os}', unknownDevice: 'Unbekanntes Gerät', thisDevice: 'Dieses Gerät', firstSignIn: 'angemeldet {date}', lastSeenAt: 'zuletzt genutzt {date}', deviceSignedOut: 'Auf {device} abgemeldet.',
     nameEdit: 'Klicken, um den Namen zu ändern',
     displayName: 'Name', optional: '(optional)', nameOptional: 'Name (optional)', nameText: 'Wie tabcat dich nennt, neben deinem Benutzernamen. Leer: dein Benutzername.', save: 'Speichern', nameSaved: 'Name gespeichert.', errNameLong: 'Der Name ist zu lang (höchstens 40 Zeichen).',
     chooseText: 'Hier sind schon {n} Konten angemeldet, mehr geht nicht. Wähle zuerst eines zum Abmelden.', chooseSignOut: 'Abmelden', signedOutOf: '{name} abgemeldet.',
@@ -241,7 +241,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
-    devices: 'Appareils connectés', deviceOn: '{browser} sous {os}', unknownDevice: 'Appareil inconnu', thisDevice: 'Cet appareil', firstSignIn: 'connecté le {date}', lastSeenAt: 'dernière utilisation {date}', deviceSignedOut: 'Cet appareil est déconnecté.',
+    devices: 'Appareils connectés', deviceOn: '{browser} sous {os}', unknownDevice: 'Appareil inconnu', thisDevice: 'Cet appareil', firstSignIn: 'connecté le {date}', lastSeenAt: 'dernière utilisation {date}', deviceSignedOut: 'Déconnecté sur {device}.',
     nameEdit: 'Cliquez pour changer votre nom',
     displayName: 'Nom', optional: '(facultatif)', nameOptional: 'Nom (facultatif)', nameText: 'Comment tabcat vous appelle, à côté de votre identifiant. Vide : votre identifiant.', save: 'Enregistrer', nameSaved: 'Nom enregistré.', errNameLong: 'Le nom est trop long (40 caractères au plus).',
     chooseText: '{n} comptes sont déjà connectés ici, le maximum. Choisissez d’abord celui à déconnecter.', chooseSignOut: 'Déconnecter', signedOutOf: '{name} est déconnecté.',
@@ -281,7 +281,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
-    devices: 'Dispositivos conectados', deviceOn: '{browser} no {os}', unknownDevice: 'Dispositivo desconhecido', thisDevice: 'Este dispositivo', firstSignIn: 'entrou em {date}', lastSeenAt: 'último uso {date}', deviceSignedOut: 'Esse dispositivo foi desconectado.',
+    devices: 'Dispositivos conectados', deviceOn: '{browser} no {os}', unknownDevice: 'Dispositivo desconhecido', thisDevice: 'Este dispositivo', firstSignIn: 'entrou em {date}', lastSeenAt: 'último uso {date}', deviceSignedOut: 'Sessão encerrada em {device}.',
     nameEdit: 'Clique para mudar seu nome',
     displayName: 'Nome', optional: '(opcional)', nameOptional: 'Nome (opcional)', nameText: 'Como o tabcat chama você, junto do seu usuário. Vazio: seu usuário.', save: 'Salvar', nameSaved: 'Nome salvo.', errNameLong: 'O nome é longo demais (40 caracteres no máximo).',
     chooseText: 'Já há {n} contas conectadas aqui, o máximo. Escolha primeiro uma para sair.', chooseSignOut: 'Sair', signedOutOf: 'Você saiu de {name}.',

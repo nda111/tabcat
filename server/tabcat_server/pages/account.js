@@ -127,7 +127,7 @@ async function devices() {
       d.current ? null : outButton(async () => {
         await api(`me/sessions/${d.id}`, { method: 'DELETE' });
         await collapse(row);
-        toast(t('deviceSignedOut'));
+        toast(t('deviceSignedOut', { device: deviceName(d.agent) }));
         devices();
       }));
     return row;
