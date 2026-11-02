@@ -202,22 +202,53 @@ async function collapse(row) {
     { height: '0px', paddingTop: '0px', paddingBottom: '0px', borderBottomWidth: '0px' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished;
   row.remove();
 }
+// (more than five: five a page, ‹ › below; a page slides in from the side it's on)
+const PER_PAGE = 5;
+let page = 0, all = [];
 async function devices() {
-  const list = await api('me/sessions');
-  await flip($('#devices'), () => $('#devices').replaceChildren(...list.map((d) => {
+  all = (await api('me/sessions')).sort((a, b) => b.current - a.current); // (this one first, the rest by last use)
+  page = Math.min(page, Math.max(0, Math.ceil(all.length / PER_PAGE) - 1));
+  drawDevices();
+}
+function turnPage(dir) {
+  const pages = Math.ceil(all.length / PER_PAGE);
+  if (page + dir < 0 || page + dir >= pages) return;
+  page += dir;
+  drawDevices(dir);
+}
+$('#page-prev').addEventListener('click', () => turnPage(-1));
+$('#page-next').addEventListener('click', () => turnPage(1));
+async function drawDevices(dir = 0) {
+  const list = all.slice(page * PER_PAGE, (page + 1) * PER_PAGE), pages = Math.ceil(all.length / PER_PAGE);
+  $('#pager').hidden = pages < 2;
+  $('#page-at').textContent = `${page + 1} / ${pages}`;
+  $('#page-prev').disabled = page === 0;
+  $('#page-next').disabled = page >= pages - 1;
+  const box = $('#devices'), from = box.offsetHeight;
+  const draw = () => box.replaceChildren(...list.map((d) => {
     const row = h('div', { class: 'device', 'data-key': d.id },
       h('div', { class: 'device-text' },
         h('div', { class: 'device-name' }, deviceName(d.agent), d.current ? h('span', { class: 'tag accent' }, t('thisDevice')) : null),
         h('div', { class: 'muted small' }, [d.ip, t('firstSignIn', { date: date(d.created_at) }), t('lastSeenAt', { date: date(d.last_seen) })].filter(Boolean).join(' · '))),
       d.current ? null : outButton(async () => {
         await api(`me/sessions/${d.id}`, { method: 'DELETE' });
-        await collapse(row);
+        // (one from the next page will take its place: it only fades, the rest gliding up as it's drawn again,
+        // the list's height the same; none will: it folds shut)
+        if (all.length > (page + 1) * PER_PAGE) await row.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(14px)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' }).finished;
+        else await collapse(row);
         toast(t('deviceSignedOut', { device: deviceName(d.agent) }));
         devices();
       }));
     return row;
-  })));
-  $('#others').disabled = list.length < 2;
+  }));
+  if (!dir) await flip(box, draw);
+  else {
+    draw();
+    // (the new page slides in from its side; the list's height glides to fit)
+    box.animate([{ opacity: 0, transform: `translateX(${dir * 24}px)` }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    box.animate([{ height: `${from}px` }, { height: `${box.offsetHeight}px` }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  }
+  $('#others').disabled = all.length < 2;
 }
 await devices();
 $('#others').addEventListener('click', async () => {
