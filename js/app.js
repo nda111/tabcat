@@ -4311,7 +4311,10 @@ async function showAccount() {
   const btn = $('#btn-account');
   btn.hidden = false;
   shownAccount = me.id;
-  // (the name to go by, if there's one, then the username: in the tooltip, and in the dialog under the name)
+  // (the name to go by, if there's one, then the username: in the tooltip, the sidebar open or collapsed, and in
+  // the dialog under the name; not the word "Account" the other buttons' collapsed tooltips would have)
+  btn.removeAttribute('data-i18n-attr');
+  btn.removeAttribute('data-rail-title');
   btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
   // (two-step sign-in on: a blue 2FA chip after the name, as on the admin page)
   $('#account-name').replaceChildren(me.name || me.username, ...(me.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : []));
