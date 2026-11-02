@@ -398,7 +398,7 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 :root { --blue: #2f6fe0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --blue: #6ea2ff; } }
 :root[data-theme="dark"] { --blue: #6ea2ff; }
-.tag.twofa { margin-left: 8px; background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
+.tag.twofa { margin-left: 8px; background: var(--panel); color: var(--blue); border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent); padding: 0 6px; }
 
 /* the devices' pages: ‹ 1 / 2 › under the list */
 .pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
