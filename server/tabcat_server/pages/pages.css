@@ -454,3 +454,6 @@ input.switch:disabled { opacity: .5; cursor: default; }
 input.switch.waiting { pointer-events: none; }
 .ts-state { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .ts-state p { margin: 0; }
+
+dd.crossfade { display: grid; align-items: center; }
+dd.crossfade > * { grid-area: 1 / 1; }

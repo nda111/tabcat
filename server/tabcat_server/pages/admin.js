@@ -247,8 +247,17 @@ async function tailscaleView(ts) {
   } else if (ts.state !== 'Running') {
     box.replaceChildren(h('div', { class: 'ts-state' }, h('p', { class: 'muted small' }, t(ts.state === 'NeedsLogin' ? 'tsSignedOut' : 'tsStopped')), again()));
   } else {
-    const https = h('dd', {});
-    const showHttps = (serving, url) => https.replaceChildren(serving ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('code', {}, url)) : h('span', { class: 'muted' }, t('tsOff')));
+    // (the address or "not served", in one place: a change cross-fades, the old fading out as the new fades in)
+    const https = h('dd', { class: 'crossfade' });
+    const showHttps = (serving, url, fade = false) => {
+      const next = serving ? h('a', { href: url, target: '_blank', rel: 'noopener' }, h('code', {}, url)) : h('span', { class: 'muted' }, t('tsOff'));
+      const old = https.firstElementChild;
+      https.append(next);
+      if (!fade || !old) { old?.remove(); return; }
+      const ease = { duration: 240, easing: 'ease-in-out' };
+      next.animate([{ opacity: 0 }, { opacity: 1 }], ease);
+      old.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, fill: 'forwards' }).finished.then(() => old.remove());
+    };
     showHttps(ts.serving, ts.url);
     // (turned on or off: the switch stays, only the address beside it changes, fading over)
     const sw = h('input', { type: 'checkbox', class: 'switch', id: 'ts-serve', checked: ts.serving, disabled: !ts.here });
@@ -257,8 +266,7 @@ async function tailscaleView(ts) {
       try {
         const next = await api('admin/tailscale/serve', { method: 'POST', body: { on: sw.checked } });
         sw.checked = next.serving;
-        showHttps(next.serving, next.url || ts.url);
-        https.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+        showHttps(next.serving, next.url || ts.url, true);
         toast(t(next.serving ? 'tsServing' : 'tsNotServing'));
       } catch (err) { toast(err.message); sw.checked = !sw.checked; }
       sw.classList.remove('waiting');
