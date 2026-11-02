@@ -4313,7 +4313,8 @@ async function showAccount() {
   shownAccount = me.id;
   // (the name to go by, if there's one, then the username: in the tooltip, and in the dialog under the name)
   btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
-  $('#account-name').textContent = me.name || me.username;
+  // (two-step sign-in on: a blue 2FA chip after the name, as on the admin page)
+  $('#account-name').replaceChildren(me.name || me.username, ...(me.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : []));
   // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
   $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
@@ -4358,7 +4359,7 @@ async function openAccountList() {
     ...others.map((a) => h('div', { class: 'account-other' },
       h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
         accountPhoto(a, 'account-avatar small'),
-        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.name || a.username),
+        h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, a.name || a.username, ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])),
           a.name ? h('span', { class: 'account-role' }, a.username) : null)),
       outButton(a))),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },

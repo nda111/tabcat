@@ -1144,6 +1144,11 @@ input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-o
 .side-photo { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; display: block; }
 .account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 16px; }
 .account-role { color: var(--muted); font-size: 12.5px; }
+/* two-step sign-in on: a small blue chip after the name (as on the server's admin page) */
+.chip-2fa { --blue: #2f6fe0; display: inline-block; margin-left: 8px; padding: 0 6px; border-radius: 99px; font-size: 11px; font-weight: 600; vertical-align: 2px;
+  background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip-2fa { --blue: #6ea2ff; } }
+:root[data-theme="dark"] .chip-2fa { --blue: #6ea2ff; }
 .account-card .account-who { flex: 1; }
 /* (the whole of it opens the other accounts, the arrow too) */
 #account .account-card { cursor: pointer; border-radius: 10px; padding: 6px; margin: 0 -6px 8px; transition: background-color .16s ease; }
