@@ -402,6 +402,8 @@ def create_app(config) -> FastAPI:
             'version': __version__,
             'data_dir': str(config.data_dir),
             'db_bytes': config.db_path.stat().st_size if config.db_path.exists() else 0,
+            'db_path': str(config.db_path),
+            'here': allowed(request, config.setup_from),  # (on the server's own computer: see /api/admin/database)
             'dashboard': {'source': 'github' if config.dashboard == 'auto' else 'folder', 'folder': str(folder),
                           'present': dashboard.present(folder), 'version': dashboard.version(folder)},
             'users': db.one('select count(*) n from users')['n'],
@@ -409,6 +411,36 @@ def create_app(config) -> FastAPI:
             'setup_from': list(config.setup_from), 'admin_from': list(config.admin_from), 'trusted_proxies': list(config.trusted_proxies),
             'sessions': db.one('select count(*) n from sessions where expires_at > ?', time.time())['n'],
         }
+
+    # Moving the database: only on the server's own computer (the addresses setup is allowed from), the path
+    # being one there. A folder: tabcat.db in it; else a file. Nothing may be there already.
+    @app.post('/api/admin/database')
+    async def move_database(request: Request):
+        need_admin(request)
+        if not allowed(request, config.setup_from):
+            raise HTTPException(403, 'only on the server computer')
+        raw = str((await body(request)).get('path', '')).strip()
+        try:
+            dest = Path(raw).expanduser()
+            if not raw or not dest.is_absolute():
+                raise ValueError
+            if dest.is_dir() or not dest.suffix:
+                dest = dest / 'tabcat.db'
+            dest = dest.resolve()
+        except (ValueError, OSError):
+            raise HTTPException(400, 'not a usable path')
+        if dest == config.db_path.resolve():
+            raise HTTPException(400, 'that is where it is')
+        if dest.exists():
+            raise HTTPException(409, 'there is a file there already')
+        try:
+            db.move_to(dest)
+        except OSError as e:
+            raise HTTPException(400, f'not a usable path: {e.strerror or e}')
+        config.database = str(dest)
+        from .config import save_setting
+        save_setting(config.data_dir, 'database', str(dest))
+        return {'db_path': str(dest)}
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):

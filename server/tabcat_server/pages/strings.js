@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    dbLocation: 'Database file', dbChange: 'Change…', dbMove: 'Move', dbPathHint: 'A folder or a .db file on the server computer', dbMoved: 'The database is moved.', dbOnlyHere: 'Only on the server computer.', errDbExists: 'There’s a file there already.', errDbPath: 'That path can’t be used.', errDbSame: 'The database is there already.',
     accountMade: 'Your account is made. Enter your password to sign in.',
     resetTitle: 'Reset {name}’s password?', resetText: 'A new password is made and shown here to pass on. The current one stops working, and the account is signed out everywhere.', resetOk: 'Reset', forgotHint: 'Forgot your password? Ask your server’s admin.',
     copiedPassword: 'Password copied.', copiedLink: 'Invitation link copied.', security: 'Security', sessionOff: 'Off', loginTries: 'Wrong passwords before a wait', loginLock: 'The wait (minutes)', logoutAll: 'Sign everyone out…', logoutAllTitle: 'Sign everyone out?', logoutAllText: 'Everyone but you has to sign in again, on every device.', logoutAllOk: 'Sign out', loggedOutAll: 'Everyone else is signed out.', activeSessions: 'Signed in now', sessionsCount: '{n}', startupNote: 'Set when the server starts (see its README):', setupFrom: 'First account from', adminFrom: 'Admin page from', trustedProxies: 'Trusted proxies', anywhere: 'Anywhere', checkAgain: 'Click to check again',
@@ -33,6 +34,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    dbLocation: '데이터베이스 파일', dbChange: '변경…', dbMove: '옮기기', dbPathHint: '서버 컴퓨터의 폴더나 .db 파일 경로', dbMoved: '데이터베이스를 옮겼습니다.', dbOnlyHere: '서버 컴퓨터에서만 바꿀 수 있습니다.', errDbExists: '그 위치에 이미 파일이 있습니다.', errDbPath: '쓸 수 없는 경로입니다.', errDbSame: '이미 그 위치에 있습니다.',
     accountMade: '계정을 만들었습니다. 비밀번호를 입력해 로그인하세요.',
     resetTitle: '{name}의 비밀번호를 재설정할까요?', resetText: '새 비밀번호를 만들어 여기에 보여줍니다. 지금 비밀번호는 더 이상 쓸 수 없고, 이 계정은 모든 기기에서 로그아웃됩니다.', resetOk: '재설정', forgotHint: '비밀번호를 잊으셨나요? 서버 관리자에게 문의하세요.',
     copiedPassword: '임시 비밀번호를 복사했습니다.', copiedLink: '초대 링크를 복사했습니다.', security: '보안', sessionOff: '사용 안 함', loginTries: '로그인 실패 허용 횟수', loginLock: '로그인 제한 시간 (분)', logoutAll: '모든 사용자 로그아웃…', logoutAllTitle: '모든 사용자를 로그아웃할까요?', logoutAllText: '나를 제외한 모든 사용자가 모든 기기에서 다시 로그인해야 합니다.', logoutAllOk: '로그아웃', loggedOutAll: '다른 모든 사용자를 로그아웃했습니다.', activeSessions: '로그인된 세션', sessionsCount: '{n}개', startupNote: '서버를 실행할 때 정하는 설정 (README 참고):', setupFrom: '최초 설정 허용 주소', adminFrom: '관리자 페이지 허용 주소', trustedProxies: '신뢰하는 프록시', anywhere: '모든 주소', checkAgain: '눌러서 다시 확인',
@@ -65,6 +67,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    dbLocation: 'データベースファイル', dbChange: '変更…', dbMove: '移動', dbPathHint: 'サーバーのコンピューター上のフォルダーか .db ファイル', dbMoved: 'データベースを移動しました。', dbOnlyHere: 'サーバーのコンピューターでのみ変更できます。', errDbExists: 'その場所にはすでにファイルがあります。', errDbPath: 'そのパスは使えません。', errDbSame: 'すでにその場所にあります。',
     accountMade: 'アカウントを作成しました。パスワードを入力してログインしてください。',
     resetTitle: '{name} のパスワードをリセットしますか？', resetText: '新しいパスワードを作ってここに表示します。今のパスワードは使えなくなり、このアカウントはすべての端末でログアウトされます。', resetOk: 'リセット', forgotHint: 'パスワードを忘れた場合は、サーバーの管理者に連絡してください。',
     copiedPassword: 'パスワードをコピーしました。', copiedLink: '招待リンクをコピーしました。', security: 'セキュリティ', sessionOff: '使わない', loginTries: 'ログイン失敗の許容回数', loginLock: 'ログイン制限の時間（分）', logoutAll: '全員をログアウト…', logoutAllTitle: '全員をログアウトしますか？', logoutAllText: '自分以外の全員が、すべての端末でもう一度ログインする必要があります。', logoutAllOk: 'ログアウト', loggedOutAll: 'ほかの全員をログアウトしました。', activeSessions: 'ログイン中のセッション', sessionsCount: '{n} 件', startupNote: 'サーバーの起動時に決める設定（README を参照）：', setupFrom: '初期設定を許可するアドレス', adminFrom: '管理ページを許可するアドレス', trustedProxies: '信頼するプロキシ', anywhere: 'すべて', checkAgain: 'クリックしてもう一度確認',
@@ -97,6 +100,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    dbLocation: '数据库文件', dbChange: '更改…', dbMove: '移动', dbPathHint: '服务器电脑上的文件夹或 .db 文件', dbMoved: '数据库已移动。', dbOnlyHere: '只能在服务器电脑上更改。', errDbExists: '那里已经有文件了。', errDbPath: '无法使用该路径。', errDbSame: '数据库已经在那里了。',
     accountMade: '账号已创建。输入密码即可登录。',
     resetTitle: '重置 {name} 的密码？', resetText: '将生成新密码并显示在这里。当前密码将失效，该账号会在所有设备上退出登录。', resetOk: '重置', forgotHint: '忘记密码？请联系服务器管理员。',
     copiedPassword: '已复制密码。', copiedLink: '已复制邀请链接。', security: '安全', sessionOff: '不使用', loginTries: '允许的登录失败次数', loginLock: '登录限制时间（分钟）', logoutAll: '让所有人退出登录…', logoutAllTitle: '让所有人退出登录？', logoutAllText: '除你以外的所有人都需要在每台设备上重新登录。', logoutAllOk: '退出登录', loggedOutAll: '其他所有人已退出登录。', activeSessions: '当前登录的会话', sessionsCount: '{n} 个', startupNote: '在启动服务器时设置（见 README）：', setupFrom: '允许初始设置的地址', adminFrom: '允许管理页面的地址', trustedProxies: '受信任的代理', anywhere: '任何地址', checkAgain: '点击再次检查',
@@ -129,6 +133,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    dbLocation: 'Archivo de la base de datos', dbChange: 'Cambiar…', dbMove: 'Mover', dbPathHint: 'Una carpeta o un archivo .db en el equipo del servidor', dbMoved: 'La base de datos se movió.', dbOnlyHere: 'Solo desde el equipo del servidor.', errDbExists: 'Ya hay un archivo ahí.', errDbPath: 'Esa ruta no se puede usar.', errDbSame: 'La base de datos ya está ahí.',
     accountMade: 'Tu cuenta está creada. Escribe tu contraseña para iniciar sesión.',
     resetTitle: '¿Restablecer la contraseña de {name}?', resetText: 'Se crea una contraseña nueva y se muestra aquí para pasarla. La actual deja de funcionar y la cuenta se cierra en todos los dispositivos.', resetOk: 'Restablecer', forgotHint: '¿Olvidaste tu contraseña? Pregunta al administrador del servidor.',
     copiedPassword: 'Contraseña copiada.', copiedLink: 'Enlace de invitación copiado.', security: 'Seguridad', sessionOff: 'No', loginTries: 'Contraseñas erróneas antes de esperar', loginLock: 'La espera (minutos)', logoutAll: 'Cerrar la sesión de todos…', logoutAllTitle: '¿Cerrar la sesión de todos?', logoutAllText: 'Todos menos tú tendrán que volver a iniciar sesión en cada dispositivo.', logoutAllOk: 'Cerrar sesión', loggedOutAll: 'Se cerró la sesión de todos los demás.', activeSessions: 'Sesiones abiertas', sessionsCount: '{n}', startupNote: 'Se fija al iniciar el servidor (ver su README):', setupFrom: 'Primera cuenta desde', adminFrom: 'Página de administración desde', trustedProxies: 'Proxies de confianza', anywhere: 'Cualquier dirección', checkAgain: 'Haz clic para comprobar de nuevo',
@@ -161,6 +166,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    dbLocation: 'Datenbankdatei', dbChange: 'Ändern…', dbMove: 'Verschieben', dbPathHint: 'Ein Ordner oder eine .db-Datei auf dem Server-Computer', dbMoved: 'Die Datenbank ist verschoben.', dbOnlyHere: 'Nur am Server-Computer.', errDbExists: 'Dort liegt schon eine Datei.', errDbPath: 'Dieser Pfad geht nicht.', errDbSame: 'Die Datenbank liegt schon dort.',
     accountMade: 'Dein Konto ist erstellt. Gib dein Passwort ein, um dich anzumelden.',
     resetTitle: 'Passwort von {name} zurücksetzen?', resetText: 'Ein neues Passwort wird erstellt und hier zum Weitergeben angezeigt. Das jetzige gilt nicht mehr, und das Konto wird überall abgemeldet.', resetOk: 'Zurücksetzen', forgotHint: 'Passwort vergessen? Frag den Admin deines Servers.',
     copiedPassword: 'Passwort kopiert.', copiedLink: 'Einladungslink kopiert.', security: 'Sicherheit', sessionOff: 'Aus', loginTries: 'Falsche Passwörter bis zur Wartezeit', loginLock: 'Wartezeit (Minuten)', logoutAll: 'Alle abmelden…', logoutAllTitle: 'Alle abmelden?', logoutAllText: 'Alle außer dir müssen sich auf jedem Gerät neu anmelden.', logoutAllOk: 'Abmelden', loggedOutAll: 'Alle anderen sind abgemeldet.', activeSessions: 'Angemeldete Sitzungen', sessionsCount: '{n}', startupNote: 'Beim Start des Servers festgelegt (siehe README):', setupFrom: 'Erstes Konto von', adminFrom: 'Admin-Seite von', trustedProxies: 'Vertrauenswürdige Proxys', anywhere: 'Überall', checkAgain: 'Klicken, um erneut zu prüfen',
@@ -193,6 +199,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    dbLocation: 'Fichier de la base de données', dbChange: 'Modifier…', dbMove: 'Déplacer', dbPathHint: 'Un dossier ou un fichier .db sur l’ordinateur du serveur', dbMoved: 'La base de données est déplacée.', dbOnlyHere: 'Seulement depuis l’ordinateur du serveur.', errDbExists: 'Il y a déjà un fichier à cet endroit.', errDbPath: 'Ce chemin ne peut pas être utilisé.', errDbSame: 'La base de données est déjà là.',
     accountMade: 'Votre compte est créé. Saisissez votre mot de passe pour vous connecter.',
     resetTitle: 'Réinitialiser le mot de passe de {name} ?', resetText: 'Un nouveau mot de passe est créé et affiché ici pour le transmettre. L’actuel ne marche plus, et le compte est déconnecté partout.', resetOk: 'Réinitialiser', forgotHint: 'Mot de passe oublié ? Demandez à l’administrateur du serveur.',
     copiedPassword: 'Mot de passe copié.', copiedLink: 'Lien d’invitation copié.', security: 'Sécurité', sessionOff: 'Non', loginTries: 'Mots de passe erronés avant une attente', loginLock: 'L’attente (minutes)', logoutAll: 'Déconnecter tout le monde…', logoutAllTitle: 'Déconnecter tout le monde ?', logoutAllText: 'Tout le monde sauf vous devra se reconnecter, sur chaque appareil.', logoutAllOk: 'Déconnecter', loggedOutAll: 'Tous les autres sont déconnectés.', activeSessions: 'Sessions ouvertes', sessionsCount: '{n}', startupNote: 'Fixé au démarrage du serveur (voir son README) :', setupFrom: 'Premier compte depuis', adminFrom: 'Page d’administration depuis', trustedProxies: 'Proxys de confiance', anywhere: 'Partout', checkAgain: 'Cliquez pour vérifier à nouveau',
@@ -225,6 +232,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    dbLocation: 'Arquivo do banco de dados', dbChange: 'Alterar…', dbMove: 'Mover', dbPathHint: 'Uma pasta ou um arquivo .db no computador do servidor', dbMoved: 'O banco de dados foi movido.', dbOnlyHere: 'Só no computador do servidor.', errDbExists: 'Já existe um arquivo aí.', errDbPath: 'Esse caminho não pode ser usado.', errDbSame: 'O banco de dados já está aí.',
     accountMade: 'Sua conta foi criada. Digite sua senha para entrar.',
     resetTitle: 'Redefinir a senha de {name}?', resetText: 'Uma nova senha é criada e mostrada aqui para você repassar. A atual deixa de funcionar, e a conta é desconectada em todos os dispositivos.', resetOk: 'Redefinir', forgotHint: 'Esqueceu a senha? Fale com o administrador do servidor.',
     copiedPassword: 'Senha copiada.', copiedLink: 'Link de convite copiado.', security: 'Segurança', sessionOff: 'Não', loginTries: 'Senhas erradas antes de esperar', loginLock: 'A espera (minutos)', logoutAll: 'Desconectar todos…', logoutAllTitle: 'Desconectar todos?', logoutAllText: 'Todos menos você terão que entrar de novo, em cada dispositivo.', logoutAllOk: 'Desconectar', loggedOutAll: 'Todos os outros foram desconectados.', activeSessions: 'Sessões ativas', sessionsCount: '{n}', startupNote: 'Definido ao iniciar o servidor (veja o README):', setupFrom: 'Primeira conta de', adminFrom: 'Página de administração de', trustedProxies: 'Proxies confiáveis', anywhere: 'Qualquer endereço', checkAgain: 'Clique para verificar de novo',

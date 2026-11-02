@@ -102,6 +102,10 @@ Everything else (accounts, sign-up and invitations, how long sign-ins last and h
 
 The admin page downloads a copy of the database. Or copy `tabcat.db` from the data folder.
 
+The database is `tabcat.db` in the data folder. To keep it elsewhere (another disk, a synced folder), move it on the
+admin page, from the server's own computer (the addresses setup is allowed from); the new place is kept in
+`config.toml` as `database`.
+
 ## Locked out, or starting over
 
 - **Someone forgot their password:** an admin presses **Reset password** on their row of the admin page and

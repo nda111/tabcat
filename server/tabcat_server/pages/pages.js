@@ -52,7 +52,8 @@ export async function api(path, { method = 'GET', body } = {}) {
     const detail = data?.detail || r.statusText;
     const key = /turned off/.test(detail) ? 'errOff' : /closed/.test(detail) ? 'errClosed' : /invitation/.test(detail) ? 'errInvite'
       : /taken/.test(detail) ? 'errTaken' : /bad username|too short/.test(detail) ? 'errBad' : /last admin/.test(detail) ? 'errLastAdmin'
-      : /current password/.test(detail) ? 'errCurrent' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
+      : /current password/.test(detail) ? 'errCurrent' : /file there already/.test(detail) ? 'errDbExists' : /not a usable path/.test(detail) ? 'errDbPath'
+      : /where it is/.test(detail) ? 'errDbSame' : /server computer/.test(detail) ? 'dbOnlyHere' : /not open to this address/.test(detail) ? 'adminHereTitle' : KNOWN[r.status];
     const err = new Error(key ? t(key) : t('errGeneric', { detail }));
     err.status = r.status;
     throw err;
@@ -321,6 +322,18 @@ export function stepper(input, { zero = null } = {}) {
   wrap.append(input, ...(zeroLabel ? [zeroLabel] : []), down, up);
   sync();
   return { sync };
+}
+
+// Open or close a part of the page in place: its height glides, it fades in or out (what's below glides with it)
+export function fold(el, open) {
+  if (open === !el.hidden) return Promise.resolve();
+  el.getAnimations().forEach((a) => a.cancel());
+  el.hidden = false;
+  const h = el.offsetHeight;
+  el.style.overflow = 'hidden';
+  const frames = [{ height: '0px', opacity: 0, marginTop: '0px' }, { height: `${h}px`, opacity: 1 }];
+  const a = el.animate(open ? frames : frames.reverse(), { duration: open ? 300 : 220, easing: open ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)' });
+  return a.finished.then(() => { el.style.overflow = ''; if (!open) el.hidden = true; }, () => { el.style.overflow = ''; });
 }
 
 // Rows that come, go and move glide (FLIP): `change` rebuilds `list`'s children; the ones there before move from

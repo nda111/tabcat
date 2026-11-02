@@ -292,3 +292,8 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: n
   100% { stroke-dasharray: 150 289; stroke-dashoffset: -288; }
 }
 @keyframes boot-bob { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.04); } }
+
+/* where the database is, and the button to move it (see admin.js), on one line as long as there's room */
+.db-where { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#db-move { margin: 0 0 14px; }
+#db-move .msg:not(:empty) { margin: 8px 0 0; }

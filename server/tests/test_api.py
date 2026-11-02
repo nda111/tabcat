@@ -138,6 +138,21 @@ codes = [flood.get('/api/server').status_code for _ in range(245)]
 check(codes.count(429) >= 5 and codes[0] == 200, f'a flood from one address is turned away after 240 calls a minute ({codes.count(429)} refused)')
 check(c.get('/api/username', params={'name': 'boss'}).json() == {'valid': True, 'free': False} and c.get('/api/username', params={'name': 'nobody9'}).json()['free'] is True, 'the username check: taken, or free')
 
+# moving the database: only on the server's own computer; nothing may be there already; kept for the next start
+a3.post('/api/login', json=J(username='root', password='12345678'))
+check(a3.post('/api/admin/database', json={'path': tempfile.mkdtemp()}).status_code == 403, 'moving the database from another computer: refused')
+info0 = c.get('/api/admin/info').json()
+check(info0['here'] is True and info0['db_path'].endswith('tabcat.db'), 'info tells where the database is, and that this is the server computer')
+check(c.post('/api/admin/database', json={'path': 'relative/place'}).status_code == 400, 'a relative path: refused')
+taken = tempfile.mkdtemp(); open(os.path.join(taken, 'tabcat.db'), 'w').close()
+check(c.post('/api/admin/database', json={'path': taken}).status_code == 409, 'a file there already: refused')
+dest_dir = tempfile.mkdtemp()
+r = c.post('/api/admin/database', json={'path': dest_dir})
+moved = os.path.join(os.path.realpath(dest_dir), 'tabcat.db')
+check(r.status_code == 200 and r.json()['db_path'] == moved and os.path.exists(moved) and not os.path.exists(info0['db_path']), f'moved to a folder: tabcat.db there, the old file gone ({r.json()})')
+check(c.get('/api/me').status_code == 200 and c.get('/api/admin/users').status_code == 200, 'and the server goes on with it, signed in as before')
+check(C.load(app.state.config.data_dir).db_path == pathlib.Path(moved), 'the next start finds it there (config.toml)')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

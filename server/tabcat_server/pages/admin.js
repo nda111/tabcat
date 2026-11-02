@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { $, api, bytes, date, flip, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { $, api, bytes, date, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -165,6 +165,10 @@ async function info() {
   const d = i.dashboard;
   const rows = [
     ['version', i.version], ['dataFolder', h('code', {}, i.data_dir)], ['database', bytes(i.db_bytes)],
+    // (where the database is; changed only on the server's own computer)
+    ['dbLocation', h('span', { class: 'db-where' }, h('code', { id: 'db-where' }, i.db_path),
+      i.here ? h('button', { type: 'button', class: 'btn small', id: 'db-change', onclick: openMove }, t('dbChange'))
+        : h('span', { class: 'muted small' }, t('dbOnlyHere')))],
     ['dashboardSrc', d.source === 'github' ? t('fromGitHub') : t('fromFolder', { folder: d.folder })],
     ['dashVersion', d.version ? `${(d.version.commit || '').slice(0, 7)} · ${date(d.version.updated_at)}` : '—'],
   ];
@@ -174,6 +178,29 @@ async function info() {
   dl($('#startup'), [['setupFrom', addresses(i.setup_from)], ['adminFrom', addresses(i.admin_from)], ['trustedProxies', addresses(i.trusted_proxies)]]);
   $('#update').hidden = d.source !== 'github';
 }
+// ---------- moving the database ----------
+function openMove() {
+  $('#db-path').value = $('#db-where').textContent;
+  say($('#db-msg'), '');
+  fold($('#db-move'), true).then(() => { $('#db-path').focus(); $('#db-path').select(); });
+}
+$('#db-cancel').addEventListener('click', () => fold($('#db-move'), false));
+$('#db-path').addEventListener('input', () => say($('#db-msg'), ''));
+$('#db-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const still = (on) => { for (const el of $('#db-form').querySelectorAll('input, button')) el.disabled = on; };
+  still(true);
+  try {
+    await api('admin/database', { method: 'POST', body: { path: $('#db-path').value } });
+    await fold($('#db-move'), false);
+    await info();
+    // (the new place fades in where the old one was)
+    $('#db-where').animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    toast(t('dbMoved'));
+  } catch (err) { say($('#db-msg'), err.message, 'error'); }
+  still(false);
+});
+
 $('#update').addEventListener('click', async (e) => {
   e.target.disabled = true;
   say($('#info-msg'), t('working'));

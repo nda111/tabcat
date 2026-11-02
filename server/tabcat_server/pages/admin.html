@@ -75,6 +75,15 @@
       <section>
         <h2 data-t="server">Server</h2>
         <dl id="info"></dl>
+        <!-- moving the database (on the server's own computer): opens under the list -->
+        <div id="db-move" hidden>
+          <form id="db-form" class="row" novalidate>
+            <input type="text" id="db-path" data-t-placeholder="dbPathHint" spellcheck="false" autocomplete="off" style="flex:1;min-width:220px;margin:0">
+            <button type="submit" class="btn primary" data-t="dbMove">Move</button>
+            <button type="button" class="btn" id="db-cancel" data-t="cancel">Cancel</button>
+          </form>
+          <p class="msg" id="db-msg"></p>
+        </div>
         <div class="row">
           <button type="button" class="btn" id="update" data-t="updateNow">Update now</button>
           <a class="btn" href="/api/admin/backup" data-t="backup">Download a backup</a>

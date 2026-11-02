@@ -29,9 +29,13 @@ class Config:
     # computer); from anyone else, the header counts for nothing
     trusted_proxies: tuple = ('127.0.0.1', '::1')
 
+    # the database file: in the data folder, unless moved (the admin page can, on the server's own computer:
+    # it's kept in config.toml as `database`)
+    database: str = ''
+
     @property
     def db_path(self) -> Path:
-        return self.data_dir / 'tabcat.db'
+        return Path(self.database).expanduser() if self.database else self.data_dir / 'tabcat.db'
 
     @property
     def dashboard_dir(self) -> Path:
@@ -57,4 +61,20 @@ def load(data_dir=None, host=None, port=None, dashboard=None, setup_from=None, a
         setup_from=_list(pick(setup_from, 'TABCAT_SETUP_FROM', 'setup_from', Config.setup_from)),
         admin_from=_list(pick(admin_from, 'TABCAT_ADMIN_FROM', 'admin_from', Config.admin_from)),
         trusted_proxies=_list(pick(trusted_proxies, 'TABCAT_TRUSTED_PROXIES', 'trusted_proxies', Config.trusted_proxies)),
+        database=str(os.environ.get('TABCAT_DATABASE') or file.get('database', '')),
     )
+
+
+def save_setting(data_dir: Path, key: str, value: str):
+    """Set one string setting in the data folder's config.toml, the rest of it as it was."""
+    import json
+    path = data_dir / 'config.toml'
+    lines = path.read_text(encoding='utf-8').splitlines() if path.exists() else []
+    line = f'{key} = {json.dumps(value)}'  # (a JSON string is a TOML basic string: backslashes and all)
+    for i, l in enumerate(lines):
+        if l.split('=')[0].strip() == key:
+            lines[i] = line
+            break
+    else:
+        lines.append(line)
+    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')

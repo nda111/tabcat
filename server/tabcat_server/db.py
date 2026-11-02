@@ -83,5 +83,21 @@ class DB:
             self.conn.backup(target)
             target.close()
 
+    # Move to another file: copied there whole, then used from there; the old file goes
+    def move_to(self, dest):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with self.lock:
+            target = sqlite3.connect(dest)
+            self.conn.backup(target)
+            target.close()
+            old, self.path = self.path, dest
+            self.conn.close()
+            self.conn = sqlite3.connect(dest, check_same_thread=False, isolation_level=None)
+            self.conn.row_factory = sqlite3.Row
+            self.conn.execute('pragma foreign_keys = on')
+            self.conn.execute('pragma journal_mode = wal')
+            for suffix in ('', '-wal', '-shm'):
+                old.with_name(old.name + suffix).unlink(missing_ok=True)
+
     def purge_sessions(self):
         self.run('delete from sessions where expires_at < ?', time.time())
