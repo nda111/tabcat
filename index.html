@@ -24,6 +24,9 @@
       else if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
     } catch { /* storage unavailable */ }
     document.documentElement.classList.add('booting');
+    // (come from the server's own pages, which showed the spinner on the way: it shows at once, not after a moment)
+    // (kept, not taken: every dashboard tab loading meanwhile, the extension's reloads too, shows it at once)
+    try { if (Date.now() - +localStorage.getItem('tabcat:bootNow') < 5000) document.documentElement.classList.add('boot-now'); } catch { /* storage unavailable */ }
     setTimeout(() => document.documentElement.classList.remove('booting'), 3000);
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
