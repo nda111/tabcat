@@ -4311,6 +4311,7 @@ async function showAccount() {
   const btn = $('#btn-account');
   btn.hidden = false;
   shownAccount = me.id;
+  listenForChanges();
   // (the name to go by, if there's one, then the username: in the tooltip, the sidebar open or collapsed, and in
   // the dialog under the name; not the word "Account" the other buttons' collapsed tooltips would have)
   btn.removeAttribute('data-i18n-attr');
@@ -4331,6 +4332,18 @@ async function showAccount() {
     history.replaceState(null, '', location.pathname);
   }
 }
+// Live sync: the server says at once when the account has new changes (from its other browsers), and the
+// extension takes them (it would anyway, later: this makes it now). Server-sent events, reconnecting by
+// themselves; one connection for the page.
+let liveSync = null;
+function listenForChanges() {
+  if (liveSync || typeof EventSource === 'undefined') return;
+  liveSync = new EventSource('/api/sync/events');
+  liveSync.addEventListener('head', () => { if (B.info) B.call('syncNow').catch(() => {}); });
+}
+// (not held while in the back/forward cache: listening again on coming back)
+window.addEventListener('pagehide', (e) => { if (e.persisted && liveSync) { liveSync.close(); liveSync = null; } });
+window.addEventListener('pageshow', (e) => { if (e.persisted && shownAccount != null) listenForChanges(); });
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
   // (another account signed in here takes over, if there is one: the dashboard opens again as it)
