@@ -89,7 +89,9 @@ th { font-size: 12px; color: var(--muted); font-weight: 600; }
 td .row { flex-wrap: nowrap; justify-content: flex-end; }
 .tag { display: inline-block; font-size: 11.5px; padding: 1px 7px; border-radius: 99px; background: var(--hover); color: var(--muted); }
 .tag.accent { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); }
-.tag.off { color: var(--danger); }
+/* suspended: an outlined chip a little apart from the name; always there, hidden unless suspended (see admin.js) */
+.tag.off { background: transparent; color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); margin-left: 10px; padding: 0 7px; }
+.tag.ghost { visibility: hidden; }
 .radios label { font-weight: 400; display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
 .radios label b { font-weight: 600; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 14px; }
@@ -165,14 +167,17 @@ input:checked::before { transform: scale(1); }
 .step-btn:active:not(:disabled) span { transform: scale(.78); transition-duration: .06s; }
 .step-btn:disabled { opacity: .35; cursor: default; }
 /* a user's role: two choices side by side, the one they have filled in */
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.seg button { font: inherit; font-size: 12.5px; padding: 4px 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .16s ease, color .16s ease; }
+.seg { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { position: relative; font: inherit; font-size: 12.5px; padding: 4px 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .16s ease, color .2s ease; }
+/* (the filled part: under the one chosen, sliding across as it changes) */
+.seg-pill { position: absolute; top: 0; bottom: 0; left: 0; width: 50%; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+.seg-pill.second { transform: translateX(100%); }
 .seg button + button { border-left: 1px solid var(--border); }
 .seg button:hover:not(.on) { background: var(--hover); color: var(--text); }
-.seg button.on { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); font-weight: 600; cursor: default; }
+.seg button.on { color: var(--accent); font-weight: 600; cursor: default; }
 .seg button:disabled:not(.on) { opacity: .45; cursor: default; }
 /* a new password, in place of its button: click to copy */
-.newpw { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; padding: 3px 8px; border-radius: 6px; border: 1px dashed var(--accent); color: var(--accent); background: transparent; cursor: copy; }
+.newpw { justify-content: center; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; padding: 3px 8px; border-radius: 6px; border: 1px dashed var(--accent); color: var(--accent); background: transparent; cursor: copy; }
 /* rows and messages beside buttons sit on one line */
 .row .msg { margin: 0; min-height: 0; }
 /* dialogs (in place of the browser's): spring in, fade out */
@@ -197,3 +202,57 @@ dialog.modal .row { justify-content: flex-end; }
 .field-msg.ok { color: var(--accent); }
 .field-msg.error { color: var(--danger); }
 #add-form { margin-top: 12px; }
+
+/* two things in one place, as wide as the wider, one shown (the suspend button's two labels; reset and the new
+   password it made) */
+.swap, .pw-slot { display: inline-grid; align-items: center; }
+.swap > *, .pw-slot > * { grid-area: 1 / 1; }
+.swap > :nth-child(2), .swap.second > :first-child, .pw-slot > .newpw, .pw-slot.second > .btn { visibility: hidden; }
+.swap.second > :nth-child(2), .pw-slot.second > .newpw { visibility: visible; }
+.pw-slot > * { width: 100%; }
+td .who { white-space: nowrap; }
+
+/* a message line that keeps its room, empty or not (nothing below it moves as one comes) */
+.msg.keep, .msg.keep:empty { min-height: 1.5em; margin: 4px 0 10px; }
+
+/* the security settings: side by side, the fields lined up at the bottom whatever their labels' length */
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 16px; align-items: end; }
+.fields label { margin-bottom: 4px; }
+dl + p.small { margin: 0 0 6px; }
+
+/* a number whose 0 means "off" says so in place of the 0 (as the dashboard's) */
+.stepper { position: relative; }
+.step-zero { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 11px; color: var(--muted); pointer-events: none; opacity: 0; font-weight: 400; }
+.stepper.zero input:not(:focus) { color: transparent; }
+.stepper.zero:not(:focus-within) .step-zero { opacity: 1; }
+
+/* fields and buttons going still while the page waits (signing in): they fade back */
+input, .btn, .pw-eye { transition: border-color .16s ease, background-color .05s ease, color .16s ease, opacity .2s ease, scale .12s ease; }
+input:disabled { opacity: .55; cursor: default; }
+.pw:has(input:disabled) .pw-eye { opacity: .55; pointer-events: none; }
+
+/* toasts, as the dashboard's: at the bottom, in the theme's colours; a click puts one away */
+#toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+.toast-item {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.16); pointer-events: auto; cursor: pointer; white-space: nowrap; transition: scale .12s ease;
+}
+.toast-item:active { scale: .97; }
+
+/* the username's check: a button, then (asked) a circle: green with a tick, or red with a cross; clicked again,
+   it asks again. Typing turns it back into the button (see login.js) */
+.check-btn { position: relative; overflow: hidden; transition: background-color .2s ease, border-color .2s ease, color .2s ease, border-radius .28s ease, scale .12s ease; }
+.check-btn .lbl { transition: opacity .16s ease; }
+.check-btn svg { position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; opacity: 0; }
+.check-btn svg path { stroke-dasharray: 20; stroke-dashoffset: 20; }
+.check-btn.done { border-radius: 50%; padding: 0; color: #fff; }
+.check-btn.done .lbl { opacity: 0; }
+.check-btn.ok { background: #2f9e5b; border-color: #2f9e5b; }
+.check-btn.bad { background: var(--danger); border-color: var(--danger); }
+.check-btn.ok .tick, .check-btn.bad .cross { opacity: 1; }
+.check-btn.ok .tick path, .check-btn.bad .cross path { stroke-dashoffset: 0; transition: stroke-dashoffset .32s cubic-bezier(.22, 1, .36, 1) .12s; }
+.check-btn.busy .lbl { opacity: .4; }
+
+/* the sign-in box comes up as the page shows (see login.js) */
+@keyframes card-in { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+body:not([data-checking]) .card.intro { animation: card-in .42s cubic-bezier(.22, 1, .36, 1) both; }

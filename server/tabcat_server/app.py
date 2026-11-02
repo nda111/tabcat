@@ -20,11 +20,13 @@ PAGES = Path(__file__).parent / 'pages'
 MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
 API_PER_MINUTE = 240          # (per address)
 NO_STORE = {'Cache-Control': 'no-store'}
+# the admin page's number settings and their ranges (session_days 0: not staying signed in)
+NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes': (1, 1440)}
 
 
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
-    throttle = auth.Throttle()
+    throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.config = db, config
 
@@ -64,8 +66,10 @@ def create_app(config) -> FastAPI:
         token = auth.new_session(db, user_id, request.headers.get('user-agent', ''))
         r = JSONResponse({'ok': True})
         secure = request.url.scheme == 'https' or request.headers.get('x-forwarded-proto') == 'https'
+        # (staying signed in off: a cookie for as long as the browser's open)
+        keep = int(db.setting('session_days')) > 0
         r.set_cookie(auth.COOKIE, token, httponly=True, samesite='lax', secure=secure,
-                     max_age=int(float(db.setting('session_days') or 30) * 86400), path='/')
+                     max_age=int(auth.session_seconds(db)) if keep else None, path='/')
         return r
 
     async def body(request: Request) -> dict:
@@ -333,7 +337,7 @@ def create_app(config) -> FastAPI:
     @app.get('/api/admin/settings')
     def get_settings(request: Request):
         need_admin(request)
-        return {'signup': db.setting('signup'), 'session_days': int(db.setting('session_days'))}
+        return {'signup': db.setting('signup'), **{k: int(db.setting(k)) for k in NUMBERS}}
 
     @app.put('/api/admin/settings')
     async def put_settings(request: Request):
@@ -343,12 +347,23 @@ def create_app(config) -> FastAPI:
             if data['signup'] not in ('closed', 'invite', 'open'):
                 raise HTTPException(400, 'signup: closed, invite or open')
             db.set_setting('signup', data['signup'])
-        if 'session_days' in data:
-            days = int(data['session_days'])
-            if not 1 <= days <= 365:
-                raise HTTPException(400, 'session_days: 1 to 365')
-            db.set_setting('session_days', days)
+        for key, (lo, hi) in NUMBERS.items():
+            if key in data:
+                try:
+                    n = int(data[key])
+                except (TypeError, ValueError):
+                    raise HTTPException(400, f'{key}: a number')
+                if not lo <= n <= hi:
+                    raise HTTPException(400, f'{key}: {lo} to {hi}')
+                db.set_setting(key, n)
         return get_settings(request)
+
+    # Signing everyone out (but you): after a leak, or to make a changed setting count for everyone
+    @app.post('/api/admin/logout-all')
+    def logout_all(request: Request):
+        need_admin(request)
+        db.run('delete from sessions where token != ?', auth.token_hash(request.cookies.get(auth.COOKIE, '')))
+        return {'ok': True}
 
     @app.get('/api/admin/invites')
     def invites(request: Request):
@@ -386,6 +401,9 @@ def create_app(config) -> FastAPI:
             'dashboard': {'source': 'github' if config.dashboard == 'auto' else 'folder', 'folder': str(folder),
                           'present': dashboard.present(folder), 'version': dashboard.version(folder)},
             'users': db.one('select count(*) n from users')['n'],
+            # (set as it starts: see config.py)
+            'setup_from': list(config.setup_from), 'admin_from': list(config.admin_from), 'trusted_proxies': list(config.trusted_proxies),
+            'sessions': db.one('select count(*) n from sessions where expires_at > ?', time.time())['n'],
         }
 
     @app.post('/api/admin/dashboard/update')

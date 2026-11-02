@@ -86,6 +86,20 @@ t = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 codes = [t.post('/api/login', json=J(username='boss', password='nope nope')).status_code for _ in range(9)]
 check(codes[-1] == 429, f'many wrong passwords: it waits ({codes[-2:]})')
 
+# security settings: the login limit as set; staying signed in off; signing everyone out
+check(c.put('/api/admin/settings', json=J(login_tries=2)).status_code == 400 and c.put('/api/admin/settings', json=J(session_days=-1)).status_code == 400, 'settings out of range are refused')
+check(c.put('/api/admin/settings', json=J(login_tries=3, login_lock_minutes=5)).json()['login_tries'] == 3, 'the login limit is set')
+t3 = TestClient(app, follow_redirects=False, client=('192.0.2.5', 1))
+codes = [t3.post('/api/login', json=J(username='boss', password='nope nope')).status_code for _ in range(4)]
+check(codes == [401, 401, 401, 429], f'…and counts: three wrong, then a wait ({codes})')
+c.put('/api/admin/settings', json=J(session_days=0))
+s0 = TestClient(app, follow_redirects=False, client=('192.0.2.6', 1))
+cookie = s0.post('/api/login', json=J(username='kid', password='mine-now-1')).headers['set-cookie'].lower()
+check('max-age' not in cookie and 'expires' not in cookie and s0.get('/api/me').status_code == 200, 'staying signed in off: a cookie for as long as the browser is open')
+c.put('/api/admin/settings', json=J(session_days=30))
+check(c.get('/api/admin/info').json()['sessions'] >= 2 and c.get('/api/admin/info').json()['setup_from'] == ['127.0.0.1/32', '::1/128'], 'info tells the sessions and the addresses set at start')
+check(c.post('/api/admin/logout-all').status_code == 200 and s0.get('/api/me').status_code == 401 and c.get('/api/me').status_code == 200, 'signing everyone out: all but you')
+
 # the admin page from an address it isn't open to
 app2 = create_app(C.load(tempfile.mkdtemp(), dashboard=WEB, admin_from='10.0.0.0/8'))
 a2 = TestClient(app2, follow_redirects=False, client=('127.0.0.1', 50003))

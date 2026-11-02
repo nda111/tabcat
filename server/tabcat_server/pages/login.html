@@ -14,13 +14,13 @@
 <body data-checking>
   <div class="wrap">
     <div class="brand"><span class="logo"></span>tabcat</div>
-    <form class="card" id="form" novalidate>
-      <h1 id="title" data-t="signInTitle">Sign in to tabcat</h1>
-      <label><span data-t="username">Username</span><span class="field-row"><input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" required><button type="button" class="btn" id="check-name" hidden data-t="checkUsername">Check</button></span><span class="field-msg" id="name-msg"></span></label>
+    <form class="card intro" id="form" novalidate>
+      <h1 id="title" data-t="signInTitle">Sign in</h1>
+      <label><span data-t="username">Username</span><span class="field-row"><input type="text" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" required><button type="button" class="btn check-btn" id="check-name" hidden><span class="lbl" data-t="checkUsername">Check</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></span></label>
       <label><span data-t="password">Password</span><input type="password" id="password" autocomplete="current-password" required></label>
       <label id="again-row" hidden><span data-t="passwordAgain">Password again</span><input type="password" id="again" autocomplete="new-password"></label>
       <label id="invite-row" hidden><span data-t="invite">Invitation code</span><input type="text" id="invite" autocomplete="off" spellcheck="false"></label>
-      <p class="msg" id="msg"></p>
+      <p class="msg keep" id="msg"></p>
       <div class="row pair"><button type="submit" class="btn primary" id="go" data-t="signIn">Sign in</button><button type="button" class="btn" id="other" hidden></button></div>
     </form>
     <footer class="foot">© 2026 Yu Geunhyeok · <a href="/privacy" target="_blank" rel="noopener" data-t="privacy">Privacy</a> · <a href="https://github.com/nda111/tabcat" target="_blank" rel="noopener">GitHub</a></footer>

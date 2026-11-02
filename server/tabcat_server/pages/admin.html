@@ -42,8 +42,7 @@
           <label><input type="radio" name="signup" value="invite"><span><b data-t="signupInvite"></b><br><span class="muted small" data-t="signupInviteText"></span></span></label>
           <label><input type="radio" name="signup" value="open"><span><b data-t="signupOpen"></b><br><span class="muted small" data-t="signupOpenText"></span></span></label>
         </div>
-        <label style="max-width:260px"><span data-t="sessionDays">Stay signed in for (days)</span><input type="number" id="session-days" min="1" max="365"></label>
-        <p class="msg" id="settings-msg"></p>
+        <p class="msg keep" id="settings-msg"></p>
       </section>
       <section>
         <h2 data-t="invites">Invitations</h2>
@@ -52,6 +51,22 @@
           <button type="submit" class="btn" data-t="createInvite">Create invitation</button>
         </form>
         <table style="margin-top:8px"><tbody id="invites"></tbody></table>
+      </section>
+    </div>
+
+    <div class="card wide">
+      <section>
+        <h2 data-t="security">Security</h2>
+        <div class="fields">
+          <label><span data-t="sessionDays">Stay signed in for (days)</span><input type="number" id="session-days" min="0" max="365"></label>
+          <label><span data-t="loginTries">Wrong passwords before a wait</span><input type="number" id="login-tries" min="3" max="50"></label>
+          <label><span data-t="loginLock">The wait (minutes)</span><input type="number" id="login-lock" min="1" max="1440"></label>
+        </div>
+        <p class="msg keep" id="security-msg"></p>
+        <dl id="sessions"></dl>
+        <p class="muted small" data-t="startupNote">Set when the server starts:</p>
+        <dl id="startup"></dl>
+        <div class="row"><button type="button" class="btn danger" id="logout-all" data-t="logoutAll">Sign everyone out…</button></div>
       </section>
     </div>
 

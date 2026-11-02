@@ -31,7 +31,7 @@ create table if not exists invites (
 create table if not exists settings (key text primary key, value text not null);
 '''
 
-DEFAULTS = {'signup': 'closed', 'session_days': '30'}  # signup: closed | invite | open
+DEFAULTS = {'signup': 'closed', 'session_days': '30', 'login_tries': '8', 'login_lock_minutes': '10'}  # signup: closed | invite | open
 
 
 class DB:

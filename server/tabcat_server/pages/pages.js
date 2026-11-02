@@ -60,10 +60,47 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// a form's message line
+// a form's message line (a new message fades in; its room is kept where the line has class 'keep')
 export function say(el, text, kind = '') {
+  const keep = el.classList.contains('keep') ? ' keep' : '';
+  const changed = el.textContent !== (text || '');
   el.textContent = text || '';
-  el.className = `msg ${kind}`;
+  el.className = `msg ${kind}${keep}`;
+  if (changed && text) el.animate([{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' });
+}
+
+// A short note at the bottom (copied, saved): it rises in, and goes after a while or on a click, as the
+// dashboard's toasts
+export function toast(text) {
+  let stack = document.getElementById('toast');
+  if (!stack) { stack = h('div', { id: 'toast', 'aria-live': 'polite' }); document.body.append(stack); }
+  const item = h('div', { class: 'toast-item', onclick: () => away(true) }, text);
+  stack.append(item);
+  item.animate([{ opacity: 0, transform: 'translateY(10px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.34, 1.2, .64, 1)' });
+  const timer = setTimeout(() => away(false), 3000);
+  let gone = false;
+  function away(clicked) {
+    if (gone) return;
+    gone = true;
+    clearTimeout(timer);
+    item.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: clicked ? 'scale(.9)' : 'translateY(8px)' }],
+      { duration: 170, easing: 'ease-in', fill: 'forwards' }).finished.then(() => {
+      const before = new Map([...stack.children].map((el) => [el, el.getBoundingClientRect().top]));
+      item.remove();
+      for (const el of stack.children) {
+        const dy = before.get(el) - el.getBoundingClientRect().top;
+        if (Math.abs(dy) > .5) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+      }
+    });
+  }
+}
+
+// Change something that changes an element's width (its text, its shape), and let the width glide there
+export function morph(el, change, duration = 280) {
+  const from = el.getBoundingClientRect().width;
+  change();
+  const to = el.getBoundingClientRect().width;
+  if (Math.abs(from - to) > .5) el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
 }
 
 export const date = (s) => s ? new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s * 1000)) : t('never');
@@ -124,7 +161,12 @@ export function passwordToggles(root = document) {
   let shown = false;
   for (const b of buttons) b.addEventListener('click', () => {
     shown = !shown;
-    for (const input of fields) input.type = shown ? 'text' : 'password';
+    // (the text turns from dots to letters, or back, fading through and drawing together)
+    for (const input of fields) {
+      input.type = shown ? 'text' : 'password';
+      if (input.value) input.animate([{ color: 'transparent', letterSpacing: shown ? '.12em' : '-.08em' }, { color: getComputedStyle(input).color, letterSpacing: 'normal' }],
+        { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    }
     for (const x of buttons) {
       x.classList.toggle('shown', shown);
       x.setAttribute('aria-pressed', String(shown));
@@ -167,22 +209,26 @@ export function modal({ title, text = '', ok, danger = false, input = null }) {
 }
 
 // Number fields: − / + beside the value; the wheel over it steps it too; a step slides the new value in from
-// the side it came. Changes are announced as a 'change' (once a burst of steps settles).
-export function stepper(input) {
+// the side it came. Changes are announced as a 'change' (once a burst of steps settles). `zero`: what 0 means,
+// said in its place (as the dashboard's "Off").
+export function stepper(input, { zero = null } = {}) {
   const wrap = h('div', { class: 'stepper' });
   input.replaceWith(wrap);
+  const zeroLabel = zero ? h('span', { class: 'step-zero' }, zero) : null;
   let timer = null;
   const changed = () => { clearTimeout(timer); timer = setTimeout(() => input.dispatchEvent(new Event('change', { bubbles: true })), 400); };
   const sync = () => {
     down.disabled = input.min !== '' && +input.value <= +input.min;
     up.disabled = input.max !== '' && +input.value >= +input.max;
+    if (zero) wrap.classList.toggle('zero', input.value !== '' && +input.value === 0);
   };
   const step = (dir) => {
     const before = input.value;
     if (dir > 0) input.stepUp(); else input.stepDown();
     if (input.value === before) return;
-    input.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.34, 1.32, .64, 1)' });
     sync();
+    const shows = wrap.classList.contains('zero') && document.activeElement !== input ? zeroLabel : input;
+    shows.animate([{ transform: `translateY(${dir * -7}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(.34, 1.32, .64, 1)' });
     changed();
   };
   const button = (dir, label) => h('button', { type: 'button', class: 'step-btn', tabindex: '-1', 'aria-hidden': 'true',
@@ -197,7 +243,7 @@ export function stepper(input) {
     acc = 0;
   }, { passive: false });
   input.addEventListener('input', sync);
-  wrap.append(input, down, up);
+  wrap.append(input, ...(zeroLabel ? [zeroLabel] : []), down, up);
   sync();
   return { sync };
 }

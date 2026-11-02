@@ -31,11 +31,17 @@ def token_hash(token: str) -> str:
 
 def new_session(db, user_id: int, agent: str = '') -> str:
     token = secrets.token_urlsafe(32)
-    days = float(db.setting('session_days') or 30)
     now = time.time()
     db.run('insert into sessions (token, user_id, created_at, expires_at, agent) values (?, ?, ?, ?, ?)',
-           token_hash(token), user_id, now, now + days * 86400, agent[:200])
+           token_hash(token), user_id, now, now + session_seconds(db), agent[:200])
     return token
+
+
+# How long a sign-in lasts: 'session_days' (the admin page's); 0: not kept, the cookie goes as the browser
+# closes (and on the server after a day, should the browser keep it, restoring its tabs)
+def session_seconds(db) -> float:
+    days = float(db.setting('session_days') or 0)
+    return (days or 1) * 86400
 
 
 def session_user(db, token):
@@ -62,16 +68,18 @@ def valid_password(password: str) -> bool:
     return isinstance(password, str) and 8 <= len(password) <= 256
 
 
-# Too many wrong passwords from one address: it waits a while (in memory: forgotten on restart)
+# Too many wrong passwords from one address: it waits a while (in memory: forgotten on restart). How many,
+# and how long: the admin page's 'login_tries' and 'login_lock_minutes', asked each time (see `limits`).
 class Throttle:
-    def __init__(self, tries=8, window=600):
-        self.tries, self.window, self.seen = tries, window, {}
+    def __init__(self, limits=lambda: (8, 600)):
+        self.limits, self.seen = limits, {}
 
     def blocked(self, key) -> bool:
+        tries, window = self.limits()
         now = time.time()
-        recent = [t for t in self.seen.get(key, []) if now - t < self.window]
+        recent = [t for t in self.seen.get(key, []) if now - t < window]
         self.seen[key] = recent
-        return len(recent) >= self.tries
+        return len(recent) >= tries
 
     def failed(self, key):
         self.seen.setdefault(key, []).append(time.time())
