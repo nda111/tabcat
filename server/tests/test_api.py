@@ -233,6 +233,11 @@ n_before = len(d1.get('/api/me/sessions').json())
 d1.post('/api/login', json=J(username='ann', password='annpass99'))
 check(len(d1.get('/api/me/sessions').json()) == n_before, 'signing in again in the same browser: still one sign-in for it, not another device')
 
+# ended sign-ins are cleared away (on each new one), not kept for ever
+app.state.db.run("insert into sessions (token, user_id, created_at, expires_at) values ('oldone', ?, 0, 1)", boss)
+TestClient(app, client=('192.0.2.50', 1)).post('/api/login', json=J(username='ann', password='annpass99'))
+check(app.state.db.one("select count(*) n from sessions where token = 'oldone'")['n'] == 0, 'an ended sign-in is cleared away when another is made')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

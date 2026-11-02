@@ -27,6 +27,7 @@ NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes
 
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
+    db.purge_sessions()  # (ended sign-ins go: on starting, and on each new one, see sign_in)
     throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.config = db, config
@@ -114,6 +115,7 @@ def create_app(config) -> FastAPI:
         return rest or None
 
     def sign_in(request: Request, user_id: int) -> Response:
+        db.purge_sessions()
         found = accounts_of(request)
         # (signed in again here: this browser's old sign-in for the account ends, not left over as another device)
         for t, u in found:
