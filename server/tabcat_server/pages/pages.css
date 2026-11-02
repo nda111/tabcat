@@ -316,7 +316,7 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .profile { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
 .profile-text { min-width: 0; }
 .profile-text h1 { margin-bottom: 2px; }
-.profile-text p { margin-bottom: 8px; }
+.profile-text p { margin-bottom: 0; }
 
 /* the photo's edit button: a small round one over its lower right edge */
 .avatar-wrap { position: relative; flex: none; }
@@ -329,3 +329,7 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 .avatar-edit:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); scale: 1.06; }
 .avatar-edit:active { scale: .94; }
 .avatar-edit:focus-visible { outline-offset: 2px; }
+
+/* removing the photo: the same little button over its upper right edge, red under the pointer */
+.avatar-remove { top: -3px; bottom: auto; }
+.avatar-remove:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }

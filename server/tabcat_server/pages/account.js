@@ -12,7 +12,11 @@ function showAvatar(user, animate = false) {
   const el = $('#avatar');
   el.replaceChildren(user.avatar ? Object.assign(document.createElement('img'), { src: user.avatar, alt: '' }) : [...user.username][0].toUpperCase());
   el.classList.toggle('has-photo', !!user.avatar);
-  $('#photo-remove').hidden = !user.avatar;
+  // (the remove button: there only with a photo, popping in and out)
+  const rm = $('#photo-remove'), show = !!user.avatar;
+  if (!animate || rm.hidden === !show) rm.hidden = !show;
+  else if (show) { rm.hidden = false; rm.animate([{ transform: 'scale(0)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); }
+  else rm.animate([{ transform: 'none' }, { transform: 'scale(0)' }], { duration: 180, easing: 'ease-in' }).finished.then(() => { rm.hidden = true; });
   if (animate) el.animate([{ transform: 'scale(.7)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.34, 1.4, .64, 1)' });
 }
 showAvatar(me);
