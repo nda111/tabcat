@@ -4302,6 +4302,7 @@ async function init() {
 
 // On the user's own tabcat server, the account signed in there: in Settings, with the way to its page (and
 // the admin page, for an admin), and signing out. (Not on tabcat.ghyeok.com or this computer: no server there to ask.)
+let shownAccount = null; // (the account this page shows: see pageshow below)
 async function showAccount() {
   if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
   const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
@@ -4309,6 +4310,7 @@ async function showAccount() {
   // (the sidebar's Account button, between About and Settings: its tooltip says who; it opens the Account dialog)
   const btn = $('#btn-account');
   btn.hidden = false;
+  shownAccount = me.id;
   // (the name to go by, if there's one, then the username: in the tooltip, and in the dialog under the name)
   btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
   $('#account-name').textContent = me.name || me.username;
@@ -4435,9 +4437,16 @@ for (const a of document.querySelectorAll('#account a[href^="/"]')) {
   });
 }
 // (back here from there, the browser may show this page as it was left: faded)
-// (and it opens again, as when it first came)
-addEventListener('pageshow', (e) => {
+// (and it opens again, as when it first came; another account in use since, switched to elsewhere: it loads
+// again as that one, its data and look; the same: its Account brought up to date)
+addEventListener('pageshow', async (e) => {
   if (!e.persisted) return;
+  if (shownAccount != null) {
+    const me = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).then((r) => (r.ok ? r.json() : null), () => null);
+    if (me?.id !== shownAccount) { location.reload(); return; }
+    closeAccountList(false);
+    showAccount();
+  }
   const root = document.documentElement;
   root.classList.remove('leaving', 'opening');
   void root.offsetWidth;
