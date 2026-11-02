@@ -4258,8 +4258,8 @@ async function init() {
     B.on('ready', (late) => { if (started) return; started = true; clearInterval(ask); start(late); });
     return;
   }
-  show();
-  await start(ext);
+  // (shown once the board's drawn: it rises in whole, not empty and then filled)
+  try { await start(ext); } finally { show(); }
 }
 
 // On the user's own tabcat server, the account signed in there: in Settings, with the way to its page (and
@@ -4275,8 +4275,24 @@ async function showAccount() {
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
-  location.reload();
+  leaveFor(() => location.reload());
 });
+// Going to the server's own pages (the account, the admin page): the dashboard fades out first, and the page
+// there rises in (see html.leaving in app.css)
+function leaveFor(go) {
+  const root = document.documentElement;
+  root.classList.add('leaving');
+  setTimeout(go, 200);
+}
+for (const a of document.querySelectorAll('#account-row a[href^="/"]')) {
+  a.addEventListener('click', (e) => {
+    if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // (a new tab or window: this stays)
+    e.preventDefault();
+    leaveFor(() => location.assign(a.href));
+  });
+}
+// (back here from there, the browser may show this page as it was left: faded)
+addEventListener('pageshow', (e) => { if (e.persisted) document.documentElement.classList.remove('leaving'); });
 
 async function start(ext) {
   setExtension(ext);
