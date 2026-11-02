@@ -4307,6 +4307,14 @@ for (const a of document.querySelectorAll('#account-row a[href^="/"]')) {
     leaveFor(() => location.assign(a.href));
   });
 }
+// Reloading from the keyboard (F5, Ctrl+R / ⌘R): it fades out first, then opens again. (The browser's reload
+// button can't be waited on; a hard reload, with Shift, is left to the browser.)
+addEventListener('keydown', (e) => {
+  const reload = (e.key === 'F5' && !e.ctrlKey && !e.metaKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'r');
+  if (!reload || e.shiftKey || e.repeat || document.documentElement.classList.contains('leaving')) return;
+  e.preventDefault();
+  leaveFor(() => location.reload());
+}, true);
 // (back here from there, the browser may show this page as it was left: faded)
 addEventListener('pageshow', (e) => { if (e.persisted) document.documentElement.classList.remove('leaving'); });
 
