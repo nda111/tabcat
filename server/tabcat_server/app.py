@@ -878,6 +878,15 @@ def create_app(config) -> FastAPI:
         snap = db.one('select seq from sync_snapshots where user_id = ?', uid)
         return max(r['n'] or 0, snap['seq'] if snap else 0)
 
+    def sync_user(request: Request):
+        """The account signed in, which must be the one the browser keeps the data for (X-Tabcat-Account: its
+        key): another signed in meanwhile (in the server's pages), and nothing of one goes into the other."""
+        u = need_user(request)
+        want = request.headers.get('x-tabcat-account')
+        if want is not None and want != str(u['space'] or u['id']):
+            raise HTTPException(409, 'another account is signed in')
+        return u
+
     def sync_ops_after(uid, after, limit=1000):
         rows = db.q('select seq, op_id, device, body from sync_ops where user_id = ? and seq > ? order by seq limit ?', uid, after, limit)
         return [{'seq': r['seq'], 'id': r['op_id'], 'device': r['device'], 'body': json.loads(r['body'])} for r in rows]
@@ -885,7 +894,7 @@ def create_app(config) -> FastAPI:
     @app.get('/api/sync/state')
     def sync_state(request: Request):
         """Everything to start from: the latest copy (none yet: null) and the changes after it."""
-        u = need_user(request)
+        u = sync_user(request)
         snap = db.one('select seq, body, at from sync_snapshots where user_id = ?', u['id'])
         after = snap['seq'] if snap else 0
         return {'snapshot': {'seq': snap['seq'], 'at': snap['at'], 'body': json.loads(snap['body'])} if snap else None,
@@ -895,7 +904,7 @@ def create_app(config) -> FastAPI:
     def sync_since(request: Request, after: int = 0):
         """The changes after a number (`more`: there are yet more after these). Too far behind, before the
         oldest kept: `reload`, start again from the copy."""
-        u = need_user(request)
+        u = sync_user(request)
         oldest = db.one('select min(seq) n from sync_ops where user_id = ?', u['id'])['n']
         snap = db.one('select seq from sync_snapshots where user_id = ?', u['id'])
         if snap and after < snap['seq'] and (oldest is None or after < oldest - 1):
@@ -907,7 +916,7 @@ def create_app(config) -> FastAPI:
     async def sync_push(request: Request):
         """Changes from a browser, in its order: each kept once (its id), numbered after the rest. What came
         back: the numbers each got (a change kept before: its number then)."""
-        u = need_user(request)
+        u = sync_user(request)
         data = await body(request)
         device = str(data.get('device', ''))[:64]
         ops = data.get('ops') if isinstance(data.get('ops'), list) else []
@@ -932,7 +941,7 @@ def create_app(config) -> FastAPI:
     async def sync_snapshot(request: Request):
         """A whole copy, as it stands after change number `seq` (the first, with nothing kept yet: seq 0, the
         browser's own data to start from). An older one than kept: refused. Changes long before it go."""
-        u = need_user(request)
+        u = sync_user(request)
         data = await body(request)
         seq = data.get('seq')
         if not isinstance(seq, int) or seq < 0 or seq > sync_head(u['id']) or not isinstance(data.get('body'), dict):
@@ -941,6 +950,10 @@ def create_app(config) -> FastAPI:
             have = db.one('select seq from sync_snapshots where user_id = ?', u['id'])
             if have and seq < have['seq']:
                 raise HTTPException(409, 'an older copy than kept')
+            # (a browser's own data to start from, `first`: only while there's nothing here yet; two browsers
+            # starting the same account at once, the other one takes this one's)
+            if data.get('first') and (have or sync_head(u['id'])):
+                raise HTTPException(409, 'there is data here already')
             db.run('insert into sync_snapshots (user_id, seq, at, body) values (?, ?, ?, ?) on conflict(user_id) do update set seq = excluded.seq, at = excluded.at, body = excluded.body',
                    u['id'], seq, time.time(), json.dumps(data['body'], separators=(',', ':')))
             db.run('delete from sync_ops where user_id = ? and seq <= ?', u['id'], seq - SYNC_KEEP_OPS)

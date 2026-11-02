@@ -83,7 +83,9 @@ with sync_playwright() as p:
     d.fill('dialog.modal input[type=text]', ''); d.type('dialog.modal input[type=text]', want.lower()); time.sleep(.1)
     check(d.input_value('dialog.modal input[type=text]') == want, f"letters typed small come out capital where the phrase has them so ({d.input_value('dialog.modal input[type=text]')!r})")
     check(d.is_enabled(go), 'the phrase and the password: it can go')
-    d.click(go); time.sleep(1)
+    d.click(go)
+    try: d.wait_for_function("!document.querySelector('#twofa .tag.accent')", timeout=8000); time.sleep(.4)
+    except Exception: pass
     check(d.is_visible('#twofa .btn') and not d.locator('#twofa .tag.accent').count(), 'off again')
     check(not errors, f'no page errors {errors}')
     ctx.close()

@@ -94,6 +94,12 @@
     if (greeted) toPage({ event: 'disconnected' });
   }, 2000);
 
+  // (sync, connected to the user's own server: back online, or the dashboard looked at again, the extension
+  // checks with the server now; it would anyway, a little later)
+  const nudge = () => { if (greeted && alive()) chrome.runtime.sendMessage({ cmd: 'syncNow' }).catch(() => {}); };
+  window.addEventListener('online', nudge);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') nudge(); });
+
   // Connect only once the page identifies itself as the dashboard (its 'hello'), so other pages
   // on the same origin never talk to the extension.
 })();

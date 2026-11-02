@@ -3,7 +3,30 @@
 Your own tabcat server, for your own computers: it hosts the tabcat dashboard at your address, with
 accounts (each with its own data) and an admin page. tabcat works without one; this is for when you want it.
 
-It hosts the dashboard only. Syncing your data between computers comes next.
+Signed in to the same account in several browsers, each keeps the same tabcat: your workspaces (with
+everything in them), Recently deleted, and the look (theme and accent). Settings of each computer's own
+(auto-suspend, columns…) and the undo history stay with that browser. Changes made offline wait in the
+browser and go once the server can be reached; none are lost. The browser's own tabcat (what
+tabcat.ghyeok.com shows) is never sent: an account new to the server starts from a copy of it, and an
+account that has data there already brings that data instead.
+
+### How sync works
+
+Each browser sends its changes, each with an id of its own, and the server numbers them in the order they
+come (a change sent twice is kept once). Every browser takes the changes in that order and applies them
+the same way, so all end up the same; two changes made at once to different things are both kept, and to
+the same thing, the later one wins. Now and then a browser sends a whole copy, and older changes are let go
+(the last 5000 stay, for browsers a little behind). The API, under `/api/sync/` (signed in; the header
+`X-Tabcat-Account` names the account the browser means, and another one signed in is refused):
+
+| | |
+|---|---|
+| `GET state` | the latest whole copy and the changes after it |
+| `GET ops?after=N` | the changes after number N (`more`: there are more; `reload`: too far behind, start from `state`) |
+| `POST ops` | `{device, ops: [{id, body}]}`: changes, in order; answers the number each got |
+| `PUT snapshot` | `{seq, body}`: a whole copy as of change `seq` (`first`: the account's first, only while there's nothing) |
+
+Bodies up to 8 MB, gzipped or not; answers are gzipped when it's worth it.
 
 ## Run it
 

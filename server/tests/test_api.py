@@ -334,7 +334,10 @@ sa = TestClient(app, follow_redirects=False, client=('192.0.2.90', 1)); sb = Tes
 sa.post('/api/login', json=J(username='ann', password='annpass99')); sb.post('/api/login', json=J(username='ben', password='benpass99'))
 st0 = sa.get('/api/sync/state').json()
 check(st0 == {'snapshot': None, 'ops': [], 'head': 0}, 'sync: nothing kept yet for a new account')
-check(sa.put('/api/sync/snapshot', json={'seq': 0, 'body': {'state': {'workspaces': []}}}).json()['seq'] == 0, 'the first copy (the browser’s own data to start from)')
+check(sa.put('/api/sync/snapshot', json={'seq': 0, 'first': True, 'body': {'state': {'workspaces': []}}}).json()['seq'] == 0, 'the first copy (the browser’s own data to start from)')
+check(sa.put('/api/sync/snapshot', json={'seq': 0, 'first': True, 'body': {}}).status_code == 409, "another browser's first copy, after it: refused (it takes this one's)")
+ann_key = sa.get('/api/me').json()['space']
+check(sa.get('/api/sync/state', headers={'X-Tabcat-Account': ann_key}).status_code == 200 and sa.get('/api/sync/state', headers={'X-Tabcat-Account': 'someone-else'}).status_code == 409, "the data asked for as another account than the one signed in: refused")
 r = sa.post('/api/sync/ops', json={'device': 'd1', 'ops': [{'id': 'a1', 'body': {'op': 'patch'}}, {'id': 'a2', 'body': {'op': 'move'}}]}).json()
 check([a['seq'] for a in r['acked']] == [1, 2] and r['head'] == 2, 'changes numbered in the order they came')
 r = sa.post('/api/sync/ops', json={'device': 'd1', 'ops': [{'id': 'a2', 'body': {'op': 'move'}}, {'id': 'a3', 'body': {'op': 'remove'}}]}).json()

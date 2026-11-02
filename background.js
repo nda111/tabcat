@@ -1,6 +1,7 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
 import * as I from './lib/i18n.js';
+import * as Y from './lib/sync.js';
 
 /* ================= setup ================= */
 
@@ -78,6 +79,7 @@ async function closeTabs(tabs, what, close = () => chrome.tabs.remove(tabs.map((
 // outermost first). An entry whose node is on the board again (an undo or Restore put it back) isn't
 // listed, but stays, so undoing that brings it back to the list; deleted again, a new entry replaces it.
 const TRASH_KEY = 'tabcat:trash';
+const SYNC_KEY = 'tabcat:sync'; // (where sync keeps its part: see the sync section)
 const TRASH_DAYS = 30;
 let trashChain = Promise.resolve();
 function withTrash(fn) { // serialized; `fn` may change the list in place (entries past 30 days: gone)
@@ -587,7 +589,7 @@ chrome.tabs.onUpdated.addListener(async (_id, change, tab) => {
   if (server && new URL(tab.url).origin === server) gateMenus();
 });
 chrome.windows.onFocusChanged.addListener(async (id) => {
-  if (id !== chrome.windows.WINDOW_ID_NONE && (await S.loadSettings()).server) gateMenus();
+  if (id !== chrome.windows.WINDOW_ID_NONE && (await S.loadSettings()).server) { gateMenus(); syncSoon(0); }
 });
 
 // Anything of tabcat's from the menu or a shortcut while that's needed: the server's page for it opens instead
@@ -838,26 +840,40 @@ async function linkServer(origin) {
 // Each server has data of its own, apart from the browser's own (what tabcat.ghyeok.com shows): connecting
 // puts the one in use away under its space's name and takes out the server's (new: a fresh start), and
 // disconnecting does the reverse. The undo history starts over. (The server keeps its copy in step: later.)
-const SPACE_KEYS = [S.KEY, TRASH_KEY, 'tabcat:tabGroupLinks'];
-const LOOK_KEY = 'tabcat:look', LOOK = ['theme', 'accent']; // (each space's look: see switchSpace)
-async function switchSpace(from, to) {
-  const named = (k, space) => `${k}@${space}`;
-  const now = await chrome.storage.local.get(SPACE_KEYS);
-  const next = await chrome.storage.local.get(SPACE_KEYS.map((k) => named(k, to)));
-  const out = {};
-  for (const k of SPACE_KEYS) {
-    if (now[k] !== undefined) out[named(k, from)] = now[k];
-    out[k] = next[named(k, to)] ?? (k === S.KEY ? S.defaultState() : k === TRASH_KEY ? [] : {});
-  }
-  // the look (Settings > Appearance) is each space's own too: this one's kept, the next one's taken up; one that
-  // never set it gets the defaults (kept apart, not swapped: settings stay where the rest of tabcat reads them)
-  const settings = await S.loadSettings();
-  const look = (await chrome.storage.local.get(named(LOOK_KEY, to)))[named(LOOK_KEY, to)] || {};
-  out[named(LOOK_KEY, from)] = Object.fromEntries(LOOK.map((k) => [k, settings[k]]));
-  out[S.SETTINGS_KEY] = { ...settings, ...Object.fromEntries(LOOK.map((k) => [k, look[k] ?? S.DEFAULT_SETTINGS[k]])) };
-  await chrome.storage.local.set(out);
-  await chrome.storage.local.remove(SPACE_KEYS.map((k) => named(k, to)));
-  await withHistory(async (h) => { await dropSnaps([...h.undo, ...h.redo]); h.undo = []; h.redo = []; });
+const SPACE_KEYS = [S.KEY, TRASH_KEY, 'tabcat:tabGroupLinks', SYNC_KEY];
+const LOOK_KEY = 'tabcat:look', LOOK = Y.LOOK; // (each space's look: see switchSpace)
+// (an account's space new to this browser starts from a copy of the browser's own data and look: what the
+// server keeps for the account, if it has anything yet, takes its place once sync reaches it)
+const isAccountSpace = (space) => space.includes('|');
+function switchSpace(from, to) {
+  return withSpace(async () => {
+    const named = (k, space) => `${k}@${space}`;
+    const now = await chrome.storage.local.get(SPACE_KEYS);
+    const next = await chrome.storage.local.get(SPACE_KEYS.map((k) => named(k, to)));
+    const fresh = isAccountSpace(to) && next[named(S.KEY, to)] === undefined;
+    const browser = fresh && (from === 'local' ? now : Object.fromEntries(Object.entries(
+      await chrome.storage.local.get(SPACE_KEYS.map((k) => named(k, 'local'))),
+    ).map(([k, v]) => [k.slice(0, -'@local'.length), v])));
+    const out = {}, gone = SPACE_KEYS.map((k) => named(k, to));
+    for (const k of SPACE_KEYS) {
+      if (now[k] !== undefined) out[named(k, from)] = now[k];
+      const v = next[named(k, to)] ?? (fresh && k !== SYNC_KEY ? structuredClone(browser[k]) : undefined);
+      if (v !== undefined) out[k] = v;
+      else if (k === SYNC_KEY) gone.push(k); // (never synced: sync starts it)
+      else out[k] = k === S.KEY ? S.defaultState() : k === TRASH_KEY ? [] : {};
+    }
+    // the look (Settings > Appearance) is each space's own too: this one's kept, the next one's taken up; one that
+    // never set it gets the defaults (kept apart, not swapped: settings stay where the rest of tabcat reads them)
+    const settings = await S.loadSettings();
+    const keyOf = named(LOOK_KEY, to), localKey = named(LOOK_KEY, 'local');
+    const stored = await chrome.storage.local.get([keyOf, localKey]);
+    const look = stored[keyOf] || (fresh && (from === 'local' ? settings : stored[localKey])) || {};
+    out[named(LOOK_KEY, from)] = Object.fromEntries(LOOK.map((k) => [k, settings[k]]));
+    out[S.SETTINGS_KEY] = { ...settings, ...Object.fromEntries(LOOK.map((k) => [k, look[k] ?? S.DEFAULT_SETTINGS[k]])) };
+    await chrome.storage.local.remove(gone.filter((k) => !(k in out)));
+    await chrome.storage.local.set(out);
+    await withHistory(async (h) => { await dropSnaps([...h.undo, ...h.redo]); h.undo = []; h.redo = []; });
+  });
 }
 // The dashboards open now (here, on tabcat.ghyeok.com or on `also`) load again, to show what they now are
 async function reloadDashboards(also) {
@@ -890,6 +906,7 @@ function ensureAccount() {
     if (!user || user === (s.serverUser ?? null)) return false;
     await switchSpace(spaceName(s.server, s.serverUser), spaceName(s.server, user));
     await S.saveSettings({ serverUser: user });
+    syncSoon();
     return true;
   })().finally(() => { accountCheck = null; });
   return accountCheck;
@@ -941,12 +958,237 @@ chrome.runtime.onStartup.addListener(checkServer);
 chrome.runtime.onInstalled.addListener(checkServer);
 chrome.permissions.onRemoved.addListener(checkServer);
 
+/* ================= sync ================= */
+
+// Signed in to an account on the user's own server, its data (the tree, Recently deleted, the look) is kept
+// in step with the server, and through it with the account's other browsers (see lib/sync.js for how).
+// The browser's own data never goes there: only an account's space syncs.
+//
+// What sync keeps, in the space (SYNC_KEY, put away and taken out with it, so a queue waits for its account):
+//   { space, seq, snapAt, base, shadow, pending: [{ id, body, seq? }], n }
+//   base: the doc as the server has it after change number `seq`; shadow: this browser's doc as last looked
+//   at; pending: this browser's changes the server hasn't handed back yet (`seq`: it has them, numbered),
+//   in order: the browser's doc is always `base` with them done on top. `snapAt`: the server's whole copy.
+// Nothing is lost offline: what changed is found by comparing the doc with `shadow` (both kept in storage), and
+// a change leaves `pending` only once it comes back from the server, in its place among everyone's.
+const DEVICE_KEY = 'tabcat:device';
+const SNAPSHOT_EVERY = 200; // (changes after the server's whole copy before this browser sends a new one)
+let spaceChain = Promise.resolve();
+function withSpace(fn) { // (the space in use, changing or being written by sync: one at a time)
+  const run = spaceChain.then(fn);
+  spaceChain = run.catch(() => {});
+  return run;
+}
+const accountSpace = (s) => (s.server && s.serverUser ? spaceName(s.server, s.serverUser) : null);
+async function deviceId() {
+  let id = (await chrome.storage.local.get(DEVICE_KEY))[DEVICE_KEY];
+  if (!id) await chrome.storage.local.set({ [DEVICE_KEY]: (id = S.uid() + S.uid()) });
+  return id;
+}
+
+// `fn(sync, doc, settings)` with the data held still (nothing else writes it meanwhile), after what changed
+// here since last time is queued. It may change `sync` and return a doc for the browser to show: all of it
+// written at once (never the one without the other). Not in an account's space (or another than `space`): null.
+function syncTxn(space, fn) {
+  return withSpace(() => withTrash(async (trash) => {
+    let out = null;
+    await S.update(async (state) => {
+      const settings = await S.loadSettings();
+      if (accountSpace(settings) !== space) return false;
+      let sync = (await chrome.storage.local.get(SYNC_KEY))[SYNC_KEY] || null;
+      if (sync && sync.space !== space) sync = null;
+      const now = Y.docOf({ state, trash, settings });
+      const write = {};
+      if (sync) {
+        const ops = Y.diff(sync.shadow, now);
+        if (ops.length) {
+          sync.pending.push({ id: `${await deviceId()}.${++sync.n}`, body: Y.body(ops) });
+          sync.shadow = now;
+          write[SYNC_KEY] = sync;
+        }
+      }
+      const res = fn ? await fn(sync, now, settings) : null;
+      const show = res?.show;
+      if (res?.sync) write[SYNC_KEY] = res.sync;
+      if (res && res.sync === null) { await chrome.storage.local.remove(SYNC_KEY); sync = null; delete write[SYNC_KEY]; }
+      if (show) {
+        // (only what's different: an unchanged tree written again would draw the dashboards again)
+        if (!same(show.workspaces, now.workspaces)) write[S.KEY] = { version: S.VERSION, workspaces: show.workspaces };
+        if (!same(show.trash, now.trash)) { write[TRASH_KEY] = show.trash; trash.splice(0, trash.length, ...show.trash); }
+        if (!same(show.look, now.look)) write[S.SETTINGS_KEY] = { ...settings, ...show.look };
+        (res.sync || sync).shadow = Y.clone(show);
+        write[SYNC_KEY] = res.sync || sync;
+      }
+      if (Object.keys(write).length) await chrome.storage.local.set(write);
+      out = { sync: write[SYNC_KEY] || sync, trashChanged: TRASH_KEY in write, res };
+      return false; // (written above, all at once)
+    });
+    return out;
+  }));
+}
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// the browser's doc: the server's, with this browser's changes not handed back yet on top
+const shown = (sync) => Y.apply(Y.clone(sync.base), sync.pending.flatMap((p) => Y.opsOf(p.body)));
+
+class SyncError extends Error {}
+async function syncApi(s, path, { method = 'GET', json } = {}) {
+  const opts = { method, credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(20000), headers: { 'X-Tabcat-Account': s.serverUser } };
+  if (json !== undefined) {
+    const { body, headers } = await Y.packed(json);
+    opts.body = body;
+    Object.assign(opts.headers, { 'Content-Type': 'application/json' }, headers);
+  }
+  const r = await fetch(`${s.server}/api/sync/${path}`, opts);
+  if (r.status === 409 && (await r.clone().json().catch(() => ({}))).detail === 'another account is signed in') {
+    ensureAccount();
+    throw new SyncError('account');
+  }
+  if (!r.ok) throw Object.assign(new SyncError(`${r.status}`), { status: r.status });
+  return r.json();
+}
+
+// The account's data as the server has it (a whole copy, and the changes after it), in place of this browser's:
+// this browser's changes not handed back yet stay, on top (those already in it go)
+function takeServers(space, st, keepPending = true) {
+  return syncTxn(space, async (sync) => {
+    const base = Y.clone(st.snapshot?.body || { workspaces: [], trash: [], look: {} });
+    base.workspaces ||= []; base.trash ||= []; base.look ||= {};
+    let seq = st.snapshot?.seq || 0;
+    const ids = new Set();
+    for (const op of st.ops) { Y.apply(base, Y.opsOf(op.body)); seq = op.seq; ids.add(op.id); }
+    const pending = keepPending && sync ? sync.pending.filter((p) => !ids.has(p.id) && !(p.seq != null && p.seq <= seq)) : [];
+    const next = { space, seq, snapAt: st.snapshot?.seq || 0, base, shadow: null, pending, n: sync?.n || 0 };
+    return { sync: next, show: shown(next) };
+  });
+}
+
+// The first time here: nothing on the server yet, this browser's data becomes the account's (its first whole
+// copy); else the server's takes the place of this browser's
+async function firstContact(s, space) {
+  const st = await syncApi(s, 'state');
+  if (st.snapshot || st.ops.length) return takeServers(space, st, false);
+  const start = (await syncTxn(space, async (_sync, now) => ({ doc: now })))?.res?.doc;
+  if (!start) return null;
+  try {
+    await syncApi(s, 'snapshot', { method: 'PUT', json: { seq: 0, first: true, body: start } });
+  } catch (e) {
+    if (e.status === 409) return takeServers(space, await syncApi(s, 'state'), false); // (another browser was first)
+    throw e;
+  }
+  await syncTxn(space, async (sync) => (sync ? null : { sync: { space, seq: 0, snapAt: 0, base: start, shadow: start, pending: [], n: 0 } }));
+  return syncTxn(space, null); // (what changed here while it went: queued, as any change after it)
+}
+
+const syncInfo = { lastOk: null, lastError: null, fails: 0 };
+let syncRunning = null, syncAgain = false, syncTimer = null, retryTimer = null;
+function syncSoon(ms = 0) {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, ms);
+}
+function syncNow() {
+  if (syncRunning) { syncAgain = true; return syncRunning; }
+  syncRunning = (async () => {
+    do { syncAgain = false; await syncOnce(); } while (syncAgain);
+  })().finally(() => { syncRunning = null; });
+  return syncRunning;
+}
+async function syncOnce() {
+  const s = await S.loadSettings();
+  const space = accountSpace(s);
+  if (!space) return;
+  clearTimeout(retryTimer);
+  try {
+    let sync = (await syncTxn(space, null))?.sync; // (what changed here: queued first, online or not)
+    if (!sync) { await firstContact(s, space); sync = (await syncTxn(space, null))?.sync; }
+    if (!sync) return;
+    // send what the server doesn't have yet, in order (each kept there once: sending again does no harm)
+    const unsent = sync.pending.filter((p) => p.seq == null);
+    for (let i = 0; i < unsent.length; i += 200) {
+      const part = unsent.slice(i, i + 200);
+      const r = await syncApi(s, 'ops', { method: 'POST', json: { device: await deviceId(), ops: part.map(({ id, body }) => ({ id, body })) } });
+      const got = new Map(r.acked.map((a) => [a.id, a.seq]));
+      sync = (await syncTxn(space, async (y) => {
+        if (!y) return null;
+        for (const p of y.pending) if (got.has(p.id)) p.seq = got.get(p.id);
+        return { sync: y };
+      }))?.sync || sync;
+    }
+    // take what came after, everyone's in the server's order (this browser's own among them: done with)
+    const ops = [];
+    let after = sync.seq, head = 0;
+    for (;;) {
+      const r = await syncApi(s, `ops?after=${after}`);
+      head = r.head;
+      if (r.reload) { await takeServers(space, await syncApi(s, 'state')); break; }
+      ops.push(...r.ops);
+      if (r.ops.length) after = r.ops[r.ops.length - 1].seq;
+      if (!r.more) break;
+    }
+    if (head < sync.seq) {
+      // (the server has less than this browser took from it: its data was put back from an older copy, or let
+      // go; this browser's goes up again as the account's, if it has nothing now)
+      await syncTxn(space, async () => ({ sync: null }));
+      return syncOnce();
+    }
+    if (ops.length) {
+      const res = await syncTxn(space, async (y) => {
+        if (!y || y.seq !== sync.seq) return null; // (changed meanwhile: next time)
+        const mine = new Set(y.pending.map((p) => p.id));
+        const others = ops.some((op) => !mine.has(op.id));
+        for (const op of ops) {
+          if (op.seq <= y.seq) continue;
+          Y.apply(y.base, Y.opsOf(op.body));
+          y.seq = op.seq;
+        }
+        const back = new Set(ops.map((op) => op.id));
+        y.pending = y.pending.filter((p) => !back.has(p.id));
+        return others ? { sync: y, show: shown(y) } : { sync: y };
+      });
+      if (res?.trashChanged) broadcast('trash');
+      sync = res?.sync || sync;
+    }
+    // now and then a whole copy, so the server can let older changes go
+    if (sync.seq - (sync.snapAt || 0) >= SNAPSHOT_EVERY) {
+      const at = sync.seq, copy = Y.clone(sync.base);
+      await syncApi(s, 'snapshot', { method: 'PUT', json: { seq: at, body: copy } }).catch(() => null);
+      await syncTxn(space, async (y) => (y && y.seq >= at ? { sync: { ...y, snapAt: at } } : null));
+    }
+    syncInfo.lastOk = Date.now(); syncInfo.lastError = null; syncInfo.fails = 0;
+  } catch (e) {
+    // offline, the server down or signed out: tried again (sooner at first, then less often), and on coming
+    // back online, a dashboard opening, a window coming to the front; the alarm wakes the worker meanwhile
+    syncInfo.lastError = e.message || String(e);
+    syncInfo.fails++;
+    retryTimer = setTimeout(syncNow, Math.min(300, 5 * 2 ** (syncInfo.fails - 1)) * 1000);
+  }
+}
+async function syncAlarm() {
+  const s = await S.loadSettings();
+  if (s.server) chrome.alarms.create('sync', { periodInMinutes: 1 });
+  else chrome.alarms.clear('sync');
+}
+chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'sync') syncNow(); });
+self.addEventListener('online', () => syncNow());
+chrome.runtime.onStartup.addListener(() => syncNow());
+syncAlarm();
+syncSoon(1000); // (the worker woke: anything left over)
+handlers.syncNow = () => { syncSoon(0); return true; };
+handlers.syncStatus = async () => {
+  const s = await S.loadSettings();
+  const sync = (await chrome.storage.local.get(SYNC_KEY))[SYNC_KEY];
+  return {
+    space: accountSpace(s), seq: sync?.seq ?? null, snapAt: sync?.snapAt ?? null,
+    pending: sync?.pending.length ?? 0, unsent: sync?.pending.filter((p) => p.seq == null).length ?? 0, ...syncInfo,
+  };
+};
+
 // dashboard bridge: content.js opens a long-lived port per dashboard tab
 const ports = new Set();
 
 chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'tabcat-bridge' || !port.sender?.tab) return;
   ports.add(port);
+  syncSoon(0); // (a dashboard opening: up to date with the server)
   port.onDisconnect.addListener(() => ports.delete(port));
   port.onMessage.addListener(async (msg) => {
     try {
@@ -982,6 +1224,8 @@ function broadcast(event, data) {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
+  // (sync: what changed here goes to the server soon, a few changes in a row together)
+  if (changes[S.KEY] || changes[TRASH_KEY]) syncSoon(500);
   if (changes[S.KEY]) {
     const state = S.normalize(changes[S.KEY].newValue);
     broadcast('state', state);
@@ -992,6 +1236,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const n = { ...S.DEFAULT_SETTINGS, ...(changes[S.SETTINGS_KEY].newValue || {}) };
     if (o.autoSuspendMinutes !== n.autoSuspendMinutes || o.dashboardUrl !== n.dashboardUrl || o.language !== n.language) init();
     if (o.accent !== n.accent) tintActionIcon();
+    if (o.server !== n.server) syncAlarm();
+    if (Y.LOOK.some((k) => o[k] !== n[k])) syncSoon(500);
     broadcast('settings', n);
   }
 });
