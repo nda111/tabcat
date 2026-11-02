@@ -22,3 +22,7 @@ addEventListener('pagereveal', (e) => { const vt = e.viewTransition; if (vt) for
 
 // (should a page's script fail, it shows anyway after a while: see reveal in pages.js)
 setTimeout(() => document.body?.removeAttribute('data-checking'), 4000);
+
+// Reloaded: the browser holds the page as it was until this one draws, so it comes as it ends up, not rising in
+// (rising from nothing, it would blink: there, then gone, then back). Coming from elsewhere, it rises in.
+if (performance.getEntriesByType?.('navigation')[0]?.type === 'reload') document.documentElement.classList.add('reloaded');

@@ -261,6 +261,7 @@ input:disabled { opacity: .55; cursor: default; }
    see login.js). Going between the server's pages and the dashboard, the page left fades out meanwhile. */
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px) scale(.99); } }
 body:not([data-checking]) .wrap > * { animation: rise-in .42s cubic-bezier(.22, 1, .36, 1) both; }
+html.reloaded .wrap > * { animation: none !important; } /* (reloaded: as it was, at once; see look.js) */
 .wrap > :nth-child(2) { animation-delay: .05s !important; }
 .wrap > :nth-child(3) { animation-delay: .1s !important; }
 .wrap > :nth-child(4) { animation-delay: .15s !important; }

@@ -223,19 +223,6 @@ export function go(url, replace = false) {
   wrap.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' })
     .finished.then(nav, nav);
 }
-// Reloading from the keyboard (F5, Ctrl+R / ⌘R): the page fades out first, then loads again, rising in. (The
-// browser's own reload button can't be waited on: that one just reloads. A hard reload, with Shift, is left
-// to the browser: it skips the cache.)
-export function fadeOut() {
-  const wrap = document.querySelector('.wrap');
-  return wrap ? wrap.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {}) : Promise.resolve();
-}
-addEventListener('keydown', (e) => {
-  const reload = (e.key === 'F5' && !e.ctrlKey && !e.metaKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'r');
-  if (!reload || e.shiftKey || e.repeat) return;
-  e.preventDefault();
-  fadeOut().then(() => location.reload());
-});
 document.addEventListener('click', (e) => {
   const a = e.target.closest?.('a[href="/"]');
   if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
