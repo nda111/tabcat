@@ -110,6 +110,58 @@ with sync_playwright() as p:
     st = b.evaluate("chrome.storage.local.get('tabcat:settings').then(r => [r['tabcat:settings'].closeOnSave, r['tabcat:settings'].columns])")
     check(st == [False, 3], f'and kept in B ({st})')
 
+    bd.keyboard.press('Escape'); time.sleep(.4)
+
+    # renamed in A (a workspace, a group): in B the old name fades out as the new fades in
+    MOVED = """window.__moved = new Set(); (function f() { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t?.className) __moved.add(String(t.className)); } requestAnimationFrame(f); })()"""
+    bd.evaluate(MOVED)
+    edit(a, "s.workspaces.find(w => w.id === 'own-A').name = 'Own A renamed'")
+    bd.wait_for_function("[...document.querySelectorAll('.ws-item .name')].some(e => e.textContent === 'Own A renamed')", timeout=8000)
+    time.sleep(.3)
+    check('name' in bd.evaluate('[...__moved]'), f"renamed in another browser: the name cross-fades ({bd.evaluate('[...__moved]')})")
+
+    # the editor open in B on a workspace, saved in A: what B hasn't edited follows; what it has, stays
+    bd.dblclick('.ws-item[data-id="w2"]'); bd.wait_for_selector('#editor[open]'); time.sleep(.3)
+    bd.fill('#editor textarea[name=description]', 'typed in B')
+    edit(a, "const w = s.workspaces.find(w => w.id === 'w2'); w.name = 'Second (A)'; w.description = 'from A'")
+    try: bd.wait_for_function("document.querySelector('#editor input[name=name]').value === 'Second (A)'", timeout=8000); ok = True
+    except Exception: ok = False
+    check(ok and bd.input_value('#editor textarea[name=description]') == 'typed in B',
+          f"editor open in B, saved in A: the name (not edited in B) follows, the description typed in B stays ({bd.input_value('#editor input[name=name]')!r}, {bd.input_value('#editor textarea[name=description]')!r})")
+    bd.click('#editor button[type=submit]'); time.sleep(1)
+    w2 = [w for w in b.evaluate(TREE)['workspaces'] if w['id'] == 'w2'][0]
+    check(w2['name'] == 'Second (A)' and w2['description'] == 'typed in B', f"saved in B: both ({w2['name']}, {w2['description']})")
+
+    # another account signed in beside, in B: renamed elsewhere, the list of them shows it, the old fading as the new comes
+    ad.evaluate("fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'ann', password: 'annpass123' }) })")
+    boss = bd.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.id)")
+    bd.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'ann', password: 'annpass123' }) })")
+    bd.evaluate(f"fetch('/api/accounts/switch', {{ method: 'POST', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ id: {boss} }}) }})")
+    time.sleep(1); bd.reload(); bd.wait_for_selector('#btn-account:not([hidden])', timeout=15000); time.sleep(1.5)
+    bd.click('#btn-account'); time.sleep(.4); bd.click('#account-more'); bd.wait_for_selector('#account-list .account-other'); time.sleep(.6)
+    tinted = bd.evaluate("document.querySelector('#account-list .account-avatar').dataset.tint")
+    check(tinted == 'hue', f"another account's letter: in its own colour ({tinted})")
+    bd.evaluate(MOVED)
+    other = p.chromium.launch(); oc = other.new_context().new_page(); oc.goto(SERVER + '/login')
+    oc.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'ann', password: 'annpass123' }) })")
+    oc.evaluate("fetch('/api/me/name', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Annie' }) })")
+    try: bd.wait_for_function("document.querySelector('#account-list .account-name').textContent.startsWith('Annie')", timeout=6000); ok = True
+    except Exception: ok = False
+    check(ok, 'another account signed in in B, renamed elsewhere: the list shows it at once')
+    time.sleep(.2)
+    check('account-name' in bd.evaluate('[...__moved]'), f"the name alone cross-fading ({bd.evaluate('[...__moved]')})")
+    time.sleep(.5); bd.evaluate(MOVED)
+    ann = oc.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.id)")
+    ad.evaluate(f"fetch('/api/admin/users/{ann}', {{ method: 'PATCH', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ admin: true }}) }})")
+    was = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
+    try: bd.wait_for_function("w => document.querySelector('#account-list .account-role').textContent !== w", arg=was, timeout=6000); ok = True
+    except Exception: ok = False
+    role = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
+    time.sleep(.5)
+    if os.environ.get('SHOT'): bd.locator('#account').screenshot(path=os.environ['SHOT'])
+    check(ok and 'account-role' in bd.evaluate('[...__moved]') and 'account-name' not in bd.evaluate('[...__moved]'), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
+    other.close()
+
     check(not errors, f'no page errors {errors}')
     actx.close(); bctx.close()
 srv.should_exit = True

@@ -381,6 +381,9 @@ $('#ev-export').addEventListener('click', exportEvents);
 async function eventAccounts() {
   const list = await api('admin/users');
   const keep = $('#ev-user').value;
+  // (the same as shown: left as it is; a name changed, an account added or gone: the list as it now is)
+  const shown = [...$('#ev-user').options].slice(1).map((o) => `${o.value}|${o.textContent}`).join();
+  if (shown && shown === list.map((u) => `${u.id}|${u.name ? `${u.name} (${u.username})` : u.username}`).join()) return;
   $('#ev-user').replaceChildren(h('option', { value: '' }, t('eventsAll')), ...list.map((u) => h('option', { value: u.id }, u.name ? `${u.name} (${u.username})` : u.username)));
   $('#ev-user').value = keep;
 }
@@ -523,7 +526,7 @@ async function refresh() {
   clearTimeout(missed);
   refreshing = true;
   // (the record: the page open, as it now is)
-  try { await Promise.all([users(), settings(), invites(), info(), events()]); } catch { /* (the server away for a moment: next time) */ }
+  try { await Promise.all([users(), settings(), invites(), info(), eventAccounts().then(() => events())]); } catch { /* (the server away for a moment: next time) */ }
   refreshing = false;
 }
 setInterval(refresh, 60000); // (and now and then anyway)

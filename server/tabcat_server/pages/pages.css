@@ -313,6 +313,18 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
   background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); font-weight: 600; font-size: 14px; user-select: none;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* (an account's own accent colour: see tint in pages.js) */
+[data-tint] { --accent: oklch(.66 .16 var(--hue)); }
+[data-tint="orange"] { --accent: #e8822f; }
+[data-tint="mono"] { --accent: #18171a; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-tint] { --accent: oklch(.75 .13 var(--hue)); }
+  :root:not([data-theme="light"]) [data-tint="orange"] { --accent: #f29a52; }
+  :root:not([data-theme="light"]) [data-tint="mono"] { --accent: #f4f2ef; }
+}
+:root[data-theme="dark"] [data-tint] { --accent: oklch(.75 .13 var(--hue)); }
+:root[data-theme="dark"] [data-tint="orange"] { --accent: #f29a52; }
+:root[data-theme="dark"] [data-tint="mono"] { --accent: #f4f2ef; }
 .avatar.big { width: 64px; height: 64px; font-size: 26px; }
 .profile { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
 .profile-text { flex: 1; min-width: 0; }

@@ -114,6 +114,8 @@ with sync_playwright() as p:
     check(b.evaluate("chrome.storage.local.get('tabcat:trash').then(r => (r['tabcat:trash'] || []).map(e => e.id))") == ['t1'], 'Recently deleted: the same in B')
     look = wait(lambda: (l := b.evaluate("chrome.storage.local.get('tabcat:settings').then(r => [r['tabcat:settings'].theme, r['tabcat:settings'].accent])")) == ['dark', 'green'] and l, 'look')
     check(look == ['dark', 'green'], f'the look too ({look})')
+    accent = bd.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.accent)")
+    check(accent == 'green', f"and the server knows the account's colour, for its letter where it has no photo ({accent})")
 
     # offline: the server down, B's changes wait in the queue, then go
     srv.should_exit = True; time.sleep(1.5)

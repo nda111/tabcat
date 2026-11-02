@@ -1,5 +1,5 @@
 // Sign in, or (when the server lets anyone, or this link has an invitation in it) make an account
-import { $, api, connected, fold, go, h, morph, say, showNotConnected, t, toast, reveal } from './pages.js';
+import { $, api, connected, fold, go, h, morph, say, showNotConnected, t, toast, reveal, tint } from './pages.js';
 
 const GLIDE = 'cubic-bezier(.22, 1, .36, 1)';
 
@@ -111,7 +111,7 @@ async function main() {
   if (here && here.accounts.length >= here.max) {
     for (const el of fields()) el.disabled = true;
     $('#choose-text').textContent = t('chooseText', { n: here.max });
-    const photo = (a) => h('span', { class: 'avatar' }, a.avatar ? h('img', { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase());
+    const photo = (a) => tint(h('span', { class: 'avatar' }, a.avatar ? h('img', { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase()), a.accent);
     $('#choose-list').replaceChildren(...here.accounts.map((a) => h('button', { type: 'button', class: 'choose-row', onclick: async (e) => {
       const row = e.currentTarget;
       for (const b of $('#choose-list').children) b.disabled = true;

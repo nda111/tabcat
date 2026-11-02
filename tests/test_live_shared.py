@@ -121,7 +121,7 @@ with sync_playwright() as p:
     check(adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1), 'a page typed, past the last: the last')
     adm.fill('#ev-page', '1'); adm.press('#ev-page', 'Enter'); time.sleep(.6)
     check(adm.locator('#events .event').first.inner_text() == first and adm.locator('#ev-prev').is_disabled(), 'page 1 typed: the first again')
-    adm.screenshot(path=os.environ.get('SHOT', '/dev/null'), full_page=True)
+    if os.environ.get('SHOT'): adm.screenshot(path=os.environ['SHOT'], full_page=True)
 
     check(not errors, f'no page errors {errors}')
     b.close()

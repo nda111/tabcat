@@ -131,6 +131,14 @@ export function morph(el, change, duration = 280) {
   if (Math.abs(from - to) > .5) el.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
 }
 
+// An account's letter, where it has no photo: in a circle of its own accent colour (as its dashboard has it)
+const HUES = { red: 25, orange: 55, yellow: 90, lime: 125, green: 150, teal: 185, sky: 225, blue: 262, purple: 300, pink: 350 };
+export function tint(el, accent) {
+  if (accent === 'orange' || accent === 'mono') { el.dataset.tint = accent; el.style.removeProperty('--hue'); }
+  else { el.dataset.tint = 'hue'; el.style.setProperty('--hue', HUES[accent] ?? HUES.purple); }
+  return el;
+}
+
 // Changed in place (elsewhere, say): the new rises in where the old was
 export const freshen = (el) => el?.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
 

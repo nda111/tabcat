@@ -106,8 +106,31 @@ def create_app(config) -> FastAPI:
     def public(u) -> dict:
         return {'id': u['id'], 'space': u['space'], 'username': u['username'], 'name': u['name'] or '', 'admin': bool(u['admin']), 'disabled': bool(u['disabled']),
                 'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None,
-                'twofa': bool(u['totp_secret']),
+                'twofa': bool(u['totp_secret']), 'accent': accent_of(u['id']),
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
+
+    # An account's accent colour (its look, in its synced data: the latest change of it, or the copy's), for its
+    # letter in a circle where it has no photo. (Read from the copy once a copy: kept until the next.)
+    accents: dict[int, tuple] = {}
+
+    def accent_of(uid) -> str:
+        for r in db.q('select body from sync_ops where user_id = ? and body like ? order by seq desc limit 20', uid, '%"o":"look"%'):
+            try:
+                for op in reversed(json.loads(r['body']).get('ops') or []):
+                    if isinstance(op, dict) and op.get('o') == 'look' and isinstance((op.get('f') or {}).get('accent'), str):
+                        return op['f']['accent'][:20]
+            except (ValueError, AttributeError):
+                pass
+        snap = db.one('select seq, body from sync_snapshots where user_id = ?', uid)
+        if not snap:
+            return 'purple'
+        if accents.get(uid, (None,))[0] != snap['seq']:
+            try:
+                a = (json.loads(snap['body']).get('look') or {}).get('accent')
+            except (ValueError, AttributeError):
+                a = None
+            accents[uid] = (snap['seq'], a if isinstance(a, str) else 'purple')
+        return accents[uid][1][:20]
 
     # Several accounts at once in one browser: the one in use (auth.COOKIE) and the others (auth.MORE), each a
     # session of its own. Signing in again adds an account (the one in use joins the others); switching swaps
@@ -896,7 +919,7 @@ def create_app(config) -> FastAPI:
         for uid in uids:
             for q in list(listeners.get(uid, ())):
                 try:
-                    q.put_nowait((kind, data))
+                    q.put_nowait((kind, data, uid))
                 except Exception:
                     pass  # (full: far behind anyway)
 
@@ -928,7 +951,10 @@ def create_app(config) -> FastAPI:
         if len(mine) >= LISTENERS:
             raise HTTPException(429, 'too many listening')
         q = asyncio.Queue(maxsize=50)
-        mine.add(q)
+        # (and the browser's other accounts, signed in beside it: one of them changed, `accounts`, for the list of them)
+        uids = [u['id']] + [o['id'] for _, o in accounts_of(request)[1:] if o]
+        for uid in uids:
+            listeners.setdefault(uid, set()).add(q)
 
         def line(kind, data=None):
             return f'event: {kind}\ndata: {json.dumps(data if data is not None else {})}\n\n'
@@ -943,7 +969,13 @@ def create_app(config) -> FastAPI:
                         while not q.empty():
                             items.append(q.get_nowait())
                         # (several at once: each kind once, the latest)
-                        latest = {kind: data for kind, data in items}
+                        latest = {}
+                        for kind, data, uid in items:
+                            if uid != u['id']:
+                                if kind != 'me':
+                                    continue  # (another's sync, or admin: not this one's)
+                                kind = 'accounts'
+                            latest[kind] = data
                         for kind, data in latest.items():
                             if kind == 'admin' and not db.one('select admin from users where id = ?', u['id'])['admin']:
                                 continue
@@ -953,7 +985,8 @@ def create_app(config) -> FastAPI:
                             break
                         yield ': still here\n\n'
             finally:
-                mine.discard(q)
+                for uid in uids:
+                    listeners.get(uid, set()).discard(q)
 
         return StreamingResponse(stream(), media_type='text/event-stream', headers={**NO_STORE, 'X-Accel-Buffering': 'no'})
 
@@ -1028,6 +1061,10 @@ def create_app(config) -> FastAPI:
                        u['id'], seq, oid, device, time.time(), json.dumps(o['body'], separators=(',', ':')))
                 acked.append({'id': oid, 'seq': seq})
         notify([u['id']], 'head', sync_head(u['id']))
+        # (the look changed: its colour, where the account is shown)
+        if any('"o":"look"' in json.dumps((o or {}).get('body'), separators=(',', ':')) for o in ops[:2000]):
+            notify([u['id']], 'me')
+            notify_admins()
         return {'acked': acked, 'head': sync_head(u['id'])}
 
     @app.put('/api/sync/snapshot')

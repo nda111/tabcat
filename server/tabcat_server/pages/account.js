@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, appear, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
+import { $, api, appear, tint, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -50,10 +50,11 @@ $('#admin-link').hidden = !me.admin;
 // ---------- the profile photo ----------
 // shown: the photo, or the name's first letter; a new one springs in
 function showAvatar(user, animate = false) {
-  current = { ...current, avatar: user.avatar }; // (what's shown: see refreshMe)
+  current = { ...current, avatar: user.avatar, accent: user.accent }; // (what's shown: see refreshMe)
   const el = $('#avatar');
   el.replaceChildren(user.avatar ? Object.assign(document.createElement('img'), { src: user.avatar, alt: '' }) : [...user.username][0].toUpperCase());
   el.classList.toggle('has-photo', !!user.avatar);
+  tint(el, user.accent);
   // (the remove button: there only with a photo, popping in and out)
   const rm = $('#photo-remove'), show = !!user.avatar;
   if (!animate || rm.hidden === !show) rm.hidden = !show;
@@ -301,7 +302,7 @@ $('#delete-me').addEventListener('click', async () => {
 async function refreshMe() {
   const now = await api('me');
   if (now.name !== current.name && $('#name-input').hidden && !saving) { current = { ...current, name: now.name }; showName(true); }
-  if ((now.avatar || null) !== (current.avatar || null)) { current = { ...current, avatar: now.avatar }; showAvatar(now, true); }
+  if ((now.avatar || null) !== (current.avatar || null) || now.accent !== current.accent) showAvatar(now, true);
   appear($('#admin-link'), !!now.admin); // (made an admin, or no longer: the button comes, or goes)
   // (2FA turned on or off elsewhere: not while it's being set up here, or its codes are showing)
   if (!!now.twofa !== twofaOn && !$('.twofa-setup:not([hidden])') && !$('#twofa .codes')) {
