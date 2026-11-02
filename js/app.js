@@ -4317,6 +4317,11 @@ async function showAccount() {
   if (me.avatar) btn.querySelector('.sym').replaceChildren(Object.assign(photo(), { className: 'side-photo' }));
   $('#account-role').textContent = t(me.admin ? 'account.roleAdmin' : 'account.roleUser');
   $('#account-admin').hidden = !me.admin;
+  // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
+  if (new URLSearchParams(location.search).has('switched')) {
+    toast(t('account.expiredSwitched', { name: me.username }));
+    history.replaceState(null, '', location.pathname);
+  }
 }
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
@@ -4332,7 +4337,7 @@ function leaveFor(go) {
   root.classList.add('leaving');
   setTimeout(go, 200);
 }
-$('#btn-account').addEventListener('click', () => { closeAccountList(false); $('#account').style.margin = ''; $('#account').showModal(); });
+$('#btn-account').addEventListener('click', () => { closeAccountList(false); $('#account').style.margin = ''; $('#account').style.maxHeight = ''; $('#account').showModal(); });
 
 // The other accounts signed in in this browser (as many as the server lets): the arrow beside who's signed in
 // folds them open (it turns); one picked, the dashboard fades out and opens again as that account, with its
@@ -4355,8 +4360,9 @@ async function openAccountList() {
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
   // (the dialog keeps its top where it is: the list opens downwards only, not the box growing both ways)
-  const dlg = $('#account');
-  dlg.style.margin = `${dlg.getBoundingClientRect().top}px auto auto`;
+  const dlg = $('#account'), top = dlg.getBoundingClientRect().top;
+  dlg.style.margin = `${top}px auto auto`;
+  dlg.style.maxHeight = `calc(100vh - ${top + 16}px)`; // (a short window: it scrolls inside, as every dialog, rather than running off)
   $('#account-more').setAttribute('aria-expanded', 'true');
   fold(list, true, true);
 }
@@ -4367,7 +4373,7 @@ function closeAccountList(animate = true) {
 // (anywhere on who's signed in, the photo to the arrow, opens or closes the list)
 const toggleAccounts = () => ($('#account-more').getAttribute('aria-expanded') === 'true' ? closeAccountList() : openAccountList());
 $('#account .account-card').addEventListener('click', toggleAccounts);
-$('#account').addEventListener('close', () => { $('#account').style.margin = ''; });
+$('#account').addEventListener('close', () => { $('#account').style.margin = ''; $('#account').style.maxHeight = ''; });
 async function switchAccount(a) {
   const r = await fetch('/api/accounts/switch', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) }).catch(() => null);
   if (!r?.ok) return toast(t('account.switchFailed'));
