@@ -3421,18 +3421,22 @@ for (const input of document.querySelectorAll('#settings-form input[type=number]
   input.addEventListener('input', syncSteppers);
 }
 
-function fillSettings() {
+// (also as they change elsewhere, the dialog open: another dashboard, another browser through sync. A field being
+// typed into is left alone.)
+function fillSettings(s = settings) {
   const f = $('#settings-form');
-  f.closeOnSave.checked = settings.closeOnSave;
-  f.groupTabs.checked = settings.groupTabs !== false;
-  f.checkUpdates.checked = settings.checkUpdates !== false;
+  const typing = document.activeElement;
+  const set = (el, k, v) => { if (el !== typing && el[k] !== v) el[k] = v; };
+  set(f.closeOnSave, 'checked', s.closeOnSave);
+  set(f.groupTabs, 'checked', s.groupTabs !== false);
+  set(f.checkUpdates, 'checked', s.checkUpdates !== false);
   f.checkUpdates.closest('label').hidden = extUpdatesItself; // (from the store: the browser updates it)
-  f.autoSuspendMinutes.value = settings.autoSuspendMinutes;
-  f.language.value = Object.hasOwn(LANGS, settings.language) ? settings.language : 'auto';
+  set(f.autoSuspendMinutes, 'value', String(s.autoSuspendMinutes));
+  set(f.language, 'value', Object.hasOwn(LANGS, s.language) ? s.language : 'auto');
   f.language.dataset.shown = f.language.selectedIndex;
-  f.theme.value = settings.theme;
-  f.accent.value = Object.hasOwn(ACCENTS, settings.accent) ? settings.accent : 'purple';
-  f.columns.value = boardColumns();
+  f.theme.value = s.theme;
+  f.accent.value = Object.hasOwn(ACCENTS, s.accent) ? s.accent : 'purple';
+  set(f.columns, 'value', String(Math.min(MAX_COLUMNS, Math.max(1, s.columns || 5))));
   syncSteppers();
 }
 
@@ -4182,7 +4186,18 @@ const nextState = () => new Promise((r) => stateWaiters.push(r));
 // (what's gone without this page taking it out itself, from another dashboard or another browser through sync,
 // an undo: it leaves as a delete here would, then the board closes up; one at a time, in the order they came)
 let stateChain = Promise.resolve(), stateHeld = 0;
-const takeState = (s) => { state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); };
+const takeState = (s) => { pinShown(); state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); };
+// (the workspace and category on screen stay on screen, wherever they've moved to: by id, not by place. Shown
+// as the first, nothing picked yet, then moved down elsewhere: still them, not whatever is first now)
+function pinShown() {
+  const ws = state && currentWs();
+  if (!ws) return;
+  const cat = currentCat(ws);
+  if (ui.ws === ws.id && (!cat || ui.cat[ws.id] === cat.id)) return;
+  ui.ws = ws.id;
+  if (cat) ui.cat[ws.id] = cat.id;
+  saveUi();
+}
 // (not on a page out of sight, where animations wait for it to be seen: the board as it now is, at once)
 const goneFrom = (s) => (state && !drag && !document.hidden ? leavingIds(state, s) : []);
 B.on('state', (s) => {
@@ -4211,6 +4226,7 @@ B.on('settings', (s) => {
   switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
   if (relayout && state) render(); // e.g. columns changed in another dashboard tab
   switchLang(s.language);
+  if ($('#settings').open) fillSettings(s);
 });
 B.on('tabs', scheduleTabs);
 B.on('ready', (ext) => { if (ext) setExtension(ext); if (elsewhere()) return showElsewhere(); if (state) refresh(); }); // reconnected after the service worker restarted (or the extension was updated)
@@ -4345,6 +4361,24 @@ async function init() {
 // On the user's own tabcat server, the account signed in there: in Settings, with the way to its page (and
 // the admin page, for an admin), and signing out. (Not on tabcat.ghyeok.com or this computer: no server there to ask.)
 let shownAccount = null; // (the account this page shows: see pageshow below)
+let accountShown = null; // (what the dialog shows of it: what changes rises in)
+// Something in a row of them that comes and goes (a button): it grows from nothing, what's beside it making room,
+// or shrinks away and is gone
+function appear(el, show) {
+  if (show === !el.hidden) return Promise.resolve();
+  el.getAnimations().forEach((a) => a.cancel());
+  el.hidden = false;
+  const cs = getComputedStyle(el), w = el.getBoundingClientRect().width;
+  const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
+  const full = { width: `${w}px`, opacity: 1, transform: 'none', ...Object.fromEntries(sides.map((k) => [k, cs[k]])) };
+  const none = { width: '0px', opacity: 0, transform: 'scale(.85)', ...Object.fromEntries(sides.map((k) => [k, '0px'])) };
+  Object.assign(el.style, { overflow: 'hidden', whiteSpace: 'nowrap' });
+  let cancelled = false;
+  const a = el.animate(show ? [none, full] : [full, none], show ? { duration: 300, easing: GLIDE } : { duration: 200, easing: 'ease-in' });
+  a.oncancel = () => { cancelled = true; };
+  const end = () => { Object.assign(el.style, { overflow: '', whiteSpace: '' }); if (!show && !cancelled) el.hidden = true; };
+  return a.finished.then(end, end);
+}
 async function showAccount() {
   if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
   const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
@@ -4359,17 +4393,27 @@ async function showAccount() {
   btn.removeAttribute('data-i18n-attr');
   btn.removeAttribute('data-rail-title');
   btn.title = me.name ? `${me.name}\n${me.username}` : me.username;
+  // (changed elsewhere, the dialog open: what's new rises in; the admin page's button comes or goes)
+  const before = accountShown;
+  accountShown = { who: `${me.name}|${me.username}|${me.twofa}`, avatar: me.avatar || '', role: `${me.name}|${me.admin}` };
+  const live = before && $('#account').open;
+  const rise = (el) => live && el.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: GLIDE });
   // (two-step sign-in on: a blue 2FA chip after the name, as on the admin page)
   $('#account-name').replaceChildren(me.name || me.username, ...(me.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : []));
+  if (before?.who !== accountShown.who) rise($('#account-name'));
   // the profile photo (set on the account page), or the name's first letter; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
-  $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
+  if (before?.avatar !== accountShown.avatar || !before) {
+    $('#account-avatar').replaceChildren(me.avatar ? photo() : [...me.username][0].toUpperCase());
+    if (live) $('#account-avatar').animate([{ opacity: 0, transform: 'scale(.8)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
+  }
   const sym = btn.querySelector('.sym');
   sym.plain ||= [...sym.childNodes]; // (the person icon, for when there's no photo again)
   sym.replaceChildren(...(me.avatar ? [Object.assign(photo(), { className: 'side-photo' })] : sym.plain));
   // (under the name: the username, then the role)
   $('#account-role').textContent = [me.name && me.username, t(me.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
-  $('#account-admin').hidden = !me.admin;
+  if (before?.role !== accountShown.role) rise($('#account-role'));
+  if (live) appear($('#account-admin'), !!me.admin); else $('#account-admin').hidden = !me.admin;
   // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
   if (new URLSearchParams(location.search).has('switched')) {
     toast(t('account.expiredSwitched', { name: me.username }));
@@ -4377,19 +4421,23 @@ async function showAccount() {
   }
 }
 // Live sync: the server says at once when the account has new changes (from its other browsers), and the
-// extension takes them (it would anyway, later: this makes it now). Server-sent events, reconnecting by
-// themselves; one connection for the page.
+// extension takes them (it would anyway, later: this makes it now). One stream for all of the server's pages open
+// in this browser, shared (the server's own live.js: see there why).
 let liveSync = null, meTimer = null;
-function listenForChanges() {
-  if (liveSync || typeof EventSource === 'undefined') return;
-  liveSync = new EventSource('/api/live');
-  liveSync.addEventListener('head', () => { if (B.info) B.call('syncNow').catch(() => {}); });
-  // (the account changed elsewhere: its name, photo, 2FA... the Account dialog as it now is)
-  liveSync.addEventListener('me', () => { clearTimeout(meTimer); meTimer = setTimeout(showAccount, 250); });
+async function listenForChanges() {
+  if (liveSync) return;
+  liveSync = { stop() {}, start() {} };
+  const { liveStream } = await import('/_server/live.js').catch(() => ({}));
+  if (!liveStream) { liveSync = null; return; }
+  liveSync = liveStream((kind) => {
+    if (kind === 'head' || kind === 'open') { if (B.info) B.call('syncNow').catch(() => {}); }
+    // (the account changed elsewhere: its name, photo, 2FA... the Account dialog as it now is)
+    if (kind === 'me' || kind === 'open') { clearTimeout(meTimer); meTimer = setTimeout(showAccount, 250); }
+  });
 }
 // (not held while in the back/forward cache: listening again on coming back)
-window.addEventListener('pagehide', (e) => { if (e.persisted && liveSync) { liveSync.close(); liveSync = null; } });
-window.addEventListener('pageshow', (e) => { if (e.persisted && shownAccount != null) listenForChanges(); });
+window.addEventListener('pagehide', (e) => { if (e.persisted) liveSync?.stop(); });
+window.addEventListener('pageshow', (e) => { if (e.persisted && liveSync) { liveSync.start(); showAccount(); } });
 // (signed out, the server shows its sign-in in the dashboard's place)
 $('#account-signout').addEventListener('click', async () => {
   // (another account signed in here takes over, if there is one: the dashboard opens again as it)
