@@ -619,6 +619,7 @@ function animateOut(ids) {
   const opts = { duration: 230, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' };
   return Promise.all(els.map((el) => {
     const r = el.getBoundingClientRect();
+    el.dataset.leaving = '1'; // (so the state that takes it out doesn't play this again)
     el.style.overflow = 'hidden';
     const across = el.closest('#cat-bar'); // tabs sit in a row: close up the width instead
     // close up the padding and the row's gap too, or what is left of them jumps shut on removal
@@ -4163,7 +4164,33 @@ window.addEventListener('blur', hideMenu);
 let stateSeq = 0;
 const stateWaiters = [];
 const nextState = () => new Promise((r) => stateWaiters.push(r));
-B.on('state', (s) => { state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); });
+// (what's gone without this page taking it out itself, from another dashboard or another browser through sync,
+// an undo: it leaves as a delete here would, then the board closes up; one at a time, in the order they came)
+let stateChain = Promise.resolve(), stateHeld = 0;
+const takeState = (s) => { state = s; stateSeq++; render(); stateWaiters.splice(0).forEach((r) => r()); };
+// (not on a page out of sight, where animations wait for it to be seen: the board as it now is, at once)
+const goneFrom = (s) => (state && !drag && !document.hidden ? leavingIds(state, s) : []);
+B.on('state', (s) => {
+  if (!stateHeld && !goneFrom(s).length) return takeState(s); // (as it comes, nothing to see leave)
+  stateHeld++;
+  stateChain = stateChain.then(async () => {
+    const gone = goneFrom(s);
+    if (gone.length) await Promise.race([animateOut(gone), new Promise((r) => setTimeout(r, 400))]);
+    takeState(s);
+  }).catch(() => {}).finally(() => { stateHeld--; });
+});
+// the outermost of what's on screen in `a` and not in `b` (and not already on its way out)
+function leavingIds(a, b) {
+  const keep = new Set();
+  T.walk(b.workspaces, (n) => keep.add(n.id));
+  const out = [];
+  T.walk(a.workspaces, (n, up) => {
+    if (keep.has(n.id) || up.some((x) => !keep.has(x.id))) return;
+    const el = document.querySelector(`#board [data-id="${CSS.escape(n.id)}"], #ws-list [data-id="${CSS.escape(n.id)}"], #cat-bar [data-id="${CSS.escape(n.id)}"]`);
+    if (el && !el.dataset.leaving && el.getClientRects().length) out.push(n.id);
+  });
+  return out;
+}
 B.on('settings', (s) => {
   const relayout = s.columns !== settings?.columns;
   switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
