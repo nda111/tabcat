@@ -24,6 +24,17 @@
       else if (accent !== 'orange' && hue != null) { root.dataset.accent = accent; root.style.setProperty('--hue', hue); }
     } catch { /* storage unavailable */ }
     document.documentElement.classList.add('booting');
+    // Back or forward from here to the server's own pages (account, admin): the browser fades this page out as it
+    // goes (see @view-transition in app.css), as a click there does (leaveFor in app.js). Any other way, and
+    // coming here, no browser transition: the dashboard opens in its own way.
+    addEventListener('pageswap', (e) => {
+      const vt = e.viewTransition;
+      if (!vt) return;
+      for (const p of [vt.ready, vt.finished, vt.updateCallbackDone]) p?.catch(() => {});
+      const to = e.activation?.entry?.url;
+      if (e.activation?.navigationType !== 'traverse' || !to || !['/login', '/setup', '/account', '/admin'].includes(new URL(to).pathname)) vt.skipTransition();
+    });
+    addEventListener('pagereveal', (e) => { const vt = e.viewTransition; if (vt) { for (const p of [vt.ready, vt.finished, vt.updateCallbackDone]) p?.catch(() => {}); vt.skipTransition(); } });
     // (reloaded: the browser holds the page as it was until this one draws; it then comes as it ends up, not
     // opening from nothing, which would blink. See show in app.js.)
     if (performance.getEntriesByType?.('navigation')[0]?.type === 'reload') document.documentElement.classList.add('reloaded');

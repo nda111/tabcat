@@ -73,6 +73,11 @@ html.booting :not(#boot, #boot *), html.booting :not(#boot, #boot *)::before, ht
 html.opening #sidebar { animation: open-from-left .46s cubic-bezier(.22, 1, .36, 1) both; }
 html.opening #tabs-panel { animation: open-from-right .46s cubic-bezier(.22, 1, .36, 1) .04s both; }
 html.opening :is(#main, #no-ext, #no-browser, #elsewhere) { animation: open-rise .5s cubic-bezier(.22, 1, .36, 1) .06s both; }
+/* back or forward to the server's own pages: the browser fades the dashboard out (only then: see index.html) */
+@view-transition { navigation: auto; types: page; }
+html:active-view-transition-type(page)::view-transition-old(root) { animation: .16s ease-in both page-out; }
+html:active-view-transition-type(page)::view-transition-new(root) { animation: none; }
+@keyframes page-out { to { opacity: 0; } }
 /* leaving for the server's pages: all of it fades away, a little up */
 @keyframes leave-out { to { opacity: 0; translate: 0 -8px; } }
 html.leaving body > :not(#toast) { animation: leave-out .2s ease-in forwards; }

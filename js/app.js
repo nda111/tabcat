@@ -4310,7 +4310,15 @@ for (const a of document.querySelectorAll('#account-row a[href^="/"]')) {
   });
 }
 // (back here from there, the browser may show this page as it was left: faded)
-addEventListener('pageshow', (e) => { if (e.persisted) document.documentElement.classList.remove('leaving'); });
+// (and it opens again, as when it first came)
+addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  const root = document.documentElement;
+  root.classList.remove('leaving', 'opening');
+  void root.offsetWidth;
+  root.classList.add('opening');
+  setTimeout(() => root.classList.remove('opening'), 700);
+});
 
 async function start(ext) {
   setExtension(ext);
