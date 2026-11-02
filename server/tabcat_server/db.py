@@ -38,7 +38,8 @@ create table if not exists events (  -- the security record (see app.log): sign-
   ip text,
   agent text,
   actor text,                      -- (an admin's doing: whose)
-  detail text
+  detail text,
+  tried text                       -- (signing in: the username typed, which may be no account's)
 );
 create index if not exists events_at on events(at);
 create index if not exists events_user on events(user_id, at);
@@ -74,6 +75,9 @@ class DB:
             if 'totp_secret' not in cols:  # (two-step sign-in, when turned on: see totp.py)
                 for col in ('totp_secret text', 'totp_pending text', 'totp_step integer', 'recovery text'):
                     self.conn.execute(f'alter table users add column {col}')
+            ecols = [r['name'] for r in self.conn.execute('pragma table_info(events)')]
+            if ecols and 'tried' not in ecols:  # (a sign-in attempt: the username tried, apart from the account)
+                self.conn.execute('alter table events add column tried text')
             if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
                 self.conn.execute('alter table users add column name text')
             if 'avatar' not in cols:

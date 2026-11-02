@@ -308,8 +308,8 @@ e1.post('/api/login', json=J(username='ann', password='nope nope'))
 e1.post('/api/login', json=J(username='ghost', password='nope nope'))
 e1.post('/api/login', json=J(username='ann', password='annpass99'))
 ev = c.get('/api/admin/events').json()
-kinds = [(e['kind'], e['username']) for e in ev['events'][:3]]
-check(kinds == [('login_ok', 'ann'), ('login_fail', 'ghost'), ('login_fail', 'ann')] and ev['events'][0]['ip'] == '192.0.2.80' and ev['events'][0]['agent'] == 'TestAgent/1', f'signing in and failing are kept, with where from ({kinds})')
+kinds = [(e['kind'], e['username'], e['tried']) for e in ev['events'][:3]]
+check(kinds == [('login_ok', 'ann', None), ('login_fail', None, 'ghost'), ('login_fail', 'ann', 'ann')] and ev['events'][0]['ip'] == '192.0.2.80' and ev['events'][0]['agent'] == 'TestAgent/1', f'signing in and failing are kept, with where from ({kinds})')
 check(any(f['ip'] == '192.0.2.80' and f['count'] >= 2 for f in ev['failures_24h']), 'failures in the last day, by address')
 ann_ev = c.get('/api/admin/events', params={'user': ann_id}).json()['events']
 check(ann_ev and all(e['user_id'] == ann_id for e in ann_ev), "one account's record only")
@@ -318,6 +318,13 @@ top = c.get('/api/admin/events').json()['events'][:2]
 check([e['kind'] for e in top] == ['unsuspended', 'suspended'] and top[0]['actor'] == 'boss', "an admin's doings, and whose")
 mine = e1.post('/api/login', json=J(username='ann', password='annpass99')) and e1.get('/api/me/events').json()
 check(mine and all(e['user_id'] == ann_id for e in mine) and mine[0]['kind'] == 'login_ok', 'each account sees its own record')
+# guessing the current password (a session borrowed): counted as failed sign-ins, held off as they are
+gs = TestClient(app, follow_redirects=False, client=('192.0.2.81', 1))
+gs.post('/api/login', json=J(username='ben', password='benpass99'))
+codes = [gs.post('/api/me/password', json={'current': f'guess{i}xx', 'new': 'whatever99'}).status_code for i in range(6)]
+n = c.get('/api/admin/settings').json()['login_tries']
+check(codes[:n] == [403] * n and set(codes[n:]) == {429}, f'guessing the current password: held off after as many as signing in allows ({n}: {codes})')
+check(c.get('/api/admin/events', params={'user': ben_id}).json()['events'][0]['kind'] == 'password_wrong', 'and kept in the record')
 check(c.put('/api/admin/settings', json={'log_days': 3}).status_code == 400 and c.put('/api/admin/settings', json={'log_days': 30}).json()['log_days'] == 30, 'kept 7 to 365 days')
 
 # the rest

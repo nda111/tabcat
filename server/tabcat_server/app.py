@@ -67,15 +67,15 @@ def create_app(config) -> FastAPI:
     # ---------- the security record ----------
     # What happened to whom, from where: signing in (and failing), changes to an account, an admin's doings. What
     # tabcat holds for anyone (links, groups) is never in it. Kept log_days days (the admin page's).
-    def log(kind, request=None, user=None, username=None, actor=None, detail=''):
-        db.run('insert into events (at, user_id, username, kind, ip, agent, actor, detail) values (?, ?, ?, ?, ?, ?, ?, ?)',
+    def log(kind, request=None, user=None, username=None, actor=None, detail='', tried=None):
+        db.run('insert into events (at, user_id, username, kind, ip, agent, actor, detail, tried) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                time.time(), user['id'] if user else None, user['username'] if user else username, kind,
                client(request) if request else None, (request.headers.get('user-agent', '') if request else '')[:200],
-               actor['username'] if actor else None, str(detail)[:200])
+               actor['username'] if actor else None, str(detail)[:200], tried[:60] if tried else None)
 
     def event(r) -> dict:
         return {'id': r['id'], 'at': r['at'], 'user_id': r['user_id'], 'username': r['username'], 'kind': r['kind'],
-                'ip': r['ip'] or '', 'agent': r['agent'] or '', 'actor': r['actor'], 'detail': r['detail'] or ''}
+                'ip': r['ip'] or '', 'agent': r['agent'] or '', 'actor': r['actor'], 'detail': r['detail'] or '', 'tried': r['tried']}
 
     def clean_name(v) -> str:
         """A name to go by: up to auth.NAME_MAX characters (as many as show whole), spaces tidied; empty: none."""
@@ -288,12 +288,13 @@ def create_app(config) -> FastAPI:
         who = client(request)
         tried = str(data.get('username', ''))[:40]
         if throttle.blocked(who):
-            log('login_locked', request, username=tried)
+            log('login_locked', request, user=db.one('select * from users where username = ?', tried), tried=tried)
             raise HTTPException(429, 'too many tries: wait a few minutes')
         u = db.one('select * from users where username = ?', tried)
         if not u or not auth.check_password(str(data.get('password', '')), u['password']):
             throttle.failed(who)
-            log('login_fail', request, user=u, username=tried, detail='' if u else 'unknown')
+            # (the username tried kept apart from the account: no account at all, the account stays empty)
+            log('login_fail', request, user=u, tried=tried, detail='' if u else 'unknown')
             raise HTTPException(401, 'wrong username or password')
         if u['disabled']:
             log('login_refused', request, user=u, detail='suspended')
@@ -421,7 +422,12 @@ def create_app(config) -> FastAPI:
     async def change_password(request: Request):
         u = need_user(request)
         data = await body(request)
+        who = client(request)
+        if throttle.blocked(who):
+            raise HTTPException(429, 'too many tries: wait a few minutes')
         if not auth.check_password(str(data.get('current', '')), u['password']):
+            throttle.failed(who)
+            log('password_wrong', request, user=u)
             raise HTTPException(403, 'the current password is wrong')
         if not auth.valid_password(data.get('new', '')):
             raise HTTPException(400, 'the new password is too short')
@@ -471,7 +477,12 @@ def create_app(config) -> FastAPI:
 
     async def with_password(request: Request):
         u = need_user(request)
+        who = client(request)
+        if throttle.blocked(who):
+            raise HTTPException(429, 'too many tries: wait a few minutes')
         if not auth.check_password(str((await body(request)).get('password', '')), u['password']):
+            throttle.failed(who)  # (as a failed sign-in: else a borrowed session could guess it fast)
+            log('password_wrong', request, user=u)
             raise HTTPException(403, 'the current password is wrong')
         return u
 

@@ -243,7 +243,8 @@ function eventRow(e) {
   return h('div', { class: `event${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
     h('span', { class: 'ev-when muted small' }, date(e.at)),
     h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null),
-    h('span', { class: 'ev-who' }, e.username || '—', e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
+    // (no account: a sign-in tried with a username that's no one's, said so, not as an account's name)
+    h('span', { class: 'ev-who' }, e.username || h('span', { class: 'muted no-account' }, t('evNoAccount')), e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
     h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · ')));
 }
 async function events(more = false) {
@@ -262,6 +263,8 @@ async function events(more = false) {
       ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
   }
   if (r.events.length) evOldest = r.events[r.events.length - 1].id;
+  // (nothing kept for the account chosen, or anyone: nothing to export; the button fades still, and back)
+  if (!more && !$('#ev-export').classList.contains('busy')) $('#ev-export').disabled = !r.events.length;
   $('#ev-more').hidden = r.events.length < 30;
 }
 $('#ev-more').addEventListener('click', () => { $('#ev-more').dataset.opened = '1'; events(true); });
@@ -292,9 +295,9 @@ async function exportEvents() {
       if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`;
       return /[",\n\r]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
     };
-    const head = ['csvWhen', 'csvAccount', 'csvWhat', 'csvDetail', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
+    const head = ['csvWhen', 'csvAccount', 'csvTried', 'csvWhat', 'csvDetail', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
     const iso = (s) => { const d = new Date(s * 1000), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
-    const rows = all.map((e) => [iso(e.at), e.username, eventLabel(e), eventDetail(e), e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
+    const rows = all.map((e) => [iso(e.at), e.username || t('evNoAccount'), e.tried || '', eventLabel(e), eventDetail(e), e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
     const blob = new Blob(['\ufeff' + [head.map(cell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const day = new Date().toISOString().slice(0, 10);
     const a = h('a', { href: URL.createObjectURL(blob), download: `tabcat-security-${day}.csv` });
@@ -302,7 +305,7 @@ async function exportEvents() {
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     toast(t('eventsExported', { n: all.length }));
   } catch (err) { toast(err.message); }
-  b.disabled = false; b.classList.remove('busy');
+  b.classList.remove('busy'); b.disabled = !$('#events .event');
 }
 $('#ev-export').addEventListener('click', exportEvents);
 
