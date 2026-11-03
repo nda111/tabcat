@@ -4532,9 +4532,13 @@ const accountPhoto = (a, cls = 'account-avatar') => ACCENT_TINT(h('span', { clas
   a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase()), a.accent);
 // (under the name: the username, if there's a name, then the role)
 // (in parts, each a span of its own: of a line changed in place, the parts changed alone cross-fade, see morph)
-const roleLine = (a) => [...(a.name ? [h('span', { 'data-p': 'id' }, a.username), h('span', { 'data-p': 'sep' }, ' · ')] : []),
-  h('span', { 'data-p': 'role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser'))];
-const roleText = (a) => [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
+// (`adminOnly`, the list of the other accounts: the type said only of an admin, a member's line its username alone)
+const roleLine = (a, adminOnly = false) => {
+  const role = !adminOnly || a.admin ? [h('span', { 'data-p': 'role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser'))] : [];
+  const id = a.name ? [h('span', { 'data-p': 'id' }, a.username)] : [];
+  return [...id, ...(id.length && role.length ? [h('span', { 'data-p': 'sep' }, ' · ')] : []), ...role];
+};
+const roleText = (a, adminOnly = false) => roleLine(a, adminOnly).map((p) => p.textContent).join('');
 const nameLine = (a) => [h('span', { class: 'nm', 'data-p': 'name' }, a.name || a.username), ...(a.twofa ? [h('span', { class: 'chip-2fa', 'data-p': '2fa' }, '2FA')] : [])];
 // A line changed in place, part by part: a part whose words changed fades out where it was as the new fades in, over
 // each other in the same line (nothing moves up or down); a part only moved (its words the same: a username after a
@@ -4587,10 +4591,10 @@ function crossfade(el, change) {
 const accountRow = (a) => h('div', { class: 'account-other', 'data-key': a.id },
   h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
     accountPhoto(a, 'account-avatar small'),
-    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, ...nameLine(a)), h('span', { class: 'account-role' }, ...roleLine(a)))),
+    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, ...nameLine(a)), h('span', { class: 'account-role' }, ...roleLine(a, true)))),
   outButton(a));
 // (each row as it reads: what changed, changes alone)
-const accountLook = (a) => ({ name: JSON.stringify([a.name, a.username, a.twofa]), role: roleText(a), photo: `${a.avatar}|${a.accent}` });
+const accountLook = (a, adminOnly = false) => ({ name: JSON.stringify([a.name, a.username, a.twofa]), role: roleText(a, adminOnly), photo: `${a.avatar}|${a.accent}` });
 async function openAccountList(again = false) {
   const data = await fetch('/api/accounts', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
   if (!data) return;
@@ -4600,17 +4604,17 @@ async function openAccountList(again = false) {
   const rows = [...list.querySelectorAll('.account-other')];
   if (again && rows.map((r) => r.dataset.key).join() === others.map((a) => String(a.id)).join()) {
     others.forEach((a, i) => {
-      const row = rows[i], now = accountLook(a), was = row.look || {};
+      const row = rows[i], now = accountLook(a, true), was = row.look || {};
       row.look = now;
       if (was.name !== now.name) swapName(row.querySelector('.account-name'), a);
-      if (was.role !== now.role) morph(row.querySelector('.account-role'), roleLine(a));
+      if (was.role !== now.role) morph(row.querySelector('.account-role'), roleLine(a, true));
       if (was.photo !== now.photo) { const old = row.querySelector('.account-avatar'); crossfade(old, () => { const p = accountPhoto(a, 'account-avatar small'); old.replaceChildren(...p.childNodes); ACCENT_TINT(old, a.accent); }); }
     });
     return;
   }
   const from = list.hidden ? null : list.offsetHeight;
   list.replaceChildren(
-    ...others.map((a) => Object.assign(accountRow(a), { look: accountLook(a) })),
+    ...others.map((a) => Object.assign(accountRow(a), { look: accountLook(a, true) })),
     h('button', { type: 'button', class: 'account-add', disabled: full, onclick: () => leaveFor(() => location.assign('/login?add=1')) },
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
