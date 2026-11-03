@@ -4777,8 +4777,12 @@ function fold(el, show, animate) {
   }
   el.hidden = false;
   el.dataset.folding = show ? 'open' : 'shut';
-  const open = { height: `${el.scrollHeight}px`, opacity: 1 };
-  const shut = { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: '0px' };
+  // (its whole height, its border too: the height it has open, not the inside alone, or it would end a little short
+  // and jump the rest. Shut, its border can't thin away (the browser keeps a border under a pixel a whole one): a
+  // margin under it as far below nothing takes its room back instead, so nothing drops at the very end)
+  const cs = getComputedStyle(el), border = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const open = { height: `${el.getBoundingClientRect().height}px`, opacity: 1 };
+  const shut = { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: `${-border}px` };
   el.style.overflow = 'hidden';
   el.animate(show ? [shut, open] : [open, shut], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.then(() => {
     el.style.overflow = '';
