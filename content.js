@@ -45,6 +45,7 @@
       return null;
     }
     port.onMessage.addListener(toPage);
+    port.postMessage({ editing }); // (linked up, anew too: a page loaded again, or the service worker recycled)
     port.onDisconnect.addListener(() => {
       void chrome.runtime.lastError; // read it so Chrome doesn't log "Unchecked runtime.lastError"
       port = null;
@@ -99,6 +100,16 @@
   const nudge = () => { if (greeted && alive()) chrome.runtime.sendMessage({ cmd: 'syncNow' }).catch(() => {}); };
   window.addEventListener('online', nudge);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') nudge(); });
+
+  // A dialog open (an edit under way): the extension is told, so that updated, it doesn't load this dashboard again
+  // under it from outside (see reloadDashboardsAfterUpdate); the page waits for it to be done itself.
+  let editing = false;
+  new MutationObserver(() => {
+    const now = !!document.querySelector('dialog[open]');
+    if (now === editing) return;
+    editing = now;
+    if (port) try { port.postMessage({ editing }); } catch { /* cut off */ }
+  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
 
   // Connect only once the page identifies itself as the dashboard (its 'hello'), so other pages
   // on the same origin never talk to the extension.

@@ -885,6 +885,28 @@ async function reloadDashboards(also) {
   }
   await Promise.all([...ids].map((id) => chrome.tabs.reload(id).catch(() => {})));
 }
+// Updated (or reloaded by hand), the dashboards open are left cut off from the extension: each loads again at once,
+// looked at or not (one in the background would find out only later, its timers slowed or the tab frozen meanwhile),
+// except one with a dialog open (an edit under way, kept in storage as it goes: see content.js) and the one in front
+// in each window: those reload themselves once nothing is being edited (the dashboard's reloadWhenIdle).
+const EDITING_KEY = 'tabcat:editing';
+async function markEditing(tabId, on) {
+  const ids = new Set((await chrome.storage.local.get(EDITING_KEY))[EDITING_KEY] || []);
+  if (on === ids.has(tabId)) return;
+  if (on) ids.add(tabId); else ids.delete(tabId);
+  await chrome.storage.local.set({ [EDITING_KEY]: [...ids] });
+}
+async function reloadDashboardsAfterUpdate() {
+  A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
+  const editing = new Set((await chrome.storage.local.get(EDITING_KEY))[EDITING_KEY] || []);
+  const tabs = await chrome.tabs.query({});
+  await chrome.storage.local.set({ [EDITING_KEY]: [...editing].filter((id) => tabs.some((t) => t.id === id)) });
+  const ids = tabs.filter((t) => !t.active && !t.discarded && !editing.has(t.id)
+    && (A.isDashboard(t.url) || /^https:\/\/tabcat\.ghyeok\.com\/(index\.html)?([?#]|$)/.test(t.url || ''))).map((t) => t.id);
+  await Promise.all(ids.map((id) => chrome.tabs.reload(id).catch(() => {})));
+}
+chrome.runtime.onInstalled.addListener(({ reason }) => { if (reason === 'update') reloadDashboardsAfterUpdate(); });
+
 // Each account on a server has data of its own too: the space in use is named for the server and, once someone
 // has signed in there, their account. Who's signed in is asked of the server as a dashboard links up and before
 // saving: another account than the space's, and the space changes to theirs (signed out, it stays, all of tabcat
@@ -1190,8 +1212,9 @@ chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'tabcat-bridge' || !port.sender?.tab) return;
   ports.add(port);
   syncSoon(0); // (a dashboard opening: up to date with the server)
-  port.onDisconnect.addListener(() => ports.delete(port));
+  port.onDisconnect.addListener(() => { ports.delete(port); markEditing(port.sender.tab.id, false); });
   port.onMessage.addListener(async (msg) => {
+    if ('editing' in msg) return markEditing(port.sender.tab.id, msg.editing);
     try {
       // (connected to a server, only its dashboard has the data: another one is told where it is)
       const { server } = await S.loadSettings();
