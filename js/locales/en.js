@@ -40,7 +40,7 @@ export default {
   'panel.expandTabs': 'Expand open tabs', 'panel.collapseTabs': 'Collapse open tabs',
   'tabs.title': 'Open tabs',
   'tabs.suspendShort': 'Suspend', 'tabs.dedupeShort': 'Dedupe', 'tabs.dedupeTip': 'Close duplicate tabs',
-  'remote.title': 'On your other devices', 'remote.device': 'Another device', 'remote.rename': 'Rename', 'remote.hide': 'Hide', 'remote.list': 'Show or hide devices', 'toast.renamedDevice': 'Renamed the device “{name}”', 'undo.renameDevice': 'Undid renaming the device', 'redo.renameDevice': 'Redid renaming the device', 'remote.window': 'Window {n}',
+  'time.justNow': 'just now', 'remote.title': 'On your other devices', 'remote.device': 'Another device', 'remote.rename': 'Rename', 'remote.hide': 'Hide', 'remote.signOut': 'Sign out', 'remote.signOutTitle': 'Sign out', 'remote.signOutText': 'Signs out on {name}.', 'remote.signOutFailed': 'Couldn’t sign out there. Try again.', 'remote.signedOut': 'Signed out on {name}', 'remote.list': 'List', 'toast.renamedDevice': 'Renamed the device “{name}”', 'undo.renameDevice': 'Undid renaming the device', 'redo.renameDevice': 'Redid renaming the device', 'remote.window': 'Window {n}',
   'win.this': 'This window', 'win.other': 'The other window', 'win.nth': 'Other window {n}',
   'win.saveThis': 'Save this window', 'win.save': 'Save window', 'win.suspend': 'Suspend other tabs', 'win.close': 'Close window',
   'win.closeThis': 'Close this window?', 'win.closeOther': 'Close the other window?', 'win.closeNth': 'Close other window {n}?',

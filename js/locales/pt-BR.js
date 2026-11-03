@@ -37,7 +37,7 @@ export default {
   'panel.expandTabs': 'Expandir abas abertas', 'panel.collapseTabs': 'Recolher abas abertas',
   'tabs.title': 'Abas abertas',
   'tabs.suspendShort': 'Suspender', 'tabs.dedupeShort': 'Duplicadas', 'tabs.dedupeTip': 'Fechar abas duplicadas',
-  'remote.title': 'Nos seus outros dispositivos', 'remote.device': 'Outro dispositivo', 'remote.rename': 'Renomear', 'remote.hide': 'Ocultar', 'remote.list': 'Mostrar ou ocultar dispositivos', 'toast.renamedDevice': 'Dispositivo renomeado para “{name}”', 'undo.renameDevice': 'Renomeação do dispositivo desfeita', 'redo.renameDevice': 'Renomeação do dispositivo refeita', 'remote.window': 'Janela {n}',
+  'time.justNow': 'agora mesmo', 'remote.title': 'Nos seus outros dispositivos', 'remote.device': 'Outro dispositivo', 'remote.rename': 'Renomear', 'remote.hide': 'Ocultar', 'remote.signOut': 'Sair', 'remote.signOutTitle': 'Sair', 'remote.signOutText': 'A sessão será encerrada em {name}.', 'remote.signOutFailed': 'Não foi possível sair. Tente de novo.', 'remote.signedOut': 'Sessão encerrada em {name}', 'remote.list': 'Lista', 'toast.renamedDevice': 'Dispositivo renomeado para “{name}”', 'undo.renameDevice': 'Renomeação do dispositivo desfeita', 'redo.renameDevice': 'Renomeação do dispositivo refeita', 'remote.window': 'Janela {n}',
   'win.this': 'Esta janela', 'win.other': 'A outra janela', 'win.nth': 'Outra janela {n}',
   'win.saveThis': 'Salvar esta janela', 'win.save': 'Salvar janela', 'win.suspend': 'Suspender abas inativas', 'win.close': 'Fechar janela',
   'win.closeThis': 'Fechar esta janela?', 'win.closeOther': 'Fechar a outra janela?', 'win.closeNth': 'Fechar a outra janela {n}?',

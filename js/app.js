@@ -1364,10 +1364,12 @@ function devPart(d, isOpen) {
   const seen = new Map(); // (the same address twice in it: told apart, for the rows to glide each to its own place)
   return h('div', { class: 'dev' + (isOpen ? '' : ' collapsed'), dataset: { device: d.device } },
     // (the twisty and the name one row, lit as a whole under the pointer; a click anywhere on it opens or shuts it)
-    h('div', { class: 'dev-head', onclick: (e) => { if (!e.target.closest('input')) toggleDev(d.device); },
+    // (dragged by it, the browser goes elsewhere in the list: see orderDevices)
+    h('div', { class: 'dev-head', draggable: 'true', onclick: (e) => { if (!e.target.closest('input')) toggleDev(d.device); },
       oncontextmenu: (e) => showMenu(e, [
         { icon: 'edit', label: t('remote.rename'), key: 'R', fn: () => renameDevice(d) },
         { icon: 'eyeOff', label: t('remote.hide'), key: 'H', fn: () => setDeviceHidden(d, true) },
+        d.session && { icon: 'close', label: t('remote.signOut'), key: 'O', danger: true, fn: () => signOutDevice(d) },
       ]) },
       h('span', { class: 'icon-btn win-twisty', 'aria-hidden': 'true' }, icon('chevron', 14)),
       h('span', { class: 'grow' }, h('span', { class: 'dev-name' }, d.name || t('remote.device')),
@@ -1383,7 +1385,7 @@ function devPart(d, isOpen) {
       })))));
 }
 function renderRemote({ opening = null } = {}) {
-  if (devs.querySelector('.dev-rename')) { remoteHeld = true; return; }
+  if (devs.querySelector('.dev-rename') || drag) { remoteHeld = true; return; } // (named, or dragged: once that's done)
   const all = remote?.devices || [], list = all.filter((d) => !d.hidden);
   const open = new Set((ui.devOpen || []).filter((id) => all.some((d) => d.device === id)));
   const first = !devs.dataset.shown && all.length > 0; // (the first time there's anything: it all comes in)
@@ -1393,16 +1395,15 @@ function renderRemote({ opening = null } = {}) {
   const title = all.length ? h('div', { class: 'devs-title' }, h('span', { class: 'grow' }, t('remote.title')),
     Object.assign(btn(icon('list', 15), t('remote.list'), (e) => { e.stopPropagation(); toggleDevList(); }), { className: 'icon-btn devs-list-btn' })) : null;
   const parts = list.map((d) => devPart(d, open.has(d.device)));
-  const pop = devs.querySelector(':scope > .devs-pop');
-  devs.replaceChildren(...[title, ...parts, pop].filter(Boolean));
+  devs.replaceChildren(...[title, ...parts].filter(Boolean));
   if (all.length) devs.dataset.shown = '1';
-  if (pop) fillDevList(pop);
+  if (devPop) { if (all.length) fillDevList(); else closeDevList(); }
   // what's gone (hidden, or not heard from): back in its place a moment, folding shut; the heading too
   const leaving = oldDevs.filter((el) => !list.some((d) => d.device === el.dataset.device));
   for (const el of leaving) {
     const at = oldDevs.indexOf(el), next = oldDevs.slice(at + 1).map((o) => devs.querySelector(`:scope > .dev[data-device="${CSS.escape(o.dataset.device)}"]`)).find(Boolean);
     el.removeAttribute('data-device');
-    devs.insertBefore(el, next || pop || null);
+    devs.insertBefore(el, next || null);
     foldOut(el);
   }
   if (oldTitle && !title) { devs.prepend(oldTitle); foldOut(oldTitle); }
@@ -1448,14 +1449,16 @@ function toggleDev(id) {
   }
 }
 // The list by the heading: each of the account's browsers, ticked when shown; unticked, it's hidden (for all of
-// the account's browsers). Opens below its button, and shuts on a click elsewhere or Escape.
+// the account's browsers). It opens beside the panel, where the tabs' tooltips show, level with its button, and
+// shuts on a click elsewhere or Escape. Its rows stay as they are while it's open (only their ticks and names
+// follow), so clicks in a row, however quick, each tick or untick it.
+let devPop = null;
 function toggleDevList() {
-  const was = devs.querySelector(':scope > .devs-pop');
-  if (was) return closeDevList();
-  const pop = h('div', { class: 'devs-pop', role: 'dialog', 'aria-label': t('remote.list') });
-  devs.append(pop);
-  fillDevList(pop);
-  pop.animate([{ opacity: 0, transform: 'translateY(-4px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
+  if (devPop) return closeDevList();
+  devPop = h('div', { class: 'devs-pop', role: 'dialog', 'aria-label': t('remote.list') });
+  document.body.append(devPop);
+  fillDevList();
+  devPop.animate([{ opacity: 0, transform: 'translateX(-4px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
   setTimeout(() => document.addEventListener('pointerdown', outsideDevList, true));
   document.addEventListener('keydown', escDevList, true);
 }
@@ -1464,19 +1467,55 @@ const escDevList = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close
 function closeDevList() {
   document.removeEventListener('pointerdown', outsideDevList, true);
   document.removeEventListener('keydown', escDevList, true);
-  const pop = devs.querySelector(':scope > .devs-pop');
+  const pop = devPop;
+  devPop = null;
   if (!pop) return;
-  pop.classList.add('closing');
-  pop.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px) scale(.97)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' })
+  pop.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-4px) scale(.97)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' })
     .finished.catch(() => {}).then(() => pop.remove());
 }
-function fillDevList(pop) {
-  if (pop.classList.contains('closing')) return;
-  const btnEl = devs.querySelector('.devs-list-btn');
-  if (btnEl) pop.style.top = `${btnEl.offsetTop + btnEl.offsetHeight + 4}px`;
-  pop.replaceChildren(...(remote?.devices || []).map((d) => h('label', { class: 'devs-pop-row' },
-    h('input', { type: 'checkbox', checked: !d.hidden, onchange: (e) => setDeviceHidden(d, !e.target.checked) }),
-    h('span', { class: 'dev-name' }, d.name || t('remote.device')))));
+function fillDevList() {
+  const pop = devPop, list = remote?.devices || [];
+  const rows = new Map([...pop.children].map((r) => [r.dataset.device, r]));
+  pop.replaceChildren(...list.map((d) => {
+    let row = rows.get(d.device);
+    if (!row) row = h('label', { class: 'devs-pop-row', dataset: { device: d.device } },
+      h('input', { type: 'checkbox', onchange: (e) => { const x = remote?.devices.find((y) => y.device === d.device); if (x) setDeviceHidden(x, !e.target.checked); } }),
+      h('span', { class: 'dev-name' }));
+    row.querySelector('input').checked = !d.hidden;
+    row.querySelector('.dev-name').textContent = d.name || t('remote.device');
+    return row;
+  }));
+  // (beside the panel, as a tab's tooltip; level with the button)
+  const b = devs.querySelector('.devs-list-btn')?.getBoundingClientRect(), side = $('#tabs-panel').getBoundingClientRect();
+  if (!b) return;
+  pop.style.left = `${Math.max(4, Math.min(innerWidth - pop.offsetWidth - 4, side.right + 6))}px`;
+  pop.style.top = `${Math.max(4, Math.min(innerHeight - pop.offsetHeight - 4, b.top))}px`;
+}
+// Put elsewhere in the list (its head dragged before or after another's): at once here, the rest gliding aside,
+// then for the account's other browsers (the server keeps the order)
+function deviceDropTarget(e, el, d) {
+  const dev = el.closest('.devs .dev[data-device]');
+  if (!dev || dev.dataset.device === d.device) return null;
+  const r = dev.getBoundingClientRect(), before = e.clientY < r.top + r.height / 2;
+  return { action: 'orderDevices', device: dev.dataset.device, before, line: hLine(r, before) };
+}
+async function orderDevices(id, t_) {
+  const list = remote?.devices;
+  const moving = list?.find((x) => x.device === id);
+  if (!moving) return;
+  list.splice(list.indexOf(moving), 1);
+  const at = list.findIndex((x) => x.device === t_.device);
+  list.splice(at < 0 ? list.length : at + (t_.before ? 0 : 1), 0, moving);
+  renderRemote();
+  await fetch('/api/sync/tabs/order', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ devices: list.map((x) => x.device) }) }).catch(() => null);
+}
+// Signed out there (its menu, asked first): its sign-in ended, the browser shows the sign-in at once (live: 'gone')
+async function signOutDevice(d) {
+  if (!(await confirmDialog({ title: t('remote.signOutTitle'), text: t('remote.signOutText', { name: d.name || t('remote.device') }), ok: t('remote.signOut'), danger: true }))) return;
+  const r = await fetch(`/api/me/sessions/${encodeURIComponent(d.session)}`, { method: 'DELETE', credentials: 'same-origin' }).catch(() => null);
+  if (!r?.ok) return toast(t('remote.signOutFailed'));
+  d.session = null;
+  toast(t('remote.signedOut', { name: d.name || t('remote.device') }));
 }
 // Hidden, or shown again: at once here, then for the account's other browsers (the server keeps it)
 async function setDeviceHidden(d, hidden) {
@@ -3080,6 +3119,7 @@ const vLine = (r, before, gap = 7) => ({ x: (before ? r.left - gap : r.right + g
 function resolveDrop(e, d) {
   const el = e.target instanceof Element ? e.target : e.target.parentElement;
   if (!el || el.closest('dialog, #menu')) return null;
+  if (d.kind === 'device') return deviceDropTarget(e, el, d);
   const extra = el.closest('#board') && (newColumnTarget(e, d) || columnGapTarget(e, d));
   if (extra) return extra;
   const type = d.kind === 'node' ? d.type : 'link'; // tabs / windows / external urls behave like links
@@ -3321,6 +3361,7 @@ async function dropInto(d, t, e) {
     clearTimeout(tabsTimer);
     return renderTabs(); // (at once: not waiting for the change to be announced)
   }
+  if (t.action === 'orderDevices') return orderDevices(d.device, t);
   if (t.action === 'copyTabs') {
     await run(B.call('openUrls', { urls: d.tabs.map((x) => x.url), windowId: t.windowId, index: t.index }));
     clearTimeout(tabsTimer);
@@ -3423,6 +3464,7 @@ function endDrag() {
   document.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
   clearIndicator();
   drag = null;
+  if (remoteHeld && !devs.querySelector('.dev-rename')) { remoteHeld = false; renderRemote(); }
   if (pendingRender) render();
   if (pendingTabsRender) renderTabs();
 }
@@ -3433,7 +3475,12 @@ document.addEventListener('dragstart', (e) => {
   hideMenu();
   const dt = e.dataTransfer;
   dt.effectAllowed = 'copyMove';
-  if (src.matches('.rtab')) { // (another browser's tab: copied wherever it's dropped)
+  if (src.matches('.dev-head')) { // (one of the other browsers: put elsewhere in their list)
+    drag = { kind: 'device', device: src.closest('.dev').dataset.device };
+    dt.effectAllowed = 'move';
+    dt.setData('text/plain', 'tabcat-device');
+    setTimeout(() => src.closest('.dev')?.classList.add('dragging'), 0);
+  } else if (src.matches('.rtab')) { // (another browser's tab: copied wherever it's dropped)
     drag = { kind: 'remote', tabs: [{ url: src.dataset.url, title: src.dataset.title }] };
     dt.effectAllowed = 'copy';
     dt.setData('text/uri-list', src.dataset.url);
@@ -3486,7 +3533,7 @@ document.addEventListener('dragover', (e) => {
   showIndicator(t);
   if (t) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = (d.kind === 'node' && t.action !== 'open') || t.action === 'moveTabs' ? 'move' : 'copy';
+    e.dataTransfer.dropEffect = (d.kind === 'node' && t.action !== 'open') || t.action === 'moveTabs' || t.action === 'orderDevices' ? 'move' : 'copy';
   }
 });
 
@@ -4062,7 +4109,7 @@ function timeAgo(at) {
   const rtf = new Intl.RelativeTimeFormat(getLang(), { numeric: 'auto' });
   const s = (at - Date.now()) / 1000;
   for (const [unit, size] of [['day', 86400], ['hour', 3600], ['minute', 60]]) if (Math.abs(s) >= size) return rtf.format(Math.round(s / size), unit);
-  return rtf.format(0, 'minute');
+  return t('time.justNow'); // (not "this minute", as the browser's own words would have it)
 }
 // rows leaving: they fold away (with the gap after them); when they're all that's left they only fade,
 // and renderTrash then glides the dialog to the "nothing deleted" note in one go (folding first and then
@@ -4226,7 +4273,8 @@ function showTip(el) {
   const [head, ...rest] = el.dataset.tip.split('\n').filter((l) => l.trim());
   // tab rows: reuse the row's favicon with the same fallbacks, on a light chip so dark icons stay visible
   const rowImg = el.matches('.tab-row, .rtab') && el.querySelector(':scope > img');
-  const fav = rowImg ? iconImg(el.dataset.url, rowImg.currentSrc || rowImg.src) : null;
+  // (one with no icon of its own, an extension's page say, shows the accent globe: that, not its blank pixel)
+  const fav = !rowImg ? null : rowImg.classList.contains('fav-blank') ? Object.assign(rowImg.cloneNode(true), { loading: 'eager' }) : iconImg(el.dataset.url, rowImg.currentSrc || rowImg.src);
   fav?.removeAttribute('loading');
   tip.replaceChildren(
     h('div', { class: 'tip-head' }, fav && h('span', { class: 'tip-icon' }, fav), h('span', {}, head)),
@@ -4328,15 +4376,22 @@ for (const p of Object.values(PANELS)) {
 // copy of it going where it was; opening, it comes back in once the panel is wide again.
 function devsAcross(collapsing) {
   if (!devs.childElementCount) return;
+  // (held at its width all along, so nothing in it squeezes or rewraps as the panel narrows or widens: it only fades)
   if (collapsing) {
     closeDevList();
     const g = devs.cloneNode(true);
     g.classList.add('devs-ghost');
     Object.assign(g.style, { position: 'absolute', left: `${devs.offsetLeft}px`, top: `${devs.offsetTop}px`, width: `${devs.offsetWidth}px`, margin: '0', pointerEvents: 'none' });
     devs.parentElement.append(g);
-    g.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(12px)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' })
-      .finished.catch(() => {}).then(() => g.remove());
-  } else devs.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 180, easing: GLIDE, fill: 'backwards' });
+    devs.style.visibility = 'hidden';
+    setTimeout(() => { devs.style.visibility = ''; }, 120); // (by then the rail hides it)
+    g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {}).then(() => g.remove());
+  } else {
+    const pad = 12; // (#windows' sides)
+    devs.style.width = `${(ui[PANELS.tabs.width] || 290) - 1 - pad}px`;
+    devs.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay: 200, easing: 'ease-out', fill: 'backwards' })
+      .finished.catch(() => {}).then(() => { devs.style.width = ''; });
+  }
 }
 
 // Switch a side panel between full and rail layout, FLIPping its icons and rows from where they
@@ -4763,11 +4818,21 @@ $('#account-signout').addEventListener('click', async () => {
 });
 // Going to the server's own pages (the account, the admin page): the dashboard fades out first, and the page
 // there rises in (see html.leaving in app.css)
+// (the page there slow to come: the spinner, as the dashboard's own loading has, after a moment; back here from
+// the browser's back button, the page as it was)
+let leaveSpin = 0;
 function leaveFor(go) {
   const root = document.documentElement;
   root.classList.add('leaving');
   setTimeout(go, 200);
+  clearTimeout(leaveSpin);
+  leaveSpin = setTimeout(() => { if (!document.hidden) root.classList.add('booting'); }, 700);
 }
+addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  clearTimeout(leaveSpin);
+  document.documentElement.classList.remove('leaving', 'booting');
+});
 $('#btn-account').addEventListener('click', () => { closeAccountList(false); $('#account').style.margin = ''; $('#account').style.maxHeight = ''; $('#account').showModal(); });
 
 // The other accounts signed in in this browser (as many as the server lets): the arrow beside who's signed in

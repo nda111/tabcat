@@ -35,7 +35,7 @@ export default {
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
   'tabs.suspendShort': '休止', 'tabs.dedupeShort': '重複整理', 'tabs.dedupeTip': '重複したタブを閉じる',
-  'remote.title': 'ほかのデバイス', 'remote.device': 'ほかのデバイス', 'remote.rename': '名前を変更', 'remote.hide': '非表示', 'remote.list': 'デバイスの表示・非表示', 'toast.renamedDevice': 'デバイス名を「{name}」に変更しました', 'undo.renameDevice': 'デバイス名の変更を取り消しました', 'redo.renameDevice': 'デバイス名の変更をやり直しました', 'remote.window': 'ウィンドウ {n}',
+  'time.justNow': 'たった今', 'remote.title': 'ほかのデバイス', 'remote.device': 'ほかのデバイス', 'remote.rename': '名前を変更', 'remote.hide': '非表示', 'remote.signOut': 'ログアウト', 'remote.signOutTitle': 'ログアウト', 'remote.signOutText': '{name} でログアウトします。', 'remote.signOutFailed': 'ログアウトできませんでした。もう一度お試しください。', 'remote.signedOut': '{name} でログアウトしました', 'remote.list': '一覧', 'toast.renamedDevice': 'デバイス名を「{name}」に変更しました', 'undo.renameDevice': 'デバイス名の変更を取り消しました', 'redo.renameDevice': 'デバイス名の変更をやり直しました', 'remote.window': 'ウィンドウ {n}',
   'win.this': 'このウィンドウ', 'win.other': 'もう一方のウィンドウ', 'win.nth': 'ほかのウィンドウ {n}',
   'win.saveThis': 'このウィンドウを保存', 'win.save': 'ウィンドウを保存', 'win.suspend': '非アクティブなタブを休止', 'win.close': 'ウィンドウを閉じる',
   'win.closeThis': 'このウィンドウを閉じますか?', 'win.closeOther': 'もう一方のウィンドウを閉じますか?', 'win.closeNth': 'ほかのウィンドウ {n} を閉じますか?',

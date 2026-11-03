@@ -37,7 +37,7 @@ export default {
   'panel.expandTabs': 'Déplier les onglets ouverts', 'panel.collapseTabs': 'Replier les onglets ouverts',
   'tabs.title': 'Onglets ouverts',
   'tabs.suspendShort': 'Suspendre', 'tabs.dedupeShort': 'Doublons', 'tabs.dedupeTip': 'Fermer les onglets en double',
-  'remote.title': 'Sur vos autres appareils', 'remote.device': 'Autre appareil', 'remote.rename': 'Renommer', 'remote.hide': 'Masquer', 'remote.list': 'Afficher ou masquer les appareils', 'toast.renamedDevice': 'Appareil renommé en « {name} »', 'undo.renameDevice': 'Renommage de l’appareil annulé', 'redo.renameDevice': 'Renommage de l’appareil rétabli', 'remote.window': 'Fenêtre {n}',
+  'time.justNow': 'à l’instant', 'remote.title': 'Sur vos autres appareils', 'remote.device': 'Autre appareil', 'remote.rename': 'Renommer', 'remote.hide': 'Masquer', 'remote.signOut': 'Se déconnecter', 'remote.signOutTitle': 'Se déconnecter', 'remote.signOutText': 'La session sera fermée sur {name}.', 'remote.signOutFailed': 'Impossible de fermer la session. Réessayez.', 'remote.signedOut': 'Session fermée sur {name}', 'remote.list': 'Liste', 'toast.renamedDevice': 'Appareil renommé en « {name} »', 'undo.renameDevice': 'Renommage de l’appareil annulé', 'redo.renameDevice': 'Renommage de l’appareil rétabli', 'remote.window': 'Fenêtre {n}',
   'win.this': 'Cette fenêtre', 'win.other': 'L’autre fenêtre', 'win.nth': 'Autre fenêtre {n}',
   'win.saveThis': 'Enregistrer cette fenêtre', 'win.save': 'Enregistrer la fenêtre', 'win.suspend': 'Suspendre les onglets inactifs', 'win.close': 'Fermer la fenêtre',
   'win.closeThis': 'Fermer cette fenêtre ?', 'win.closeOther': 'Fermer l’autre fenêtre ?', 'win.closeNth': 'Fermer l’autre fenêtre {n} ?',

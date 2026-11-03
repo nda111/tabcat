@@ -35,7 +35,7 @@ export default {
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
   'tabs.suspendShort': '재우기', 'tabs.dedupeShort': '중복 정리', 'tabs.dedupeTip': '중복 탭 닫기',
-  'remote.title': '내 다른 기기', 'remote.device': '다른 기기', 'remote.rename': '이름 바꾸기', 'remote.hide': '숨기기', 'remote.list': '기기 보이기·숨기기', 'toast.renamedDevice': '기기 이름을 “{name}”(으)로 바꿨습니다', 'undo.renameDevice': '기기 이름 바꾸기를 취소했습니다.', 'redo.renameDevice': '기기 이름 바꾸기를 다시 실행했습니다.', 'remote.window': '창 {n}',
+  'time.justNow': '방금 전', 'remote.title': '내 다른 기기', 'remote.device': '다른 기기', 'remote.rename': '이름 바꾸기', 'remote.hide': '숨기기', 'remote.signOut': '로그아웃', 'remote.signOutTitle': '로그아웃', 'remote.signOutText': '{name}에서 로그아웃합니다.', 'remote.signOutFailed': '로그아웃하지 못했습니다. 다시 시도해 주세요.', 'remote.signedOut': '{name}에서 로그아웃했습니다', 'remote.list': '목록', 'toast.renamedDevice': '기기 이름을 “{name}”(으)로 바꿨습니다', 'undo.renameDevice': '기기 이름 바꾸기를 취소했습니다.', 'redo.renameDevice': '기기 이름 바꾸기를 다시 실행했습니다.', 'remote.window': '창 {n}',
   'win.this': '이 창', 'win.other': '다른 창', 'win.nth': '다른 창 {n}',
   'win.saveThis': '이 창 저장하기', 'win.save': '창 저장하기', 'win.suspend': '다른 탭 재우기', 'win.close': '창 닫기',
   'win.closeThis': '이 창을 닫을까요?', 'win.closeOther': '다른 창을 닫을까요?', 'win.closeNth': '다른 창 {n}을 닫을까요?',

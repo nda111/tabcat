@@ -37,7 +37,7 @@ export default {
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',
   'tabs.suspendShort': 'Pausieren', 'tabs.dedupeShort': 'Duplikate', 'tabs.dedupeTip': 'Doppelte Tabs schließen',
-  'remote.title': 'Auf deinen anderen Geräten', 'remote.device': 'Anderes Gerät', 'remote.rename': 'Umbenennen', 'remote.hide': 'Ausblenden', 'remote.list': 'Geräte ein- oder ausblenden', 'toast.renamedDevice': 'Gerät in „{name}“ umbenannt', 'undo.renameDevice': 'Umbenennen des Geräts rückgängig gemacht', 'redo.renameDevice': 'Umbenennen des Geräts wiederholt', 'remote.window': 'Fenster {n}',
+  'time.justNow': 'gerade eben', 'remote.title': 'Auf deinen anderen Geräten', 'remote.device': 'Anderes Gerät', 'remote.rename': 'Umbenennen', 'remote.hide': 'Ausblenden', 'remote.signOut': 'Abmelden', 'remote.signOutTitle': 'Abmelden', 'remote.signOutText': 'Du wirst auf {name} abgemeldet.', 'remote.signOutFailed': 'Abmelden fehlgeschlagen. Versuch es noch einmal.', 'remote.signedOut': 'Auf {name} abgemeldet', 'remote.list': 'Liste', 'toast.renamedDevice': 'Gerät in „{name}“ umbenannt', 'undo.renameDevice': 'Umbenennen des Geräts rückgängig gemacht', 'redo.renameDevice': 'Umbenennen des Geräts wiederholt', 'remote.window': 'Fenster {n}',
   'win.this': 'Dieses Fenster', 'win.other': 'Das andere Fenster', 'win.nth': 'Anderes Fenster {n}',
   'win.saveThis': 'Dieses Fenster speichern', 'win.save': 'Fenster speichern', 'win.suspend': 'Inaktive Tabs pausieren', 'win.close': 'Fenster schließen',
   'win.closeThis': 'Dieses Fenster schließen?', 'win.closeOther': 'Das andere Fenster schließen?', 'win.closeNth': 'Anderes Fenster {n} schließen?',

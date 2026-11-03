@@ -612,12 +612,12 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 #windows { position: relative; } /* (for the list of browsers, and the part's copy fading as the panel closes) */
 .devs { position: relative; }
 .devs:empty { display: none; }
-.devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 0 0 6px; border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+.devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 6px 0; /* (its button in line with the windows' buttons above) */ border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
 .devs-title .grow { flex: 1; min-width: 0; }
 .devs-list-btn { width: 24px; height: 24px; }
 /* the list of them: each ticked when shown */
-.devs-pop { position: absolute; right: 0; z-index: 20; min-width: 190px; max-width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: 0 8px 24px rgb(0 0 0 / .14); transform-origin: top right; }
-.devs-pop-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.devs-pop { position: fixed; z-index: 2000; min-width: 190px; max-width: 280px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: 0 8px 24px rgb(0 0 0 / .14); transform-origin: top left; }
+.devs-pop-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; user-select: none; }
 .devs-pop-row:hover { background: var(--hover); }
 .devs-pop-row input { margin: 0; accent-color: var(--accent); }
 .devs-pop-row .dev-name { font-weight: 500; }
