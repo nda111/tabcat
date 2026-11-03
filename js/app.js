@@ -335,12 +335,14 @@ async function run(promise) {
 
 // The extension went away under the page (reloaded or updated: the page's link to it can't come back):
 // load the page again, which links up with it anew, or waits on the notice if it is really gone. Not
-// in the middle of an edit (a dialog, a note): a toast says so, and the page reloads once that's done.
+// in the middle of an edit (a dialog, a note): a toast says so, and the page reloads once that's done. (The
+// extension, updated, also loads the dashboards in the background again itself: see reloadDashboardsAfterUpdate.)
 let reloading = false;
 function reloadWhenIdle() {
   if (reloading) return;
   reloading = true;
-  const busy = () => document.querySelector('dialog[open]') || document.activeElement?.matches('input, textarea, select, [contenteditable]');
+  // (not looked at, a field merely left focused, the search say, isn't an edit: only a dialog open is)
+  const busy = () => document.querySelector('dialog[open]') || (!document.hidden && document.activeElement?.matches('input, textarea, select, [contenteditable]'));
   if (busy()) toast(t('toast.extReloaded'));
   const attempt = () => (busy() ? setTimeout(attempt, 500) : location.reload());
   setTimeout(attempt, 300); // (a moment for the updated extension to start)
