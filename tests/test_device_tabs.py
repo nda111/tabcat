@@ -78,7 +78,8 @@ with sync_playwright() as p:
     check(ok and bd.locator('.devs .dev.collapsed').count() == 1 and bd.locator('.devs .rtab').count() == 0,
           f"B's open tabs panel: A's part, shut to begin with ({bd.locator('.devs .dev').count()})")
     name = bd.inner_text('.devs .dev-name')
-    check(name.strip() != '' and 'tab' in bd.inner_text('.devs .dev-meta'), f"named for its browser, with how many tabs and when ({name!r}, {bd.inner_text('.devs .dev-meta')!r})")
+    meta = bd.inner_text('.devs .dev-meta')
+    check(name.strip() != '' and 'tab' in meta and 'just now' in meta, f"named for its browser, with how many tabs and when ('just now', not 'this minute') ({name!r}, {meta!r})")
     check(bd.locator('.devs .dev').count() == 1 and not bd.locator(f".devs .dev[data-device='{b.evaluate('chrome.storage.local.get(\'tabcat:device\').then(r => r[\'tabcat:device\'])') or 'x'}']").count(), "not B itself")
     bd.click('.devs .dev-head'); time.sleep(.08)
     check(bd.locator('.devs .dev:not(.collapsed)').count() == 1, 'a click opens it at once')
@@ -115,7 +116,7 @@ with sync_playwright() as p:
     bd.locator('#menu button', has_text='Rename').click(); bd.wait_for_selector('.devs .dev-rename')
     bd.fill('.devs .dev-rename', 'Work PC'); bd.press('.devs .dev-rename', 'Enter'); time.sleep(.8)
     names = lambda pg: pg.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(r => r.devices.map(d => d.name))")
-    check(bd.inner_text('.devs .dev-name') == 'Work PC' and 'Work PC' in names(ad), f'renamed: shown, kept for the account ({names(ad)})')
+    check(bd.inner_text('.devs .dev-name') == 'Work PC' and 'Work PC' in names(ad), f'renamed: shown, kept for the account ({bd.locator(".devs .dev-name").all_inner_texts()}, {names(ad)})')
     bd.mouse.click(600, 400); bd.keyboard.press('Control+z'); time.sleep(1)
     check(bd.inner_text('.devs .dev-name') == own and 'Work PC' not in names(ad), f'Ctrl+Z: its name as it was ({bd.inner_text(".devs .dev-name")!r})')
     bd.keyboard.press('Control+Shift+z'); time.sleep(1)
@@ -124,11 +125,19 @@ with sync_playwright() as p:
     # hidden from its menu; shown again from the list by the heading
     menu(); bd.locator('#menu button', has_text='Hide').click(); time.sleep(.6)
     check(bd.locator('.devs .dev').count() == 0 and bd.locator('.devs .devs-title').count() == 1, 'hidden: gone from the panel, the heading stays (for the list)')
+    tip = bd.evaluate("(b => b.title || b.dataset.tip)(document.querySelector('.devs-list-btn'))")
+    gap = bd.evaluate("(() => { const a = document.querySelector('.devs-list-btn').getBoundingClientRect(), w = document.querySelector('#windows .win-head .icon-btn:last-child').getBoundingClientRect(); return Math.round(a.right - w.right); })()")
+    check(tip == 'List' and abs(gap) <= 1, f"the list button: 'List', in line with the windows' buttons above ({tip!r}, {gap}px off)")
     bd.click('.devs-list-btn'); bd.wait_for_selector('.devs-pop')
     boxes = bd.evaluate("[...document.querySelectorAll('.devs-pop input')].map(i => i.checked)")
     check(boxes == [False], f'the list: it, unticked ({boxes})')
+    time.sleep(.4)
+    side = bd.evaluate("[document.querySelector('.devs-pop').getBoundingClientRect().left, document.querySelector('#tabs-panel').getBoundingClientRect().right]")
+    check(abs(side[0] - min(side[1] + 6, bd.viewport_size['width'] - bd.evaluate("document.querySelector('.devs-pop').offsetWidth") - 4)) <= 1, f'it opens beside the panel, where the tabs\' tooltips show ({side})')
+    bd.dblclick('.devs-pop-row .dev-name'); time.sleep(.8)
+    check(bd.evaluate("document.querySelector('.devs-pop input').checked") is False and bd.locator('.devs .dev').count() == 0, 'two quick clicks: ticked and unticked again (each a click, not a double-click)')
     bd.click('.devs-pop input'); time.sleep(.6)
-    check(bd.locator('.devs .dev').count() == 1, 'ticked: shown again')
+    check(wait(lambda: bd.locator('.devs .dev').count() == 1, 'shown', timeout=5), f"ticked: shown again ({bd.locator('.devs .dev').count()})")
     bd.click('.devs-pop input'); wait(lambda: bd.locator('.devs .dev').count() == 0, 'hidden', timeout=5); bd.keyboard.press('Escape')
     check(wait(lambda: bd.locator('.devs .dev').count() == 0 and not bd.locator('.devs-pop').count(), 'shut', timeout=5), 'unticked: hidden; Escape shuts the list')
 
@@ -140,11 +149,39 @@ with sync_playwright() as p:
         if bd.locator('.devs .dev.collapsed').count(): bd.click('.devs .dev-head')
         time.sleep(.6); bd.mouse.move(5, 5); bd.locator('#tabs-panel').screenshot(path=os.environ['SHOT'])
 
-    # A signed out of from B (its account page's list of sign-ins): A's dashboard shows the sign-in at once
-    sess = bd.evaluate("fetch('/api/me/sessions').then(r => r.json())")
-    other = [x for x in sess if not x.get('current')]
-    for x in other: bd.evaluate(f"fetch('/api/me/sessions/{x['id']}', {{ method: 'DELETE' }})")
-    check(wait(lambda: ad.locator('#username').count() and ad.is_visible('#username'), 'A signed out', timeout=6), f'signed out of from another device: the sign-in shows at once, no reload ({len(other)} other)')
+    # put in order: B gets a third browser's tabs (straight to the server), then drags one head above the other
+    import json as _j
+    cc = p.chromium.launch().new_context(); cp = cc.new_page(); cp.goto(SERVER + '/login')
+    cp.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'boss', password: 'correct horse' }) })")
+    cp.evaluate("fetch('/api/sync/tabs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device: 'third', name: 'Third', windows: [{ tabs: [{ url: 'https://example.com/' }] }] }) })")
+    wait(lambda: bd.locator('.devs .dev').count() == 2, 'third', timeout=10)
+    order = lambda: bd.evaluate("[...document.querySelectorAll('.devs .dev[data-device]')].map(e => e.querySelector('.dev-name').textContent)")
+    was = order()
+    cp.evaluate("fetch('/api/sync/tabs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device: 'third', name: 'Third', windows: [{ tabs: [{ url: 'https://example.org/' }] }] }) })")
+    time.sleep(1.5)
+    check(order() == was, f'one speaking again: the list stays in its order ({order()})')
+    bd.locator('.devs .dev-head').nth(1).drag_to(bd.locator('.devs .dev-head').nth(0), target_position={'x': 20, 'y': 3}); time.sleep(1)
+    now = order(); srv_order = ad.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(r => r.devices.map(d => d.name))")
+    check(now == was[::-1] and [n for n in srv_order if n in now] == now, f'a head dragged above another: put there, here and for the account ({was} -> {now})')
+
+    # signed out from its menu, asked first: that browser shows the sign-in at once
+    a_head = bd.locator('.devs .dev-head', has_text='Work PC').first
+    if not a_head.count(): a_head = bd.locator('.devs .dev-head').filter(has_not_text='Third').first
+    a_head.click(button='right'); bd.wait_for_selector('#menu:not([hidden])')
+    so = bd.locator('#menu button', has_text='Sign out')
+    check(so.count() == 1 and 'danger' in (so.get_attribute('class') or ''), 'its menu: Sign out, in red')
+    so.click(); bd.wait_for_selector('#confirm[open]')
+    text = bd.inner_text('#confirm-text')
+    check(text.startswith('Signs out on '), f'asked first: "Signs out on (its name)." ({text!r})')
+    bd.click('#confirm-ok')
+    check(wait(lambda: ad.locator('#username').count() and ad.is_visible('#username'), 'A signed out', timeout=8), 'signed out there: the sign-in shows at once, no reload')
+    cc.close()
+
+    # off to the account page, slow to come: the spinner after a moment
+    bd.click('#btn-account'); time.sleep(.4)
+    # (a link that goes nowhere: the leaving as for any, the page there never coming)
+    bd.evaluate("(a => { a.href = 'javascript:void 0'; a.click(); })(document.querySelector('#account a[href=\"/account\"]'))"); time.sleep(1.4)
+    check(bd.evaluate("document.documentElement.classList.contains('booting')"), 'off to the account page, slow: the spinner shows')
 
     check(not errors, f'no page errors {errors}')
     actx.close(); bctx.close()

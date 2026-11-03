@@ -94,6 +94,10 @@ with sync_playwright() as p:
     adm.locator('#users tr').first.locator('.seg button').nth(1).click(); time.sleep(.4)
     check(not adm.locator('dialog.modal[open]').count() and adm.locator('#users-msg').inner_text().strip(), f"the only admin to a member: refused at once ({adm.locator('#users-msg').inner_text()!r})")
 
+    # the only admin: no Delete button on their account page, a red word why
+    oa = one.new_page(); oa.goto(SERVER + '/account'); oa.wait_for_selector('#name-view'); time.sleep(.5)
+    check(oa.is_visible('#only-admin') and not oa.is_visible('#delete-me') and 'only admin' in oa.inner_text('#only-admin'), f"the only admin: no Delete button, a word why ({oa.inner_text('#only-admin')!r})")
+    oa_open = True
     # the account page's admin button, made an admin elsewhere: it comes, moving
     call(o, 'POST', '/api/admin/users', {'username': 'ann', 'password': 'annpass123'})
     four = b.new_context(); four.add_init_script(COUNT)
@@ -104,6 +108,7 @@ with sync_playwright() as p:
     ann_id = o.evaluate("fetch('/api/admin/users').then(r => r.json()).then(l => l.find(u => u.username === 'ann').id)")
     call(o, 'PATCH', f'/api/admin/users/{ann_id}', {'admin': True})
     check(soon(ann, "!document.querySelector('#admin-link').hidden"), 'made an admin elsewhere: the button comes')
+    check(soon(oa, "!document.querySelector('#delete-me').closest('#delete-row').hidden && document.querySelector('#only-admin').hidden"), 'another made an admin: the Delete button comes back, live')
     time.sleep(.1)
     check('admin-link' in ann.evaluate('[...window.__moved]'), 'growing in')
     ann.evaluate('window.__moved.clear()')

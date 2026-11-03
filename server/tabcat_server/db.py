@@ -55,6 +55,8 @@ create table if not exists device_tabs (  -- each of an account's browsers: its 
   body text not null,              -- ({windows: [{focused, tabs: [{url, title, icon, pinned, active, group}], groups: [{id, title, color}]}]})
   label text not null default '',  -- (a name given it by the user, in place of its own)
   forgotten real,                  -- (hidden from the list, when: shown again by hand, or once it signs in again after)
+  position integer,                -- (its place in the list, as the user put them; none yet: after those, as they came)
+  session text,                    -- (the sign-in it last sent from, as the list of sign-ins knows it: to sign it out)
   primary key (user_id, device)
 );
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
@@ -112,6 +114,9 @@ class DB:
             if dcols and 'label' not in dcols:  # (each browser's tabs, before they could be named or let go)
                 self.conn.execute("alter table device_tabs add column label text not null default ''")
                 self.conn.execute('alter table device_tabs add column forgotten real')
+            if dcols and 'position' not in dcols:  # (before they could be put in order, or signed out from the list)
+                self.conn.execute('alter table device_tabs add column position integer')
+                self.conn.execute('alter table device_tabs add column session text')
             if 'avatar' not in cols:
                 self.conn.execute('alter table users add column avatar text')
                 self.conn.execute('alter table users add column avatar_at real')

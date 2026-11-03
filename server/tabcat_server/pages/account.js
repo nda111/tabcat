@@ -333,6 +333,16 @@ $('#pw-form').addEventListener('submit', async (e) => {
   } catch (err) { say($('#pw-msg'), err.message, 'error'); }
 });
 // deleting this account: typed out first, as the dialog says (the last admin can't: the server says so)
+// (the server's only admin: no Delete button, a red word why in its place; made so, or no longer, elsewhere: the
+// one fades out as the other comes)
+function onlyAdmin(only, animate = false) {
+  const [show, hide] = only ? [$('#only-admin'), $('#delete-row')] : [$('#delete-row'), $('#only-admin')];
+  if (!show.hidden) return;
+  const swap = () => { hide.hidden = true; show.hidden = false; if (animate) show.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }); };
+  if (animate && !hide.hidden) hide.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: 'ease-in' }).finished.then(swap, swap);
+  else swap();
+}
+onlyAdmin(!!me.only_admin);
 $('#delete-me').addEventListener('click', async () => {
   const phrase = t('deletePhrase', { name: me.username });
   if (!(await modal({ title: t('deleteAccount'), text: t('deleteAccountText', { phrase }), input: phrase, ok: t('deleteAccount'), danger: true }))) return;
@@ -344,6 +354,7 @@ $('#delete-me').addEventListener('click', async () => {
 // ---------- live: changed elsewhere (another browser, an admin), shown here at once ----------
 async function refreshMe() {
   const now = await api('me');
+  onlyAdmin(!!now.only_admin, true);
   if (now.name !== current.name && $('#name-input').hidden && !saving) { current = { ...current, name: now.name }; showName(true); }
   if ((now.avatar || null) !== (current.avatar || null) || now.accent !== current.accent) showAvatar(now, true);
   appear($('#admin-link'), !!now.admin); // (made an admin, or no longer: the button comes, or goes)

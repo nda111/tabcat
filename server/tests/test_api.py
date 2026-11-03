@@ -367,7 +367,13 @@ check(sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows
 sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': []})
 got = sa.get('/api/sync/tabs').json()['devices']
 pc1 = next(d for d in got if d['device'] == 'pc1')
-check([d['device'] for d in got] == ['pc2', 'pc1'] and pc1['name'] == 'Chrome on Windows', f"each browser of the account, the latest heard first ({[d['device'] for d in got]})")
+check([d['device'] for d in got] == ['pc1', 'pc2'] and pc1['name'] == 'Chrome on Windows', f"each browser of the account, as they came (not reshuffled by which spoke last) ({[d['device'] for d in got]})")
+sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
+check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1', 'pc2'], 'one speaking again: still in its place')
+sa.put('/api/sync/tabs/order', json={'devices': ['pc2', 'pc1']})
+check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc2', 'pc1'], 'put in order by the user: kept so')
+sess = [x for x in sa.get('/api/me/sessions').json() if x['current']][0]['id']
+check(pc1['session'] == sess, f"each with the sign-in it sends from, to sign it out ({pc1['session']} {sess})")
 t = pc1['windows'][0]['tabs']
 check(len(pc1['windows']) == 1 and len(t) == 2 and t[0]['icon'] == '' and t[0]['group'] == 3 and len(t[1]['title']) == 300, 'kept tidy: a window with no tabs, a tab with no address, an icon not on the web: left out; a long title cut')
 check(sb.get('/api/sync/tabs').json()['devices'] == [], "another account doesn't see them")

@@ -560,3 +560,6 @@ select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%);
 .btn { transition: background-color .16s ease, border-color .16s ease, color .16s ease, opacity .24s ease, scale .12s ease; }
 
 .no-account { font-style: normal; }
+
+/* the account page, the server's only admin: their account can't be deleted, said in red in place of the button */
+.only-admin { margin: 0; color: var(--danger); font-size: 13.5px; white-space: pre-line; }

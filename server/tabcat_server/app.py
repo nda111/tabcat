@@ -483,7 +483,10 @@ def create_app(config) -> FastAPI:
         if not user_of(request) and (rest := takeover(request)):
             u = auth.session_user(db, rest[0])
             return set_accounts(JSONResponse({**public(u), 'switched': True}), request, rest)
-        return public(need_user(request))
+        u = need_user(request)
+        # (the server's only admin: their account can't be deleted, which its page says in place of the button)
+        only = bool(u['admin']) and db.one('select count(*) n from users where admin = 1 and disabled = 0')['n'] <= 1
+        return {**public(u), 'only_admin': only}
 
     @app.post('/api/me/password')
     async def change_password(request: Request):
@@ -1093,23 +1096,37 @@ def create_app(config) -> FastAPI:
         device = str(data.get('device', ''))[:64]
         if not device:
             raise HTTPException(400, 'which browser?')
-        db.run("""insert into device_tabs (user_id, device, name, at, body) values (?, ?, ?, ?, ?) on conflict(user_id, device) do update set
-                  name = excluded.name, at = excluded.at, body = excluded.body,
+        db.run("""insert into device_tabs (user_id, device, name, at, body, session) values (?, ?, ?, ?, ?, ?) on conflict(user_id, device) do update set
+                  name = excluded.name, at = excluded.at, body = excluded.body, session = excluded.session,
                   forgotten = case when device_tabs.forgotten is not null and device_tabs.forgotten < ? then null else device_tabs.forgotten end""",
                u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')),
-               u['session_created'] or 0)
+               auth.token_hash(request.cookies.get(auth.COOKIE, ''))[:16], u['session_created'] or 0)
         notify([u['id']], 'tabs')
         return {'ok': True}
 
     @app.get('/api/sync/tabs')
     def get_device_tabs(request: Request):
-        """The account's browsers and what each has open, the latest heard first (`name`: its own, or the one given;
-        `hidden`: kept out of the open tabs panel, shown in its list of them to be shown again)."""
+        """The account's browsers and what each has open, in the order the user put them (the rest as they came;
+        `name`: its own, or the one given; `hidden`: kept out of the open tabs panel, shown in its list of them to be
+        shown again; `session`: its sign-in while it lasts, for the list of sign-ins to end)."""
         u = need_user(request)
         db.run('delete from device_tabs where at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
-        rows = db.q('select device, name, label, at, body, forgotten from device_tabs where user_id = ? order by at desc', u['id'])
+        rows = db.q('''select d.device, d.name, d.label, d.at, d.body, d.forgotten, d.session,
+                              exists(select 1 from sessions s where s.user_id = d.user_id and substr(s.token, 1, 16) = d.session and s.expires_at > ?) signed_in
+                       from device_tabs d where d.user_id = ? order by coalesce(d.position, 1e18), d.rowid''', time.time(), u['id'])
         return {'devices': [{'device': r['device'], 'name': r['label'] or r['name'], 'own': r['name'], 'at': r['at'], 'hidden': r['forgotten'] is not None,
-                             **json.loads(r['body'])} for r in rows]}
+                             'session': r['session'] if r['signed_in'] else None, **json.loads(r['body'])} for r in rows]}
+
+    @app.put('/api/sync/tabs/order')
+    async def order_devices(request: Request):
+        """The account's browsers in the order given (the rest after them, as they were), for all of them to show."""
+        u = need_user(request)
+        ids = [str(x)[:64] for x in ((await body(request)).get('devices') or [])][:200]
+        with db.lock:
+            for i, device in enumerate(ids):
+                db.run('update device_tabs set position = ? where user_id = ? and device = ?', i, u['id'], device)
+        notify([u['id']], 'tabs')
+        return {'ok': True}
 
     @app.put('/api/sync/tabs/{device}/name')
     async def name_device(device: str, request: Request):
