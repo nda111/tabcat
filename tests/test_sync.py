@@ -107,7 +107,13 @@ with sync_playwright() as p:
     check(a.evaluate(TREE)['workspaces'][1]['categories'][0]['groups'][0]['id'] == 'g-A', 'a group moved to another workspace in B: moved in A, with its link')
 
     # Recently deleted, and the look
-    a.evaluate("chrome.storage.local.set({ 'tabcat:trash': [{ id: 't1', node: { id: 'x', type: 'link', url: 'https://gone.example/', name: 'Gone' }, parentId: null, index: 0, trail: [], deletedAt: Date.now() }] })")
+    # (written straight to storage, as the extension wouldn't: a sync under way then may write its own over it, so
+    # again until it holds)
+    trash_a = lambda: a.evaluate("chrome.storage.local.get('tabcat:trash').then(r => (r['tabcat:trash'] || []).map(e => e.id))")
+    for _ in range(6):
+        a.evaluate("chrome.storage.local.set({ 'tabcat:trash': [{ id: 't1', node: { id: 'x', type: 'link', url: 'https://gone.example/', name: 'Gone' }, parentId: null, index: 0, trail: [], deletedAt: Date.now() }] })")
+        time.sleep(.8)
+        if trash_a() == ['t1']: break
     a.evaluate("chrome.storage.local.get('tabcat:settings').then(r => chrome.storage.local.set({ 'tabcat:settings': { ...r['tabcat:settings'], accent: 'green', theme: 'dark' } }))")
     time.sleep(1.5); ask(ac, 'syncNow'); wait(lambda: ask(ac, 'syncStatus')['pending'] == 0, 'A sent'); ask(bc, 'syncNow')
     wait(lambda: b.evaluate("chrome.storage.local.get('tabcat:trash').then(r => (r['tabcat:trash'] || []).map(e => e.id))") == ['t1'], 'trash')

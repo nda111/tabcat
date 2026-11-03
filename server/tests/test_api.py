@@ -450,6 +450,28 @@ check(sb.delete(f'/api/sync/shares/{sid}').status_code == 200 and sb.get('/api/s
 check(all(m['id'] != late['id'] for m in sa.get('/api/mail').json()['mail']), 'its invites not answered yet go with it')
 check(len(sb.get('/api/mail').json()['mail']) >= 2, 'answered mail stays')
 
+# letting go, leaving, stopping: told by mail; finding whom to invite
+ws = {'id': 'w9', 'type': 'workspace', 'name': 'Plans', 'symbol': '', 'categories': []}
+s9 = sa.post('/api/sync/shares', json={'root': 'w9', 'body': {'workspaces': [ws]}}).json()['id']
+check([x['username'] for x in sa.get('/api/users/search', params={'q': 'be'}).json()['users']] == ['ben'] and sa.get('/api/users/search', params={'q': 'ann'}).json()['users'] == [], 'search: by username, not oneself')
+sa.post('/api/sync/ops', json={'device': 'a', 'ops': []})
+sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'editor', 'name': 'Plans'})
+sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json={'accept': True})
+sa.post(f'/api/sync/shares/{s9}/ops', json={'device': 'a', 'ops': [{'id': 'n1', 'body': {'v': 1, 'ops': [{'o': 'set', 'id': 'w9', 'f': {'name': 'Big plans'}}]}}]})
+sa.delete(f'/api/shares/{s9}/members/{ben_id}')
+m = sb.get('/api/mail').json()['mail'][0]
+check(m['kind'] == 'removed' and m['from']['username'] == 'ann' and m['workspace']['name'] == 'Big plans', f"let go: ben told by mail, the workspace as it's called now ({m['kind']}, {m['workspace']})")
+sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'viewer', 'name': 'Big plans'})
+sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json={'accept': True})
+sb.delete(f'/api/sync/shares/{s9}')
+m = sa.get('/api/mail').json()['mail'][0]
+check(m['kind'] == 'left' and m['from']['username'] == 'ben', f'ben leaves: the owner told ({m["kind"]})')
+sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'viewer', 'name': 'Big plans'})
+sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json={'accept': True})
+info = sa.post(f'/api/shares/{s9}/end').json()
+check([x['username'] for x in info['members']] == ['ann'] and sb.get('/api/sync/shares').json()['shares'] == [] and sb.get('/api/mail').json()['mail'][0]['kind'] == 'removed', 'shared with no one any more: the owner alone, the rest told')
+check([x['id'] for x in sa.get('/api/sync/shares').json()['shares']] == [s9], "the owner's still there")
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')

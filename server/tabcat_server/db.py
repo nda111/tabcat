@@ -64,7 +64,9 @@ create table if not exists device_tabs (  -- each of an account's browsers: its 
 create table if not exists shares (
   id text primary key,
   root text not null,              -- (the workspace's id, the same in each member's data)
-  created_at real not null
+  created_at real not null,
+  name text not null default '',   -- (the workspace's name and symbol as last changed, for mail about it)
+  symbol text not null default ''
 );
 create table if not exists share_members (
   share_id text not null references shares(id) on delete cascade,
@@ -95,7 +97,7 @@ create table if not exists mail (  -- each account's mailbox: asked to join a sh
   to_id integer not null references users(id) on delete cascade,
   from_id integer references users(id) on delete set null,
   from_name text not null default '', -- (who sent it, as they were then: kept after their account goes)
-  kind text not null,              -- invite | reply
+  kind text not null,              -- invite | reply | removed (let go by its owner) | left (someone left the owner's)
   share_id text,                   -- (the share it's about; kept, by name, after it goes)
   ws_name text not null default '',
   ws_symbol text not null default '',
@@ -170,6 +172,10 @@ class DB:
             if dcols and 'position' not in dcols:  # (before they could be put in order, or signed out from the list)
                 self.conn.execute('alter table device_tabs add column position integer')
                 self.conn.execute('alter table device_tabs add column session text')
+            shcols = [r['name'] for r in self.conn.execute('pragma table_info(shares)')]
+            if shcols and 'name' not in shcols:
+                self.conn.execute("alter table shares add column name text not null default ''")
+                self.conn.execute("alter table shares add column symbol text not null default ''")
             if 'avatar' not in cols:
                 self.conn.execute('alter table users add column avatar text')
                 self.conn.execute('alter table users add column avatar_at real')

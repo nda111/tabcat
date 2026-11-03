@@ -135,6 +135,20 @@ with sync_playwright() as p:
     touch('touchEnd', 0, 0); time.sleep(.6)
     check(d.evaluate(TOP) < top0 - 60 and not pulled, f'touch: drawn back in the same touch, it comes to rest and scrolls up ({top0} -> {d.evaluate(TOP)}, {pulled!r})')
 
+    # a dialog: pulled past its end, what's in it moves and the dialog itself keeps its size (one that scrolls, and
+    # one whose content fits: neither grows)
+    BOX = "(sel)=>{window.__b=[]; const e=document.querySelector(sel), c=e.firstElementChild; (function f(){ __b.push([e.getBoundingClientRect().height, c.getBoundingClientRect().top - e.getBoundingClientRect().top]); if(__b.length<80) requestAnimationFrame(f); })()}"
+    for sel in ('#settings', '#trash'):
+        d.evaluate(f"(()=>{{const e=document.querySelector('{sel}'); e.showModal(); e.scrollTop=1e5;}})()"); time.sleep(.5)
+        cx, cy, room = d.evaluate(f"(()=>{{const e=document.querySelector('{sel}'), r=e.getBoundingClientRect(); return [r.x+r.width/2, r.y+r.height/2, e.scrollHeight-e.clientHeight];}})()")
+        d.mouse.move(cx, cy); time.sleep(.1); d.evaluate(BOX, sel)
+        for _ in range(10): cdp0.send('Input.dispatchMouseEvent', {'type': 'mouseWheel', 'x': cx, 'y': cy, 'deltaX': 0, 'deltaY': 20}); time.sleep(.016)
+        time.sleep(1.4)
+        bb = d.evaluate('__b'); hs = [x[0] for x in bb]; ys = [x[1] for x in bb]
+        check(max(hs) - min(hs) < .5 and max(ys) - min(ys) > 5 and abs(ys[-1] - ys[0]) < .5,
+              f'{sel} ({"scrolls" if room > 1 else "fits"}): pulled past its end, its content moves, its size stays (height {min(hs)}..{max(hs)}, content {min(ys)}..{max(ys)})')
+        d.evaluate(f"document.querySelector('{sel}').close()"); time.sleep(.3)
+
     # sideways: the board wider than its box (narrow window). No sideways bar; the wheel turned sideways past the
     # left end pulls it and it springs back; a finger moves it diagonally, both ways at once
     d.set_viewport_size({'width': 700, 'height': 560}); time.sleep(.6)

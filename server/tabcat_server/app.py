@@ -1253,9 +1253,14 @@ def create_app(config) -> FastAPI:
         return {'id': u['id'], 'username': u['username'], 'name': u['name'] or '', 'twofa': bool(u['totp_secret']), 'accent': accent_of(u['id']),
                 'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None}
 
-    def end_share(sid):
-        """Gone for everyone: its invites still unanswered with it (answered mail stays, by name)."""
+    def end_share(sid, by=None):
+        """Gone for everyone: its invites still unanswered with it (answered mail stays, by name); deleted by its
+        owner (`by`), the others told by mail."""
         uids = share_users(sid)
+        if by:
+            for x in uids:
+                if x != by['id']:
+                    tell(x, by, 'removed', sid)
         invited = [r['to_id'] for r in db.q("select to_id from mail where share_id = ? and kind = 'invite' and answer is null", sid)]
         db.run("delete from mail where share_id = ? and kind = 'invite' and answer is null", sid)
         db.run('delete from shares where id = ?', sid)
@@ -1300,11 +1305,30 @@ def create_app(config) -> FastAPI:
                 return {'id': had['id'], 'created': False}
             sid = secrets.token_hex(12)
             now = time.time()
-            db.run('insert into shares (id, root, created_at) values (?, ?, ?)', sid, root, now)
+            w = doc['workspaces'][0]
+            db.run('insert into shares (id, root, created_at, name, symbol) values (?, ?, ?, ?, ?)', sid, root, now, str(w.get('name') or '')[:100], str(w.get('symbol') or '')[:40])
             db.run("insert into share_members (share_id, user_id, role, at) values (?, ?, 'owner', ?)", sid, u['id'], now)
             db.run('insert into share_snapshots (share_id, seq, at, body) values (?, 0, ?, ?)', sid, now, json.dumps(doc, separators=(',', ':')))
         notify([u['id']], 'shares')
         return {'id': sid, 'created': True}
+
+    def track_name(sid, body):
+        """The workspace renamed (or its symbol changed) in a change: kept, for mail about it to name it."""
+        root = db.one('select root from shares where id = ?', sid)['root']
+        for op in (body.get('ops') if isinstance(body, dict) and isinstance(body.get('ops'), list) else []):
+            f = op.get('f') if isinstance(op, dict) and op.get('id') == root and op.get('o') in ('set', 'add') else None
+            if isinstance(f, dict):
+                if isinstance(f.get('name'), str):
+                    db.run('update shares set name = ? where id = ?', f['name'][:100], sid)
+                if isinstance(f.get('symbol'), str):
+                    db.run('update shares set symbol = ? where id = ?', f['symbol'][:40], sid)
+
+    def tell(to_id, frm, kind, sid):
+        """Mail about a share (someone let go of it, or leaving it), naming it as it is now."""
+        sh = db.one('select name, symbol from shares where id = ?', sid)
+        db.run('insert into mail (to_id, from_id, from_name, kind, share_id, ws_name, ws_symbol, at) values (?, ?, ?, ?, ?, ?, ?, ?)',
+               to_id, frm['id'], frm['username'], kind, sid, sh['name'] if sh else '', sh['symbol'] if sh else '', time.time())
+        notify([to_id], 'mail')
 
     def share_ops_after(sid, after, limit=1000):
         rows = db.q('select seq, op_id, device, user_id, body from share_ops where share_id = ? and seq > ? order by seq limit ?', sid, after, limit)
@@ -1353,6 +1377,7 @@ def create_app(config) -> FastAPI:
                 db.run('insert into share_ops (share_id, seq, op_id, user_id, device, at, body) values (?, ?, ?, ?, ?, ?, ?)',
                        sid, seq, oid, u['id'], device, time.time(), json.dumps(o['body'], separators=(',', ':')))
                 acked.append({'id': oid, 'seq': seq})
+                track_name(sid, o['body'])
         notify(share_users(sid), 'shares')
         return {'acked': acked, 'head': share_head(sid)}
 
@@ -1379,11 +1404,17 @@ def create_app(config) -> FastAPI:
         u = sync_user(request)
         _, role = need_share(request, sid, user=u)
         if role == 'owner':
-            end_share(sid)
+            end_share(sid, u)
         else:
             db.run('delete from share_members where share_id = ? and user_id = ?', sid, u['id'])
             notify(share_users(sid) + [u['id']], 'shares')
+            owner_left_mail(sid, u)
         return {'ok': True}
+
+    def owner_left_mail(sid, who):
+        o = db.one("select user_id from share_members where share_id = ? and role = 'owner'", sid)
+        if o:
+            tell(o['user_id'], who, 'left', sid)
 
     # (the dashboard's side: who's in it and as what, asking others, the mailbox)
     def share_info(sid, uid) -> dict:
@@ -1475,7 +1506,39 @@ def create_app(config) -> FastAPI:
         others = share_users(sid)
         db.run('delete from share_members where share_id = ? and user_id = ?', sid, uid)
         notify(others, 'shares')
-        return share_info(sid, u['id']) if uid != u['id'] else {'ok': True}
+        if uid == u['id']:
+            owner_left_mail(sid, u)
+            return {'ok': True}
+        tell(uid, u, 'removed', sid)
+        return share_info(sid, u['id'])
+
+    @app.post('/api/shares/{sid}/end')
+    def stop_sharing(sid: str, request: Request):
+        """The owner stops sharing it with everyone: all let go (each told by mail), invites taken back; the owner's
+        workspace stays as it is, theirs alone."""
+        u, _ = need_share(request, sid, ('owner',))
+        others = [x for x in share_users(sid) if x != u['id']]
+        invited = [r['to_id'] for r in db.q("select to_id from mail where share_id = ? and kind = 'invite' and answer is null", sid)]
+        with db.lock:
+            db.run("delete from mail where share_id = ? and kind = 'invite' and answer is null", sid)
+            db.run('delete from share_members where share_id = ? and user_id != ?', sid, u['id'])
+        for x in others:
+            tell(x, u, 'removed', sid)
+        notify(others + invited + [u['id']], 'shares')
+        notify(invited, 'mail')
+        return share_info(sid, u['id'])
+
+    @app.get('/api/users/search')
+    def find_users(request: Request, q: str = ''):
+        """Accounts to invite: those whose username or name has `q` in it (the start first), not oneself."""
+        u = need_user(request)
+        q = q.strip()[:60]
+        if not q:
+            return {'users': []}
+        like = '%' + q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+        rows = db.q(r"""select * from users where id != ? and disabled = 0 and (username like ? escape '\' or coalesce(name, '') like ? escape '\')
+                       order by (username like ? escape '\') desc, username collate nocase limit 8""", u['id'], like, like, like[1:])
+        return {'users': [person(r) for r in rows]}
 
     def mail_item(r) -> dict:
         frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None
