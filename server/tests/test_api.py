@@ -318,7 +318,7 @@ check(ann_ev and all(e['user_id'] == ann_id for e in ann_ev), "one account's rec
 c.patch(f'/api/admin/users/{ann_id}', json={'disabled': True}); c.patch(f'/api/admin/users/{ann_id}', json={'disabled': False})
 top = c.get('/api/admin/events').json()['events'][:2]
 check([e['kind'] for e in top] == ['unsuspended', 'suspended'] and top[0]['actor'] == 'boss', "an admin's doings, and whose")
-mine = e1.post('/api/login', json=J(username='ann', password='annpass99')) and e1.get('/api/me/events').json()
+mine = e1.post('/api/login', json=J(username='ann', password='annpass99')) and e1.get('/api/me/events').json()['events']
 check(mine and all(e['user_id'] == ann_id for e in mine) and mine[0]['kind'] == 'login_ok', 'each account sees its own record')
 # guessing the current password (a session borrowed): counted as failed sign-ins, held off as they are
 gs = TestClient(app, follow_redirects=False, client=('192.0.2.81', 1))

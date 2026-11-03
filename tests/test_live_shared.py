@@ -4,16 +4,19 @@
 # And what comes live comes moving: the admin page's rows, the sign-up choice; the account page's admin button.
 # The security record: 15 a page, a page's number typed. The only admin making themselves a member: refused at once.
 # (Needs fastapi and uvicorn: pip install fastapi uvicorn)
-import os, sys, tempfile, threading
+import os, sqlite3, sys, tempfile, threading
 from harness import *
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'server'))
 import uvicorn
 from tabcat_server import config as C
 from tabcat_server.app import create_app
+import tabcat_server.app as APP
+APP.API_PER_MINUTE = 100_000  # (every page here from one address, many at once: not held back as too many)
 
 PORT = 8775
 SERVER = f'http://127.0.0.1:{PORT}'
-srv = uvicorn.Server(uvicorn.Config(create_app(C.load(tempfile.mkdtemp())), host='127.0.0.1', port=PORT, log_level='warning'))
+DATA = tempfile.mkdtemp()
+srv = uvicorn.Server(uvicorn.Config(create_app(C.load(DATA)), host='127.0.0.1', port=PORT, log_level='warning'))
 threading.Thread(target=srv.run, daemon=True).start()
 while not srv.started: time.sleep(.05)
 
@@ -21,7 +24,7 @@ while not srv.started: time.sleep(.05)
 COUNT = '''(() => { const E = window.EventSource; window.__es = 0;
   window.EventSource = class extends E { constructor(...a) { super(...a); window.__es++; this.addEventListener('error', () => {}); } };
   window.__moved = new Set();
-  const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t) window.__moved.add(t.id || t.className || t.tagName); } requestAnimationFrame(look); };
+  const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t) { window.__moved.add(t.id || t.className || t.tagName); if (t.dataset?.f) window.__moved.add('f:' + t.dataset.f + ':' + (a.effect.getKeyframes()[0].transform ? 'slide' : 'fade')); } } requestAnimationFrame(look); };
   requestAnimationFrame(look); })()'''
 NOLOCKS = "Object.defineProperty(Navigator.prototype, 'locks', { get: () => undefined });"
 
@@ -77,7 +80,9 @@ with sync_playwright() as p:
     call(o, 'PUT', '/api/me/name', {'name': 'Renamed'})
     check(soon(adm, "document.querySelector('#users b').textContent === 'Renamed'"), 'renamed elsewhere: the admin page shows it')
     time.sleep(.3)
-    check('who' in adm.evaluate('[...window.__moved]'), f"rising in, not just there ({adm.evaluate('[...window.__moved]')})")
+    m = adm.evaluate('[...window.__moved]')
+    check('f:name:fade' in m, f"the name: the old fading out as the new fades in ({m})")
+    check('f:uname:slide' in m and 'f:uname:fade' not in m and 'f:seen:slide' in m, f"the username beside it, and last seen after it, slide to their new places, not blinking ({m})")
     adm.evaluate('window.__moved.clear()')
     call(o, 'PUT', '/api/admin/settings', {'signup': 'open'})
     check(soon(adm, "document.querySelector('input[name=signup][value=open]').checked"), 'sign-up changed by another admin: shown')
@@ -105,6 +110,22 @@ with sync_playwright() as p:
     check(soon(ann, "document.querySelector('#admin-link').hidden"), 'and goes')
     check('admin-link' in ann.evaluate('[...window.__moved]'), 'shrinking away')
     four.close()
+
+    # the account page's own record: five a page
+    # (a few sign-ins more, put straight in: more through the API would be held back as too many)
+    with sqlite3.connect(os.path.join(DATA, 'tabcat.db')) as c:
+        for i in range(6): c.execute("insert into events (at, user_id, username, kind, ip) select ?, id, username, 'login_ok', ? from users where username = 'boss'", (time.time() - 3600 * (i + 1), f'10.0.0.{i}'))
+    acc = one.new_page(); acc.on('pageerror', lambda e: errors.append(str(e))); acc.goto(SERVER + '/account'); acc.wait_for_selector('#my-events .event'); time.sleep(.6)
+    mine = acc.evaluate("fetch('/api/me/events?limit=1').then(r => r.json()).then(r => r.total)")
+    mp = -(-mine // 5)
+    check(acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp), f'the account page: its record five a page, {mp} pages ({mine} in all)')
+    top = acc.locator('#my-events .event').first.get_attribute('data-key')
+    acc.click('#my-ev-next'); time.sleep(.6)
+    check(acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top, 'next: page 2')
+    acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); time.sleep(.6)
+    check(acc.locator('#my-ev-page').input_value() == str(mp) and acc.locator('#my-events .event').count() == mine - 5 * (mp - 1), 'a page typed, past the last: the last')
+    if os.environ.get('SHOT2'): acc.locator('#my-events').locator('..').screenshot(path=os.environ['SHOT2'])
+    acc.close()
 
     # the record: 15 a page
     bad = b.new_context().new_page(); bad.goto(SERVER + '/login')

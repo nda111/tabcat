@@ -258,21 +258,71 @@ async function drawDevices(dir = 0) {
 }
 await devices();
 
-// ---------- recent security activity: this account's own record, the latest ten ----------
-let shownEvents = '';
-async function myEvents() {
-  const mine = await api('me/events?limit=10').catch(() => []);
-  if (JSON.stringify(mine) === shownEvents) return;
+// ---------- recent security activity: this account's own record, five a page (‹ › or a page's number typed) ----------
+const MY_PER_PAGE = 5;
+let shownEvents = '', myPage = 1;
+// `to`: another page (its rows slide in from the side it's on); none: this one again, as it now is
+async function myEvents(to = null) {
+  const page = Math.max(1, to ?? myPage);
+  const r = await api(`me/events?limit=${MY_PER_PAGE}&offset=${(page - 1) * MY_PER_PAGE}`).catch(() => null);
+  if (!r) return;
+  const pages = Math.max(1, Math.ceil(r.total / MY_PER_PAGE));
+  if (page > pages && r.total) return myEvents(pages); // (fewer now: the last there is)
+  const dir = Math.sign(page - myPage);
+  myPage = page;
+  pagerShows(page, pages);
+  const seen = JSON.stringify([page, r.events]);
+  if (seen === shownEvents) return;
   const first = !shownEvents;
-  shownEvents = JSON.stringify(mine);
+  shownEvents = seen;
   const box = $('#my-events');
-  const draw = () => box.replaceChildren(...(mine.length ? mine.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
+  const rows = r.events.length ? r.events.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
     h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
     h('span', { class: 'ev-when muted small' }, date(e.at)),
     h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · '))))
-    : [h('p', { class: 'muted small' }, t('eventsNone'))]));
-  if (first) draw(); else await flip(box, draw);
+    : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
+  if (first) box.replaceChildren(...rows);
+  else if (!dir) await flip(box, () => box.replaceChildren(...rows));
+  else {
+    // (another page: the box glides to its height, its rows slide in from the side it's on)
+    const from = box.offsetHeight;
+    box.replaceChildren(...rows);
+    const to2 = box.offsetHeight;
+    if (Math.abs(from - to2) > .5) {
+      box.style.overflow = 'clip';
+      box.animate([{ height: `${from}px` }, { height: `${to2}px` }], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; }).catch(() => {});
+    }
+    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: `translateX(${dir * 18}px)` }, { opacity: 1, transform: 'none' }],
+      { duration: 260, delay: i * 12, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'backwards' }));
+  }
 }
+// the pages: shown once there are more than five
+function pagerShows(page, pages) {
+  const input = $('#my-ev-page');
+  if (document.activeElement !== input) input.value = page;
+  input.max = pages;
+  if ($('#my-ev-pages').textContent !== String(pages)) {
+    $('#my-ev-pages').textContent = pages;
+    if (!$('#my-ev-pager').hidden) $('#my-ev-pages').animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  }
+  input.style.width = `${String(pages).length + 3.2}ch`;
+  $('#my-ev-prev').disabled = page <= 1;
+  $('#my-ev-next').disabled = page >= pages;
+  if ($('#my-ev-pager').hidden !== (pages <= 1)) fold($('#my-ev-pager'), pages > 1);
+}
+$('#my-ev-prev').addEventListener('click', () => myEvents(myPage - 1));
+$('#my-ev-next').addEventListener('click', () => myEvents(myPage + 1));
+// (a page's number: gone to on Enter, or leaving the field; past the last, the last)
+const goMyPage = () => {
+  const input = $('#my-ev-page'), n = Math.round(+input.value);
+  if (!input.value || !Number.isFinite(n)) { input.value = myPage; return; }
+  const to = Math.min(Math.max(1, n), +input.max || 1);
+  input.value = to;
+  if (to !== myPage) myEvents(to);
+};
+$('#my-ev-page').addEventListener('change', goMyPage);
+$('#my-ev-page').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); goMyPage(); e.target.select(); } });
+$('#my-ev-page').addEventListener('focus', (e) => e.target.select());
 await myEvents();
 $('#others').addEventListener('click', async () => {
   await api('me/logout-others', { method: 'POST' });

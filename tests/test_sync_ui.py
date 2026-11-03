@@ -149,7 +149,7 @@ with sync_playwright() as p:
     except Exception: ok = False
     check(ok, 'another account signed in in B, renamed elsewhere: the list shows it at once')
     time.sleep(.2)
-    check('account-name' in bd.evaluate('[...__moved]'), f"the name alone cross-fading ({bd.evaluate('[...__moved]')})")
+    check({'nm', 'nm-ghost'} <= set(bd.evaluate('[...__moved]')), f"the name alone cross-fading, the old over the new on the same line ({bd.evaluate('[...__moved]')})")
     time.sleep(.5); bd.evaluate(MOVED)
     ann = oc.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.id)")
     ad.evaluate(f"fetch('/api/admin/users/{ann}', {{ method: 'PATCH', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ admin: true }}) }})")
@@ -159,7 +159,7 @@ with sync_playwright() as p:
     role = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
     time.sleep(.5)
     if os.environ.get('SHOT'): bd.locator('#account').screenshot(path=os.environ['SHOT'])
-    check(ok and 'account-role' in bd.evaluate('[...__moved]') and 'account-name' not in bd.evaluate('[...__moved]'), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
+    check(ok and 'account-role' in bd.evaluate('[...__moved]') and 'nm' not in bd.evaluate('[...__moved]'), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
     other.close()
 
     check(not errors, f'no page errors {errors}')

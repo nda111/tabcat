@@ -480,10 +480,11 @@ dd.crossfade > * { grid-area: 1 / 1; }
 /* the users' rows: the name, the username and its chips on one line, in the row's middle; the date on one line */
 #users .pic { width: 32px; padding-right: 0; }
 #users td.pic { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
-#users td.user { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; min-height: 49px; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
+#users td.user { position: relative; display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; min-height: 49px; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
 #users .who { white-space: nowrap; }
 #users .who { display: inline-flex; align-items: baseline; gap: 4px; }
 #users .tag { flex: none; line-height: 18px; }
+#users [data-f="seen"] { display: inline-block; } /* (to slide, as the name before it grows or shrinks) */
 #users td.hide-narrow { min-width: 90px; } /* (the date may take two lines: the row fits its box) */
 
 /* the security record: a row a happening (when, what, whose, from where); failures in red */

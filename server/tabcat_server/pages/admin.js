@@ -22,18 +22,34 @@ async function users() {
   // (gone since, another admin's doing say: they fade aside first, the rest gliding up after)
   const ids = new Set(list.map((u) => String(u.id)));
   await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
-  // (each row's cells as they read before: what reads otherwise now comes in, see below)
+  // (each row's cells as they read before: what reads otherwise now comes in, see below; and where each part of
+  // them stood, from the row's top, and as left as it was: a name longer or shorter moves what's after it, which
+  // slides there rather than jumping)
   const read = (tr) => [...tr.cells].map((td) => td.textContent + '|' + td.querySelectorAll('button, .tag').length + '|' + [...td.querySelectorAll('img, [data-tint]')].map((x) => x.src || x.style.cssText + x.dataset.tint).join());
-  const before = new Map([...$('#users').children].map((tr) => [tr.dataset.key, read(tr)]));
+  const spot = (tr) => { const top = tr.getBoundingClientRect().top;
+    return new Map([...tr.querySelectorAll('[data-f]')].map((el) => { const r = el.getBoundingClientRect(); return [el.dataset.f, { el, left: r.left, top: r.top - top }]; })); };
+  const olds = [...$('#users').children];
+  const before = new Map(olds.map((tr) => [tr.dataset.key, read(tr)]));
+  const spots = new Map(olds.map((tr) => [tr.dataset.key, spot(tr)]));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
   for (const tr of $('#users').children) {
-    const old = before.get(tr.dataset.key), now = read(tr);
+    const old = before.get(tr.dataset.key), now = read(tr), was = spots.get(tr.dataset.key);
     if (!old) continue;
-    // (the name, 2FA's chip, last seen, a button come or gone: not the role, suspending, a new password, done below)
+    const top = tr.getBoundingClientRect().top;
+    for (const el of tr.querySelectorAll('[data-f]')) {
+      const w = was.get(el.dataset.f);
+      if (!w) { if (el.matches('.tag')) el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING }); continue; } // (a chip new: it pops in)
+      const dx = w.left - el.getBoundingClientRect().left;
+      if (Math.abs(dx) > .5) el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 300, easing: GLIDE });
+      // (the name itself changed: the old fades out where it was as the new fades in; the username beside it only slides)
+      if (el.dataset.f === 'name' && w.el.textContent !== el.textContent) { ghost(w, el, top); el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' }); }
+    }
+    for (const [f, w] of was) if (!tr.querySelector(`[data-f="${f}"]`) && w.el.matches('.tag:not(.ghost)')) ghost(w, tr.cells[1], top); // (a chip gone: it fades where it was)
+    // (2FA's chip, last seen, a button come or gone: not the name, done above, nor the role, suspending, a new password, done below)
     now.forEach((x, i) => {
-      if (x === old[i] || [3, 4, 5].includes(i)) return;
+      if (x === old[i] || [1, 3, 4, 5].includes(i)) return;
       if (i === 0) tr.cells[0].firstChild?.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING }); // (a new photo, or colour: it springs in)
-      else if (i === 2) freshen(tr.cells[i]);
+      else if (i === 2) freshen(tr.cells[i].firstChild || tr.cells[i]);
       else [...tr.cells[i].children].forEach(freshen);
     });
   }
@@ -46,6 +62,14 @@ async function users() {
     if (before.disabled !== now.disabled) { chip(tr.parts.chip, now.disabled); swap(tr.parts.suspend, now.disabled); }
     if (before.pw !== now.pw && now.pw) reveal(tr.parts.newpw);
   }
+}
+// What was there, fading where it stood, over the row now (in the cell given, from the row's top as it was)
+function ghost(w, el, top) {
+  const td = el.closest('td'), r = td.getBoundingClientRect(), g = w.el.cloneNode(true);
+  g.removeAttribute('data-f');
+  Object.assign(g.style, { position: 'absolute', margin: '0', pointerEvents: 'none', whiteSpace: 'nowrap', left: `${w.left - r.left}px`, top: `${w.top - (r.top - top)}px` });
+  td.append(g);
+  g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => g.remove(), () => g.remove());
 }
 // the role's filled part slides to the other side
 function slidePill(pill, admin) {
@@ -86,8 +110,8 @@ function row(u) {
     } }, t(label));
   const pill = h('span', { class: `seg-pill${u.admin ? '' : ' second'}`, 'aria-hidden': 'true' });
   // (always there, hidden unless suspended: the columns beside it don't move as it comes and goes)
-  const chipEl = h('span', { class: `tag off${u.disabled ? '' : ' ghost'}`, 'aria-hidden': String(!u.disabled) }, t('off'));
-  const suspend = self ? null : h('button', { type: 'button', class: `btn small swap${u.disabled ? ' second' : ''}`, onclick: () => edit({ disabled: !u.disabled }) },
+  const chipEl = h('span', { class: `tag off${u.disabled ? '' : ' ghost'}`, 'aria-hidden': String(!u.disabled), 'data-f': 'off' }, t('off'));
+  const suspend = self ? null : h('button', { type: 'button', class: `btn small swap${u.disabled ? ' second' : ''}`, 'data-f': 'suspend', onclick: () => edit({ disabled: !u.disabled }) },
     h('span', {}, t('turnOff')), h('span', {}, t('turnOn')));
   // reset: a new random password, set at once, shown in place of the button (click: copied). Both in one
   // place, as wide as a password: the row doesn't change width as it comes
@@ -112,20 +136,20 @@ function row(u) {
     // (the profile photo, or the name's first letter in the account's own colour)
     h('td', { class: 'pic' }, tint(h('span', { class: 'avatar', 'aria-hidden': 'true' }, u.avatar ? h('img', { src: u.avatar, alt: '' }) : [...u.username][0].toUpperCase()), u.accent)),
     // (the name to go by, if any, then the username, smaller)
-    h('td', { class: 'user' }, h('span', { class: 'who' }, h('b', {}, u.name || u.username), u.name ? h('span', { class: 'muted small' }, ` ${u.username}`) : null,
-      self ? h('span', { class: 'muted small' }, ` (${t('you')})`) : null), chipEl,
+    h('td', { class: 'user' }, h('span', { class: 'who' }, h('b', { 'data-f': 'name' }, u.name || u.username), u.name ? h('span', { class: 'muted small', 'data-f': 'uname' }, ` ${u.username}`) : null,
+      self ? h('span', { class: 'muted small', 'data-f': 'you' }, ` (${t('you')})`) : null), chipEl,
       // (two-step sign-in on: a blue chip by the name)
-      u.twofa ? h('span', { class: 'tag twofa' }, t('twofaTag')) : null),
-    h('td', { class: 'hide-narrow muted small' }, date(u.last_seen)),
+      u.twofa ? h('span', { class: 'tag twofa', 'data-f': 'twofa' }, t('twofaTag')) : null),
+    h('td', { class: 'hide-narrow muted small' }, h('span', { 'data-f': 'seen' }, date(u.last_seen))),
     h('td', { class: 'act' }, suspend),
-    h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group' }, pill, role(true, 'admin'), role(false, 'member'))),
-    h('td', { class: 'act' }, self ? null : h('span', { class: `pw-slot${pw ? ' second' : ''}` }, reset, newpw)),
+    h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group', 'data-f': 'role' }, pill, role(true, 'admin'), role(false, 'member'))),
+    h('td', { class: 'act' }, self ? null : h('span', { class: `pw-slot${pw ? ' second' : ''}`, 'data-f': 'pw' }, reset, newpw)),
     // (turning someone's 2FA off, locked out of it: a plain warning first; not your own, that's on your account page)
-    h('td', { class: 'act' }, u.twofa && !self ? h('button', { type: 'button', class: 'btn small', onclick: async () => {
+    h('td', { class: 'act' }, u.twofa && !self ? h('button', { type: 'button', class: 'btn small', 'data-f': 'twofaReset', onclick: async () => {
       if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaResetOk'), danger: true }))) return;
       edit({ twofa: false });
     } }, t('twofaResetOk')) : null),
-    h('td', { class: 'act' }, self ? null : h('button', { type: 'button', class: 'btn small danger', onclick: async () => {
+    h('td', { class: 'act' }, self ? null : h('button', { type: 'button', class: 'btn small danger', 'data-f': 'del', onclick: async () => {
       if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
       await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
     } }, t('remove'))));

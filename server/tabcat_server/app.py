@@ -902,9 +902,12 @@ def create_app(config) -> FastAPI:
         return {'events': [event(r) for r in rows], 'total': total, 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
 
     @app.get('/api/me/events')
-    def my_events(request: Request, limit: int = 20):
+    def my_events(request: Request, limit: int = 20, offset: int = 0):
+        """Newest first: `limit` of them, after `offset` (a page of them); `total`: how many there are."""
         u = need_user(request)
-        return [event(r) for r in db.q('select * from events where user_id = ? order by id desc limit ?', u['id'], min(max(limit, 1), 100))]
+        total = db.one('select count(*) n from events where user_id = ?', u['id'])['n']
+        rows = db.q('select * from events where user_id = ? order by id desc limit ? offset ?', u['id'], min(max(limit, 1), 100), max(offset, 0))
+        return {'events': [event(r) for r in rows], 'total': total}
 
     # ---------- live: open pages told at once when what they show changes ----------
     # Server-sent events, one connection a page: `head` (the account's latest sync change, for the dashboard's
