@@ -3,6 +3,10 @@
 # board scrolls it; held still a moment first, it draws a box selection.
 import json
 from harness import *
+import harness
+# (the pauses here are part of the gestures, the gaps between wheel turns and touches the scrolling reads: not stretched
+# when run beside other tests, as the harness does for pauses that only wait)
+time.sleep = harness._sleep
 
 PULL = "(sel)=>{window.__p=[]; const e=document.querySelector(sel); (function f(){ window.__p.push(parseFloat((e.style.translate||'0 0').split(' ')[1])||0); if(window.__p.length<100) requestAnimationFrame(f); })()}"
 serve()

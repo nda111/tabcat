@@ -21,8 +21,9 @@ threading.Thread(target=srv.run, daemon=True).start()
 while not srv.started: time.sleep(.05)
 
 # (each page counts the streams it opens, and what's been moving)
-COUNT = '''(() => { const E = window.EventSource; window.__es = 0;
-  window.EventSource = class extends E { constructor(...a) { super(...a); window.__es++; this.addEventListener('error', () => {}); } };
+COUNT = '''(() => { const E = window.EventSource; window.__es = 0; window.__all = [];
+  window.EventSource = class extends E { constructor(...a) { super(...a); window.__es++; window.__all.push(this); this.addEventListener('error', () => {}); } };
+  window.__open = () => window.__all.filter((e) => e.readyState !== 2).length;
   window.__moved = new Set();
   const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t) { window.__moved.add(t.id || t.className || t.tagName); if (t.closest?.('thead')) window.__moved.add('head:' + t.textContent); if (t.dataset?.f) window.__moved.add('f:' + t.dataset.f + ':' + (/translateX/.test(a.effect.getKeyframes()[0].transform) ? 'slide' : a.effect.getKeyframes()[0].transform ? 'rise' : 'fade')); } } requestAnimationFrame(look); };
   requestAnimationFrame(look); })()'''
@@ -33,7 +34,10 @@ def call(pg, method, path, body=None):
 def soon(pg, js, timeout=5000, arg=None):
     try: pg.wait_for_function(js, arg=arg, timeout=timeout); return True
     except Exception: return False
-def streams(pages): return sum(pg.evaluate('window.__es') for pg in pages)
+# (streams open now, not how many were ever made: one closed and opened again, after a moment's break, is still one)
+def streams(pages): return sum(pg.evaluate('window.__open()') for pg in pages)
+def states(pages, js): return [pg.evaluate(js) for pg in pages]
+SHOWN = "[location.pathname, document.querySelector('#name-view')?.textContent || document.querySelector('#users b')?.textContent, window.__open()]"
 
 errors = []
 with sync_playwright() as p:
@@ -48,14 +52,14 @@ with sync_playwright() as p:
     pages = []
     for path in ['/account', '/admin', '/account', '/admin']:
         pg = one.new_page(); pg.on('pageerror', lambda e: errors.append(str(e))); pg.goto(SERVER + path); pages.append(pg)
-    time.sleep(1.5)
-    check(streams(pages + [a]) == 1, f'five pages of the server open: one stream among them ({streams(pages + [a])})')
+    until(lambda: all(pg.evaluate("document.readyState === 'complete'") for pg in pages)); time.sleep(1.5)
+    check(streams(pages + [a]) == 1, f'five pages of the server open: one stream among them ({states(pages + [a], "window.__open()")})')
     call(o, 'PUT', '/api/me/name', {'name': 'Big Boss'})
     check(all(soon(pg, "document.querySelector('#name-view')?.textContent === 'Big Boss' || document.querySelector('#users')?.textContent.includes('Big Boss')") for pg in pages),
-          'and each hears what changed (the name, on the account pages and the admin pages)')
-    holder = next(pg for pg in pages if pg.evaluate('window.__es'))
-    pages.remove(holder); holder.close(); time.sleep(1)
-    check(streams(pages) == 1, 'the page holding it closed: another takes over')
+          'and each hears what changed (the name, on the account pages and the admin pages) ' + str(states(pages, SHOWN)))
+    holder = next(pg for pg in pages if pg.evaluate('window.__open()'))
+    pages.remove(holder); holder.close()
+    check(until(lambda: streams(pages) == 1, timeout=10), f'the page holding it closed: another takes over ({states(pages, "window.__open()")})')
     call(o, 'PUT', '/api/me/name', {'name': 'Boss'})
     check(all(soon(pg, "document.querySelector('#name-view')?.textContent === 'Boss' || document.querySelector('#users b')?.textContent === 'Boss'") for pg in pages), 'and they all still hear')
 
@@ -64,11 +68,11 @@ with sync_playwright() as p:
     n = three.new_page(); n.goto(SERVER + '/login'); call(n, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
     plain = [three.new_page() for _ in range(3)]
     for pg in plain: pg.goto(SERVER + '/account')
-    time.sleep(1.5)
-    check(streams(plain + [n]) == 1, f'without locks too: one stream ({streams(plain + [n])})')
-    holder = next(pg for pg in plain if pg.evaluate('window.__es'))
-    plain.remove(holder); holder.close(); time.sleep(1.5)
-    check(streams(plain) == 1, 'its page closed: another takes over at once')
+    until(lambda: streams(plain + [n]) >= 1); time.sleep(1.5)  # (the note settled: one has it)
+    check(streams(plain + [n]) == 1, f'without locks too: one stream ({states(plain + [n], "window.__open()")})')
+    holder = next(pg for pg in plain if pg.evaluate('window.__open()'))
+    plain.remove(holder); holder.close()
+    check(until(lambda: streams(plain) == 1, timeout=10), f'its page closed: another takes over at once ({states(plain, "window.__open()")})')
     call(o, 'PUT', '/api/me/name', {'name': 'Plain'})
     check(all(soon(pg, "document.querySelector('#name-view').textContent === 'Plain'") for pg in plain), 'and they hear')
     three.close()

@@ -88,6 +88,10 @@ class DB:
         with self.lock:
             self.conn.execute('pragma foreign_keys = on')
             self.conn.execute('pragma journal_mode = wal')
+            # (WAL, as SQLite advises for it: a write waits for the disk only at checkpoints, not each time; never
+            # corrupt, and a power cut may undo only the last writes. Each request notes when it was last used, so
+            # waiting each time had every request take some 20 ms more)
+            self.conn.execute('pragma synchronous = normal')
             self.conn.executescript(SCHEMA)
             # Each account's key for its data in the browser (see the extension's spaceName): random and its own,
             # never another's (ids come round again once the newest account goes: one made after would get its
@@ -165,6 +169,7 @@ class DB:
             self.conn.row_factory = sqlite3.Row
             self.conn.execute('pragma foreign_keys = on')
             self.conn.execute('pragma journal_mode = wal')
+            self.conn.execute('pragma synchronous = normal')  # (as when opened: see __init__)
             for suffix in ('', '-wal', '-shm'):
                 old.with_name(old.name + suffix).unlink(missing_ok=True)
 

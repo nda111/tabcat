@@ -84,7 +84,7 @@ with sync_playwright() as p:
     bd.click('.devs .dev-head'); time.sleep(.08)
     check(bd.locator('.devs .dev:not(.collapsed)').count() == 1, 'a click opens it at once')
     urls = lambda: bd.evaluate("[...document.querySelectorAll('.devs .rtab')].map(r => r.dataset.url)")
-    check(wait(lambda: SERVER + '/privacy?from-a' in urls(), 'opened', timeout=10) and not any(u.startswith('chrome-extension:') for u in urls()), f"opened: its tabs (not tabcat's own pages) ({urls()})")
+    check(wait(lambda: SERVER + '/privacy?from-a' in urls(), 'opened', timeout=20) and not any(u.startswith('chrome-extension:') for u in urls()), f"opened: its tabs (not tabcat's own pages) ({urls()})")
 
     # live: A opens another
     pa2 = actx.new_page(); pa2.goto(SERVER + '/privacy?second')

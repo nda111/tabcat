@@ -30,9 +30,11 @@ with sync_playwright() as p:
     g = sw.evaluate(STORED)
     check(g['symbol'] == '' and g['color'] == '', f'but nothing unsafe: an overlong symbol, a non-name colour ({g["symbol"]!r}, {g["color"]!r})')
     # a drawn symbol it doesn't know stays out of a tab group's title
-    d.evaluate(CALL, ['apply', [{'op': 'patch', 'id': 'Box', 'fields': {'symbol': ':future:', 'color': 'cyan'}}]]); time.sleep(.6)
-    d.click('#board .group[data-id="Box"] .node-tools button:nth-of-type(4)'); time.sleep(1.2)
-    titles = sw.evaluate("chrome.tabGroups.query({}).then(gs=>gs.map(g=>g.title))")
+    d.evaluate(CALL, ['apply', [{'op': 'patch', 'id': 'Box', 'fields': {'symbol': ':future:', 'color': 'cyan'}}]]); until(lambda: d.locator('#board .group[data-id="Box"][data-color="cyan"]').count())
+    d.click('#board .group[data-id="Box"] .node-tools button:nth-of-type(4)')
+    TITLES = "chrome.tabGroups.query({}).then(gs=>gs.map(g=>g.title))"
+    until(lambda: sw.evaluate(TITLES) == ['Box'])
+    titles = sw.evaluate(TITLES)
     check(titles == ['Box'], f'an unknown :code: symbol is left out of the tab group title {titles}')
     ctx.close()
 
@@ -43,16 +45,16 @@ with sync_playwright() as p:
     d.evaluate('window.__old = true')
     try: sw.evaluate('chrome.runtime.reload()')
     except Exception: pass  # (the worker goes with it)
-    time.sleep(3)
+    until(lambda: d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0 and d.evaluate("document.querySelector('#no-ext').hidden"))
     check(d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0 and d.evaluate("document.querySelector('#no-ext').hidden"), 'reloaded under the page: it loads again, connected')
     d.evaluate('window.__old = true')
-    d.click('#btn-settings'); time.sleep(.4)
+    d.click('#btn-settings'); until(lambda: d.locator('#settings[open]').count())
     for w in reversed(ctx.service_workers):  # (the reloaded extension's worker: the old one is gone)
         try: w.evaluate('chrome.runtime.reload()'); break
         except Exception: pass
     time.sleep(2)
     check(d.evaluate('window.__old === true') and d.locator('#toast').inner_text() != '', 'while Settings is open: no reload yet, a toast says why')
-    d.keyboard.press('Escape'); time.sleep(2.5)
+    d.keyboard.press('Escape'); until(lambda: d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0)
     check(d.evaluate('!window.__old') and d.locator('.ws-item').count() > 0, 'Settings closed: it reloads and connects')
     check(not errors, f'no page errors {errors}')
     ctx.close()

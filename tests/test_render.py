@@ -21,7 +21,7 @@ with sync_playwright() as p:
     out = d.evaluate("__out.filter((id) => id !== 'g0')")
     check(not out, f'and none of them was taken out and put back {out}')
     d.hover('#board .group[data-id="g6"] .link-row'); time.sleep(.2)
-    sw.evaluate("chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces.find(w=>w.id==='Big').categories[0].groups[3].name='Renamed'; return chrome.storage.local.set({tabcat:s})})"); time.sleep(1.2)
+    sw.evaluate("chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces.find(w=>w.id==='Big').categories[0].groups[3].name='Renamed'; return chrome.storage.local.set({tabcat:s})})"); until(lambda: 'Renamed' in d.inner_text('#board .group[data-id="g3"]'))
     check('Renamed' in d.inner_text('#board .group[data-id="g3"]'), 'a change from elsewhere is drawn')
     hovered = d.evaluate("[...document.querySelectorAll('.hover')].map((e) => e.id || e.className.split(' ')[0])")
     check(not any(x in ('columns', 'col', 'board', 'main', '') for x in hovered) and 'link-row' in hovered, f'the hover mirror stays inside the card {hovered}')
@@ -30,7 +30,7 @@ with sync_playwright() as p:
     f = folder('F', [link('fa'), link('fb'), folder('Sub', [link('fc')])])
     seed(sw, d, workspace('Folders', [group('G', [link('top'), f, link('after')])]))
     tw = '#board .folder[data-id="F"] > .folder-head .twisty'
-    d.click(tw); time.sleep(1); d.mouse.move(5, 790)
+    d.click(tw); until(lambda: not d.is_visible('#board .item[data-id="fb"]')); settle(d); d.mouse.move(5, 790)
     d.evaluate("() => { window.__pop = 0; const go = (t0) => { document.querySelectorAll('#board .folder[data-id=\"F\"] .item').forEach((i) => { __pop += i.getAnimations().length; }); if (performance.now() - t0 < 500) requestAnimationFrame(() => go(t0)); }; requestAnimationFrame(() => go(performance.now())); }")
     d.click(tw); time.sleep(1)
     check(d.evaluate('__pop') == 0 and d.is_visible('#board .item[data-id="fb"]'), f"a folder opens with its contents, none popping in on its own ({d.evaluate('__pop')})")
@@ -55,7 +55,7 @@ with sync_playwright() as p:
     card = lambda: float(d.evaluate("getComputedStyle(document.querySelector('#board .col[data-col=\"0\"] .add-group')).opacity"))
     check(d.evaluate("document.querySelector('#board .group[data-id=\"B\"]').closest('.col').dataset.col") == '2' and card() == 0, f'a group dragged away: its old column shows no New group card ({card()})')
     tail = d.locator('#board .col[data-col="0"] .add-group').bounding_box()
-    d.mouse.move(tail['x'] + 30, tail['y'] + 20); time.sleep(.4)
+    d.mouse.move(tail['x'] + 30, tail['y'] + 20); until(lambda: card() > .5)
     check(card() > .5, f'the mouse moved there: it shows ({card()})')
     for theme in ['light', 'dark']:
         settings(sw, theme=theme); time.sleep(.8)

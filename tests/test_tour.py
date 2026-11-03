@@ -11,14 +11,14 @@ with sync_playwright() as p:
         if first: break
         time.sleep(.1)
     check(len(first) == 1 and first[0][0] == 0 and 'tabcat.ghyeok.com' in first[0][1], f'installed: the dashboard opens, pinned first {first}')
-    d = dashboard(ctx, errors); time.sleep(1.2)
+    d = dashboard(ctx, errors); until(lambda: d.locator('#confirm[open]').count() == 1)
     sample = sw.evaluate("""chrome.storage.local.get('tabcat').then(r => { const g = r.tabcat.workspaces[0].categories[0].groups;
       const f = g[1].items.find(i => i.type === 'folder'); return [g.map(x => x.name), g[1].items.filter(i => i.type === 'link').map(l => l.name), f.name, f.items.find(i => i.type === 'folder')?.name]; })""")
     check(sample == [['Inbox', 'Start here'], ['Google', 'YouTube', 'GitHub'], 'Sample folder', 'Folder in a folder'], f'sample group to start from: sites and a folder in a folder {sample}')
     check(d.locator('#confirm[open]').count() == 1 and d.inner_text('#confirm-cancel') == 'Later', 'the first time, it offers a tour (Later / Take the tour)')
     installable = d.is_visible('#btn-install')  # (Chrome offers the install here: the tour shows it)
     N = 11 if installable else 10
-    d.click('#confirm-ok'); time.sleep(.6)
+    d.click('#confirm-ok'); until(lambda: d.is_visible('#tour') and d.get_attribute('.tour-progress', 'aria-valuenow') == '1'); settle(d)
     check(d.is_visible('#tour') and d.get_attribute('.tour-progress', 'aria-valuenow') == '1' and d.get_attribute('.tour-progress', 'aria-valuemax') == str(N), f'the tour starts at step 1 of {N}')
     STEP = """(() => { const s = document.querySelector('.tour-spot').getBoundingClientRect(), c = document.querySelector('.tour-card').getBoundingClientRect();
       return { title: document.querySelector('#tour-title').textContent, text: document.querySelector('#tour-text').textContent,
@@ -27,7 +27,7 @@ with sync_playwright() as p:
         side: !s.width ? '' : c.left >= s.right - 1 ? 'right' : c.right <= s.left + 1 ? 'left' : c.top >= s.bottom - 1 ? 'below' : 'above' }; })()"""
     steps = [d.evaluate(STEP)]
     for i in range(N - 1):
-        d.click('#tour-next'); time.sleep(.8)
+        d.click('#tour-next'); until(lambda: d.get_attribute('.tour-progress', 'aria-valuenow') == str(i + 2)); settle(d)
         steps.append(d.evaluate(STEP))
     order = [x['title'] for x in steps]
     expected = ['Hello ', 'Workspaces', 'Open tabs', 'Categories', 'Groups', 'Search'] + (['Install app'] if installable else []) + ['Settings and help', 'Tour', 'Always at hand', "Let's get along. 😸"]
@@ -51,18 +51,18 @@ with sync_playwright() as p:
     check(d.evaluate("document.querySelector('#tour-skip').hidden"), 'the last step: no Skip')
     d.click('#tour-prev'); time.sleep(.1)
     glides = d.evaluate("document.querySelector('#tour-skip').getAnimations().length + [...document.querySelectorAll('#tour .tour-card > .btn')].length")
-    time.sleep(.5)
+    until(lambda: not d.evaluate("document.querySelector('#tour-skip').hidden"))
     check(glides > 0 and not d.evaluate("document.querySelector('#tour-skip').hidden"), f'a step back: Skip fades back in ({glides})')
-    d.click('#tour-next'); time.sleep(.6)
-    d.click('#tour-next'); time.sleep(.3)
+    d.click('#tour-next'); until(lambda: d.get_attribute('.tour-progress', 'aria-valuenow') == str(N)); settle(d)
+    d.click('#tour-next'); until(lambda: not d.is_visible('#tour'))
     check(not d.is_visible('#tour'), 'Done closes it')
     d.reload(); d.wait_for_selector('.ws-item'); time.sleep(1.2)
     check(d.locator('#confirm[open]').count() == 0, 'not offered again')
-    d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
+    d.click('#btn-help'); until(lambda: d.locator('#help[open]').count()); d.click('#help-tour'); until(lambda: d.is_visible('#tour') and d.locator('#help[open]').count() == 0)
     check(d.is_visible('#tour') and d.locator('#help[open]').count() == 0, "Help's Take the tour starts it (Help makes way)")
-    d.keyboard.press('ArrowRight'); time.sleep(.3)
+    d.keyboard.press('ArrowRight'); until(lambda: d.get_attribute('.tour-progress', 'aria-valuenow') == '2')
     check(d.get_attribute('.tour-progress', 'aria-valuenow') == '2', '→ steps on')
-    d.click('#tour-prev'); time.sleep(.3); d.keyboard.press(' '); time.sleep(.3)  # (focus on Back: Space still goes on)
+    d.click('#tour-prev'); until(lambda: d.get_attribute('.tour-progress', 'aria-valuenow') == '1'); d.keyboard.press(' '); until(lambda: d.get_attribute('.tour-progress', 'aria-valuenow') == '2')  # (focus on Back: Space still goes on)
     check(d.get_attribute('.tour-progress', 'aria-valuenow') == '2', 'Space steps on, whatever button has focus')
     # with the pointer resting on the card, a redraw of the page (here: a tab opening) leaves it gliding
     box = d.locator('.tour-card').bounding_box(); d.mouse.move(box['x'] + 20, box['y'] + 20)
@@ -75,12 +75,12 @@ with sync_playwright() as p:
     w0 = d.evaluate(bar); d.keyboard.press(' ')
     mid = d.evaluate(f"new Promise(r => setTimeout(() => r({bar}), 90))"); time.sleep(.5); w1 = d.evaluate(bar)
     check(w0 < mid < w1, f'the progress bar fills gradually ({w0} → {mid} → {w1})')
-    d.keyboard.press('Escape'); time.sleep(.3)
+    d.keyboard.press('Escape'); until(lambda: not d.is_visible('#tour'))
     check(not d.is_visible('#tour'), 'Esc ends it')
-    d.hover('#btn-install'); d.click('#install-dismiss'); time.sleep(.3)
-    d.click('#btn-help'); time.sleep(.4); d.click('#help-tour'); time.sleep(.4)
+    d.hover('#btn-install'); d.click('#install-dismiss'); until(lambda: not d.is_visible('#btn-install'))
+    d.click('#btn-help'); until(lambda: d.locator('#help[open]').count()); d.click('#help-tour'); until(lambda: d.is_visible('#tour') and d.locator('#help[open]').count() == 0)
     check(d.get_attribute('.tour-progress', 'aria-valuemax') == '10', 'with the install hidden, the tour skips that step (1 of 10)')
-    d.keyboard.press('Escape'); time.sleep(.3)
+    d.keyboard.press('Escape'); until(lambda: not d.is_visible('#tour'))
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()
