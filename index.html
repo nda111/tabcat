@@ -359,7 +359,9 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
       </div>
       <ul id="mail-list"></ul>
       <p class="muted mail-none" id="mail-none" hidden data-i18n="mail.none">No mail.</p>
-      <menu><span class="menu-gap"></span><button type="submit" class="btn primary" data-i18n="common.close">Close</button></menu>
+      <menu><button type="button" class="btn" id="mail-clear" hidden data-i18n="mail.clear">Delete all</button><span class="menu-gap"></span>
+        <span class="mail-pager" id="mail-pager" hidden><button type="button" class="icon-btn" id="mail-prev" title="Previous" data-i18n-attr="title:mail.prev"><span data-icon="chevron" class="turn-l"></span></button><span id="mail-at"></span><button type="button" class="icon-btn" id="mail-next" title="Next" data-i18n-attr="title:mail.next"><span data-icon="chevron" class="turn-r"></span></button></span>
+        <button type="submit" class="btn primary" data-i18n="common.close">Close</button></menu>
     </form>
   </dialog>
 
@@ -374,6 +376,7 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
           <select id="share-role" aria-label="Role" data-i18n-attr="aria-label:share.role"><option value="editor" data-i18n="role.editor">Editor</option><option value="viewer" data-i18n="role.viewer">Viewer</option></select>
           <button type="button" class="btn primary" id="share-go" data-i18n="share.invite">Invite</button>
         </div>
+        <ul id="share-found" class="share-found" hidden></ul>
         <p class="error" id="share-error"></p>
       </div>
       <ul id="share-list"></ul>

@@ -80,6 +80,8 @@ function h(tag, props = {}, ...kids) {
 
 const plus = () => icon('plus');
 
+// (`edits`: a button that changes something, kept out of a workspace only viewed: see body.viewing)
+const edits = (b) => { if (b) b.classList.add('edits'); return b; };
 function btn(label, title, fn) {
   // Rapid clicks must not reach a parent's double-click-to-edit handler.
   return h('button', {
@@ -355,6 +357,8 @@ function reloadWhenIdle() {
 // keep it either, see its syncTxn)
 const wsOfId = (id) => { const r = id && state && T.locate(state, id); return r ? r.ancestors[0] || r.node : null; };
 const readOnly = (ws) => shareOf(ws)?.role === 'viewer';
+// (an edit asked for there, from a button, a menu or a shortcut: said why not, no editor opening)
+const viewOnly = (id) => { if (!readOnly(wsOfId(id))) return false; toast(t('share.readOnly')); return true; };
 function blocked(ops) {
   const ids = ops.flatMap((o) => [o.id, o.parentId, o.categoryId, o.workspaceId]);
   return ids.some((id) => readOnly(wsOfId(id)));
@@ -458,6 +462,7 @@ function render() {
   const before = snapshotLayout();
   const wsChanged = before.ws && before.ws !== currentWs()?.id;
   const catChanged = before.board && before.board !== currentCat()?.id;
+  document.body.classList.toggle('viewing', readOnly(currentWs())); // (a workspace only viewed: no editing controls)
   renderSidebar();
   renderHead();
   if (wsChanged) switchCats(); else renderCats();
@@ -529,7 +534,7 @@ function snapshotLayout() {
     const r = el.getBoundingClientRect();
     if (r.width) rects.set(el.dataset.id, r);
   }
-  return { rects, board: $('#board').dataset.parent, ws: $('#ws-list .ws-item.active')?.dataset.id };
+  return { rects, board: $('#board').dataset.parent, ws: $('#ws-list .ws-item.active')?.dataset.id, syms: symbolsBefore(rects) };
 }
 
 // After a re-render, slide each element from its old place to its new one, and pop in new ones
@@ -541,7 +546,7 @@ function animateLayout(before) {
   const card = holdCard();
   const opening = holdExpanding();
   // (expanding is kept until the moves are worked out, so the contents opening up aren't popped in too)
-  try { animateMoves(before, wsChanged); } finally { expanding = null; openExpanded(opening); turnOpen(); growNote(held); growCard(card); }
+  try { animateMoves(before, wsChanged); morphSymbols(before, card?.el.dataset.id); } finally { expanding = null; openExpanded(opening); turnOpen(); growNote(held); growCard(card); }
 }
 
 function animateMoves(before, wsChanged = false) {
@@ -644,6 +649,52 @@ function raiseWhile(el, anim) {
   anim.finished.catch(() => {}).then(() => { el.style.zIndex = ''; if (el.style.position === 'relative') el.style.position = ''; });
 }
 
+// A card's or a folder's symbol that came, went or changed in a re-render, whatever changed it (here, an undo, another
+// browser): on a card the new one springs in while the old one shrinks away where it was, and the name and tools beside
+// it slide over rather than jump; a folder's springs in. (A card being edited does the same itself, see growCard; what's
+// being previewed, showPreview; and relabel leaves these symbols to this.)
+function symbolsBefore(rects) {
+  const cards = new Map();
+  for (const el of document.querySelectorAll('#board .group')) {
+    const box = rects.get(el.dataset.id), sym = el.querySelector(':scope > .group-head > .node-sym');
+    const info = el.querySelector(':scope > .group-head > .node-info');
+    if (!box || !info) continue;
+    cards.set(el.dataset.id, { el, info: info.getBoundingClientRect().left - box.left,
+      sym: sym && { rect: sym.getBoundingClientRect(), size: getComputedStyle(sym).fontSize } });
+  }
+  return cards;
+}
+function morphSymbols(before, held) {
+  if (!before.syms) return;
+  const springIn = (el) => el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SPRING });
+  const key = (el) => el && el.className + el.innerHTML;
+  for (const [id, was] of before.syms) {
+    if (id === held || id === preview?.id) continue;
+    const el = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
+    if (!el || el === was.el) continue; // (not redrawn: nothing changed)
+    const old = was.el.querySelector(':scope > .group-head > .node-sym'), sym = el.querySelector(':scope > .group-head > .node-sym');
+    if (old?.innerHTML !== sym?.innerHTML) {
+      if (old && was.sym?.rect.width) {
+        const { rect, size } = was.sym, copy = old.cloneNode(true);
+        copy.classList.add('sym-leaving');
+        Object.assign(copy.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, fontSize: size });
+        document.body.append(copy);
+        copy.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.6)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' })
+          .finished.catch(() => {}).then(() => copy.remove());
+      }
+      if (sym) springIn(sym);
+      const info = el.querySelector(':scope > .group-head > .node-info');
+      const dx = info ? was.info - (info.getBoundingClientRect().left - el.getBoundingClientRect().left) : 0; // (within the card, which may be moving itself)
+      if (Math.abs(dx) >= 0.5) info.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 280, easing: GLIDE });
+    }
+    for (const f of el.querySelectorAll('.item.folder')) {
+      if (f.dataset.id === preview?.id) continue;
+      const a = was.el.querySelector(`.item.folder[data-id="${CSS.escape(f.dataset.id)}"] > .folder-head > .sym`), b = f.querySelector(':scope > .folder-head > .sym');
+      if (a && b && key(a) !== key(b)) springIn(b);
+    }
+  }
+}
+
 // Re-lay the category bar and board (e.g. a new column count), sliding groups to their new places.
 function relayoutBoard() {
   const before = snapshotLayout();
@@ -703,7 +754,7 @@ const previewed = (n) => (n && preview?.id === n.id ? { ...n, ...preview.fields 
 
 function renderSidebar() {
   const cur = currentWs();
-  $('#ws-list').replaceChildren(...state.workspaces.map((orig) => [orig, previewed(orig)]).map(([orig, ws]) =>
+  const item = ([orig, ws]) =>
     h('li', {
       class: 'ws-item' + (ws.id === cur?.id ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
       title: ws.description ? `${ws.name}\n${ws.description}` : ws.name,
@@ -713,9 +764,14 @@ function renderSidebar() {
     },
     symbolEl(ws.symbol, '🗃️'),
     h('span', { class: 'name' }, ws.name),
-    h('span', { class: 'count' }, T.countLinks(orig)))),
+    h('span', { class: 'count' }, T.countLinks(orig)));
+  // (those shared with this account by others: apart, below a line with a small share icon)
+  const all = state.workspaces.map((orig) => [orig, previewed(orig)]);
+  const theirs = all.filter(([o]) => received(o)), mine = all.filter(([o]) => !received(o));
+  $('#ws-list').replaceChildren(...mine.map(item),
     // collapsed rail: "new workspace" sits at the end of the list (expanded, it is beside the heading)
-    h('li', { class: 'ws-add', dataset: { railTitle: t('new.workspace') }, onclick: addWorkspace }, icon('plus', 17)));
+    h('li', { class: 'ws-add', dataset: { railTitle: t('new.workspace') }, onclick: addWorkspace }, icon('plus', 17)),
+    ...(theirs.length ? [h('li', { class: 'ws-split', dataset: { railTitle: t('side.shared') } }, icon('people', 13), h('span', { class: 'label' }, t('side.sharedLabel'))), ...theirs.map(item)] : []));
   applyRailTitles();
 }
 
@@ -1038,10 +1094,10 @@ function renderGroup(g) {
         !empty && Object.assign(btn(icon('chevron'), t(g.collapsed ? 'act.expand' : 'act.collapse'), () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
       // always-visible tools: add buttons | divider | everything else
       h('div', { class: 'node-tools' },
-        btn(icon('linkPlus'), t('act.addLink'), () => addLink(g.id)),
-        btn(icon('folderPlus'), t('act.addFolder'), () => addFolder(g.id)),
+        edits(btn(icon('linkPlus'), t('act.addLink'), () => addLink(g.id))),
+        edits(btn(icon('folderPlus'), t('act.addFolder'), () => addFolder(g.id))),
         h('span', { class: 'tools-split' }),
-        btn(icon('note'), t('act.editNote'), () => startNoteEdit(g.id)),
+        edits(btn(icon('note'), t('act.editNote'), () => startNoteEdit(g.id))),
         btn(icon('open'), t('act.openAll'), () => openAll(g)),
         btn(icon('more'), t('act.more'), (e) => nodeMenu(e, g))))),
     h('div', { class: 'group-body' },
@@ -1068,8 +1124,8 @@ function renderLink(l) {
     h('span', { class: 'name' }, l.name || l.url),
     l.description && h('span', { class: 'desc' }, l.description),
     h('span', { class: 'head-actions' },
-      btn(icon('edit'), t('act.edit'), () => editNode(l)),
-      btn(icon('close'), 'Delete', () => deleteNode(l)))));
+      edits(btn(icon('edit'), t('act.edit'), () => editNode(l))),
+      edits(btn(icon('close'), 'Delete', () => deleteNode(l))))));
 }
 
 // One compact row (folders sit among links): chevron, symbol, name, count; the action buttons
@@ -1090,10 +1146,10 @@ function renderFolder(f, depth) {
       h('span', { class: 'name' }, f.name),
       h('span', { class: 'count' }, T.countLinks(f))),
     h('span', { class: 'head-actions' },
-      btn(icon('linkPlus'), t('act.addLink'), () => addLink(f.id)),
-      depth < T.MAX_FOLDER_DEPTH && btn(icon('folderPlus'), t('act.addSubfolder'), () => addFolder(f.id)),
+      edits(btn(icon('linkPlus'), t('act.addLink'), () => addLink(f.id))),
+      edits(depth < T.MAX_FOLDER_DEPTH && btn(icon('folderPlus'), t('act.addSubfolder'), () => addFolder(f.id))),
       h('span', { class: 'tools-split' }),
-      btn(icon('edit'), t('act.editFolder'), () => editNode(f)),
+      edits(btn(icon('edit'), t('act.editFolder'), () => editNode(f))),
       btn(icon('open'), t('act.openAll'), () => openAll(f)),
       btn(icon('more'), t('act.more'), (e) => nodeMenu(e, f)))),
     renderItems(f.items, f.id, depth));
@@ -1948,6 +2004,7 @@ function openExpanded(held) {
 }
 
 function startNoteEdit(id) {
+  if (viewOnly(id)) return;
   editingNoteId = id;
   const group = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
   const note = group?.querySelector('.note');
@@ -2558,6 +2615,7 @@ function openEditor(type, data = {}, title, onPreview = null) {
 
 const LIVE_EDIT = new Set(['workspace', 'category', 'group', 'folder', 'link']);
 async function editNode(node) {
+  if (viewOnly(node.id)) return;
   if (!LIVE_EDIT.has(node.type)) {
     const v = await openEditor(node.type, node);
     if (v) patchRemembered(node, v);
@@ -2698,6 +2756,7 @@ function randomSymbol() {
 }
 
 async function addCategory(ws) {
+  if (viewOnly(ws.id)) return;
   const v = await openEditor('category', {}, t('new.category'));
   if (!v) return;
   const before = structuredClone(state);
@@ -2706,11 +2765,13 @@ async function addCategory(ws) {
 }
 
 async function addNode(type, parentId, title, extra = {}) {
+  if (viewOnly(parentId)) return;
   const v = await openEditor(type, {}, title);
   if (v) createRemembered({ op: 'create', parentId, node: { type, ...extra, ...v } });
 }
 // A new group in `column`: before group `beforeId`, or at the end of that column.
 async function addGroup(cat, column = null, { beforeId = null, afterId = null } = {}) {
+  if (viewOnly(cat.id)) return;
   const v = await openEditor('group', {}, t('new.group'));
   if (v) createRemembered({ op: 'create', parentId: cat.id, index: columnIndex(cat, column, { beforeId, afterId }), node: { type: 'group', column, ...v } });
 }
@@ -2815,7 +2876,17 @@ function nodeMenu(e, node) {
     link: [{ icon: 'open', label: t('menu.open'), key: 'O', fn: () => openLink(node) }, { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => openLink(node, { shiftKey: true }) },
       edit, { icon: 'copy', label: t('menu.copyUrl'), key: 'C', fn: () => navigator.clipboard.writeText(node.url).then(() => toast(t('toast.urlCopied'))) }, '-', del],
   };
-  showMenu(e, menus[node.type]);
+  let entries = menus[node.type];
+  // (a shared workspace: its share manager; one shared with this account, leaving it in place of deleting; one only
+  // viewed: nothing that would change it)
+  const sh = node.type === 'workspace' && sharing() && shareOf(node), mine = !sh || sh.role === 'owner';
+  if (node.type === 'workspace' && sharing()) {
+    const share = { icon: 'people', label: t('share.menu'), key: 'H', fn: () => openShare(node) };
+    entries = mine ? [entries[0], share, ...entries.slice(1)]
+      : [share, ...entries.slice(0, -2), '-', { icon: 'logout', label: t('share.leaveOk'), key: 'D', danger: true, fn: () => endShare(node) }];
+  }
+  if (readOnly(wsOfId(node.id))) entries = entries.filter((x) => x === '-' || ['O', 'W', 'H', 'X'].includes(x.key) || x.label === t('menu.copyUrl') || x.danger && x.key === 'D' && node.type === 'workspace');
+  showMenu(e, entries.filter((x, i, l) => x !== '-' || (i && i < l.length - 1 && l[i - 1] !== '-')));
 }
 
 async function addWindowTabs(groupId) {
@@ -4795,7 +4866,8 @@ function relabel(a, b) {
   const labels = (id) => {
     const q = CSS.escape(id);
     const own = [...document.querySelectorAll(`#ws-list [data-id="${q}"], #cat-bar [data-id="${q}"], #board [data-id="${q}"]`)]
-      .flatMap((el) => [...el.querySelectorAll('.name, .sym, .node-sym')].filter((x) => x.closest('[data-id]') === el && !x.parentElement.closest('.sym, .node-sym')));
+      .flatMap((el) => [...el.querySelectorAll('.name, .sym, .node-sym')].filter((x) => x.closest('[data-id]') === el && !x.parentElement.closest('.sym, .node-sym')
+        && !x.matches('#board :is(.node-sym, .folder-head > .sym)'))); // (a card's and a folder's symbol: see morphSymbols)
     return id === currentWs()?.id ? [...own, ...document.querySelectorAll('#ws-head h1')] : own;
   };
   const before = new Map(ids.map((id) => [id, labels(id).map((el) => el.cloneNode(true))]));
@@ -5309,8 +5381,12 @@ const api = (path, method = 'GET', body) => fetch(path, { method, credentials: '
 function shareOf(ws) {
   if (!ws || !sharing()) return null;
   const s = shareList.find((x) => x.root === ws.id && (!ws.share || ws.share === x.id));
-  return s ? { id: s.id, role: s.role, members: s.members } : null;
+  return s ? { id: s.id, role: s.role, members: s.members, invited: s.invited || 0 } : null;
 }
+// (someone else in it, or asked: what the heading's button and the sidebar's split go by)
+const sharedWithOthers = (sh) => !!sh && (sh.members > 1 || sh.invited > 0);
+// (shared with this account by someone else: listed apart in the sidebar, below a line)
+const received = (ws) => { const sh = shareOf(ws); return !!sh && sh.role !== 'owner'; };
 function startSharing(me) {
   const was = sharing();
   meNow = me;
@@ -5325,7 +5401,7 @@ async function refreshShares() {
   if (!sharing()) return;
   const seq = ++sharesSeq, r = await api('/api/shares');
   if (seq !== sharesSeq || !r.ok) return;
-  const key = (l) => JSON.stringify(l.map((s) => [s.id, s.root, s.role, s.members]));
+  const key = (l) => JSON.stringify(l.map((s) => [s.id, s.root, s.role, s.members, s.invited]));
   const changed = key(r.data.shares) !== key(shareList);
   shareList = r.data.shares;
   if (changed) render(); // (the heading's count, and what this account may do in each: see shareOf)
@@ -5363,26 +5439,45 @@ function syncRows(list, items, make, update, animate = true) {
 
 // The heading's button: the people icon, and how many are in it once it's shared
 let headShared = null; // ({ ws, n, w }: what it showed last, for what changes to move)
+// (shown only while someone else is in it or asked, the count everyone so: sharing starts from the workspace's menu)
 function shareButton(head, ws) {
-  const sh = shareOf(ws), n = sh?.members || 0, was = headShared, same = was?.ws === ws.id;
-  const b = h('button', { type: 'button', class: 'icon-btn ws-share' + (sh ? ' shared' : ''), title: t(sh ? 'share.manage' : 'share.share'),
-    onclick: () => openShare(ws), ondblclick: (e) => e.stopPropagation() },
-  icon('people', 17), sh && h('span', { class: 'ws-share-n' }, rollNum(`share:${ws.id}`, n)));
-  head.append(b);
-  // (only viewing it: said beside, and nothing in it can be changed)
-  if (sh?.role === 'viewer') {
-    const chip = h('span', { class: 'ws-readonly', title: t('share.readOnly') }, t('share.viewing'));
-    head.append(chip);
-    if (was?.ws !== ws.id || was?.role !== 'viewer') chip.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
+  const sh = shareOf(ws), on = sharedWithOthers(sh), n = on ? sh.members + sh.invited : 0, was = headShared, same = was?.ws === ws.id;
+  const viewer = sh?.role === 'viewer';
+  headShared = { ws: ws.id, n, w: 0, role: sh?.role, on };
+  // (a stand-in for what just went: shrinks away where it was)
+  const away = (el, wide) => {
+    head.append(el);
+    el.style.pointerEvents = 'none';
+    el.animate([{ opacity: 1, transform: 'none', width: `${wide}px`, marginLeft: getComputedStyle(el).marginLeft },
+      { opacity: 0, transform: 'scale(.6)', width: '0px', marginLeft: '0px' }], { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished.then(() => el.remove(), () => {});
+  };
+  if (on) {
+    const b = h('button', { type: 'button', class: 'icon-btn ws-share shared', title: t('share.tip'), onclick: () => openShare(ws),
+      ondblclick: (e) => e.stopPropagation(), oncontextmenu: (e) => { e.preventDefault(); e.stopPropagation(); } },
+    icon('people', 17), h('span', { class: 'ws-share-n' }, rollNum(`share:${ws.id}`, n)));
+    head.append(b);
+    const w = b.getBoundingClientRect().width;
+    headShared.w = w;
+    // (come now: it pops in; its count longer or shorter: it grows or shrinks to it)
+    if (!same || !was.on) b.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING });
+    else if (Math.abs(was.w - w) > .5) b.animate([{ width: `${was.w}px`, overflow: 'hidden' }, { width: `${w}px`, overflow: 'hidden' }], { duration: 280, easing: GLIDE });
+  } else if (same && was.on) {
+    away(h('span', { class: 'icon-btn ws-share shared' }, icon('people', 17), h('span', { class: 'ws-share-n' }, String(was.n))), was.w);
   }
-  const w = b.getBoundingClientRect().width;
-  headShared = { ws: ws.id, n, w, role: sh?.role };
-  // (come now, the feature just available: it pops in; a count come or gone, or longer: it grows or shrinks to it)
-  if (!was) b.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING });
-  if (!same) return;
-  if (n && !was.n) b.querySelector('.ws-share-n').animate([{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
-  if (Math.abs(was.w - w) > .5) b.animate([{ width: `${was.w}px`, overflow: 'hidden' }, { width: `${w}px`, overflow: 'hidden' }], { duration: 280, easing: GLIDE });
-  if (!!was.n !== !!n) b.animate([{ color: getComputedStyle(b).color }, {}], { duration: 280 }); // (to the accent, or back)
+  // (only viewing it: said beside, and nothing in it can be changed; coming and going, it grows and shrinks)
+  const chip = () => h('span', { class: 'ws-readonly', title: t('share.readOnly') }, t('share.viewing'));
+  if (viewer) {
+    const c = chip();
+    head.append(c);
+    if (!same || was.role !== 'viewer') {
+      const w = c.getBoundingClientRect().width;
+      c.animate([{ opacity: 0, transform: 'scale(.7)', width: '0px', marginLeft: '0px', paddingLeft: '0px', paddingRight: '0px' }, { opacity: 1, transform: 'none', width: `${w}px` }], { duration: 300, easing: SPRING });
+    }
+  } else if (same && was.role === 'viewer') {
+    const c = chip();
+    head.append(c);
+    away(c, c.getBoundingClientRect().width);
+  }
 }
 
 // The mailbox: newest first. An invite not answered yet has Accept and Decline (answered, what was said takes their
@@ -5420,17 +5515,49 @@ function mailBadge(n) {
 }
 function openMail() {
   mailPicked.clear();
+  mailPage = 0;
   fillMail(false);
   $('#mail').showModal();
   $('#mail').querySelector('button[type=submit]').blur();
   refreshMail();
 }
+// (ten a page: past ten, a pager beside Close; the page turned, the old rows slide up and away, the next come from below)
+const MAIL_PAGE = 10;
+let mailPage = 0;
+const mailPages = () => Math.max(1, Math.ceil(mail.length / MAIL_PAGE));
+const pageMail = () => mail.slice(mailPage * MAIL_PAGE, (mailPage + 1) * MAIL_PAGE);
 function fillMail(animate = true) {
   for (const id of mailPicked) { const m = mail.find((x) => x.id === id); if (!m || !deletable(m)) mailPicked.delete(id); }
-  syncRows(mailList, mail.map((m) => [String(m.id), m]), mailRow, updateMailRow, animate);
+  mailPage = Math.min(mailPage, mailPages() - 1);
+  syncRows(mailList, pageMail().map((m) => [String(m.id), m]), mailRow, updateMailRow, animate);
   fold($('#mail-head'), mail.length > 0, animate);
   fold($('#mail-none'), !mail.length, animate);
   mailHead(animate);
+  mailPager(animate);
+}
+function mailPager(animate = true) {
+  const pages = mailPages(), pager = $('#mail-pager'), all = $('#mail-clear'), some = mail.some(deletable);
+  $('#mail-prev').disabled = mailPage === 0;
+  $('#mail-next').disabled = mailPage >= pages - 1;
+  const text = `${mailPage + 1} / ${pages}`, at = $('#mail-at');
+  if (at.textContent !== text) { if (animate && at.textContent) crossfade(at, () => { at.textContent = text; }); else at.textContent = text; }
+  for (const [el, show] of [[pager, pages > 1], [all, some]]) {
+    if (!animate) { el.hidden = !show; continue; }
+    if (show !== (!el.hidden && el.dataset.going == null)) { if (!show) el.dataset.going = ''; appear(el, show).then(() => { delete el.dataset.going; }); }
+  }
+}
+async function turnMail(by) {
+  const to = Math.max(0, Math.min(mailPages() - 1, mailPage + by));
+  if (to === mailPage || mailList.dataset.turning != null) return;
+  mailList.dataset.turning = '';
+  const h0 = mailList.offsetHeight, dy = by > 0 ? 14 : -14;
+  await mailList.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-dy}px)` }], { duration: 130, easing: 'ease-in' }).finished.catch(() => {});
+  mailPage = to;
+  fillMail(false);
+  mailPager();
+  const h1 = mailList.offsetHeight;
+  mailList.animate([{ opacity: 0, transform: `translateY(${dy}px)`, height: `${h0}px` }, { opacity: 1, transform: 'none', height: `${h1}px` }], { duration: 220, easing: GLIDE });
+  delete mailList.dataset.turning;
 }
 function mailRow(m) {
   const box = h('input', { type: 'checkbox', class: 'mail-pick', 'aria-label': t('mail.select'), onchange: (e) => {
@@ -5447,8 +5574,9 @@ function mailRow(m) {
 function mailText(m) {
   const who = h('b', {}, whoOf(m.from));
   const ws = h('span', { class: 'mail-ws' }, m.workspace.symbol ? symbolEl(m.workspace.symbol) : null, m.workspace.name);
-  const key = m.kind === 'invite' ? 'mail.invite' : m.answer === 'accepted' ? 'mail.accepted' : 'mail.declined';
-  return [...fillIn(t(key), { name: who, ws }), m.kind === 'invite' && m.role ? ` · ${t(`role.${m.role}`)}` : ''];
+  const key = m.kind === 'invite' ? 'mail.invite' : m.kind === 'removed' ? 'mail.removed' : m.kind === 'left' ? 'mail.left' : m.answer === 'accepted' ? 'mail.accepted' : 'mail.declined';
+  // (let go: by the owner's username, "ann/Plans")
+  return [...fillIn(t(key), { name: m.kind === 'removed' ? h('b', {}, m.from.username) : who, ws }), m.kind === 'invite' && m.role ? ` · ${t(`role.${m.role}`)}` : ''];
 }
 function mailActs(m) {
   if (m.kind !== 'invite') return [];
@@ -5463,9 +5591,9 @@ function updateMailRow(row, m, animate = true) {
   const ok = deletable(m), box = row.querySelector('.mail-pick'), x = row.querySelector('.mail-x');
   box.disabled = !ok;
   box.checked = mailPicked.has(m.id);
-  x.classList.toggle('off', !ok);
-  x.setAttribute('aria-disabled', String(!ok));
-  const tip = t(ok ? 'mail.delete' : 'mail.answerFirst');
+  // (not answered yet: no × at all, Accept and Decline over to where it would be; answered, it comes)
+  if (animate && row.look && x.hidden === ok) appear(x, ok); else x.hidden = !ok;
+  const tip = t('mail.delete');
   if (x.dataset.tip != null) x.dataset.tip = tip; else x.title = tip;
   const when = timeAgo(m.at * 1000), whenEl = row.querySelector('.mail-when');
   if (whenEl.textContent !== when) whenEl.textContent = when;
@@ -5484,10 +5612,10 @@ function updateMailRow(row, m, animate = true) {
 // (the row above the list: a tick for all that can be deleted, a dash when only some are; with any ticked, Delete (n)
 // at its end, coming and going, its number rolling)
 function mailHead(animate = true) {
-  const all = mail.filter(deletable), n = mailPicked.size, box = $('#mail-all');
+  const all = pageMail().filter(deletable), n = mailPicked.size, box = $('#mail-all'), here = all.filter((m) => mailPicked.has(m.id)).length;
   box.disabled = !all.length;
-  box.checked = n > 0 && n === all.length;
-  box.indeterminate = n > 0 && n < all.length;
+  box.checked = here > 0 && here === all.length;
+  box.indeterminate = n > 0 && !box.checked;
   for (const row of mailList.children) { const c = row.querySelector('.mail-pick'); if (row.m && c.checked !== mailPicked.has(row.m.id)) c.checked = mailPicked.has(row.m.id); }
   const del = $('#mail-del'), shown = !del.hidden && del.dataset.going == null, w = del.offsetWidth;
   if (n) del.replaceChildren(...[counted('mail-del', 'mail.deleteN', n)].flat());
@@ -5532,11 +5660,17 @@ async function deleteMail(ids) {
 }
 $('#btn-mail').addEventListener('click', openMail);
 $('#mail-all').addEventListener('change', (e) => {
-  mailPicked.clear();
-  if (e.target.checked) for (const m of mail) if (deletable(m)) mailPicked.add(m.id);
+  for (const m of pageMail()) if (deletable(m)) { if (e.target.checked) mailPicked.add(m.id); else mailPicked.delete(m.id); }
   mailHead();
 });
 $('#mail-del').addEventListener('click', () => deleteMail([...mailPicked]));
+$('#mail-prev').addEventListener('click', () => turnMail(-1));
+$('#mail-next').addEventListener('click', () => turnMail(1));
+// (all of it at once, those that can be: asked first; undone as any delete)
+$('#mail-clear').addEventListener('click', async () => {
+  if (!(await confirmDialog({ title: t('mail.clearTitle'), ok: t('mail.clear'), danger: true }))) return;
+  deleteMail(mail.filter(deletable).map((m) => m.id));
+});
 
 // The share manager: who's in the workspace (the owner first, then editors and viewers; whoever is asked and hasn't
 // answered yet after them), each with their photo or letter, their name (a 2FA chip if they have two-step sign-in)
@@ -5548,6 +5682,7 @@ async function openShare(ws) {
   shareInfo = null;
   $('#share-user').value = '';
   $('#share-error').textContent = '';
+  peopleList.hidden = true; peopleList.replaceChildren();
   $('#share-list').replaceChildren();
   await fillShare(false);
   $('#share').showModal();
@@ -5577,15 +5712,18 @@ async function fillShare(animate = true, info = null) {
   shareTitle(animate);
   const owner = !info || info.role === 'owner';
   const members = info ? info.members : meNow ? [{ ...meNow, role: 'owner', me: true }] : [];
+  // (keyed by who: someone asked who accepts, their row becomes theirs as a member, in place)
   const items = [...members.map((p) => [`u${p.id}`, { p, role: p.role, owner }]),
-    ...(info?.invites || []).map((i) => [`i${i.mail}`, { p: i.user, role: i.role, invite: i.mail, owner }])];
+    ...(info?.invites || []).map((i) => [`u${i.user.id}`, { p: i.user, role: i.role, invite: i.mail, owner }])];
   syncRows($('#share-list'), items, shareRow, updateShareRow, animate);
   fold($('#share-note'), !info, animate);
   fold($('#share-invite'), owner, animate);
-  const end = $('#share-end'), text = info ? t(owner ? 'share.deleteAll' : 'share.leave') : '';
-  if (info && end.textContent && end.textContent !== text && animate) crossfade(end, () => { end.textContent = text; });
-  else if (info) end.textContent = text;
-  if (animate) appear(end, !!info); else end.hidden = !info;
+  const others = !!info && (info.members.length > 1 || info.invites.length > 0);
+  const end = $('#share-end'), show = !!info && (!owner || others), text = info ? t(owner ? 'share.removeAll' : 'share.leave') : '';
+  if (show && end.textContent && end.textContent !== text && animate && !end.hidden) crossfade(end, () => { end.textContent = text; });
+  else if (show) end.textContent = text;
+  if (animate) { if (show !== (!end.hidden && end.dataset.going == null)) { if (!show) end.dataset.going = ''; appear(end, show).then(() => { delete end.dataset.going; }); } }
+  else end.hidden = !show;
 }
 function shareRow(it) {
   const row = h('li', { class: 'share-row' + (it.invite ? ' pending' : '') }, accountPhoto(it.p, 'account-avatar small'),
@@ -5601,7 +5739,7 @@ function roleCell(it, row) {
   if (it.invite) return [];
   if (!it.owner || it.p.me) return [h('span', { class: 'share-role-name' }, t(`role.${it.role}`))];
   const sel = h('select', { 'aria-label': t('share.roleOf', { name: whoOf(it.p) }) },
-    ...['editor', 'viewer', 'owner'].map((r) => h('option', { value: r }, t(r === 'owner' ? 'share.makeOwner' : `role.${r}`))));
+    ...['editor', 'viewer', 'owner'].map((r) => h('option', { value: r }, t(`role.${r}`))));
   sel.value = it.role;
   sel.dataset.shown = sel.selectedIndex;
   sel.addEventListener('change', () => setRole(row, sel));
@@ -5609,6 +5747,7 @@ function roleCell(it, row) {
 }
 function updateShareRow(row, it, animate = true) {
   row.it = it;
+  row.classList.toggle('pending', !!it.invite);
   const p = it.p, was = row.look || {};
   const now = { name: JSON.stringify([p.name, p.username, p.twofa, p.me, getLang()]), sub: JSON.stringify([p.name && p.username, it.invite && it.role, getLang()]),
     photo: `${p.avatar}|${p.accent}`, role: roleKey(it) };
@@ -5683,16 +5822,90 @@ async function inviteShare() {
 slideSelect($('#share-role'));
 $('#share-go').addEventListener('click', inviteShare);
 $('#share-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inviteShare(); } });
-$('#share-user').addEventListener('input', () => shareError(''));
+$('#share-user').addEventListener('input', () => { shareError(''); findPeople(); });
+// Whom to invite: accounts whose username or name has what's typed in it, in a list under the field (arrows and
+// Enter, or a click, pick one); it folds open and shut, its rows coming and going as the list changes
+let peopleSeq = 0, peopleTimer = null, peopleAt = -1;
+const peopleList = $('#share-found');
+function findPeople() {
+  clearTimeout(peopleTimer);
+  const q = $('#share-user').value.trim();
+  if (!q) return showPeople([]);
+  peopleTimer = setTimeout(async () => {
+    const seq = ++peopleSeq, r = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
+    if (seq !== peopleSeq || q !== $('#share-user').value.trim()) return;
+    const taken = new Set([...(shareInfo?.members || []).map((p) => p.id), ...(shareInfo?.invites || []).map((i) => i.user.id)]);
+    showPeople(r.ok ? r.data.users.filter((p) => !taken.has(p.id)) : []);
+  }, 120);
+}
+function showPeople(people) {
+  const open = !peopleList.hidden && peopleList.dataset.going == null;
+  if (!people.length) {
+    peopleAt = -1;
+    if (open) { peopleList.dataset.going = ''; peopleList.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px) scale(.98)' }], { duration: 140, easing: 'ease-in' }).finished.then(() => { if (peopleList.dataset.going != null) { peopleList.hidden = true; delete peopleList.dataset.going; } }, () => {}); }
+    return;
+  }
+  delete peopleList.dataset.going;
+  peopleList.getAnimations().forEach((a) => a.cancel());
+  const h0 = open ? peopleList.offsetHeight : 0;
+  peopleAt = Math.min(peopleAt, people.length - 1);
+  syncRows(peopleList, people.map((p) => [`p${p.id}`, p]), personRow, updatePersonRow, open);
+  paintPeople();
+  if (!open) {
+    peopleList.hidden = false;
+    peopleList.animate([{ opacity: 0, transform: 'translateY(-4px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
+  } else if (Math.abs(peopleList.offsetHeight - h0) > .5) peopleList.animate([{ height: `${h0}px` }, { height: `${peopleList.offsetHeight}px` }], { duration: 200, easing: GLIDE });
+}
+function personRow(p) {
+  const row = h('li', { class: 'share-found-row', onpointerdown: (e) => { e.preventDefault(); pickPerson(row.p); } },
+    accountPhoto(p, 'account-avatar small'), h('span', { class: 'account-who' }, h('span', { class: 'account-name' }), h('span', { class: 'account-role' })));
+  updatePersonRow(row, p);
+  return row;
+}
+function updatePersonRow(row, p) {
+  row.p = p;
+  row.querySelector('.account-name').replaceChildren(...nameLine(p));
+  row.querySelector('.account-role').textContent = p.name ? p.username : '';
+}
+const paintPeople = () => [...peopleList.children].filter((r) => r.dataset.leaving == null).forEach((r, i) => r.classList.toggle('on', i === peopleAt));
+function pickPerson(p) {
+  $('#share-user').value = p.username;
+  showPeople([]);
+  $('#share-user').focus();
+}
+$('#share-user').addEventListener('keydown', (e) => {
+  const rows = [...peopleList.children].filter((r) => r.dataset.leaving == null);
+  if (peopleList.hidden || !rows.length) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); peopleAt = (peopleAt + (e.key === 'ArrowDown' ? 1 : rows.length - 1 + (peopleAt < 0 ? 1 : 0))) % rows.length; paintPeople(); }
+  else if (e.key === 'Enter' && peopleAt >= 0) { e.preventDefault(); e.stopImmediatePropagation(); pickPerson(rows[peopleAt].p); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); showPeople([]); }
+}, { capture: true });
+$('#share-user').addEventListener('blur', () => setTimeout(() => showPeople([]), 100));
 // Deleted for everyone (the owner; its content to the owner's Recently deleted), or left (anyone else): asked first
-$('#share-end').addEventListener('click', () => endShare(state?.workspaces.find((w) => w.id === shareWs), shareInfo?.role === 'owner', shareId));
-async function endShare(ws, owner = shareOf(ws)?.role === 'owner', id = shareOf(ws)?.id) {
-  if (!ws || !id) return;
-  if (!(await confirmDialog({ title: t(owner ? 'share.deleteTitle' : 'share.leaveTitle', { ws: ws.name }), text: t(owner ? 'share.deleteText' : 'share.leaveText'),
-    ok: t(owner ? 'share.deleteAll' : 'share.leaveOk'), danger: true }))) return;
-  if (!(await run(B.call(owner ? 'deleteShare' : 'leaveShare', { id })))) return;
+// The owner: everyone else let go at once (each told by mail; the workspace stays the owner's); anyone else: leaving
+$('#share-end').addEventListener('click', async () => {
+  const ws = state?.workspaces.find((w) => w.id === shareWs);
+  if (!ws || !shareId) return;
+  if (shareInfo?.role !== 'owner') return endShare(ws);
+  if (!(await confirmDialog({ title: t('share.removeAllTitle'), text: t('share.removeAllText'), ok: t('share.removeAll'), danger: true }))) return;
+  const r = await api(`/api/shares/${shareId}/end`, 'POST', {});
+  if (!r.ok) return toast(t('share.failed'));
+  fillShare(true, r.data);
+  refreshShares();
+});
+// Leaving one shared with this account (gone from here until asked again); its owner deleting it: gone from everyone
+// else too (told by mail), the owner's own in Recently deleted as any workspace deleted
+async function endShare(ws) {
+  const sh = shareOf(ws), owner = sh?.role === 'owner';
+  if (!ws || !sh) return;
+  if (owner && !sharedWithOthers(sh)) {
+    if (!(await confirmDialog({ title: t('del.workspace', { name: ws.name }), text: T.countLinks(ws) ? t('del.links', { n: T.countLinks(ws) }) : '', ok: t('menu.delete'), danger: true }))) return;
+  } else if (!(await confirmDialog({ title: t(owner ? 'share.deleteTitle' : 'share.leaveTitle', { ws: ws.name }), text: t(owner ? 'share.deleteText' : 'share.leaveText'),
+    ok: t(owner ? 'menu.delete' : 'share.leaveOk'), danger: true }))) return;
+  await animateOut([ws.id]);
+  if (!(await run(B.call(owner ? 'deleteShare' : 'leaveShare', { id: sh.id })))) return;
   if ($('#share').open) $('#share').close();
-  toast(t(owner ? 'toast.shareDeleted' : 'toast.shareLeft', { name: ws.name }));
+  toast(t(owner ? 'toast.deleted' : 'toast.shareLeft', { name: ws.name }));
   refreshShares();
 }
 B.on('state', () => { if ($('#share').open) shareTitle(true); });
