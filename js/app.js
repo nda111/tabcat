@@ -4474,7 +4474,7 @@ async function showAccount() {
   sym.plain ||= [...sym.childNodes]; // (the person icon, for when there's no photo again)
   if (before?.avatar !== accountShown.avatar) sym.replaceChildren(...(me.avatar ? [Object.assign(photo(), { className: 'side-photo' })] : sym.plain));
   // (under the name: the username, then the role)
-  put($('#account-role'), before?.role, accountShown.role, () => { $('#account-role').textContent = accountShown.role; });
+  if (before?.role !== accountShown.role) { if (live) morph($('#account-role'), roleLine(me)); else $('#account-role').replaceChildren(...roleLine(me)); }
   if (live) appear($('#account-admin'), !!me.admin); else $('#account-admin').hidden = !me.admin;
   // (come here as another account, the one in use having been signed out of elsewhere: say so, once)
   if (new URLSearchParams(location.search).has('switched')) {
@@ -4531,28 +4531,36 @@ const ACCENT_TINT = (el, accent) => {
 const accountPhoto = (a, cls = 'account-avatar') => ACCENT_TINT(h('span', { class: cls, 'aria-hidden': 'true' },
   a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase()), a.accent);
 // (under the name: the username, if there's a name, then the role)
-const roleLine = (a) => [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
-const nameLine = (a) => [h('span', { class: 'nm' }, a.name || a.username), ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])];
-// A name changed in place: the old words fade out where they were as the new fade in, over each other on the same
-// line (in the same element: nothing moves up or down); the 2FA chip after it slides to its new place, comes, or goes.
-const SLIDE = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' };
-function swapName(el, a) {
-  const was = el.querySelector('.nm')?.textContent ?? el.textContent, chipWas = el.querySelector('.chip-2fa');
-  const at = el.getBoundingClientRect().left, x = chipWas ? chipWas.getBoundingClientRect().left - at : null;
-  el.replaceChildren(...nameLine(a));
-  const nm = el.querySelector('.nm'), chip = el.querySelector('.chip-2fa');
-  const ghost = h('span', { class: 'nm-ghost', 'aria-hidden': 'true' }, ...(was !== nm.textContent ? [was] : []));
-  if (chipWas && !chip) ghost.append(Object.assign(chipWas, { style: `position: absolute; left: ${x}px; margin: 0` }));
-  if (ghost.childNodes.length) {
-    el.append(ghost);
-    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
+// (in parts, each a span of its own: of a line changed in place, the parts changed alone cross-fade, see morph)
+const roleLine = (a) => [...(a.name ? [h('span', { 'data-p': 'id' }, a.username), h('span', { 'data-p': 'sep' }, ' · ')] : []),
+  h('span', { 'data-p': 'role' }, t(a.admin ? 'account.roleAdmin' : 'account.roleUser'))];
+const roleText = (a) => [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
+const nameLine = (a) => [h('span', { class: 'nm', 'data-p': 'name' }, a.name || a.username), ...(a.twofa ? [h('span', { class: 'chip-2fa', 'data-p': '2fa' }, '2FA')] : [])];
+// A line changed in place, part by part: a part whose words changed fades out where it was as the new fades in, over
+// each other in the same line (nothing moves up or down); a part only moved (its words the same: a username after a
+// role that changed, the 2FA chip after a name) slides to its new place, never blinking; one new comes, one gone fades.
+const SLIDE = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' }, FADE = { duration: 280, easing: 'ease-in-out' };
+function morph(el, parts) {
+  const at = el.getBoundingClientRect();
+  const was = new Map([...el.querySelectorAll(':scope > [data-p]')].map((p) => { const r = p.getBoundingClientRect(); return [p.dataset.p, { p, x: r.left - at.left, y: r.top - at.top }]; }));
+  el.replaceChildren(...parts);
+  const ghost = (w) => {
+    const g = w.p.cloneNode(true);
+    g.removeAttribute('data-p');
+    Object.assign(g.style, { position: 'absolute', left: `${w.x}px`, top: `${w.y}px`, margin: '0', whiteSpace: 'nowrap', pointerEvents: 'none' });
+    el.append(g);
+    g.animate([{ opacity: 1 }, { opacity: 0 }], { ...FADE, fill: 'forwards' }).finished.then(() => g.remove(), () => g.remove());
+  };
+  for (const p of parts) {
+    const w = was.get(p.dataset.p);
+    if (!w) { p.animate(p.matches('.chip-2fa') ? [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }], SLIDE); continue; }
+    if (w.p.textContent !== p.textContent) { ghost(w); p.animate([{ opacity: 0 }, { opacity: 1 }], FADE); continue; }
+    const dx = w.x - (p.getBoundingClientRect().left - at.left);
+    if (Math.abs(dx) > .5) p.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], SLIDE);
   }
-  if (was !== nm.textContent) nm.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
-  if (chip && x != null) {
-    const dx = x - (chip.getBoundingClientRect().left - at);
-    if (dx) chip.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], SLIDE);
-  } else if (chip) chip.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], SLIDE);
+  for (const [k, w] of was) if (!parts.some((p) => p.dataset.p === k)) ghost(w);
 }
+const swapName = (el, a) => morph(el, nameLine(a));
 // In place, the old fades out as the new fades in, both at once: the old pictured over it while it goes (in the
 // box it's placed by, with its text's look)
 function ghostOver(el, old) {
@@ -4577,10 +4585,10 @@ function crossfade(el, change) {
 const accountRow = (a) => h('div', { class: 'account-other', 'data-key': a.id },
   h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
     accountPhoto(a, 'account-avatar small'),
-    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, ...nameLine(a)), h('span', { class: 'account-role' }, roleLine(a)))),
+    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }, ...nameLine(a)), h('span', { class: 'account-role' }, ...roleLine(a)))),
   outButton(a));
 // (each row as it reads: what changed, changes alone)
-const accountLook = (a) => ({ name: JSON.stringify([a.name, a.username, a.twofa]), role: roleLine(a), photo: `${a.avatar}|${a.accent}` });
+const accountLook = (a) => ({ name: JSON.stringify([a.name, a.username, a.twofa]), role: roleText(a), photo: `${a.avatar}|${a.accent}` });
 async function openAccountList(again = false) {
   const data = await fetch('/api/accounts', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
   if (!data) return;
@@ -4593,7 +4601,7 @@ async function openAccountList(again = false) {
       const row = rows[i], now = accountLook(a), was = row.look || {};
       row.look = now;
       if (was.name !== now.name) swapName(row.querySelector('.account-name'), a);
-      if (was.role !== now.role) crossfade(row.querySelector('.account-role'), () => { row.querySelector('.account-role').textContent = now.role; });
+      if (was.role !== now.role) morph(row.querySelector('.account-role'), roleLine(a));
       if (was.photo !== now.photo) { const old = row.querySelector('.account-avatar'); crossfade(old, () => { const p = accountPhoto(a, 'account-avatar small'); old.replaceChildren(...p.childNodes); ACCENT_TINT(old, a.accent); }); }
     });
     return;
