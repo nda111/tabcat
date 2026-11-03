@@ -59,6 +59,55 @@ create table if not exists device_tabs (  -- each of an account's browsers: its 
   session text,                    -- (the sign-in it last sent from, as the list of sign-ins knows it: to sign it out)
   primary key (user_id, device)
 );
+-- workspaces shared between accounts: each its own data, kept in step like an account's (its changes numbered,
+-- now and then a whole copy), for its members to see and (owner, editors) change. Asked by mail to join.
+create table if not exists shares (
+  id text primary key,
+  root text not null,              -- (the workspace's id, the same in each member's data)
+  created_at real not null
+);
+create table if not exists share_members (
+  share_id text not null references shares(id) on delete cascade,
+  user_id integer not null references users(id) on delete cascade,
+  role text not null,              -- owner (one) | editor | viewer
+  at real not null,
+  primary key (share_id, user_id)
+);
+create table if not exists share_ops (
+  share_id text not null references shares(id) on delete cascade,
+  seq integer not null,
+  op_id text not null,
+  user_id integer,
+  device text,
+  at real not null,
+  body text not null,
+  primary key (share_id, seq),
+  unique (share_id, op_id)
+);
+create table if not exists share_snapshots (
+  share_id text primary key references shares(id) on delete cascade,
+  seq integer not null,
+  at real not null,
+  body text not null
+);
+create table if not exists mail (  -- each account's mailbox: asked to join a share, and the answers to its own asking
+  id integer primary key,
+  to_id integer not null references users(id) on delete cascade,
+  from_id integer references users(id) on delete set null,
+  from_name text not null default '', -- (who sent it, as they were then: kept after their account goes)
+  kind text not null,              -- invite | reply
+  share_id text,                   -- (the share it's about; kept, by name, after it goes)
+  ws_name text not null default '',
+  ws_symbol text not null default '',
+  role text,                       -- (an invite: as what)
+  answer text,                     -- (an invite: accepted | declined once answered; a reply: which)
+  invite_id integer,               -- (a reply: to which invite)
+  at real not null,
+  answered_at real,
+  deleted real                     -- (put away by its owner: kept a while, to be undone)
+);
+create index if not exists mail_to on mail(to_id, at);
+create index if not exists share_members_user on share_members(user_id);
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
   id integer primary key,
   at real not null,

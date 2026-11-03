@@ -22,7 +22,8 @@
   // deviceTabs (connected to a server, this browser's open tabs go to it for the account's other browsers;
   // deviceId: which one this is; openUrls takes an `index` in the window), actHistory (rememberAct: a change
   // outside the data in the shared undo history; undo / redo hand back what to `run`)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs', 'favicons', 'deviceTabs', 'actHistory'];
+  // shares (workspaces shared between accounts on the server: shareWorkspace, leaveShare, deleteShare)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs', 'favicons', 'deviceTabs', 'actHistory', 'shares'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache

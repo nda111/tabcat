@@ -520,6 +520,7 @@ def create_app(config) -> FastAPI:
         rest = [(t, x) for t, x in accounts_of(request)[1:] if x]
         log('account_deleted', request, user=u)
         db.run('delete from users where id = ?', u['id'])
+        app.state.tidy_shares()  # (its shares: another owner, or gone)
         # (signed out of it; another account signed in here takes over)
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
 
@@ -710,6 +711,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, "you can't delete yourself or the last admin")
         log('user_deleted', request, user=u, actor=me_)
         db.run('delete from users where id = ?', uid)
+        app.state.tidy_shares()
         return {'ok': True}
 
     @app.get('/api/admin/settings')
@@ -961,6 +963,10 @@ def create_app(config) -> FastAPI:
                 uids = set(listeners)
             notify(uids, 'me')
             notify_admins()
+            # (an account changed, its name, photo, 2FA...: whoever lists it, its shares' members and mail, told too)
+            if path.startswith('/api/me') or path.startswith('/api/admin/users'):
+                for uid in uids:
+                    notify(related(uid), 'shares')
         return response
 
     async def live_events(request: Request):
@@ -1175,6 +1181,7 @@ def create_app(config) -> FastAPI:
         if any('"o":"look"' in json.dumps((o or {}).get('body'), separators=(',', ':')) for o in ops[:2000]):
             notify([u['id']], 'me')
             notify_admins()
+            notify(related(u['id']), 'shares')
         return {'acked': acked, 'head': sync_head(u['id'])}
 
     @app.put('/api/sync/snapshot')
@@ -1200,6 +1207,345 @@ def create_app(config) -> FastAPI:
         if data.get('first'):
             notify([u['id']], 'head', sync_head(u['id']))
         return {'ok': True, 'seq': seq}
+
+    # ---------- shared workspaces: one workspace, kept in step between accounts ----------
+    # A workspace shared is data of its own (not in any account's): its changes numbered and handed on as an
+    # account's are (see sync above), to its members' browsers, which show it among their workspaces (each keeps
+    # only where it goes in its list). Its owner (one) and editors change it; viewers only see it. The owner asks
+    # others to join by mail (an invite, answered: accepted or declined, the answer mailed back), changes what
+    # each may do, hands the ownership on, or lets someone go; anyone may leave but the owner (who hands it on
+    # first, or deletes it: gone for everyone).
+    ROLES = ('owner', 'editor', 'viewer')
+    MAIL_KEEP_DAYS = 30  # (mail put away: kept this long, for undoing)
+
+    def share_role(sid, uid):
+        r = db.one('select role from share_members where share_id = ? and user_id = ?', sid, uid)
+        return r['role'] if r else None
+
+    def need_share(request: Request, sid: str, roles=ROLES, user=None):
+        u = user or need_user(request)
+        role = share_role(sid, u['id'])
+        if not role:
+            raise HTTPException(404, 'no such shared workspace')
+        if role not in roles:
+            raise HTTPException(403, 'not allowed for ' + role + 's')
+        return u, role
+
+    def share_users(sid) -> list:
+        return [r['user_id'] for r in db.q('select user_id from share_members where share_id = ?', sid)]
+
+    def share_head(sid) -> int:
+        r = db.one('select max(seq) n from share_ops where share_id = ?', sid)
+        snap = db.one('select seq from share_snapshots where share_id = ?', sid)
+        return max(r['n'] or 0, snap['seq'] if snap else 0)
+
+    def related(uid) -> set:
+        """Whoever sees this account in a list of their own: its shares' members, and those it has mail with."""
+        out = {r['user_id'] for r in db.q('select m2.user_id from share_members m1 join share_members m2 on m1.share_id = m2.share_id where m1.user_id = ?', uid)}
+        out |= {r['u'] for r in db.q('select from_id u from mail where to_id = ? and deleted is null union select to_id u from mail where from_id = ? and deleted is null', uid, uid) if r['u']}
+        out.discard(uid)
+        return out
+
+    def person(u) -> dict:
+        """Someone as another account sees them: who, not what (no admin, last seen...)."""
+        if not u:
+            return None
+        return {'id': u['id'], 'username': u['username'], 'name': u['name'] or '', 'twofa': bool(u['totp_secret']), 'accent': accent_of(u['id']),
+                'avatar': f"/api/users/{u['id']}/avatar?v={int(u['avatar_at'] or 0)}" if u['avatar'] else None}
+
+    def end_share(sid):
+        """Gone for everyone: its invites still unanswered with it (answered mail stays, by name)."""
+        uids = share_users(sid)
+        invited = [r['to_id'] for r in db.q("select to_id from mail where share_id = ? and kind = 'invite' and answer is null", sid)]
+        db.run("delete from mail where share_id = ? and kind = 'invite' and answer is null", sid)
+        db.run('delete from shares where id = ?', sid)
+        notify(uids, 'shares')
+        notify(invited, 'mail')
+
+    def tidy_shares():
+        """After an account goes: its shares without an owner get one (an editor first, the longest there), those
+        with no one left go."""
+        for r in db.q('select s.id from shares s where not exists (select 1 from share_members m where m.share_id = s.id)'):
+            end_share(r['id'])
+        for r in db.q("select s.id from shares s where not exists (select 1 from share_members m where m.share_id = s.id and m.role = 'owner')"):
+            heir = db.one("select user_id from share_members where share_id = ? order by role = 'editor' desc, at limit 1", r['id'])
+            if heir:
+                db.run("update share_members set role = 'owner' where share_id = ? and user_id = ?", r['id'], heir['user_id'])
+                notify(share_users(r['id']), 'shares')
+        db.run("delete from mail where kind = 'invite' and answer is null and from_id is null")
+
+    app.state.tidy_shares = tidy_shares
+
+    # (the browsers' side: which shares, and each one's data, as sync does an account's)
+    @app.get('/api/sync/shares')
+    def my_shares(request: Request):
+        u = sync_user(request)
+        rows = db.q('select s.id, s.root, m.role from share_members m join shares s on s.id = m.share_id where m.user_id = ? order by m.at', u['id'])
+        return {'shares': [{'id': r['id'], 'root': r['root'], 'role': r['role'], 'head': share_head(r['id'])} for r in rows]}
+
+    @app.post('/api/sync/shares')
+    async def new_share(request: Request):
+        """One of the account's workspaces, to share: from now on data of its own, a copy of it as it is (`body`:
+        {workspaces: [it]}), its owner the account. Asked again for the same workspace (an answer lost): the same."""
+        u = sync_user(request)
+        data = await body(request)
+        root = str(data.get('root') or '')[:64]
+        doc = data.get('body')
+        if not root or not isinstance(doc, dict) or not isinstance(doc.get('workspaces'), list) or len(doc['workspaces']) != 1 \
+                or not isinstance(doc['workspaces'][0], dict) or doc['workspaces'][0].get('id') != root:
+            raise HTTPException(400, 'bad workspace')
+        with db.lock:
+            had = db.one('select s.id from shares s join share_members m on m.share_id = s.id where s.root = ? and m.user_id = ?', root, u['id'])
+            if had:
+                return {'id': had['id'], 'created': False}
+            sid = secrets.token_hex(12)
+            now = time.time()
+            db.run('insert into shares (id, root, created_at) values (?, ?, ?)', sid, root, now)
+            db.run("insert into share_members (share_id, user_id, role, at) values (?, ?, 'owner', ?)", sid, u['id'], now)
+            db.run('insert into share_snapshots (share_id, seq, at, body) values (?, 0, ?, ?)', sid, now, json.dumps(doc, separators=(',', ':')))
+        notify([u['id']], 'shares')
+        return {'id': sid, 'created': True}
+
+    def share_ops_after(sid, after, limit=1000):
+        rows = db.q('select seq, op_id, device, user_id, body from share_ops where share_id = ? and seq > ? order by seq limit ?', sid, after, limit)
+        return [{'seq': r['seq'], 'id': r['op_id'], 'device': r['device'], 'user': r['user_id'], 'body': json.loads(r['body'])} for r in rows]
+
+    @app.get('/api/sync/shares/{sid}/state')
+    def share_state(sid: str, request: Request):
+        u = sync_user(request)
+        need_share(request, sid, user=u)
+        snap = db.one('select seq, body, at from share_snapshots where share_id = ?', sid)
+        after = snap['seq'] if snap else 0
+        return {'snapshot': {'seq': snap['seq'], 'at': snap['at'], 'body': json.loads(snap['body'])} if snap else None,
+                'ops': share_ops_after(sid, after, 100000), 'head': share_head(sid)}
+
+    @app.get('/api/sync/shares/{sid}/ops')
+    def share_since(sid: str, request: Request, after: int = 0):
+        u = sync_user(request)
+        need_share(request, sid, user=u)
+        oldest = db.one('select min(seq) n from share_ops where share_id = ?', sid)['n']
+        snap = db.one('select seq from share_snapshots where share_id = ?', sid)
+        if snap and after < snap['seq'] and (oldest is None or after < oldest - 1):
+            return {'reload': True, 'head': share_head(sid)}
+        ops = share_ops_after(sid, after)
+        return {'ops': ops, 'head': share_head(sid), 'more': len(ops) == 1000}
+
+    @app.post('/api/sync/shares/{sid}/ops')
+    async def share_push(sid: str, request: Request):
+        """Changes to it, from an owner's or editor's browser (a viewer's: refused, 403), as an account's are."""
+        u = sync_user(request)
+        need_share(request, sid, ('owner', 'editor'), user=u)
+        data = await body(request)
+        device = str(data.get('device', ''))[:64]
+        ops = data.get('ops') if isinstance(data.get('ops'), list) else []
+        acked = []
+        with db.lock:
+            seq = share_head(sid)
+            for o in ops[:2000]:
+                oid = str((o or {}).get('id', ''))[:64]
+                if not oid or 'body' not in o:
+                    continue
+                had = db.one('select seq from share_ops where share_id = ? and op_id = ?', sid, oid)
+                if had:
+                    acked.append({'id': oid, 'seq': had['seq']})
+                    continue
+                seq += 1
+                db.run('insert into share_ops (share_id, seq, op_id, user_id, device, at, body) values (?, ?, ?, ?, ?, ?, ?)',
+                       sid, seq, oid, u['id'], device, time.time(), json.dumps(o['body'], separators=(',', ':')))
+                acked.append({'id': oid, 'seq': seq})
+        notify(share_users(sid), 'shares')
+        return {'acked': acked, 'head': share_head(sid)}
+
+    @app.put('/api/sync/shares/{sid}/snapshot')
+    async def share_snapshot(sid: str, request: Request):
+        u = sync_user(request)
+        need_share(request, sid, ('owner', 'editor'), user=u)
+        data = await body(request)
+        seq = data.get('seq')
+        if not isinstance(seq, int) or seq < 0 or seq > share_head(sid) or not isinstance(data.get('body'), dict):
+            raise HTTPException(400, 'bad snapshot')
+        with db.lock:
+            have = db.one('select seq from share_snapshots where share_id = ?', sid)
+            if have and seq < have['seq']:
+                raise HTTPException(409, 'an older copy than kept')
+            db.run('insert into share_snapshots (share_id, seq, at, body) values (?, ?, ?, ?) on conflict(share_id) do update set seq = excluded.seq, at = excluded.at, body = excluded.body',
+                   sid, seq, time.time(), json.dumps(data['body'], separators=(',', ':')))
+            db.run('delete from share_ops where share_id = ? and seq <= ?', sid, seq - SYNC_KEEP_OPS)
+        return {'ok': True, 'seq': seq}
+
+    @app.delete('/api/sync/shares/{sid}')
+    def drop_share(sid: str, request: Request):
+        """The owner: deleted, for everyone. Anyone else: leaving it."""
+        u = sync_user(request)
+        _, role = need_share(request, sid, user=u)
+        if role == 'owner':
+            end_share(sid)
+        else:
+            db.run('delete from share_members where share_id = ? and user_id = ?', sid, u['id'])
+            notify(share_users(sid) + [u['id']], 'shares')
+        return {'ok': True}
+
+    # (the dashboard's side: who's in it and as what, asking others, the mailbox)
+    def share_info(sid, uid) -> dict:
+        members = db.q('select u.*, m.role, m.at joined from share_members m join users u on u.id = m.user_id where m.share_id = ? '
+                       "order by case m.role when 'owner' then 0 when 'editor' then 1 else 2 end, m.at", sid)
+        invites = db.q("select m.id, m.role, m.at, u.* from mail m join users u on u.id = m.to_id where m.share_id = ? and m.kind = 'invite' and m.answer is null order by m.at", sid)
+        return {'id': sid, 'root': db.one('select root from shares where id = ?', sid)['root'], 'role': share_role(sid, uid),
+                'members': [{**person(r), 'role': r['role'], 'me': r['id'] == uid} for r in members],
+                'invites': [{'mail': r[0], 'role': r[1], 'at': r[2], 'user': person(r)} for r in invites]}
+
+    @app.get('/api/shares')
+    def list_shares(request: Request):
+        """The account's shares: each one's workspace (root), what the account may do, and how many are in it."""
+        u = need_user(request)
+        rows = db.q('select s.id, s.root, m.role, (select count(*) from share_members x where x.share_id = s.id) n, '
+                    "(select count(*) from mail x where x.share_id = s.id and x.kind = 'invite' and x.answer is null) asked "
+                    'from share_members m join shares s on s.id = m.share_id where m.user_id = ? order by m.at', u['id'])
+        return {'shares': [{'id': r['id'], 'root': r['root'], 'role': r['role'], 'members': r['n'], 'invited': r['asked']} for r in rows]}
+
+    @app.get('/api/shares/{sid}')
+    def get_share(sid: str, request: Request):
+        u, _ = need_share(request, sid)
+        return share_info(sid, u['id'])
+
+    @app.post('/api/shares/{sid}/invites')
+    async def invite(sid: str, request: Request):
+        """The owner asks someone (by username) to join, as an editor or a viewer: mailed to them."""
+        u, _ = need_share(request, sid, ('owner',))
+        data = await body(request)
+        role = data.get('role')
+        if role not in ('editor', 'viewer'):
+            raise HTTPException(400, 'as what?')
+        to = db.one('select * from users where username = ? and disabled = 0', str(data.get('username') or '').strip())
+        if not to:
+            raise HTTPException(404, 'no such account')
+        if to['id'] == u['id']:
+            raise HTTPException(409, 'that is you')
+        if share_role(sid, to['id']):
+            raise HTTPException(409, 'already in it')
+        if db.one("select 1 from mail where share_id = ? and to_id = ? and kind = 'invite' and answer is null", sid, to['id']):
+            raise HTTPException(409, 'already asked')
+        db.run("insert into mail (to_id, from_id, from_name, kind, share_id, ws_name, ws_symbol, role, at) values (?, ?, ?, 'invite', ?, ?, ?, ?, ?)",
+               to['id'], u['id'], u['username'], sid, str(data.get('name') or '')[:100], str(data.get('symbol') or '')[:40], role, time.time())
+        notify([to['id']], 'mail')
+        notify(share_users(sid), 'shares')
+        return share_info(sid, u['id'])
+
+    @app.delete('/api/shares/{sid}/invites/{mid}')
+    def cancel_invite(sid: str, mid: int, request: Request):
+        """The owner takes an invite back, unanswered: gone from their mailbox too."""
+        u, _ = need_share(request, sid, ('owner',))
+        r = db.one("select to_id from mail where id = ? and share_id = ? and kind = 'invite' and answer is null", mid, sid)
+        if not r:
+            raise HTTPException(404, 'no such invite')
+        db.run('delete from mail where id = ?', mid)
+        notify([r['to_id']], 'mail')
+        notify(share_users(sid), 'shares')
+        return share_info(sid, u['id'])
+
+    @app.put('/api/shares/{sid}/members/{uid}')
+    async def set_role(sid: str, uid: int, request: Request):
+        """The owner changes what someone may do; making them the owner hands it on (the owner an editor then)."""
+        u, _ = need_share(request, sid, ('owner',))
+        role = (await body(request)).get('role')
+        if role not in ROLES:
+            raise HTTPException(400, 'as what?')
+        if uid == u['id']:
+            raise HTTPException(409, 'hand it on to someone else')
+        if not share_role(sid, uid):
+            raise HTTPException(404, 'not in it')
+        with db.lock:
+            if role == 'owner':
+                db.run("update share_members set role = 'editor' where share_id = ? and user_id = ?", sid, u['id'])
+            db.run('update share_members set role = ? where share_id = ? and user_id = ?', role, sid, uid)
+        notify(share_users(sid), 'shares')
+        return share_info(sid, u['id'])
+
+    @app.delete('/api/shares/{sid}/members/{uid}')
+    def remove_member(sid: str, uid: int, request: Request):
+        """The owner lets someone go (or anyone else leaves: themselves)."""
+        u, role = need_share(request, sid)
+        if uid == u['id']:
+            if role == 'owner':
+                raise HTTPException(409, 'hand it on first')
+        elif role != 'owner':
+            raise HTTPException(403, 'owners only')
+        if not share_role(sid, uid):
+            raise HTTPException(404, 'not in it')
+        others = share_users(sid)
+        db.run('delete from share_members where share_id = ? and user_id = ?', sid, uid)
+        notify(others, 'shares')
+        return share_info(sid, u['id']) if uid != u['id'] else {'ok': True}
+
+    def mail_item(r) -> dict:
+        frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None
+        return {'id': r['id'], 'kind': r['kind'], 'from': person(frm) or {'id': None, 'username': r['from_name'], 'name': '', 'avatar': None, 'accent': 'purple', 'twofa': False},
+                'share': r['share_id'], 'workspace': {'name': r['ws_name'], 'symbol': r['ws_symbol']}, 'role': r['role'],
+                'answer': r['answer'], 'at': r['at'], 'answered_at': r['answered_at']}
+
+    @app.get('/api/mail')
+    def mailbox(request: Request):
+        """The account's mail, newest first (`asking`: invites not answered yet, for the badge)."""
+        u = need_user(request)
+        db.run('delete from mail where deleted is not null and deleted < ?', time.time() - MAIL_KEEP_DAYS * 86400)
+        rows = db.q('select * from mail where to_id = ? and deleted is null order by at desc, id desc limit 500', u['id'])
+        return {'mail': [mail_item(r) for r in rows], 'asking': sum(1 for r in rows if r['kind'] == 'invite' and r['answer'] is None)}
+
+    @app.post('/api/mail/{mid}/answer')
+    async def answer(mid: int, request: Request):
+        """An invite, accepted (in the share from now on, as asked) or declined: either way the answer's mailed back."""
+        u = need_user(request)
+        accept = (await body(request)).get('accept') is True
+        with db.lock:
+            r = db.one("select * from mail where id = ? and to_id = ? and kind = 'invite' and deleted is null", mid, u['id'])
+            if not r:
+                raise HTTPException(404, 'no such invite')
+            if r['answer']:
+                raise HTTPException(409, 'answered already')
+            alive = r['share_id'] and db.one('select 1 from shares where id = ?', r['share_id'])
+            if accept and not alive:
+                raise HTTPException(410, 'the shared workspace is gone')
+            now = time.time()
+            db.run('update mail set answer = ?, answered_at = ? where id = ?', 'accepted' if accept else 'declined', now, mid)
+            if accept and not share_role(r['share_id'], u['id']):
+                db.run('insert into share_members (share_id, user_id, role, at) values (?, ?, ?, ?)', r['share_id'], u['id'], r['role'] or 'viewer', now)
+            if r['from_id']:
+                db.run("insert into mail (to_id, from_id, from_name, kind, share_id, ws_name, ws_symbol, role, answer, invite_id, at) values (?, ?, ?, 'reply', ?, ?, ?, ?, ?, ?, ?)",
+                       r['from_id'], u['id'], u['username'], r['share_id'], r['ws_name'], r['ws_symbol'], r['role'], 'accepted' if accept else 'declined', mid, now)
+        notify([u['id']] + ([r['from_id']] if r['from_id'] else []), 'mail')
+        if alive:
+            notify(share_users(r['share_id']) + [u['id']], 'shares')
+        return mail_item(db.one('select * from mail where id = ?', mid))
+
+    @app.post('/api/mail/delete')
+    async def delete_mail(request: Request):
+        """Mail put away (kept a while, to be undone: see /api/mail/restore); an invite only once answered."""
+        u = need_user(request)
+        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        done = []
+        with db.lock:
+            for mid in ids:
+                r = db.one('select kind, answer from mail where id = ? and to_id = ? and deleted is null', mid, u['id'])
+                if r and (r['kind'] != 'invite' or r['answer']):
+                    db.run('update mail set deleted = ? where id = ?', time.time(), mid)
+                    done.append(mid)
+        if done:
+            notify([u['id']], 'mail')
+        return {'ids': done}
+
+    @app.post('/api/mail/restore')
+    async def restore_mail(request: Request):
+        u = need_user(request)
+        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        done = []
+        with db.lock:
+            for mid in ids:
+                if db.one('select 1 from mail where id = ? and to_id = ? and deleted is not null', mid, u['id']):
+                    db.run('update mail set deleted = null where id = ?', mid)
+                    done.append(mid)
+        if done:
+            notify([u['id']], 'mail')
+        return {'ids': done}
 
     @app.post('/api/admin/dashboard/update')
     def update_dashboard(request: Request):

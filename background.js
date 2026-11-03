@@ -648,6 +648,11 @@ const handlers = {
   // ops: array of store ops, applied atomically; returns array of results. A remove marked `trash` (a
   // delete) keeps what it removed in Recently deleted.
   async apply(ops) {
+    // (a shared workspace isn't deleted as others are: left, or deleted for everyone by its owner; see leaveShare)
+    if (ops.some((o) => o.op === 'remove')) {
+      const now = await S.load();
+      if (ops.some((o) => o.op === 'remove' && now.workspaces.some((w) => w.id === o.id && w.share))) throw new Error('shared');
+    }
     const gone = [];
     const results = await S.update((state) => {
       for (const o of ops) if (o.op === 'remove' && o.trash) gone.push(trashEntry(state, o.id));
@@ -1028,7 +1033,11 @@ async function deviceId() {
 // `fn(sync, doc, settings)` with the data held still (nothing else writes it meanwhile), after what changed
 // here since last time is queued. It may change `sync` and return a doc for the browser to show: all of it
 // written at once (never the one without the other). Not in an account's space (or another than `space`): null.
-function syncTxn(space, fn) {
+// `pre(sync, doc)`, before that: may change both (a workspace shared, say), what's shown following.
+// What changed is split between the account's own data and each shared workspace's (see lib/sync.js join and
+// split): each part queued with its own; a viewer's changes to a shared workspace are not, and what's shown goes
+// back to the share's as it was.
+function syncTxn(space, fn, pre = null) {
   return withSpace(() => withTrash(async (trash) => {
     let out = null;
     await S.update(async (state) => {
@@ -1036,27 +1045,39 @@ function syncTxn(space, fn) {
       if (accountSpace(settings) !== space) return false;
       let sync = (await chrome.storage.local.get(SYNC_KEY))[SYNC_KEY] || null;
       if (sync && sync.space !== space) sync = null;
-      const now = Y.docOf({ state, trash, settings });
+      const was = Y.docOf({ state, trash, settings });
+      const now = pre ? Y.clone(was) : was;
       const write = {};
+      let joined = null;
       if (sync) {
-        const ops = Y.diff(sync.shadow, now);
+        sync.shares ||= {};
+        if (pre && (await pre(sync, now)) !== false) write[SYNC_KEY] = sync;
+        const { personal, parts } = Y.split(now, sync.shadow, sync.shares);
+        const ops = Y.diff(sync.shadow, personal);
         if (ops.length) {
           sync.pending.push({ id: `${await deviceId()}.${++sync.n}`, body: Y.body(ops) });
-          sync.shadow = now;
           write[SYNC_KEY] = sync;
         }
+        sync.shadow = personal;
+        for (const [sid, sh] of Object.entries(sync.shares)) {
+          const sops = Y.diff(sh.shadow, parts[sid]);
+          if (!sops.length || sh.role === 'viewer') continue; // (a viewer's: not kept, shown as it was below)
+          sh.pending.push({ id: `${await deviceId()}.${++sync.n}`, body: Y.body(sops) });
+          sh.shadow = parts[sid];
+          write[SYNC_KEY] = sync;
+        }
+        joined = Y.join(sync.shadow, shadows(sync));
       }
       const res = fn ? await fn(sync, now, settings) : null;
-      const show = res?.show;
       if (res?.sync) write[SYNC_KEY] = res.sync;
       if (res && res.sync === null) { await chrome.storage.local.remove(SYNC_KEY); sync = null; delete write[SYNC_KEY]; }
+      const show = res?.show || (sync && joined);
       if (show) {
         // (only what's different: an unchanged tree written again would draw the dashboards again)
-        if (!same(show.workspaces, now.workspaces)) write[S.KEY] = { version: S.VERSION, workspaces: show.workspaces };
-        if (!same(show.trash, now.trash)) { write[TRASH_KEY] = show.trash; trash.splice(0, trash.length, ...show.trash); }
-        if (!same(show.look, now.look)) write[S.SETTINGS_KEY] = { ...settings, ...show.look };
-        (res.sync || sync).shadow = Y.clone(show);
-        write[SYNC_KEY] = res.sync || sync;
+        if (!same(show.workspaces, was.workspaces)) write[S.KEY] = { version: S.VERSION, workspaces: show.workspaces };
+        if (!same(show.trash, was.trash)) { write[TRASH_KEY] = show.trash; trash.splice(0, trash.length, ...show.trash); }
+        if (!same(show.look, was.look)) write[S.SETTINGS_KEY] = { ...settings, ...show.look };
+        if (res?.show) write[SYNC_KEY] = res.sync || sync;
       }
       if (Object.keys(write).length) await chrome.storage.local.set(write);
       out = { sync: write[SYNC_KEY] || sync, trashChanged: TRASH_KEY in write, res };
@@ -1066,8 +1087,14 @@ function syncTxn(space, fn) {
   }));
 }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-// the browser's doc: the server's, with this browser's changes not handed back yet on top
-const shown = (sync) => Y.apply(Y.clone(sync.base), sync.pending.flatMap((p) => Y.opsOf(p.body)));
+const shadows = (sync) => Object.fromEntries(Object.entries(sync.shares || {}).map(([id, sh]) => [id, sh.shadow]));
+// the browser's doc: the server's, with this browser's changes not handed back yet on top (the account's, and each
+// shared workspace's: what's shown from now on, so each part's shadow too)
+function shown(sync) {
+  sync.shadow = Y.apply(Y.clone(sync.base), sync.pending.flatMap((p) => Y.opsOf(p.body)));
+  for (const sh of Object.values(sync.shares ||= {})) sh.shadow = Y.apply(Y.clone(sh.base), sh.pending.flatMap((p) => Y.opsOf(p.body)));
+  return Y.join(sync.shadow, shadows(sync));
+}
 
 class SyncError extends Error {}
 async function syncApi(s, path, { method = 'GET', json } = {}) {
@@ -1096,7 +1123,7 @@ function takeServers(space, st, keepPending = true) {
     const ids = new Set();
     for (const op of st.ops) { Y.apply(base, Y.opsOf(op.body)); seq = op.seq; ids.add(op.id); }
     const pending = keepPending && sync ? sync.pending.filter((p) => !ids.has(p.id) && !(p.seq != null && p.seq <= seq)) : [];
-    const next = { space, seq, snapAt: st.snapshot?.seq || 0, base, shadow: null, pending, n: sync?.n || 0 };
+    const next = { space, seq, snapAt: st.snapshot?.seq || 0, base, shadow: null, pending, n: sync?.n || 0, shares: sync?.shares || {} };
     return { sync: next, show: shown(next) };
   });
 }
@@ -1186,6 +1213,9 @@ async function syncOnce() {
       if (res?.trashChanged) broadcast('trash');
       sync = res?.sync || sync;
     }
+    // the shared workspaces the account is in, each in step the same way (after the account's own: a stub it has
+    // now, its share is on the server already)
+    await syncShares(s, space);
     // now and then a whole copy, so the server can let older changes go
     if (sync.seq - (sync.snapAt || 0) >= SNAPSHOT_EVERY) {
       const at = sync.seq, copy = Y.clone(sync.base);
@@ -1202,6 +1232,171 @@ async function syncOnce() {
     retryTimer = setTimeout(syncNow, Math.min(300, 5 * 2 ** (syncInfo.fails - 1)) * 1000);
   }
 }
+// Shared workspaces (see lib/sync.js join): which the account is in, asked of the server each time; one newly in,
+// its data taken, and a stub for it put in the account's list (last: where it goes, kept by the account, moved as
+// any workspace); one left, let go (its stub too). Each then kept in step as the account's own data is: this
+// browser's changes sent (a viewer's never are; refused, now a viewer say, they go), everyone's taken in order.
+// Sharing, leaving and deleting go one at a time with this (withShares), never between its asking and its taking.
+let shareChain = Promise.resolve();
+function withShares(fn) {
+  const run = shareChain.then(fn);
+  shareChain = run.catch(() => {});
+  return run;
+}
+const shareBase = (st) => {
+  const base = Y.clone(st.snapshot?.body || { workspaces: [] });
+  base.workspaces ||= []; base.trash = []; base.look = {};
+  let seq = st.snapshot?.seq || 0;
+  for (const op of st.ops) { Y.apply(base, Y.opsOf(op.body)); seq = op.seq; }
+  return { base, seq, snapAt: st.snapshot?.seq || 0 };
+};
+function syncShares(s, space) {
+  return withShares(async () => {
+    const list = (await syncApi(s, 'shares')).shares;
+    const want = new Map(list.map((x) => [x.id, x]));
+    let sync = (await syncTxn(space, null))?.sync;
+    if (!sync) return;
+    const fresh = {};
+    for (const x of list) if (!sync.shares?.[x.id]) fresh[x.id] = shareBase(await syncApi(s, `shares/${x.id}/state`));
+    sync = (await syncTxn(space, async (y) => {
+      if (!y) return null;
+      let changed = false;
+      for (const id of Object.keys(y.shares)) if (!want.has(id)) { delete y.shares[id]; changed = true; }
+      for (const x of list) {
+        const sh = y.shares[x.id];
+        if (sh) { if (sh.role !== x.role) { sh.role = x.role; changed = true; } continue; }
+        if (!fresh[x.id]) continue;
+        y.shares[x.id] = { root: x.root, role: x.role, ...fresh[x.id], shadow: null, pending: [] };
+        changed = true;
+      }
+      // (the account's list: a stub for each, none for one let go)
+      const mine = Y.apply(Y.clone(y.base), y.pending.flatMap((p) => Y.opsOf(p.body))).workspaces;
+      const ops = [];
+      let last = mine.at(-1)?.id ?? null;
+      for (const x of list) {
+        if (mine.some((w) => w.id === x.root)) continue;
+        ops.push({ o: 'add', id: x.root, p: null, a: last, f: { type: 'workspace', share: x.id } });
+        last = x.root;
+      }
+      for (const w of mine) if (w.share && !want.has(w.share)) ops.push({ o: 'del', id: w.id });
+      if (ops.length) y.pending.push({ id: `${await deviceId()}.${++y.n}`, body: Y.body(ops) });
+      return changed || ops.length ? { sync: y, show: shown(y) } : null;
+    }))?.sync || sync;
+    for (const id of Object.keys(sync.shares || {})) await syncShare(s, space, id);
+  });
+}
+async function syncShare(s, space, id) {
+  const path = `shares/${id}`;
+  const txn = (fn) => syncTxn(space, async (y) => (y?.shares?.[id] ? fn(y, y.shares[id]) : null));
+  let sh = (await syncTxn(space, null))?.sync?.shares?.[id];
+  if (!sh) return;
+  const unsent = sh.pending.filter((p) => p.seq == null);
+  try {
+    for (let i = 0; i < unsent.length; i += 200) {
+      const part = unsent.slice(i, i + 200);
+      const r = await syncApi(s, `${path}/ops`, { method: 'POST', json: { device: await deviceId(), ops: part.map(({ id: pid, body }) => ({ id: pid, body })) } });
+      const got = new Map(r.acked.map((a) => [a.id, a.seq]));
+      await txn((y, x) => { for (const p of x.pending) if (got.has(p.id)) p.seq = got.get(p.id); return { sync: y }; });
+    }
+  } catch (e) {
+    if (e.status !== 403) throw e;
+    // (not allowed to change it, made a viewer meanwhile: what this browser changed goes, the share's as it is shown)
+    await txn((y, x) => { x.pending = x.pending.filter((p) => p.seq != null); x.role = 'viewer'; return { sync: y, show: shown(y) }; });
+  }
+  sh = (await syncTxn(space, null))?.sync?.shares?.[id];
+  if (!sh) return;
+  const ops = [];
+  let after = sh.seq, head = 0, reload = false;
+  for (;;) {
+    const r = await syncApi(s, `${path}/ops?after=${after}`);
+    head = r.head;
+    if (r.reload) { reload = true; break; }
+    ops.push(...r.ops);
+    if (r.ops.length) after = r.ops[r.ops.length - 1].seq;
+    if (!r.more) break;
+  }
+  if (reload || head < sh.seq) {
+    const st = shareBase(await syncApi(s, `${path}/state`));
+    const ids = new Set();
+    await txn((y, x) => {
+      Object.assign(x, st);
+      x.pending = x.pending.filter((p) => !ids.has(p.id) && !(p.seq != null && p.seq <= st.seq));
+      return { sync: y, show: shown(y) };
+    });
+    return;
+  }
+  if (ops.length) {
+    await txn((y, x) => {
+      if (x.seq !== sh.seq) return null; // (changed meanwhile: next time)
+      const mine = new Set(x.pending.map((p) => p.id));
+      const others = ops.some((op) => !mine.has(op.id));
+      for (const op of ops) { if (op.seq > x.seq) { Y.apply(x.base, Y.opsOf(op.body)); x.seq = op.seq; } }
+      const back = new Set(ops.map((op) => op.id));
+      x.pending = x.pending.filter((p) => !back.has(p.id));
+      return others ? { sync: y, show: shown(y) } : { sync: y };
+    });
+  }
+  sh = (await syncTxn(space, null))?.sync?.shares?.[id];
+  if (sh && sh.role !== 'viewer' && sh.seq - (sh.snapAt || 0) >= SNAPSHOT_EVERY) {
+    const at = sh.seq, copy = Y.clone(sh.base);
+    await syncApi(s, `${path}/snapshot`, { method: 'PUT', json: { seq: at, body: copy } }).catch(() => null);
+    await txn((y, x) => (x.seq >= at ? (x.snapAt = at, { sync: y }) : null));
+  }
+}
+// A workspace of the account's, shared from now on (its owner the account; asking others is the dashboard's, by
+// mail): its data goes up as it is, its own from then on, the account's list keeping a stub where it is
+handlers.shareWorkspace = ({ id }) => withShares(async () => {
+  const s = await S.loadSettings();
+  const space = accountSpace(s);
+  if (!space) throw new Error('not-signed-in');
+  const sync = (await syncTxn(space, null))?.sync;
+  if (!sync) throw new Error('not-synced');
+  const w = (await S.load()).workspaces.find((x) => x.id === id);
+  if (!w) throw new Error('not-found');
+  if (w.share && sync.shares?.[w.share]?.root === id) return { id: w.share };
+  const { share, ...own } = Y.clone(w);
+  const doc = { workspaces: [own], trash: [], look: {} };
+  const r = await syncApi(s, 'shares', { method: 'POST', json: { root: id, body: doc } });
+  const st = r.created ? { base: doc, seq: 0, snapAt: 0 } : shareBase(await syncApi(s, `shares/${r.id}/state`));
+  await syncTxn(space, null, async (y, now) => {
+    const ws = now.workspaces.find((x) => x.id === id);
+    if (!ws) return false;
+    y.shares[r.id] = { root: id, role: 'owner', ...st, shadow: Y.clone(st.base), pending: [] };
+    ws.share = r.id;
+  });
+  syncSoon(0);
+  return { id: r.id };
+});
+// Leaving a shared workspace (anyone but its owner): gone from here at once (its stub, from the account's list, next)
+handlers.leaveShare = ({ id }) => withShares(async () => {
+  const s = await S.loadSettings();
+  const space = accountSpace(s);
+  if (!space) throw new Error('not-signed-in');
+  await syncApi(s, `shares/${id}`, { method: 'DELETE' });
+  await syncTxn(space, null, async (y) => { delete y.shares[id]; });
+  syncSoon(0);
+  return true;
+});
+// Its owner deleting it: gone for everyone; this account keeps it in Recently deleted (put back, its own workspace)
+handlers.deleteShare = ({ id }) => withShares(async () => {
+  const s = await S.loadSettings();
+  const space = accountSpace(s);
+  if (!space) throw new Error('not-signed-in');
+  const state = await S.load();
+  const index = state.workspaces.findIndex((w) => w.share === id);
+  await syncApi(s, `shares/${id}`, { method: 'DELETE' });
+  await syncTxn(space, null, async (y, now) => {
+    delete y.shares[id];
+    if (index < 0) return;
+    now.workspaces = now.workspaces.filter((w) => w.id !== state.workspaces[index].id);
+    const { share, ...node } = Y.clone(state.workspaces[index]);
+    now.trash.unshift({ id: S.uid(), node, parentId: null, index, deletedAt: Date.now(), trail: [] });
+  });
+  broadcast('trash');
+  syncSoon(0);
+  return true;
+});
+
 async function syncAlarm() {
   const s = await S.loadSettings();
   if (s.server) chrome.alarms.create('sync', { periodInMinutes: 1 });

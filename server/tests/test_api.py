@@ -396,6 +396,60 @@ time.sleep(.01); sa.post('/api/login', json=J(username='ann', password='annpass9
 sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]})
 check(not {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}['pc2']['hidden'], 'hidden, then signed in again there: shown again by itself')
 
+# shared workspaces and the mailbox
+ws = {'id': 'w1', 'type': 'workspace', 'name': 'Research', 'categories': []}
+r = sa.post('/api/sync/shares', json={'root': 'w1', 'body': {'workspaces': [ws]}})
+check(r.status_code == 200 and r.json()['created'], 'a workspace shared: data of its own, its owner the account')
+sid = r.json()['id']
+check(sa.post('/api/sync/shares', json={'root': 'w1', 'body': {'workspaces': [ws]}}).json() == {'id': sid, 'created': False}, 'asked again for the same workspace: the same one')
+check(sa.post('/api/sync/shares', json={'root': 'w2', 'body': {'workspaces': [ws]}}).status_code == 400, "a copy that isn't the workspace named: refused")
+check(sb.get(f'/api/sync/shares/{sid}/state').status_code == 404 and sb.get(f'/api/shares/{sid}').status_code == 404, "someone not in it doesn't see it")
+check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'nobody-here', 'role': 'editor'}).status_code == 404, 'asking no account: refused')
+check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ann', 'role': 'editor'}).status_code == 409, 'asking yourself: refused')
+check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'owner'}).status_code == 400, 'asked as an owner: refused (handed on later)')
+info = sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'viewer', 'name': 'Research', 'symbol': '🔬'}).json()
+check([i['user']['username'] for i in info['invites']] == ['ben'] and [m['role'] for m in info['members']] == ['owner'], 'ben asked: listed as asked, not in it yet')
+check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'viewer'}).status_code == 409, 'asked twice: refused')
+box = sb.get('/api/mail').json()
+inv = box['mail'][0]
+check(box['asking'] == 1 and inv['kind'] == 'invite' and inv['from']['username'] == 'ann' and inv['workspace'] == {'name': 'Research', 'symbol': '🔬'} and inv['role'] == 'viewer', "in ben's mailbox: the invite, from ann, for Research as a viewer")
+check(sb.post('/api/mail/delete', json={'ids': [inv['id']]}).json()['ids'] == [], 'an invite not answered yet: not put away')
+check(sb.get(f'/api/sync/shares/{sid}/state').status_code == 404, 'not in it before accepting')
+check(sb.post(f'/api/mail/{inv["id"]}/answer', json={'accept': True}).json()['answer'] == 'accepted', 'ben accepts')
+check(sb.post(f'/api/mail/{inv["id"]}/answer', json={'accept': True}).status_code == 409, 'answered once only')
+mine = sb.get('/api/sync/shares').json()['shares']
+check(mine == [{'id': sid, 'root': 'w1', 'role': 'viewer', 'head': 0}], 'in it now, as a viewer')
+check(sb.get(f'/api/sync/shares/{sid}/state').json()['snapshot']['body']['workspaces'][0]['name'] == 'Research', 'and sees it')
+check(sb.post(f'/api/sync/shares/{sid}/ops', json={'device': 'b', 'ops': [{'id': 'x1', 'body': {}}]}).status_code == 403, "a viewer's changes: refused")
+reply = sa.get('/api/mail').json()
+check(reply['asking'] == 0 and reply['mail'][0]['kind'] == 'reply' and reply['mail'][0]['answer'] == 'accepted' and reply['mail'][0]['from']['username'] == 'ben', 'ann gets the answer by mail (not counted as asking)')
+r = sa.post(f'/api/sync/shares/{sid}/ops', json={'device': 'a', 'ops': [{'id': 's1', 'body': {'v': 1, 'ops': []}}]}).json()
+check(r['head'] == 1 and sb.get(f'/api/sync/shares/{sid}/ops', params={'after': 0}).json()['ops'][0]['id'] == 's1', "the owner's changes reach the others")
+check(sa.put(f'/api/shares/{sid}/members/{ann_id}', json={'role': 'viewer'}).status_code == 409, "the owner can't change their own role (hands it on instead)")
+ben_id = sb.get('/api/me').json()['id']
+sa.put(f'/api/shares/{sid}/members/{ben_id}', json={'role': 'editor'})
+check(sb.post(f'/api/sync/shares/{sid}/ops', json={'device': 'b', 'ops': [{'id': 'x2', 'body': {}}]}).status_code == 200, 'made an editor: changes it')
+check(sb.put(f'/api/shares/{sid}/members/{ann_id}', json={'role': 'viewer'}).status_code == 403, "an editor can't change others")
+check(sa.delete(f'/api/shares/{sid}/members/{ann_id}').status_code == 409, "the owner can't leave without handing it on")
+info = sa.put(f'/api/shares/{sid}/members/{ben_id}', json={'role': 'owner'}).json()
+check({m['username']: m['role'] for m in info['members']} == {'ben': 'owner', 'ann': 'editor'}, 'handed on: ben the owner, ann an editor')
+check(sb.post('/api/mail/delete', json={'ids': [inv['id']]}).json()['ids'] == [inv['id']] and sb.get('/api/mail').json()['mail'] == [], 'answered: put away')
+check(sb.post('/api/mail/restore', json={'ids': [inv['id']]}).json()['ids'] == [inv['id']] and len(sb.get('/api/mail').json()['mail']) == 1, 'and back again (undo)')
+check(sa.delete(f'/api/shares/{sid}/members/{ann_id}').json() == {'ok': True} and sa.get('/api/sync/shares').json()['shares'] == [], 'ann leaves')
+info = sb.post(f'/api/shares/{sid}/invites', json={'username': 'ann', 'role': 'editor', 'name': 'Research'}).json()
+mid = info['invites'][0]['mail']
+sb.delete(f'/api/shares/{sid}/invites/{mid}')
+check(sa.get('/api/mail').json()['asking'] == 0, 'an invite taken back: gone from the mailbox')
+sb.post(f'/api/shares/{sid}/invites', json={'username': 'ann', 'role': 'editor', 'name': 'Research'})
+decl = sa.get('/api/mail').json()['mail'][0]
+sa.post(f'/api/mail/{decl["id"]}/answer', json={'accept': False})
+check(sa.get('/api/sync/shares').json()['shares'] == [] and sb.get('/api/mail').json()['mail'][0]['answer'] == 'declined', 'declined: not in it, and the owner told')
+sb.post(f'/api/shares/{sid}/invites', json={'username': 'ann', 'role': 'editor', 'name': 'Research'})
+late = sa.get('/api/mail').json()['mail'][0]
+check(sb.delete(f'/api/sync/shares/{sid}').status_code == 200 and sb.get('/api/sync/shares').json()['shares'] == [], 'the owner deletes it: gone')
+check(all(m['id'] != late['id'] for m in sa.get('/api/mail').json()['mail']), 'its invites not answered yet go with it')
+check(len(sb.get('/api/mail').json()['mail']) >= 2, 'answered mail stays')
+
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
