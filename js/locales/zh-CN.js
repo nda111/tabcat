@@ -35,7 +35,7 @@ export default {
   'panel.expandTabs': '展开打开的标签页', 'panel.collapseTabs': '收起打开的标签页',
   'tabs.title': '打开的标签页',
   'tabs.suspendShort': '休眠', 'tabs.dedupeShort': '去重', 'tabs.dedupeTip': '关闭重复的标签页',
-  'remote.title': '我的其他设备', 'remote.device': '其他设备', 'remote.forget': '从列表中移除（该设备再次登录时会回来）', 'remote.rename': '重命名', 'remote.headTip': '双击名称可重命名 · 右键查看更多', 'remote.window': '窗口 {n}', 'remote.openHere': '点击：在此打开 · 拖动：复制到此',
+  'remote.title': '我的其他设备', 'remote.device': '其他设备', 'remote.rename': '重命名', 'remote.hide': '隐藏', 'remote.list': '显示或隐藏设备', 'toast.renamedDevice': '已将设备重命名为“{name}”', 'undo.renameDevice': '已撤销设备重命名', 'redo.renameDevice': '已重做设备重命名', 'remote.window': '窗口 {n}',
   'win.this': '此窗口', 'win.other': '另一个窗口', 'win.nth': '其他窗口 {n}',
   'win.saveThis': '保存此窗口', 'win.save': '保存窗口', 'win.suspend': '休眠不活跃的标签页', 'win.close': '关闭窗口',
   'win.closeThis': '关闭此窗口？', 'win.closeOther': '关闭另一个窗口？', 'win.closeNth': '关闭其他窗口 {n}？',

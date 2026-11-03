@@ -609,21 +609,35 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 
 /* the account's other browsers, under this one's windows: a part each, shut until opened; their tabs only to open
    here (a click) or copy (a drag), so no buttons on the rows */
+#windows { position: relative; } /* (for the list of browsers, and the part's copy fading as the panel closes) */
+.devs { position: relative; }
 .devs:empty { display: none; }
-.devs-title { margin: 14px 6px 4px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
-.dev { margin-bottom: 6px; border-radius: 8px; }
-.dev-head { display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+.devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 0 0 6px; border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+.devs-title .grow { flex: 1; min-width: 0; }
+.devs-list-btn { width: 24px; height: 24px; }
+/* the list of them: each ticked when shown */
+.devs-pop { position: absolute; right: 0; z-index: 20; min-width: 190px; max-width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: 0 8px 24px rgb(0 0 0 / .14); transform-origin: top right; }
+.devs-pop-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.devs-pop-row:hover { background: var(--hover); }
+.devs-pop-row input { margin: 0; accent-color: var(--accent); }
+.devs-pop-row .dev-name { font-weight: 500; }
+.dev { margin-bottom: 4px; }
+/* its head: the twisty and the name together, lit as one under the pointer */
+.dev-head { display: flex; align-items: flex-start; gap: 6px; padding: 5px 6px; border-radius: 6px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; transition: background-color .16s ease; }
+.dev-head:hover { background: var(--hover); transition-duration: .05s; }
+.dev-head .win-twisty { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; }
 .dev-head .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-top: 3px; line-height: 16px; }
 .dev-name { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dev-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dev.collapsed .win-twisty .ico { transform: rotate(-90deg); }
 .dev-rename { width: 100%; margin: -2px 0; padding: 1px 4px; font: inherit; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--accent); border-radius: 4px; outline: none; }
+/* its tabs, set in under its name */
 .rwin + .rwin { margin-top: 4px; }
-.rwin-head { padding: 2px 6px 2px 14px; font-size: 11px; color: var(--muted); }
-.rtab { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: 6px; cursor: grab; }
+.rwin-head { padding: 2px 6px 2px 36px; font-size: 11px; color: var(--muted); }
+.rtab { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 36px; border-radius: 6px; cursor: grab; }
 .rtab:hover { background: var(--hover); }
 .rtab .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body.tabs-collapsed .devs { display: none; } /* (the rail: this browser's windows only) */
+body.tabs-collapsed .devs:not(.devs-ghost) { display: none; } /* (the rail: this browser's windows only) */
 
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip, .tip-out {

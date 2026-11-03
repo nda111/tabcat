@@ -37,7 +37,7 @@ export default {
   'panel.expandTabs': 'Expandir pestañas abiertas', 'panel.collapseTabs': 'Contraer pestañas abiertas',
   'tabs.title': 'Pestañas abiertas',
   'tabs.suspendShort': 'Suspender', 'tabs.dedupeShort': 'Duplicadas', 'tabs.dedupeTip': 'Cerrar pestañas duplicadas',
-  'remote.title': 'En tus otros dispositivos', 'remote.device': 'Otro dispositivo', 'remote.forget': 'Quitar de la lista (vuelve cuando ese dispositivo inicie sesión de nuevo)', 'remote.rename': 'Cambiar nombre', 'remote.headTip': 'Doble clic en el nombre para cambiarlo · clic derecho para más', 'remote.window': 'Ventana {n}', 'remote.openHere': 'Clic: abrir aquí · arrastrar: copiar aquí',
+  'remote.title': 'En tus otros dispositivos', 'remote.device': 'Otro dispositivo', 'remote.rename': 'Cambiar nombre', 'remote.hide': 'Ocultar', 'remote.list': 'Mostrar u ocultar dispositivos', 'toast.renamedDevice': 'Dispositivo renombrado como “{name}”', 'undo.renameDevice': 'Se deshizo el cambio de nombre del dispositivo', 'redo.renameDevice': 'Se rehízo el cambio de nombre del dispositivo', 'remote.window': 'Ventana {n}',
   'win.this': 'Esta ventana', 'win.other': 'La otra ventana', 'win.nth': 'Otra ventana {n}',
   'win.saveThis': 'Guardar esta ventana', 'win.save': 'Guardar ventana', 'win.suspend': 'Suspender pestañas inactivas', 'win.close': 'Cerrar ventana',
   'win.closeThis': '¿Cerrar esta ventana?', 'win.closeOther': '¿Cerrar la otra ventana?', 'win.closeNth': '¿Cerrar la otra ventana {n}?',

@@ -40,7 +40,7 @@ export default {
   'panel.expandTabs': 'Expand open tabs', 'panel.collapseTabs': 'Collapse open tabs',
   'tabs.title': 'Open tabs',
   'tabs.suspendShort': 'Suspend', 'tabs.dedupeShort': 'Dedupe', 'tabs.dedupeTip': 'Close duplicate tabs',
-  'remote.title': 'On your other devices', 'remote.device': 'Another device', 'remote.forget': 'Remove from the list (it comes back when that device signs in again)', 'remote.rename': 'Rename', 'remote.headTip': 'Double-click the name to rename it · right-click for more', 'remote.window': 'Window {n}', 'remote.openHere': 'Click: open here · drag: copy here',
+  'remote.title': 'On your other devices', 'remote.device': 'Another device', 'remote.rename': 'Rename', 'remote.hide': 'Hide', 'remote.list': 'Show or hide devices', 'toast.renamedDevice': 'Renamed the device “{name}”', 'undo.renameDevice': 'Undid renaming the device', 'redo.renameDevice': 'Redid renaming the device', 'remote.window': 'Window {n}',
   'win.this': 'This window', 'win.other': 'The other window', 'win.nth': 'Other window {n}',
   'win.saveThis': 'Save this window', 'win.save': 'Save window', 'win.suspend': 'Suspend other tabs', 'win.close': 'Close window',
   'win.closeThis': 'Close this window?', 'win.closeOther': 'Close the other window?', 'win.closeNth': 'Close other window {n}?',

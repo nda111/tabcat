@@ -1331,8 +1331,11 @@ async function renderTabs() {
 // deviceTabs); the others show here, under this browser's windows, a part each, shut until opened (remembered on
 // this device). A tab there: clicked, opened here; dragged, copied (into a window here where it's dropped, or onto
 // the board as a link), never taken from the other browser. Told live when one changes ('tabs', listenForChanges).
+// A browser can be named (its menu; undoable) or hidden (its menu, or the list button by the heading, where each
+// is ticked to show or not; one hidden comes back by itself once it signs in again). Whatever comes or goes, a
+// browser, the heading, a tab, moves: folding open or shut, gliding to its place.
 const devs = h('div', { class: 'devs' });
-let remote = null, remoteSeq = 0; // ({ me: this browser's id, devices: the others' })
+let remote = null, remoteSeq = 0, remoteHeld = false; // ({ me: this browser's id, devices: the others', hidden ones too })
 async function refreshRemote() {
   if (!extFeatures.has('deviceTabs') || !liveSync) return;
   const seq = ++remoteSeq;
@@ -1343,87 +1346,146 @@ async function refreshRemote() {
   renderRemote();
 }
 const remoteKey = (el) => (el.matches('.dev') ? `d${el.dataset.device}` : `r${el.closest('.dev').dataset.device}|${el.dataset.url}|${el.dataset.n}`);
-let remoteHeld = false, devClick = null; // (a browser being named: what comes meanwhile waits for it)
+// (folding open from nothing, or shut to nothing, the rest of the panel following as it goes)
+function foldIn(el, delay = 0) {
+  const full = el.getBoundingClientRect().height;
+  el.style.overflow = 'hidden';
+  return el.animate([{ height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }, { height: `${full}px`, opacity: 1 }],
+    { duration: 300, delay, easing: GLIDE, fill: 'backwards' }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
+}
+function foldOut(el) {
+  el.style.overflow = 'hidden';
+  el.style.pointerEvents = 'none';
+  return el.animate([{ height: `${el.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }],
+    { duration: 240, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => el.remove());
+}
+function devPart(d, isOpen) {
+  const n = d.windows.reduce((a, w) => a + w.tabs.length, 0);
+  const seen = new Map(); // (the same address twice in it: told apart, for the rows to glide each to its own place)
+  return h('div', { class: 'dev' + (isOpen ? '' : ' collapsed'), dataset: { device: d.device } },
+    // (the twisty and the name one row, lit as a whole under the pointer; a click anywhere on it opens or shuts it)
+    h('div', { class: 'dev-head', onclick: (e) => { if (!e.target.closest('input')) toggleDev(d.device); },
+      oncontextmenu: (e) => showMenu(e, [
+        { icon: 'edit', label: t('remote.rename'), key: 'R', fn: () => renameDevice(d) },
+        { icon: 'eyeOff', label: t('remote.hide'), key: 'H', fn: () => setDeviceHidden(d, true) },
+      ]) },
+      h('span', { class: 'icon-btn win-twisty', 'aria-hidden': 'true' }, icon('chevron', 14)),
+      h('span', { class: 'grow' }, h('span', { class: 'dev-name' }, d.name || t('remote.device')),
+        h('span', { class: 'dev-meta' }, chunks([counted(`dev:${d.device}`, 'count.tabs', n), timeAgo(d.at * 1000)])))),
+    isOpen && h('div', { class: 'dev-wins' }, d.windows.map((w, i) => h('div', { class: 'rwin' },
+      d.windows.length > 1 && h('div', { class: 'rwin-head' }, t('remote.window', { n: i + 1 })),
+      w.tabs.map((tb) => {
+        const k = (seen.get(tb.url) || 0) + 1;
+        seen.set(tb.url, k);
+        return h('div', { class: 'rtab', draggable: 'true', dataset: { url: tb.url, title: tb.title || '', n: k }, title: [tb.title || tb.url, tb.url].join('\n'),
+          onclick: () => run(B.call('openUrls', { urls: [tb.url], active: true })) },
+        iconImg(tb.url, tb.icon), h('span', { class: 'name' }, tb.title || tb.url));
+      })))));
+}
 function renderRemote({ opening = null } = {}) {
   if (devs.querySelector('.dev-rename')) { remoteHeld = true; return; }
-  const list = remote?.devices || [];
-  const open = new Set((ui.devOpen || []).filter((id) => list.some((d) => d.device === id)));
+  const all = remote?.devices || [], list = all.filter((d) => !d.hidden);
+  const open = new Set((ui.devOpen || []).filter((id) => all.some((d) => d.device === id)));
+  const first = !devs.dataset.shown && all.length > 0; // (the first time there's anything: it all comes in)
   const before = new Map([...devs.querySelectorAll('.dev, .rtab')].map((el) => [remoteKey(el), el.getBoundingClientRect()]));
   const names = new Map([...devs.querySelectorAll('.dev')].map((el) => [el.dataset.device, el.querySelector('.dev-name').cloneNode(true)]));
-  const had = before.size > 0;
-  devs.replaceChildren(...(list.length ? [h('div', { class: 'devs-title' }, t('remote.title'))] : []), ...list.map((d) => {
-    const isOpen = open.has(d.device), n = d.windows.reduce((a, w) => a + w.tabs.length, 0);
-    const seen = new Map(); // (the same address twice in it: told apart, for the rows to glide each to its own place)
-    return h('div', { class: 'dev' + (isOpen ? '' : ' collapsed'), dataset: { device: d.device } },
-      h('div', { class: 'dev-head', title: t('remote.headTip'),
-        // (a click opens or shuts it; on the name, a moment later, as a second click there names it instead)
-        onclick: (e) => {
-          if (e.target.closest('button, input') || e.detail > 1) return;
-          clearTimeout(devClick);
-          if (e.target.closest('.dev-name')) devClick = setTimeout(() => toggleDev(d.device), 260);
-          else toggleDev(d.device);
-        },
-        ondblclick: (e) => { if (e.target.closest('.dev-name')) { e.preventDefault(); clearTimeout(devClick); renameDevice(d); } },
-        oncontextmenu: (e) => showMenu(e, [
-          { icon: 'edit', label: t('remote.rename'), key: 'R', fn: () => renameDevice(d) },
-          { icon: 'trash', label: t('remote.forget'), key: 'D', danger: true, fn: () => forgetDevice(d) },
-        ]) },
-        Object.assign(btn(icon('chevron', 14), t(isOpen ? 'act.collapse' : 'act.expand'), () => toggleDev(d.device)), { className: 'icon-btn win-twisty' }),
-        h('span', { class: 'grow' }, h('span', { class: 'dev-name' }, d.name || t('remote.device')),
-          h('span', { class: 'dev-meta' }, chunks([counted(`dev:${d.device}`, 'count.tabs', n), timeAgo(d.at * 1000)])))),
-      isOpen && h('div', { class: 'dev-wins' }, d.windows.map((w, i) => h('div', { class: 'rwin' },
-        d.windows.length > 1 && h('div', { class: 'rwin-head' }, t('remote.window', { n: i + 1 })),
-        w.tabs.map((tb) => {
-          const k = (seen.get(tb.url) || 0) + 1;
-          seen.set(tb.url, k);
-          return h('div', { class: 'rtab', draggable: 'true', dataset: { url: tb.url, title: tb.title || '', n: k }, title: [tb.title || tb.url, tb.url, t('remote.openHere')].join('\n'),
-            onclick: () => run(B.call('openUrls', { urls: [tb.url], active: true })) },
-          iconImg(tb.url, tb.icon), h('span', { class: 'name' }, tb.title || tb.url));
-        })))));
-  }));
-  // (as they were: what moved glides there, what's new pops in; the part being opened unfolds, the rest following)
+  const oldDevs = [...devs.querySelectorAll(':scope > .dev')], oldTitle = devs.querySelector(':scope > .devs-title');
+  const title = all.length ? h('div', { class: 'devs-title' }, h('span', { class: 'grow' }, t('remote.title')),
+    Object.assign(btn(icon('list', 15), t('remote.list'), (e) => { e.stopPropagation(); toggleDevList(); }), { className: 'icon-btn devs-list-btn' })) : null;
+  const parts = list.map((d) => devPart(d, open.has(d.device)));
+  const pop = devs.querySelector(':scope > .devs-pop');
+  devs.replaceChildren(...[title, ...parts, pop].filter(Boolean));
+  if (all.length) devs.dataset.shown = '1';
+  if (pop) fillDevList(pop);
+  // what's gone (hidden, or not heard from): back in its place a moment, folding shut; the heading too
+  const leaving = oldDevs.filter((el) => !list.some((d) => d.device === el.dataset.device));
+  for (const el of leaving) {
+    const at = oldDevs.indexOf(el), next = oldDevs.slice(at + 1).map((o) => devs.querySelector(`:scope > .dev[data-device="${CSS.escape(o.dataset.device)}"]`)).find(Boolean);
+    el.removeAttribute('data-device');
+    devs.insertBefore(el, next || pop || null);
+    foldOut(el);
+  }
+  if (oldTitle && !title) { devs.prepend(oldTitle); foldOut(oldTitle); }
+  // what's new folds open (on the first showing, all of it, one after another)
+  if (title && (!oldTitle || first)) foldIn(title);
+  parts.forEach((el, i) => { if (first || !oldDevs.some((o) => o.dataset.device === el.dataset.device)) foldIn(el, first ? 40 + i * 40 : 0); });
+  // the part being opened unfolds, the rest following
   if (opening) {
     const body = devs.querySelector(`.dev[data-device="${CSS.escape(opening)}"] > .dev-wins`);
     if (body) {
-      const hh = body.getBoundingClientRect().height;
-      body.animate([{ height: '0px', opacity: 0 }, { height: `${hh}px`, opacity: 1 }], { duration: 300, easing: GLIDE });
-      body.style.overflow = 'hidden';
-      setTimeout(() => { body.style.overflow = ''; }, 320);
+      foldIn(body);
       body.parentElement.querySelector('.win-twisty .ico')?.animate([{ transform: 'rotate(-90deg)' }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
     }
   }
-  for (const el of devs.querySelectorAll('.dev')) {
+  // a name changed (here or elsewhere): the old fades as the new comes
+  for (const el of devs.querySelectorAll('.dev[data-device]')) {
     const was = names.get(el.dataset.device), now = el.querySelector('.dev-name');
     if (was && was.textContent !== now.textContent) ghostOver(now, was);
   }
-  for (const el of devs.querySelectorAll('.dev, .rtab')) {
-    if (opening && el.closest(`.dev[data-device="${CSS.escape(opening)}"] > .dev-wins`)) continue;
+  // the rest, as they were: what moved glides there, a tab new pops in
+  if (first) return;
+  for (const el of devs.querySelectorAll('.dev[data-device], .rtab')) {
+    if (el.closest('.dev:not([data-device])') || (opening && el.closest(`.dev[data-device="${CSS.escape(opening)}"] > .dev-wins`))) continue;
     const a = before.get(remoteKey(el));
-    if (!a) { if (had) el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING }); continue; }
+    if (!a) { if (el.matches('.rtab')) el.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING }); continue; }
     const dy = a.top - el.getBoundingClientRect().top;
     if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 360, easing: SPRING });
   }
 }
-// (opened or shut: remembered on this device; shutting, its tabs fold away first)
-async function toggleDev(id) {
+// (opened or shut, at once: remembered on this device; shutting, its tabs fold away first)
+function toggleDev(id) {
   const open = new Set(ui.devOpen || []);
+  const dev = devs.querySelector(`.dev[data-device="${CSS.escape(id)}"]`);
   if (open.has(id)) {
     open.delete(id);
-    const dev = devs.querySelector(`.dev[data-device="${CSS.escape(id)}"]`), body = dev?.querySelector(':scope > .dev-wins');
-    dev?.querySelector('.win-twisty .ico')?.animate([{ transform: 'none' }, { transform: 'rotate(-90deg)' }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
-    if (body) {
-      body.style.overflow = 'hidden';
-      await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
-        { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
-    }
-    ui.devOpen = [...open]; saveUi(); renderRemote();
+    ui.devOpen = [...open]; saveUi();
+    const body = dev?.querySelector(':scope > .dev-wins');
+    dev?.classList.add('collapsed'); // (its twisty turns by itself: see .win-twisty)
+    if (body) foldOut(body);
   } else {
     open.add(id);
     ui.devOpen = [...open]; saveUi(); renderRemote({ opening: id });
   }
 }
-// Named in place (double-click, or the menu): Enter or leaving keeps it, Escape doesn't; empty, its own name again.
-// For all of the account's browsers (the server keeps it).
+// The list by the heading: each of the account's browsers, ticked when shown; unticked, it's hidden (for all of
+// the account's browsers). Opens below its button, and shuts on a click elsewhere or Escape.
+function toggleDevList() {
+  const was = devs.querySelector(':scope > .devs-pop');
+  if (was) return closeDevList();
+  const pop = h('div', { class: 'devs-pop', role: 'dialog', 'aria-label': t('remote.list') });
+  devs.append(pop);
+  fillDevList(pop);
+  pop.animate([{ opacity: 0, transform: 'translateY(-4px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
+  setTimeout(() => document.addEventListener('pointerdown', outsideDevList, true));
+  document.addEventListener('keydown', escDevList, true);
+}
+const outsideDevList = (e) => { if (!e.target.closest?.('.devs-pop, .devs-list-btn')) closeDevList(); };
+const escDevList = (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeDevList(); } };
+function closeDevList() {
+  document.removeEventListener('pointerdown', outsideDevList, true);
+  document.removeEventListener('keydown', escDevList, true);
+  const pop = devs.querySelector(':scope > .devs-pop');
+  if (!pop) return;
+  pop.classList.add('closing');
+  pop.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px) scale(.97)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' })
+    .finished.catch(() => {}).then(() => pop.remove());
+}
+function fillDevList(pop) {
+  if (pop.classList.contains('closing')) return;
+  const btnEl = devs.querySelector('.devs-list-btn');
+  if (btnEl) pop.style.top = `${btnEl.offsetTop + btnEl.offsetHeight + 4}px`;
+  pop.replaceChildren(...(remote?.devices || []).map((d) => h('label', { class: 'devs-pop-row' },
+    h('input', { type: 'checkbox', checked: !d.hidden, onchange: (e) => setDeviceHidden(d, !e.target.checked) }),
+    h('span', { class: 'dev-name' }, d.name || t('remote.device')))));
+}
+// Hidden, or shown again: at once here, then for the account's other browsers (the server keeps it)
+async function setDeviceHidden(d, hidden) {
+  d.hidden = hidden;
+  renderRemote();
+  await fetch(`/api/sync/tabs/${encodeURIComponent(d.device)}/hidden`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hidden }) }).catch(() => null);
+}
+// Named in place (from its menu): Enter or leaving keeps it, Escape doesn't; empty, its own name again. For all of
+// the account's browsers (the server keeps it), and undoable (Ctrl+Z, the toast's Undo) like the data's changes.
 function renameDevice(d) {
   const name = devs.querySelector(`.dev[data-device="${CSS.escape(d.device)}"] .dev-name`);
   if (!name || name.querySelector('input')) return;
@@ -1437,28 +1499,22 @@ function renameDevice(d) {
     const label = input.value.replace(/\s+/g, ' ').trim();
     const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } };
     if (!keep || label === (d.name || '')) { name.textContent = d.name || t('remote.device'); caughtUp(); return; }
+    const was = d.name === d.own ? '' : d.name;
     d.name = label || d.own || d.name;
     name.textContent = d.name;
     name.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
     caughtUp();
-    await fetch(`/api/sync/tabs/${encodeURIComponent(d.device)}/name`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: label }) }).catch(() => null);
+    await nameDevice(d.device, label);
+    const what = { verb: 'renameDevice' };
+    const entry = await rememberAct({ back: { kind: 'deviceName', device: d.device, name: was }, forth: { kind: 'deviceName', device: d.device, name: label } }, what);
+    if (entry) toast(t('toast.renamedDevice', { name: d.name }), t('common.undo'), () => undo(entry, true));
   };
   input.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') finish(true); else if (e.key === 'Escape') finish(false); });
   input.addEventListener('blur', () => finish(true));
   input.addEventListener('click', (e) => e.stopPropagation());
 }
-// (let go from the list, from the menu: it fades away; it's back once that browser signs in again)
-async function forgetDevice(d) {
-  const el = devs.querySelector(`.dev[data-device="${CSS.escape(d.device)}"]`);
-  if (el) {
-    el.style.overflow = 'hidden';
-    await el.animate([{ opacity: 1, height: `${el.getBoundingClientRect().height}px` }, { opacity: 0, height: '0px', marginBottom: '0px' }],
-      { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
-  }
-  remote.devices = remote.devices.filter((x) => x !== d);
-  renderRemote();
-  await fetch(`/api/sync/tabs/${encodeURIComponent(d.device)}`, { method: 'DELETE', credentials: 'same-origin' }).catch(() => null);
-}
+const nameDevice = (device, name) => fetch(`/api/sync/tabs/${encodeURIComponent(device)}/name`, { method: 'PUT', credentials: 'same-origin',
+  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) }).catch(() => null);
 
 // Collapse / expand a window in the open tabs panel (remembered on this device while it is open). Its
 // tabs close up first, then it is drawn collapsed; expanding opens them (see renderTabs).
@@ -1902,22 +1958,45 @@ const pageHistory = {
     const entry = this.future.pop();
     return entry ? this.swap(entry, this.past) : null;
   },
+  async rememberAct({ act, what }) {
+    const id = ++this.seq;
+    this.past.push({ id, act, what });
+    if (this.past.length > 50) this.past.shift();
+    this.future.length = 0;
+    return id;
+  },
   async swap(entry, other) { // puts back entry's state, keeping the one it replaces in `other`
+    if (entry.act) { // (an act: the other way round kept, what undoes it handed back to do)
+      other.push({ id: ++this.seq, act: { back: entry.act.forth, forth: entry.act.back }, what: entry.what });
+      return { what: entry.what, run: entry.act.back };
+    }
     const now = structuredClone(state);
     if (!(await apply({ op: 'replace', state: entry.before }))) return null;
     other.push({ id: ++this.seq, before: now, what: entry.what });
     return { what: entry.what };
   },
 };
-const undoHistory = (cmd, args = {}) => (extFeatures.has('sharedHistory') ? run(B.call(cmd, args)) : pageHistory[cmd](args));
+const undoHistory = (cmd, args = {}) => (extFeatures.has('sharedHistory') && (cmd !== 'rememberAct' || extFeatures.has('actHistory')) ? run(B.call(cmd, args)) : pageHistory[cmd](args));
+// A change outside the data (a device renamed, on the server): `act.back` undoes it, `act.forth` does it again
+const rememberAct = (act, what) => undoHistory('rememberAct', { act, what });
+// (what an act says to do: done here, in whichever dashboard undoes it)
+async function runAct(a) {
+  if (a?.kind === 'deviceName') {
+    await nameDevice(a.device, a.name);
+    const d = remote?.devices.find((x) => x.device === a.device);
+    if (d) { d.name = a.name || d.own; renderRemote(); }
+  }
+}
 // Returns the entry's id, for its toast's Undo
 const remember = (before, what) => undoHistory('remember', { before, what });
 async function undo(id = null, quiet = false) {
   const r = await undoHistory('undo', { id });
+  if (r?.run) await runAct(r.run);
   if (r && !quiet) toast(undoText('undo', r.what));
 }
 async function redo() {
   const r = await undoHistory('redo');
+  if (r?.run) await runAct(r.run);
   if (r) toast(undoText('redo', r.what));
 }
 // (a mix of links and folders counts as items)
@@ -4024,7 +4103,8 @@ async function stateArrived(id) {
 }
 // Scrolling with give at the ends, and slim scrollbars (see scroll-feel.js): the board, both side panels,
 // the picker; dialogs bounce too (their content moves inside them)
-for (const sel of ['#board', '#ws-list', '#windows']) scrollFeel($(sel));
+scrollFeel($('#board'), { x: true, pan: true }); // (the board: sideways as well, and a finger moves it any way)
+for (const sel of ['#ws-list', '#windows']) scrollFeel($(sel));
 scrollFeel($('.side-bottom'), { inner: true });
 scrollFeel($('#picker-tree'), { inner: true });
 for (const dlg of document.querySelectorAll('dialog')) scrollFeel(dlg, { inner: true, bar: false });
@@ -4113,7 +4193,7 @@ function showUpdate() {
 // (and anything in a collapsed rail) show beside the panel; everything else shows below the element.
 const tip = $('#tip');
 const RAILS = 'body.ws-collapsed #sidebar, body.tabs-collapsed #tabs-panel';
-const BESIDE = '.ws-item, .tab-row, .win-head';
+const BESIDE = '.ws-item, .tab-row, .rtab, .win-head';
 const TIP_DELAY = 180;
 let tipEl = null;
 let tipTimer = null;
@@ -4145,7 +4225,7 @@ function showTip(el) {
   if (el.title) { el.dataset.tip = el.title; el.removeAttribute('title'); }
   const [head, ...rest] = el.dataset.tip.split('\n').filter((l) => l.trim());
   // tab rows: reuse the row's favicon with the same fallbacks, on a light chip so dark icons stay visible
-  const rowImg = el.matches('.tab-row') && el.querySelector(':scope > img');
+  const rowImg = el.matches('.tab-row, .rtab') && el.querySelector(':scope > img');
   const fav = rowImg ? iconImg(el.dataset.url, rowImg.currentSrc || rowImg.src) : null;
   fav?.removeAttribute('loading');
   tip.replaceChildren(
@@ -4231,6 +4311,7 @@ for (const p of Object.values(PANELS)) {
     const panel = $(p.el);
     const collapsing = !ui[p.collapsed];
     hideTip();
+    if (p === PANELS.tabs) devsAcross(collapsing);
     if (collapsing) {
       // fade the labels out while the panel starts to narrow, then switch to the rail layout
       panel.classList.add('fading');
@@ -4241,6 +4322,21 @@ for (const p of Object.values(PANELS)) {
       setTimeout(() => { switchPanel(p); panel.classList.remove('fading'); panel.style.width = ''; }, 60);
     } else switchPanel(p);
   });
+}
+
+// The open tabs panel to its rail and back: the other browsers' part (not in the rail) fades away as it narrows, a
+// copy of it going where it was; opening, it comes back in once the panel is wide again.
+function devsAcross(collapsing) {
+  if (!devs.childElementCount) return;
+  if (collapsing) {
+    closeDevList();
+    const g = devs.cloneNode(true);
+    g.classList.add('devs-ghost');
+    Object.assign(g.style, { position: 'absolute', left: `${devs.offsetLeft}px`, top: `${devs.offsetTop}px`, width: `${devs.offsetWidth}px`, margin: '0', pointerEvents: 'none' });
+    devs.parentElement.append(g);
+    g.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(12px)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' })
+      .finished.catch(() => {}).then(() => g.remove());
+  } else devs.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 180, easing: GLIDE, fill: 'backwards' });
 }
 
 // Switch a side panel between full and rail layout, FLIPping its icons and rows from where they
@@ -4644,6 +4740,8 @@ async function listenForChanges() {
   if (!liveStream) { liveSync = null; return; }
   setTimeout(refreshRemote); // (the other browsers' tabs, to begin with)
   liveSync = liveStream((kind) => {
+    // (this sign-in ended, signed out of from another device: the server's sign-in, at once)
+    if (kind === 'gone') return leaveFor(() => location.reload());
     if (kind === 'head' || kind === 'open') { if (B.info) B.call('syncNow').catch(() => {}); }
     // (one of the account's browsers changed its tabs: the open tabs panel's part for it, as it now is)
     if (kind === 'tabs' || kind === 'open') { clearTimeout(remoteTimer); remoteTimer = setTimeout(refreshRemote, 250); }

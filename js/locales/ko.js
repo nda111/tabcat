@@ -35,7 +35,7 @@ export default {
   'panel.expandTabs': '열린 탭 펼치기', 'panel.collapseTabs': '열린 탭 접기',
   'tabs.title': '열린 탭',
   'tabs.suspendShort': '재우기', 'tabs.dedupeShort': '중복 정리', 'tabs.dedupeTip': '중복 탭 닫기',
-  'remote.title': '내 다른 기기', 'remote.device': '다른 기기', 'remote.forget': '목록에서 빼기 (그 기기에서 다시 로그인하면 돌아와요)', 'remote.rename': '이름 바꾸기', 'remote.headTip': '이름을 더블클릭해 바꾸기 · 우클릭으로 더 보기', 'remote.window': '창 {n}', 'remote.openHere': '클릭: 여기서 열기 · 끌기: 여기로 복제',
+  'remote.title': '내 다른 기기', 'remote.device': '다른 기기', 'remote.rename': '이름 바꾸기', 'remote.hide': '숨기기', 'remote.list': '기기 보이기·숨기기', 'toast.renamedDevice': '기기 이름을 “{name}”(으)로 바꿨습니다', 'undo.renameDevice': '기기 이름 바꾸기를 취소했습니다.', 'redo.renameDevice': '기기 이름 바꾸기를 다시 실행했습니다.', 'remote.window': '창 {n}',
   'win.this': '이 창', 'win.other': '다른 창', 'win.nth': '다른 창 {n}',
   'win.saveThis': '이 창 저장하기', 'win.save': '창 저장하기', 'win.suspend': '다른 탭 재우기', 'win.close': '창 닫기',
   'win.closeThis': '이 창을 닫을까요?', 'win.closeOther': '다른 창을 닫을까요?', 'win.closeNth': '다른 창 {n}을 닫을까요?',
