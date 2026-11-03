@@ -35,6 +35,7 @@ export default {
   'panel.expandTabs': '開いているタブを展開', 'panel.collapseTabs': '開いているタブを折りたたむ',
   'tabs.title': '開いているタブ',
   'tabs.suspendShort': '休止', 'tabs.dedupeShort': '重複整理', 'tabs.dedupeTip': '重複したタブを閉じる',
+  'remote.title': 'ほかのデバイス', 'remote.device': 'ほかのデバイス', 'remote.forget': '一覧から外す（そのデバイスでまたログインすると戻ります）', 'remote.rename': '名前を変更', 'remote.headTip': '名前をダブルクリックで変更 · 右クリックでその他', 'remote.window': 'ウィンドウ {n}', 'remote.openHere': 'クリック: ここで開く · ドラッグ: ここに複製',
   'win.this': 'このウィンドウ', 'win.other': 'もう一方のウィンドウ', 'win.nth': 'ほかのウィンドウ {n}',
   'win.saveThis': 'このウィンドウを保存', 'win.save': 'ウィンドウを保存', 'win.suspend': '非アクティブなタブを休止', 'win.close': 'ウィンドウを閉じる',
   'win.closeThis': 'このウィンドウを閉じますか?', 'win.closeOther': 'もう一方のウィンドウを閉じますか?', 'win.closeNth': 'ほかのウィンドウ {n} を閉じますか?',

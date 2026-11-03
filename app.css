@@ -486,7 +486,7 @@ dialog a:not([class]), :is(#no-ext, #no-browser, #elsewhere) a:not([class]) { co
   line-height: 18px; /* a whole number: rows 26px tall, so each row's icon and text land on the same pixels */
 }
 .link-row:hover, .link-row.hover, .folder-head:hover, .folder-head.hover { background: var(--hover); }
-.link-row img, .tab-row img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+.link-row img, .tab-row img, .rtab img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
 img.fav { box-sizing: content-box; background: var(--fav-bg); padding: var(--fav-pad); border-radius: 4px; }
 .link-row img.fav { margin-block: calc(-1 * var(--fav-pad)); } /* (its chip doesn't make the row taller than a folder's) */
 /* a site with no favicon yet: a globe in the accent colour (in place of Chrome's grey one, see iconImg) */
@@ -606,6 +606,24 @@ body.tabs-collapsed .win-count { display: block; font-size: 11px; letter-spacing
 /* row buttons take no space until hover, so narrow panels keep more of the title */
 .tab-row .icon-btn { display: none; }
 body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .tab-row.hover .icon-btn { display: inline-grid; }
+
+/* the account's other browsers, under this one's windows: a part each, shut until opened; their tabs only to open
+   here (a click) or copy (a drag), so no buttons on the rows */
+.devs:empty { display: none; }
+.devs-title { margin: 14px 6px 4px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+.dev { margin-bottom: 6px; border-radius: 8px; }
+.dev-head { display: flex; align-items: flex-start; gap: 6px; padding: 6px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+.dev-head .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-top: 3px; line-height: 16px; }
+.dev-name { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dev.collapsed .win-twisty .ico { transform: rotate(-90deg); }
+.dev-rename { width: 100%; margin: -2px 0; padding: 1px 4px; font: inherit; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--accent); border-radius: 4px; outline: none; }
+.rwin + .rwin { margin-top: 4px; }
+.rwin-head { padding: 2px 6px 2px 14px; font-size: 11px; color: var(--muted); }
+.rtab { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: 6px; cursor: grab; }
+.rtab:hover { background: var(--hover); }
+.rtab .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.tabs-collapsed .devs { display: none; } /* (the rail: this browser's windows only) */
 
 /* ---------- collapsed side panels: icon rails ---------- */
 #tip, .tip-out {

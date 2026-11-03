@@ -37,6 +37,7 @@ export default {
   'panel.expandTabs': 'Offene Tabs ausklappen', 'panel.collapseTabs': 'Offene Tabs einklappen',
   'tabs.title': 'Offene Tabs',
   'tabs.suspendShort': 'Pausieren', 'tabs.dedupeShort': 'Duplikate', 'tabs.dedupeTip': 'Doppelte Tabs schließen',
+  'remote.title': 'Auf deinen anderen Geräten', 'remote.device': 'Anderes Gerät', 'remote.forget': 'Aus der Liste entfernen (kommt zurück, wenn sich das Gerät wieder anmeldet)', 'remote.rename': 'Umbenennen', 'remote.headTip': 'Doppelklick auf den Namen zum Umbenennen · Rechtsklick für mehr', 'remote.window': 'Fenster {n}', 'remote.openHere': 'Klicken: hier öffnen · ziehen: hierher kopieren',
   'win.this': 'Dieses Fenster', 'win.other': 'Das andere Fenster', 'win.nth': 'Anderes Fenster {n}',
   'win.saveThis': 'Dieses Fenster speichern', 'win.save': 'Fenster speichern', 'win.suspend': 'Inaktive Tabs pausieren', 'win.close': 'Fenster schließen',
   'win.closeThis': 'Dieses Fenster schließen?', 'win.closeOther': 'Das andere Fenster schließen?', 'win.closeNth': 'Anderes Fenster {n} schließen?',
