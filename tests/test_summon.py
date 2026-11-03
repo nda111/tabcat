@@ -4,7 +4,7 @@
 from harness import *
 
 TABS = f"chrome.windows.getAll({{populate:true, windowTypes:['normal']}}).then(ws=>ws.map(w=>w.tabs.map(t=>(t.pinned?'pin:':'')+((t.url||t.pendingUrl).startsWith('{URL}')?'DASH':(t.url||t.pendingUrl).split('?').pop())+(t.active?'*':''))))"
-PAGE = 'http://127.0.0.1:8765/page?'  # (a page elsewhere: not the dashboard's address; data: pages can't be gone back to)
+PAGE = f'http://127.0.0.1:{PORT}/page?'  # (a page elsewhere: not the dashboard's address; data: pages can't be gone back to)
 def GO(name):  # typing the address in that tab (a navigation like the address bar's: one to go back from)
     pg = next(pg for pg in ctx.pages if pg.url.endswith(name))
     pg.goto(URL, wait_until='commit')

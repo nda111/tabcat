@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.environ.get('TABCAT_WEB', os.path.join(ROOT, 'web'))  # the `pages` worktree
-PORT = 8765
+PORT = int(os.environ.get('TABCAT_TEST_PORT', 8765))  # (run.py gives each test running beside others its own)
 URL = f'http://localhost:{PORT}/'
 
 failures = []
@@ -110,4 +110,4 @@ def workspace(i, groups):
             'categories': [{'id': i + '-c', 'type': 'category', 'name': 'C', 'groups': groups}]}
 
 __all__ = ['sync_playwright', 'check', 'done', 'serve', 'launch', 'dashboard', 'seed', 'settings',
-           'second_dashboard', 'link', 'folder', 'group', 'workspace', 'URL', 'time']
+           'second_dashboard', 'link', 'folder', 'group', 'workspace', 'URL', 'PORT', 'time']

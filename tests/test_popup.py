@@ -4,7 +4,7 @@
 import json
 from harness import *
 
-PAGE = 'http://127.0.0.1:8765/page?'
+PAGE = f'http://127.0.0.1:{PORT}/page?'
 serve()
 errors = []
 with sync_playwright() as p:

@@ -8,7 +8,7 @@
 import os, re
 from harness import *
 
-SERVER = 'http://tabcat.localhost:8765'  # (any *.localhost is this computer, and a secure context: as a server over https)
+SERVER = f'http://tabcat.localhost:{PORT}'  # (any *.localhost is this computer, and a secure context: as a server over https)
 WS = "chrome.storage.local.get('tabcat').then(r=>r.tabcat.workspaces.map(w=>w.name))"
 serve()
 errors = []
@@ -48,7 +48,7 @@ with sync_playwright() as p:
     look.close()
     # opened from a server's dashboard, its address is filled in (without the scheme: it needn't be typed)
     c2 = ctx.new_page(); c2.goto(f'{ext}/connect.html?address=' + SERVER); time.sleep(.4)
-    check(c2.input_value('#address') == 'tabcat.localhost:8765', f"opened from a server's dashboard, its address is filled in ({c2.input_value('#address')!r})")
+    check(c2.input_value('#address') == f'tabcat.localhost:{PORT}', f"opened from a server's dashboard, its address is filled in ({c2.input_value('#address')!r})")
     c2.close()
     # what connect.html asks for is what the manifest lets it ask for: the browser puts the question to the
     # user (asked for anything else, it refuses outright, and the window would say tabcat wasn't allowed)
