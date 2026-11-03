@@ -434,11 +434,19 @@ export async function flip(list, change) {
 
 // Another page of a list (`dir`: 1 on, -1 back): each row's place turns over in place, within it: what was there
 // goes up (going back, down) and out as the new comes in from below (above). Rows more than before come the same way
-// in their places; rows fewer go the same way out of theirs, as the list closes up (the caller glides its height).
+// in their places; rows fewer go the same way out of theirs, as the list closes up.
 export function turnRows(list, rows, dir) {
   const olds = [...list.children].map((el) => ({ el, top: el.offsetTop, height: el.offsetHeight }));
+  const fromH = list.offsetHeight;
   list.replaceChildren(...rows);
   const timing = { duration: 340, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  // (the list as tall as it'll be, measured before anything moves: it glides there at the same pace, the box around it
+  // with it, rows more or fewer, taller or shorter)
+  const toH = list.offsetHeight;
+  if (Math.abs(fromH - toH) > .5) {
+    list.style.overflow = 'clip';
+    list.animate([{ height: `${fromH}px` }, { height: `${toH}px` }], timing).finished.finally(() => { list.style.overflow = ''; }).catch(() => {});
+  }
   const out = (g, by) => g.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * by}px)`, opacity: 0 }], { ...timing, fill: 'forwards' })
     .finished.then(() => g.remove(), () => g.remove());
   const ghost = (o, style) => { Object.assign(o.el.style, { position: 'absolute', left: '0', right: '0', margin: '0', pointerEvents: 'none', ...style }); return o.el; };
@@ -491,6 +499,8 @@ export function live(on, gone = () => location.replace('/login')) {
   const fns = Object.fromEntries(Object.entries(on).map(([k, fn]) => [k, runner(fn)]));
   const stream = liveStream((kind) => {
     if (kind === 'gone') return leave();
+    // (the account's data changed elsewhere: tabcat's extension, if it's here and connected, told to look now)
+    if (kind === 'head') postMessage({ source: 'tabcat-page', cmd: 'sync' }, location.origin);
     // (not just as the page opens, having just asked for everything itself)
     if (kind === 'open') { if (performance.now() > 3000) Object.values(fns).forEach((f) => f()); return; }
     fns[kind]?.();

@@ -1,8 +1,8 @@
 # Runs the tests, several at once: `python run.py` (all of them, the server's API tests too), `python run.py sync live`
 # (those whose names have any of these in them), `-j 6` (how many at once; 4 by default). Each test running beside
-# others serves the dashboard on a port of its own (TABCAT_TEST_PORT, see harness.py); the ones with servers of their
-# own already have their own ports. Prints a line a test, and what failed in full. A test failing is run once more, on
-# its own: passing then, it's reported as flaky (timing under load), not failed.
+# others serves the dashboard on a port of its own (TABCAT_TEST_PORT, see harness.py; the ones with servers of their
+# own already have their own ports), its waits roomier (see harness.py). Prints a line a test, and what failed in full.
+# A test failing is run once more, on its own: passing then, it's reported as flaky (timing under load), not failed.
 import os, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +21,8 @@ API = [os.environ.get('TABCAT_SERVER_PYTHON', sys.executable), os.path.join(ROOT
 
 ports = iter(range(8800, 8900))
 def run(name, port=None):
-    env = {**os.environ, 'TABCAT_TEST_PORT': str(port or next(ports))}
+    # (beside others, the fixed pauses half as long again: see harness.py; alone, as written)
+    env = {**os.environ, 'TABCAT_TEST_PORT': str(port or next(ports)), 'TABCAT_TEST_SLOW': '1' if port else os.environ.get('TABCAT_TEST_SLOW', '1.5')}
     cmd = API if name == 'api' else [sys.executable, f'{name}.py']
     t0 = time.time()
     try: p = subprocess.run(cmd, cwd=HERE if name != 'api' else ROOT, env=env, capture_output=True, text=True, timeout=600)

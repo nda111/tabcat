@@ -493,11 +493,16 @@ th > span { display: inline-block; } /* (a column head, to slide as its column m
 .ev-head { margin-bottom: 8px; gap: 8px; }
 .ev-head h2 { margin: 0; }
 .ev-head select { width: auto; margin: 0; padding-top: 5px; padding-bottom: 5px; font-size: 13px; }
-.ev-fails { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.ev-fails { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+/* over the record: the failures on the left, the pages on the right, on one line (wrapping under on a narrow screen) */
+.ev-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 8px; min-height: 30px; }
+.ev-bar > :first-child { flex: 1 1 auto; min-width: 0; }
+.ev-bar > h2 { margin: 0; }
+.ev-bar .ev-pager { margin-left: auto; }
 .ev-fails b { margin-right: 2px; }
 .events { position: relative; display: flex; flex-direction: column; margin: 0 0 8px; }
 /* the record's pages: ‹ [n] / N › under it */
-.ev-pager { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 4px; }
+.ev-pager { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .ev-pager .btn { min-width: 32px; justify-content: center; font-size: 15px; line-height: 1; }
 .ev-page { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .ev-page input { margin: 0; padding: 4px 6px; text-align: center; appearance: textfield; font-variant-numeric: tabular-nums; }

@@ -286,13 +286,7 @@ async function myEvents(to = null) {
   else {
     // (another page: each row's place turns over, the old going up and out as the new comes in from below; going
     // back, the other way. The box glides to its height.)
-    const from = box.offsetHeight;
     turnRows(box, rows, dir);
-    const to2 = box.offsetHeight;
-    if (Math.abs(from - to2) > .5) {
-      box.style.overflow = 'clip';
-      box.animate([{ height: `${from}px` }, { height: `${to2}px` }], { duration: 340, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; }).catch(() => {});
-    }
   }
 }
 // the pages: shown once there are more than five
@@ -307,7 +301,7 @@ function pagerShows(page, pages) {
   input.style.width = `${String(pages).length + 3.2}ch`;
   $('#my-ev-prev').disabled = page <= 1;
   $('#my-ev-next').disabled = page >= pages;
-  if ($('#my-ev-pager').hidden !== (pages <= 1)) fold($('#my-ev-pager'), pages > 1);
+  if ($('#my-ev-pager').hidden !== (pages <= 1)) appear($('#my-ev-pager'), pages > 1); // (beside the heading: it grows in sideways)
 }
 $('#my-ev-prev').addEventListener('click', () => myEvents(myPage - 1));
 $('#my-ev-next').addEventListener('click', () => myEvents(myPage + 1));

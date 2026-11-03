@@ -3,6 +3,7 @@
 The dashboard's own files are public (they are on GitHub anyway; the extension looks at its manifest to know
 a tabcat server answers), but the page itself opens only signed in: else the sign-in page (or, with no
 account yet, the page that makes the first one, an admin)."""
+import asyncio
 import ipaddress
 import os
 import json
@@ -923,12 +924,22 @@ def create_app(config) -> FastAPI:
     LISTENERS = 20
 
     def notify(uids, kind, data=None):
+        # (most changes are made in handlers on worker threads: a queue of the event loop's, put to from there, wouldn't
+        # wake the stream waiting on it, which then heard only when something else woke the loop, up to 20 seconds on.
+        # From another thread, handed to the loop to put.)
+        try:
+            here = asyncio.get_running_loop()
+        except RuntimeError:
+            here = None
         for uid in uids:
             for q in list(listeners.get(uid, ())):
+                put = lambda q=q, item=(kind, data, uid): q.full() or q.put_nowait(item)  # (full: far behind anyway)
+                loop = getattr(q, 'loop', None)
                 try:
-                    q.put_nowait((kind, data, uid))
+                    if loop is not None and loop is not here: loop.call_soon_threadsafe(put)
+                    else: put()
                 except Exception:
-                    pass  # (full: far behind anyway)
+                    pass  # (the loop closed: the stream's gone)
 
     def notify_admins():
         admins = {r['id'] for r in db.q('select id from users where admin = 1')}
@@ -958,6 +969,7 @@ def create_app(config) -> FastAPI:
         if len(mine) >= LISTENERS:
             raise HTTPException(429, 'too many listening')
         q = asyncio.Queue(maxsize=50)
+        q.loop = asyncio.get_running_loop()  # (for notify, from other threads)
         # (and the browser's other accounts, signed in beside it: one of them changed, `accounts`, for the list of them)
         uids = [u['id']] + [o['id'] for _, o in accounts_of(request)[1:] if o]
         for uid in uids:

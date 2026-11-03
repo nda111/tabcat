@@ -68,6 +68,9 @@
       });
       return;
     }
+    // (the server's own pages, hearing the account changed elsewhere: the extension looks at once, rather than at its
+    // next look a minute on, when no dashboard is open to tell it. Nothing comes back; no link opened)
+    if (e.data.cmd === 'sync') { if (alive()) chrome.runtime.sendMessage({ cmd: 'syncNow' }).catch(() => {}); return; }
     if (!greeted) return; // page must say hello first
     if (!port && !connect()) { toPage({ reply: e.data.id, error: 'tabcat extension is not available (reload the page)' }); return; }
     port.postMessage({ id: e.data.id, cmd: e.data.cmd, args: e.data.args });

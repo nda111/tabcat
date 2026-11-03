@@ -343,13 +343,7 @@ async function events(to = null) {
   else {
     // (another page: each row's place turns over, the old going up and out as the new comes in from below; going
     // back, the other way. The box glides to its height.)
-    const card = list.closest('.card'), from = card.offsetHeight;
     turnRows(list, rows, dir);
-    const h2 = card.offsetHeight;
-    if (Math.abs(from - h2) > .5) {
-      card.style.overflow = 'clip';
-      card.animate([{ height: `${from}px` }, { height: `${h2}px` }], { duration: 340, easing: GLIDE }).finished.finally(() => { card.style.overflow = ''; }).catch(() => {});
-    }
   }
   $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
     ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
@@ -368,7 +362,7 @@ async function events(to = null) {
   $('#ev-prev').disabled = page <= 1;
   $('#ev-next').disabled = page >= pages;
   const pager = $('#ev-pager');
-  if (pager.hidden !== (pages <= 1)) fold(pager, pages > 1);
+  if (pager.hidden !== (pages <= 1)) appear(pager, pages > 1); // (beside the failures: it grows in sideways)
 }
 $('#ev-prev').addEventListener('click', () => events(evPage - 1));
 $('#ev-next').addEventListener('click', () => events(evPage + 1));

@@ -2,6 +2,25 @@
 # loaded (from a clean copy of the repo), a fresh profile each run, and PASS / FAIL reporting.
 import atexit, functools, json, http.server, os, shutil, sys, tempfile, threading, time
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import Frame, Page
+
+# Room for a busy machine (tests run several at once, see run.py): waiting for something is given three times as long
+# (TABCAT_TEST_WAIT; no slower when it's there in time: a wait ends as soon as it is), and the fixed pauses before a
+# look at the page are stretched by TABCAT_TEST_SLOW (1 alone; run.py sets more beside others).
+WAIT = float(os.environ.get('TABCAT_TEST_WAIT', '3'))
+SLOW = float(os.environ.get('TABCAT_TEST_SLOW', '1'))
+def _roomier(f):
+    @functools.wraps(f)
+    def wait(*a, **kw):
+        if kw.get('timeout'): kw['timeout'] = kw['timeout'] * WAIT
+        return f(*a, **kw)
+    return wait
+for _cls in (Page, Frame):
+    for _name in ('wait_for_function', 'wait_for_selector', 'wait_for_url', 'wait_for_event'):
+        if hasattr(_cls, _name): setattr(_cls, _name, _roomier(getattr(_cls, _name)))
+if SLOW != 1:
+    _sleep = time.sleep
+    time.sleep = lambda s: _sleep(s * SLOW)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.environ.get('TABCAT_WEB', os.path.join(ROOT, 'web'))  # the `pages` worktree

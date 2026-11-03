@@ -58,13 +58,9 @@
       <div class="row"><button type="button" class="btn" id="others" data-t="signOutOthers">Sign out of other devices</button></div>
       <hr>
       <!-- this account's own security record: the latest -->
-      <h2 data-t="myEvents">Recent security activity</h2>
+      <!-- the pages beside the heading, where they stay as the list grows or shrinks -->
+      <div class="ev-bar"><h2 data-t="myEvents">Recent security activity</h2><div class="ev-pager" id="my-ev-pager" hidden><button type="button" class="btn small" id="my-ev-prev" data-t-title="evPrev">‹</button><span class="ev-page"><input type="number" id="my-ev-page" min="1" step="1" inputmode="numeric" data-t-title="evPage"><span class="muted">/</span><span id="my-ev-pages"></span></span><button type="button" class="btn small" id="my-ev-next" data-t-title="evNext">›</button></div></div>
       <div class="events" id="my-events"></div>
-      <div class="ev-pager" id="my-ev-pager" hidden>
-        <button type="button" class="btn small" id="my-ev-prev" data-t-title="evPrev">‹</button>
-        <span class="ev-page"><input type="number" id="my-ev-page" min="1" step="1" inputmode="numeric" data-t-title="evPage"><span class="muted">/</span><span id="my-ev-pages"></span></span>
-        <button type="button" class="btn small" id="my-ev-next" data-t-title="evNext">›</button>
-      </div>
       <hr>
       <h2 data-t="deleteAccount">Delete account</h2>
       <p class="muted small" data-t="deleteAccountNote"></p>

@@ -36,6 +36,8 @@ async function showCounts() {
 }
 
 (async function init() {
+  // (connected to a server: its latest asked for now, not at the extension's next look a minute on)
+  chrome.runtime.sendMessage({ cmd: 'syncNow' }).catch(() => {});
   const [[tab], state, settings, commands] = await Promise.all([
     chrome.tabs.query({ active: true, currentWindow: true }),
     S.load(), S.loadSettings(), chrome.commands.getAll(),
