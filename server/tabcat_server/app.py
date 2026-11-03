@@ -988,6 +988,11 @@ def create_app(config) -> FastAPI:
                         items = [await asyncio.wait_for(q.get(), 20)]
                         while not q.empty():
                             items.append(q.get_nowait())
+                        # (this sign-in ended meanwhile, signed out of from another device say: told at once,
+                        # 'gone', for its pages to show the sign-in, rather than at the next look 20 seconds on)
+                        if not auth.session_user(db, request.cookies.get(auth.COOKIE), touch=False):
+                            yield line('gone')
+                            break
                         # (several at once: each kind once, the latest)
                         latest = {}
                         for kind, data, uid in items:
@@ -1059,7 +1064,7 @@ def create_app(config) -> FastAPI:
 
     # Each browser's open windows and tabs, for the account's others to see (the open tabs panel, one part a device):
     # sent as they change (the latest only, nothing kept of before), told live to the account's pages ('tabs'). A
-    # browser not heard from in DEVICE_TABS_DAYS is let go; one can be named, or let go from the list until it signs in again.
+    # browser not heard from in DEVICE_TABS_DAYS is let go; one can be named, or hidden (until shown again, or it signs in again).
     def clean_tabs(windows) -> list:
         text = lambda v, n: str(v or '')[:n]
         out = []
@@ -1081,45 +1086,47 @@ def create_app(config) -> FastAPI:
 
     @app.put('/api/sync/tabs')
     async def put_device_tabs(request: Request):
-        """This browser's tabs, the latest. Let go from the list since it signed in: not taken (`forgotten`), until it
-        signs in again; then it's back, under its own name."""
+        """This browser's tabs, the latest. Hidden from the list since it signed in: shown again once it signs in again
+        (still kept meanwhile, for the list of them to show it again)."""
         u = sync_user(request)
         data = await body(request)
         device = str(data.get('device', ''))[:64]
         if not device:
             raise HTTPException(400, 'which browser?')
-        had = db.one('select forgotten from device_tabs where user_id = ? and device = ?', u['id'], device)
-        if had and had['forgotten'] and (u['session_created'] or 0) < had['forgotten']:
-            return {'ok': False, 'forgotten': True}
         db.run("""insert into device_tabs (user_id, device, name, at, body) values (?, ?, ?, ?, ?) on conflict(user_id, device) do update set
                   name = excluded.name, at = excluded.at, body = excluded.body,
-                  label = case when device_tabs.forgotten is null then device_tabs.label else '' end, forgotten = null""",
-               u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')))
+                  forgotten = case when device_tabs.forgotten is not null and device_tabs.forgotten < ? then null else device_tabs.forgotten end""",
+               u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')),
+               u['session_created'] or 0)
         notify([u['id']], 'tabs')
         return {'ok': True}
 
     @app.get('/api/sync/tabs')
     def get_device_tabs(request: Request):
-        """The account's browsers and what each has open, the latest heard first (`name`: its own, or the one given)."""
+        """The account's browsers and what each has open, the latest heard first (`name`: its own, or the one given;
+        `hidden`: kept out of the open tabs panel, shown in its list of them to be shown again)."""
         u = need_user(request)
-        db.run('delete from device_tabs where forgotten is null and at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
-        rows = db.q('select device, name, label, at, body from device_tabs where user_id = ? and forgotten is null order by at desc', u['id'])
-        return {'devices': [{'device': r['device'], 'name': r['label'] or r['name'], 'own': r['name'], 'at': r['at'], **json.loads(r['body'])} for r in rows]}
+        db.run('delete from device_tabs where at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
+        rows = db.q('select device, name, label, at, body, forgotten from device_tabs where user_id = ? order by at desc', u['id'])
+        return {'devices': [{'device': r['device'], 'name': r['label'] or r['name'], 'own': r['name'], 'at': r['at'], 'hidden': r['forgotten'] is not None,
+                             **json.loads(r['body'])} for r in rows]}
 
     @app.put('/api/sync/tabs/{device}/name')
     async def name_device(device: str, request: Request):
         """A name for one of the account's browsers (empty: its own again), for all of them to show."""
         u = need_user(request)
         label = ' '.join(str((await body(request)).get('name') or '').split())[:30]
-        db.run('update device_tabs set label = ? where user_id = ? and device = ? and forgotten is null', label, u['id'], device[:64])
+        db.run('update device_tabs set label = ? where user_id = ? and device = ?', label, u['id'], device[:64])
         notify([u['id']], 'tabs')
         return {'ok': True}
 
-    @app.delete('/api/sync/tabs/{device}')
-    async def forget_device_tabs(device: str, request: Request):
-        """Let go from the list: its tabs gone, and not taken again until it signs in again."""
+    @app.put('/api/sync/tabs/{device}/hidden')
+    async def hide_device(device: str, request: Request):
+        """Kept out of the open tabs panel (or shown again): for all of the account's browsers; one hidden is shown
+        again by itself once it signs in again."""
         u = need_user(request)
-        db.run("update device_tabs set forgotten = ?, body = '{\"windows\":[]}', label = '' where user_id = ? and device = ?", time.time(), u['id'], device[:64])
+        hidden = (await body(request)).get('hidden') is True
+        db.run('update device_tabs set forgotten = ? where user_id = ? and device = ?', time.time() if hidden else None, u['id'], device[:64])
         notify([u['id']], 'tabs')
         return {'ok': True}
 

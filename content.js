@@ -20,8 +20,9 @@
   // in and out of tab groups; getTabs tells each tab's index), favicons (favicons: the icons as images, for a
   // dashboard on the user's own server, which the browser won't let load them from the extension itself),
   // deviceTabs (connected to a server, this browser's open tabs go to it for the account's other browsers;
-  // deviceId: which one this is; openUrls takes an `index` in the window)
-  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs', 'favicons', 'deviceTabs'];
+  // deviceId: which one this is; openUrls takes an `index` in the window), actHistory (rememberAct: a change
+  // outside the data in the shared undo history; undo / redo hand back what to `run`)
+  const FEATURES = ['wakeTabs', 'logoSymbol', 'looseData', 'sharedHistory', 'closeHistory', 'shortcuts', 'trash', 'moveTabs', 'favicons', 'deviceTabs', 'actHistory'];
 
   let greeted = false;
   let parked = false; // page is in the back/forward cache

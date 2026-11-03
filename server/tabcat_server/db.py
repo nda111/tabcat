@@ -54,7 +54,7 @@ create table if not exists device_tabs (  -- each of an account's browsers: its 
   at real not null,
   body text not null,              -- ({windows: [{focused, tabs: [{url, title, icon, pinned, active, group}], groups: [{id, title, color}]}]})
   label text not null default '',  -- (a name given it by the user, in place of its own)
-  forgotten real,                  -- (let go from the list, when: not taken back until it signs in again after)
+  forgotten real,                  -- (hidden from the list, when: shown again by hand, or once it signs in again after)
   primary key (user_id, device)
 );
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings

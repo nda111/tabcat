@@ -500,6 +500,9 @@ async function snap(state) {
 // it replaced (for redo, or undo again)
 async function restore(entry) {
   const out = { id: S.uid(), what: entry.what };
+  // (a change made elsewhere than in the data, on the server say: the dashboard does it, `run`; what does the
+  // opposite is kept for redo, or undo again. feature: actHistory)
+  if (entry.act) { out.act = { back: entry.act.forth, forth: entry.act.back }; out.run = entry.act.back; }
   if (entry.closed) out.opened = await A.reopenTabs(entry.closed);
   if (entry.opened) {
     await chrome.tabs.remove(entry.opened.map((t) => t.id)).catch(() => {});
@@ -530,6 +533,13 @@ const historyHandlers = {
     await pushChange(h, { id, data: true, what: what ?? null });
     return id;
   }),
+  // a change the dashboard made outside the data (a device renamed on the server...): `act.back` undoes it,
+  // `act.forth` does it again, each a plain object the dashboard knows what to do with. Returns its id.
+  rememberAct: ({ act, what }) => withHistory(async (h) => {
+    const id = S.uid();
+    await pushChange(h, { id, act, what: what ?? null });
+    return id;
+  }),
   // the last change, or the one with `id` (and everything after it); returns { what } or null
   undo: ({ id } = {}) => withHistory(async (h) => {
     const i = id == null ? h.undo.length - 1 : h.undo.findIndex((e) => e.id === id);
@@ -541,8 +551,8 @@ const historyHandlers = {
     await dropSnaps(gone);
     if (gone.length > 1) h.undo.push(...gone.slice(1).filter((e) => !e.data));
     if (!back) return null;
-    h.redo.push(back);
-    return { what: back.what };
+    h.redo.push({ ...back, run: undefined });
+    return { what: back.what, run: back.run ?? null };
   }),
   redo: () => withHistory(async (h) => {
     const entry = h.redo.pop();
@@ -550,8 +560,8 @@ const historyHandlers = {
     const back = await restore(entry);
     await dropSnaps([entry]);
     if (!back) return null;
-    h.undo.push(back);
-    return { what: back.what };
+    h.undo.push({ ...back, run: undefined });
+    return { what: back.what, run: back.run ?? null };
   }),
 };
 // Closes duplicate tabs, remembered for undo; returns how many
@@ -1219,7 +1229,7 @@ chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'tabcat-bridge' || !port.sender?.tab) return;
   ports.add(port);
   syncSoon(0); // (a dashboard opening: up to date with the server)
-  if (tabsForgotten) { tabsSent = ''; sendTabsSoon(0, true); } // (signed in again, maybe: this browser's tabs, back on the list)
+  sendTabsSoon(0, true); // (signed in again, maybe: told at once, a browser hidden from the list is shown again then)
   port.onDisconnect.addListener(() => { ports.delete(port); markEditing(port.sender.tab.id, false); });
   port.onMessage.addListener(async (msg) => {
     if ('editing' in msg) return markEditing(port.sender.tab.id, msg.editing);
@@ -1292,7 +1302,7 @@ for (const ev of ['onCreated', 'onUpdated', 'onRemoved']) chrome.tabGroups?.[ev]
 // see /api/sync/tabs), a moment after they change, so the account's other browsers show them in their open tabs
 // panel (feature: deviceTabs). Not its private windows, nor the dashboard, nor new tabs, nor tabcat's own pages. The same as last sent:
 // not again, but now and then all the same (the alarm), to say it's still there.
-let tabsSent = '', tabsSentAt = 0, tabsSendTimer = null, tabsForgotten = false;
+let tabsSent = '', tabsSentAt = 0, tabsSendTimer = null;
 function sendTabsSoon(ms = 2000, again = false) {
   clearTimeout(tabsSendTimer);
   tabsSendTimer = setTimeout(() => sendTabs(again), ms);
@@ -1304,8 +1314,8 @@ function browserName() {
   const os = { macOS: 'macOS', Windows: 'Windows', Linux: 'Linux', 'Chrome OS': 'ChromeOS', ChromeOS: 'ChromeOS', Android: 'Android' }[ua?.platform] || ua?.platform || '';
   return [brand.replace(/^(Google|Microsoft) /, ''), os].filter(Boolean).join(' on ');
 }
+// (`again`: sent even if the same as last time)
 async function sendTabs(again = false) {
-  if (tabsForgotten && again !== true) return; // (let go from the list: see below)
   const s = await S.loadSettings();
   if (!s.server || !s.serverUser) return;
   A.setDashboardUrl(s.dashboardUrl);
@@ -1317,12 +1327,9 @@ async function sendTabs(again = false) {
     groups: groups.filter((g) => g.windowId === w.id).map(({ id, title, color }) => ({ id, title: title || '', color })),
   })).filter((w) => w.tabs.length);
   const now = JSON.stringify([s.server, s.serverUser, windows]);
-  if (now === tabsSent && Date.now() - tabsSentAt < 10 * 60_000) return;
+  if (again !== true && now === tabsSent && Date.now() - tabsSentAt < 10 * 60_000) return;
   try {
-    const r = await syncApi(s, 'tabs', { method: 'PUT', json: { device: await deviceId(), name: browserName(), windows } });
-    // (let go from the account's list: not taken until this browser signs in again; it's tried again then, as a
-    // dashboard links up, rather than at every change meanwhile)
-    tabsForgotten = !!r?.forgotten;
+    await syncApi(s, 'tabs', { method: 'PUT', json: { device: await deviceId(), name: browserName(), windows } });
     tabsSent = now; tabsSentAt = Date.now();
   } catch { /* (offline, or signed out: next time) */ }
 }

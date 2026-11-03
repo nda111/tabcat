@@ -377,14 +377,18 @@ pc2 = next(d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] 
 check(pc2['name'] == 'Work laptop' and pc2['own'] == 'Edge on macOS', f"a browser named: that name, its own kept beside ({pc2['name']!r})")
 sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': []})
 check(next(d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2')['name'] == 'Work laptop', 'and kept as it goes on sending')
-sa.delete('/api/sync/tabs/pc2')
-check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1'], 'a browser let go from the list')
-r = sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]}).json()
-check(r.get('forgotten') and [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1'], "it goes on sending: not taken back (it's let go until it signs in again)")
+sa.put('/api/sync/tabs/pc2/hidden', json={'hidden': True})
+dv = {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}
+check(dv['pc2']['hidden'] and not dv['pc1']['hidden'], 'a browser hidden: still listed, marked hidden (for the list of them to show it again)')
+sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]})
+dv = {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}
+check(dv['pc2']['hidden'] and len(dv['pc2']['windows']) == 1, 'it goes on sending: kept up to date, still hidden')
+sa.put('/api/sync/tabs/pc2/hidden', json={'hidden': False})
+check(not {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}['pc2']['hidden'], 'shown again by hand')
+sa.put('/api/sync/tabs/pc2/hidden', json={'hidden': True})
 time.sleep(.01); sa.post('/api/login', json=J(username='ann', password='annpass99'))
-r = sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]}).json()
-pc2 = next((d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2'), None)
-check(r.get('ok') and pc2 and pc2['name'] == 'Edge on macOS', f"signed in again: back, under its own name ({pc2 and pc2['name']!r})")
+sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]})
+check(not {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}['pc2']['hidden'], 'hidden, then signed in again there: shown again by itself')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

@@ -130,6 +130,31 @@ with sync_playwright() as p:
     pulled = d.evaluate("document.querySelector('#board').style.translate")
     touch('touchEnd', 0, 0); time.sleep(.6)
     check(d.evaluate(TOP) < top0 - 60 and not pulled, f'touch: drawn back in the same touch, it comes to rest and scrolls up ({top0} -> {d.evaluate(TOP)}, {pulled!r})')
+
+    # sideways: the board wider than its box (narrow window). No sideways bar; the wheel turned sideways past the
+    # left end pulls it and it springs back; a finger moves it diagonally, both ways at once
+    d.set_viewport_size({'width': 700, 'height': 560}); time.sleep(.6)
+    d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=200; b.scrollLeft=0;})()"); time.sleep(.3)
+    room = d.evaluate("(()=>{const b=document.querySelector('#board'); return b.scrollWidth-b.clientWidth;})()")
+    bar = d.evaluate("[...document.querySelectorAll('.sf-thumb.x')].some(t => !t.hidden && t.parentElement.contains(document.querySelector('#board')))")
+    check(room > 50 and not bar, f'the board wider than its box: scrolls sideways, no sideways bar ({room}px, bar: {bar})')
+    PULLX = "(sel)=>{window.__px=[]; const e=document.querySelector(sel); (function f(){ window.__px.push(parseFloat((e.style.translate||'0 0').split(' ')[0])||0); if(window.__px.length<100) requestAnimationFrame(f); })()}"
+    bx, by = d.evaluate("(()=>{const r=document.querySelector('#board').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2];})()")
+    d.mouse.move(bx, by); d.evaluate(PULLX, '#board')
+    for _ in range(6): cdp0.send('Input.dispatchMouseEvent', {'type': 'mouseWheel', 'x': bx, 'y': by, 'deltaX': -20, 'deltaY': 0}); time.sleep(.016)
+    time.sleep(1.6)
+    px = d.evaluate('__px')
+    check(max(px) > 8 and px[-1] == 0, f'the wheel sideways past the left end pulls the board and it springs back ({max(px)})')
+    d.evaluate("(()=>{const b=document.querySelector('#board'); b.scrollTop=150; b.scrollLeft=0;})()"); time.sleep(.3)
+    x, y = bx + 60, by + 60
+    touch('touchStart', x, y)
+    for i in range(1, 9): touch('touchMove', x - i * 12, y - i * 9); time.sleep(.016)
+    touch('touchEnd', 0, 0); time.sleep(.2)
+    left, top = d.evaluate("(()=>{const b=document.querySelector('#board'); return [b.scrollLeft, b.scrollTop];})()")
+    check(left > 40 and top > 150 + 30, f'a finger drawn diagonally: the board goes both ways at once ({left}, {top - 150})')
+    time.sleep(1); l2 = d.evaluate("document.querySelector('#board').scrollLeft")
+    check(l2 > left, f'and flung, it glides on ({left} -> {l2})')
+
     check(not errors, f'no page errors {errors}')
     ctx.close()
 done()

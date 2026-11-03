@@ -80,7 +80,9 @@ with sync_playwright() as p:
     name = bd.inner_text('.devs .dev-name')
     check(name.strip() != '' and 'tab' in bd.inner_text('.devs .dev-meta'), f"named for its browser, with how many tabs and when ({name!r}, {bd.inner_text('.devs .dev-meta')!r})")
     check(bd.locator('.devs .dev').count() == 1 and not bd.locator(f".devs .dev[data-device='{b.evaluate('chrome.storage.local.get(\'tabcat:device\').then(r => r[\'tabcat:device\'])') or 'x'}']").count(), "not B itself")
-    bd.click('.devs .dev-head'); time.sleep(.5)
+    bd.click('.devs .dev-head'); time.sleep(.08)
+    check(bd.locator('.devs .dev:not(.collapsed)').count() == 1, 'a click opens it at once')
+    time.sleep(.4)
     urls = lambda: bd.evaluate("[...document.querySelectorAll('.devs .rtab')].map(r => r.dataset.url)")
     check(wait(lambda: SERVER + '/privacy?from-a' in urls(), 'opened', timeout=10) and not any(u.startswith('chrome-extension:') for u in urls()), f"opened: its tabs (not tabcat's own pages) ({urls()})")
 
@@ -102,33 +104,47 @@ with sync_playwright() as p:
     links = b.evaluate(f"{TREE}.then(s => JSON.stringify(s)).then(j => (j.match(/privacy\\?from-a/g) || []).length)")
     check(links == 1, f'dragged onto the board: saved as a link ({links})')
 
-    # named: double-click the name, type, Enter; every browser of the account shows it
-    bd.dblclick('.devs .dev-name'); bd.wait_for_selector('.devs .dev-rename')
+    tip = bd.evaluate("document.querySelector('.devs .rtab').title || document.querySelector('.devs .rtab').dataset.tip")
+    check('click' not in tip.lower() and 'drag' not in tip.lower(), f'its tabs: their title and address, no how-to ({tip!r})')
+
+    # named from its menu; undone with Ctrl+Z, done again with Ctrl+Shift+Z
+    menu = lambda: (bd.click('.devs .dev-head', button='right'), bd.wait_for_selector('#menu:not([hidden])'), bd.evaluate("[...document.querySelectorAll('#menu button')].map(b => b.textContent.trim())"))[2]
+    items = menu()
+    check(any(i.startswith('Rename') for i in items) and any(i.startswith('Hide') for i in items) and not any('(' in i for i in items), f'its menu: Rename, Hide ({items})')
+    own = bd.inner_text('.devs .dev-name')
+    bd.locator('#menu button', has_text='Rename').click(); bd.wait_for_selector('.devs .dev-rename')
     bd.fill('.devs .dev-rename', 'Work PC'); bd.press('.devs .dev-rename', 'Enter'); time.sleep(.8)
-    got = ad.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(r => r.devices.map(d => d.name))")
-    check(bd.inner_text('.devs .dev-name') == 'Work PC' and 'Work PC' in got and bd.locator('.devs .dev:not(.collapsed)').count() == 1,
-          f"named in place (double-click): shown, kept for the account; not opened or shut by it ({got})")
-    pa.goto(SERVER + '/privacy?third'); time.sleep(3)
-    check(bd.inner_text('.devs .dev-name') == 'Work PC', 'kept as that browser goes on')
+    names = lambda pg: pg.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(r => r.devices.map(d => d.name))")
+    check(bd.inner_text('.devs .dev-name') == 'Work PC' and 'Work PC' in names(ad), f'renamed: shown, kept for the account ({names(ad)})')
+    bd.mouse.click(600, 400); bd.keyboard.press('Control+z'); time.sleep(1)
+    check(bd.inner_text('.devs .dev-name') == own and 'Work PC' not in names(ad), f'Ctrl+Z: its name as it was ({bd.inner_text(".devs .dev-name")!r})')
+    bd.keyboard.press('Control+Shift+z'); time.sleep(1)
+    check(bd.inner_text('.devs .dev-name') == 'Work PC' and 'Work PC' in names(ad), 'Ctrl+Shift+Z: renamed again')
 
-    # let go from the list, from the right-click menu only
-    check(not bd.locator('.devs .dev-head button:not(.win-twisty)').count(), 'no button on it to let it go by a slip')
-    bd.click('.devs .dev-head', button='right'); bd.wait_for_selector('#menu:not([hidden])')
-    items = bd.evaluate("[...document.querySelectorAll('#menu button')].map(b => b.textContent.trim())")
-    check(any('Rename' in i for i in items) and any('Remove' in i for i in items), f'its menu: rename, remove ({items})')
-    bd.locator('#menu button', has_text='Remove').click(); time.sleep(1)
-    check(bd.locator('.devs .dev').count() == 0, 'removed from the menu: gone')
-    pa.goto(SERVER + '/privacy?fourth'); time.sleep(4)
-    check(bd.locator('.devs .dev').count() == 0, "that browser goes on: not back (it's let go until it signs in again)")
+    # hidden from its menu; shown again from the list by the heading
+    menu(); bd.locator('#menu button', has_text='Hide').click(); time.sleep(.6)
+    check(bd.locator('.devs .dev').count() == 0 and bd.locator('.devs .devs-title').count() == 1, 'hidden: gone from the panel, the heading stays (for the list)')
+    bd.click('.devs-list-btn'); bd.wait_for_selector('.devs-pop')
+    boxes = bd.evaluate("[...document.querySelectorAll('.devs-pop input')].map(i => i.checked)")
+    check(boxes == [False], f'the list: it, unticked ({boxes})')
+    bd.click('.devs-pop input'); time.sleep(.6)
+    check(bd.locator('.devs .dev').count() == 1, 'ticked: shown again')
+    bd.click('.devs-pop input'); wait(lambda: bd.locator('.devs .dev').count() == 0, 'hidden', timeout=5); bd.keyboard.press('Escape')
+    check(wait(lambda: bd.locator('.devs .dev').count() == 0 and not bd.locator('.devs-pop').count(), 'shut', timeout=5), 'unticked: hidden; Escape shuts the list')
 
-    # signed in again there: back, under its own name
+    # signed in again there: shown again by itself
     ad.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'boss', password: 'correct horse' }) })")
     ad.reload(); ad.wait_for_selector('.ws-item', timeout=15000)
-    check(wait(lambda: bd.locator('.devs .dev').count() == 1, 'back', timeout=15) and bd.inner_text('.devs .dev-name') != 'Work PC',
-          f"signed in again there: back, under its own name ({bd.locator('.devs .dev-name').all_inner_texts()})")
+    check(wait(lambda: bd.locator('.devs .dev').count() == 1, 'back', timeout=15), 'hidden, then signed in again there: shown again by itself')
     if os.environ.get('SHOT'):
         if bd.locator('.devs .dev.collapsed').count(): bd.click('.devs .dev-head')
         time.sleep(.6); bd.mouse.move(5, 5); bd.locator('#tabs-panel').screenshot(path=os.environ['SHOT'])
+
+    # A signed out of from B (its account page's list of sign-ins): A's dashboard shows the sign-in at once
+    sess = bd.evaluate("fetch('/api/me/sessions').then(r => r.json())")
+    other = [x for x in sess if not x.get('current')]
+    for x in other: bd.evaluate(f"fetch('/api/me/sessions/{x['id']}', {{ method: 'DELETE' }})")
+    check(wait(lambda: ad.locator('#username').count() and ad.is_visible('#username'), 'A signed out', timeout=6), f'signed out of from another device: the sign-in shows at once, no reload ({len(other)} other)')
 
     check(not errors, f'no page errors {errors}')
     actx.close(); bctx.close()

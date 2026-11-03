@@ -24,6 +24,13 @@ export function liveStream(handle) {
     const open = () => {
       es = new EventSource('/api/live');
       for (const k of ['head', 'me', 'admin', 'accounts', 'tabs']) es.addEventListener(k, (e) => { let d = null; try { d = JSON.parse(e.data); } catch { /* none */ } tell(k, d); });
+      // (this sign-in ended, signed out of elsewhere: said by the server at once. Signed out for good, if the
+      // browser has no other sign-in now; another account taking over instead: listened to again, as it)
+      es.addEventListener('gone', async () => {
+        es?.close(); es = null;
+        const r = await fetch('/api/me', { credentials: 'same-origin' }).catch(() => null);
+        if (r?.status === 401) tell('gone'); else if (!stopped) open();
+      });
       // (newly held, taken over from a page closed meanwhile, or back after a break: what came between was missed)
       es.addEventListener('open', () => { tell('open'); });
       es.addEventListener('error', async () => { // (the server away a moment: it tries again by itself)
