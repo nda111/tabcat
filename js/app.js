@@ -4463,7 +4463,7 @@ async function showAccount() {
   const live = before && $('#account').open;
   const put = (el, was, now, change) => { if (was === now) return; if (live) crossfade(el, change); else change(); };
   // (two-step sign-in on: a blue 2FA chip after the name, as on the admin page)
-  put($('#account-name'), before?.name, accountShown.name, () => $('#account-name').replaceChildren(...nameLine(me)));
+  if (before?.name !== accountShown.name) { if (live) swapName($('#account-name'), me); else $('#account-name').replaceChildren(...nameLine(me)); }
   // the profile photo (set on the account page), or the name's first letter in the account's colour; the button shows the photo too
   const photo = () => Object.assign(document.createElement('img'), { src: me.avatar, alt: '' });
   put($('#account-avatar'), before?.avatar, accountShown.avatar, () => {
@@ -4532,7 +4532,27 @@ const accountPhoto = (a, cls = 'account-avatar') => ACCENT_TINT(h('span', { clas
   a.avatar ? Object.assign(document.createElement('img'), { src: a.avatar, alt: '' }) : [...a.username][0].toUpperCase()), a.accent);
 // (under the name: the username, if there's a name, then the role)
 const roleLine = (a) => [a.name && a.username, t(a.admin ? 'account.roleAdmin' : 'account.roleUser')].filter(Boolean).join(' · ');
-const nameLine = (a) => [a.name || a.username, ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])];
+const nameLine = (a) => [h('span', { class: 'nm' }, a.name || a.username), ...(a.twofa ? [h('span', { class: 'chip-2fa' }, '2FA')] : [])];
+// A name changed in place: the old words fade out where they were as the new fade in, over each other on the same
+// line (in the same element: nothing moves up or down); the 2FA chip after it slides to its new place, comes, or goes.
+const SLIDE = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+function swapName(el, a) {
+  const was = el.querySelector('.nm')?.textContent ?? el.textContent, chipWas = el.querySelector('.chip-2fa');
+  const at = el.getBoundingClientRect().left, x = chipWas ? chipWas.getBoundingClientRect().left - at : null;
+  el.replaceChildren(...nameLine(a));
+  const nm = el.querySelector('.nm'), chip = el.querySelector('.chip-2fa');
+  const ghost = h('span', { class: 'nm-ghost', 'aria-hidden': 'true' }, ...(was !== nm.textContent ? [was] : []));
+  if (chipWas && !chip) ghost.append(Object.assign(chipWas, { style: `position: absolute; left: ${x}px; margin: 0` }));
+  if (ghost.childNodes.length) {
+    el.append(ghost);
+    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
+  }
+  if (was !== nm.textContent) nm.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
+  if (chip && x != null) {
+    const dx = x - (chip.getBoundingClientRect().left - at);
+    if (dx) chip.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], SLIDE);
+  } else if (chip) chip.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], SLIDE);
+}
 // In place, the old fades out as the new fades in, both at once: the old pictured over it while it goes (in the
 // box it's placed by, with its text's look)
 function ghostOver(el, old) {
@@ -4572,7 +4592,7 @@ async function openAccountList(again = false) {
     others.forEach((a, i) => {
       const row = rows[i], now = accountLook(a), was = row.look || {};
       row.look = now;
-      if (was.name !== now.name) crossfade(row.querySelector('.account-name'), () => row.querySelector('.account-name').replaceChildren(...nameLine(a)));
+      if (was.name !== now.name) swapName(row.querySelector('.account-name'), a);
       if (was.role !== now.role) crossfade(row.querySelector('.account-role'), () => { row.querySelector('.account-role').textContent = now.role; });
       if (was.photo !== now.photo) { const old = row.querySelector('.account-avatar'); crossfade(old, () => { const p = accountPhoto(a, 'account-avatar small'); old.replaceChildren(...p.childNodes); ACCENT_TINT(old, a.accent); }); }
     });
