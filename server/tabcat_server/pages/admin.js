@@ -14,11 +14,16 @@ const leave = (el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 
 // from how it was, kept here by user
 const was = new Map();
 let adminCount = 0;
+let shownUsers = '';
 async function users() {
   // (you first, then the other admins, then everyone else, each as they were made)
   const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
   const list = (await api('admin/users')).sort((a, b) => rank(a) - rank(b));
   adminCount = list.filter((u) => u.admin).length;
+  // (the same as shown: nothing redrawn. Told twice of one change, a redraw would cut short what's moving)
+  const seen = JSON.stringify([list, [...newPasswords]]);
+  if (seen === shownUsers) return;
+  shownUsers = seen;
   // (gone since, another admin's doing say: they fade aside first, the rest gliding up after)
   const ids = new Set(list.map((u) => String(u.id)));
   await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
@@ -41,15 +46,16 @@ async function users() {
       if (!w) { if (el.matches('.tag')) el.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING }); continue; } // (a chip new: it pops in)
       const dx = w.left - el.getBoundingClientRect().left;
       if (Math.abs(dx) > .5) el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 300, easing: GLIDE });
-      // (the name itself changed: the old fades out where it was as the new fades in; the username beside it only slides)
-      if (el.dataset.f === 'name' && w.el.textContent !== el.textContent) { ghost(w, el, top); el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' }); }
+      // (the name itself changed, or when last seen: the old fades out where it was as the new fades in; the username
+      // beside it only slides)
+      if (['name', 'seen'].includes(el.dataset.f) && w.el.textContent !== el.textContent) { ghost(w, el, top); el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' }); }
     }
     for (const [f, w] of was) if (!tr.querySelector(`[data-f="${f}"]`) && w.el.matches('.tag:not(.ghost)')) ghost(w, tr.cells[1], top); // (a chip gone: it fades where it was)
-    // (2FA's chip, last seen, a button come or gone: not the name, done above, nor the role, suspending, a new password, done below)
+    // (a button come or gone, a new photo: not the name, the chips, last seen, done above, nor the role, suspending, a
+    // new password, done below)
     now.forEach((x, i) => {
-      if (x === old[i] || [1, 3, 4, 5].includes(i)) return;
+      if (x === old[i] || [1, 2, 3, 4, 5].includes(i)) return;
       if (i === 0) tr.cells[0].firstChild?.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING }); // (a new photo, or colour: it springs in)
-      else if (i === 2) freshen(tr.cells[i].firstChild || tr.cells[i]);
       else [...tr.cells[i].children].forEach(freshen);
     });
   }

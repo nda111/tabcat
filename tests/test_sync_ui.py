@@ -113,7 +113,7 @@ with sync_playwright() as p:
     bd.keyboard.press('Escape'); time.sleep(.4)
 
     # renamed in A (a workspace, a group): in B the old name fades out as the new fades in
-    MOVED = """window.__moved = new Set(); (function f() { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t?.className) __moved.add(String(t.className)); } requestAnimationFrame(f); })()"""
+    MOVED = """window.__moved = new Set(); (function f() { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t?.className) __moved.add(String(t.className)); if (t?.dataset?.p) __moved.add('p:' + t.dataset.p + ':' + (a.effect.getKeyframes()[0].transform ? 'slide' : 'fade')); } requestAnimationFrame(f); })()"""
     bd.evaluate(MOVED)
     edit(a, "s.workspaces.find(w => w.id === 'own-A').name = 'Own A renamed'")
     bd.wait_for_function("[...document.querySelectorAll('.ws-item .name')].some(e => e.textContent === 'Own A renamed')", timeout=8000)
@@ -149,7 +149,7 @@ with sync_playwright() as p:
     except Exception: ok = False
     check(ok, 'another account signed in in B, renamed elsewhere: the list shows it at once')
     time.sleep(.2)
-    check({'nm', 'nm-ghost'} <= set(bd.evaluate('[...__moved]')), f"the name alone cross-fading, the old over the new on the same line ({bd.evaluate('[...__moved]')})")
+    check('p:name:fade' in bd.evaluate('[...__moved]'), f"the name alone cross-fading, the old over the new on the same line ({bd.evaluate('[...__moved]')})")
     time.sleep(.5); bd.evaluate(MOVED)
     ann = oc.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.id)")
     ad.evaluate(f"fetch('/api/admin/users/{ann}', {{ method: 'PATCH', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ admin: true }}) }})")
@@ -159,7 +159,7 @@ with sync_playwright() as p:
     role = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
     time.sleep(.5)
     if os.environ.get('SHOT'): bd.locator('#account').screenshot(path=os.environ['SHOT'])
-    check(ok and 'account-role' in bd.evaluate('[...__moved]') and 'nm' not in bd.evaluate('[...__moved]'), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
+    check(ok and 'p:role:fade' in bd.evaluate('[...__moved]') and not {'nm', 'p:id:fade', 'p:sep:fade', 'p:name:fade'} & set(bd.evaluate('[...__moved]')), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
     other.close()
 
     check(not errors, f'no page errors {errors}')
