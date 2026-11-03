@@ -119,6 +119,14 @@ with sync_playwright() as p:
     bd.wait_for_function("[...document.querySelectorAll('.ws-item .name')].some(e => e.textContent === 'Own A renamed')", timeout=8000)
     time.sleep(.3)
     check('name' in bd.evaluate('[...__moved]'), f"renamed in another browser: the name cross-fades ({bd.evaluate('[...__moved]')})")
+    # (the board's title too: the old one fading exactly where it was, its symbol and gaps as they were, not aside)
+    bd.evaluate('''window.__title = null; new MutationObserver(() => { const hs = document.querySelectorAll('#ws-head h1');
+      if (hs.length === 2 && !window.__title) { const x = (h) => { const r = document.createRange(); r.selectNodeContents(h); return [h.getBoundingClientRect().left, h.lastChild.nodeType === 3 ? (r.setStart(h.lastChild, 0), r.getBoundingClientRect().left) : null]; };
+        window.__title = [x(hs[0]), x(hs[1])]; } }).observe(document.querySelector('#ws-head'), { childList: true, subtree: true })''')
+    edit(a, "s.workspaces.find(w => w.id === 'own-A').name = 'Own A again'")
+    bd.wait_for_function("document.querySelector('#ws-head h1').textContent.includes('Own A again')", timeout=8000); time.sleep(.1)
+    title = bd.evaluate('window.__title')
+    check(title and abs(title[0][0] - title[1][0]) < 1 and (title[0][1] is None or abs(title[0][1] - title[1][1]) < 1), f"the board's title: the old fading right where it was, not shifted aside ({title})")
 
     # the editor open in B on a workspace, saved in A: what B hasn't edited follows; what it has, stays
     bd.dblclick('.ws-item[data-id="w2"]'); bd.wait_for_selector('#editor[open]'); time.sleep(.3)
