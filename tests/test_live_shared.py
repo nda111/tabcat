@@ -24,7 +24,7 @@ while not srv.started: time.sleep(.05)
 COUNT = '''(() => { const E = window.EventSource; window.__es = 0;
   window.EventSource = class extends E { constructor(...a) { super(...a); window.__es++; this.addEventListener('error', () => {}); } };
   window.__moved = new Set();
-  const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t) { window.__moved.add(t.id || t.className || t.tagName); if (t.dataset?.f) window.__moved.add('f:' + t.dataset.f + ':' + (/translateX/.test(a.effect.getKeyframes()[0].transform) ? 'slide' : a.effect.getKeyframes()[0].transform ? 'rise' : 'fade')); } } requestAnimationFrame(look); };
+  const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t) { window.__moved.add(t.id || t.className || t.tagName); if (t.closest?.('thead')) window.__moved.add('head:' + t.textContent); if (t.dataset?.f) window.__moved.add('f:' + t.dataset.f + ':' + (/translateX/.test(a.effect.getKeyframes()[0].transform) ? 'slide' : a.effect.getKeyframes()[0].transform ? 'rise' : 'fade')); } } requestAnimationFrame(look); };
   requestAnimationFrame(look); })()'''
 NOLOCKS = "Object.defineProperty(Navigator.prototype, 'locks', { get: () => undefined });"
 
@@ -82,6 +82,7 @@ with sync_playwright() as p:
     time.sleep(.3)
     m = adm.evaluate('[...window.__moved]')
     check('f:name:fade' in m, f"the name: the old fading out as the new fades in ({m})")
+    check('head:Last seen' in m, f'the column heads after the name slide with their columns ({m})')
     check('f:uname:slide' in m and not {'f:uname:fade', 'f:uname:rise', 'f:seen:rise'} & set(m) and 'f:seen:slide' in m, f"the username beside it, and last seen after it, slide to their new places, not blinking ({m})")
     adm.evaluate('window.__moved.clear()')
     call(o, 'PUT', '/api/admin/settings', {'signup': 'open'})

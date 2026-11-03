@@ -484,7 +484,8 @@ dd.crossfade > * { grid-area: 1 / 1; }
 #users .who { white-space: nowrap; }
 #users .who { display: inline-flex; align-items: baseline; gap: 4px; }
 #users .tag { flex: none; line-height: 18px; }
-#users td { position: relative; } /* (what was there fades where it stood, over the cell: see ghost in admin.js) */
+#users td { position: relative; }
+th > span { display: inline-block; } /* (a column head, to slide as its column moves) */ /* (what was there fades where it stood, over the cell: see ghost in admin.js) */
 #users [data-f="seen"] { display: inline-block; } /* (to slide, as the name before it grows or shrinks) */
 #users td.hide-narrow { min-width: 90px; } /* (the date may take two lines: the row fits its box) */
 

@@ -33,10 +33,16 @@ async function users() {
   const read = (tr) => [...tr.cells].map((td) => td.textContent + '|' + td.querySelectorAll('button, .tag').length + '|' + [...td.querySelectorAll('img, [data-tint]')].map((x) => x.src || x.style.cssText + x.dataset.tint).join());
   const spot = (tr) => { const top = tr.getBoundingClientRect().top;
     return new Map([...tr.querySelectorAll('[data-f]')].map((el) => { const r = el.getBoundingClientRect(); return [el.dataset.f, { el, left: r.left, top: r.top - top }]; })); };
+  // (the column heads too: a column wider or narrower, the heads after it slide with it)
+  const heads = [...$('#users').closest('table').tHead.querySelectorAll('th > span')], headsAt = heads.map((el) => el.getBoundingClientRect().left);
   const olds = [...$('#users').children];
   const before = new Map(olds.map((tr) => [tr.dataset.key, read(tr)]));
   const spots = new Map(olds.map((tr) => [tr.dataset.key, spot(tr)]));
   await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
+  heads.forEach((el, i) => {
+    const dx = headsAt[i] - el.getBoundingClientRect().left;
+    if (Math.abs(dx) > .5) el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 300, easing: GLIDE });
+  });
   for (const tr of $('#users').children) {
     const old = before.get(tr.dataset.key), now = read(tr), was = spots.get(tr.dataset.key);
     if (!old) continue;
