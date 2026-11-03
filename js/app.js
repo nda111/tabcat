@@ -4573,7 +4573,9 @@ function ghostOver(el, old) {
     left: `${r.left - b.left - box.clientLeft + box.scrollLeft}px`, top: `${r.top - b.top - box.clientTop + box.scrollTop}px`,
     maxWidth: `${Math.max(r.width, 1)}px`, height: `${r.height}px`, font: cs.font, color: cs.color, lineHeight: cs.lineHeight, letterSpacing: cs.letterSpacing,
   });
-  box.append(old);
+  // (beside it, not at the end of the box: placed by the same box all the same, and styled as it is where it is: the
+  // board's title, say, keeps its symbol's width and gaps, rather than shifting aside while it fades)
+  el.after(old);
   old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
   el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
 }
