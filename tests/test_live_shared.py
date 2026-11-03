@@ -121,6 +121,17 @@ with sync_playwright() as p:
     mp = -(-mine // 5)
     check(acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp), f'the account page: its record five a page, {mp} pages ({mine} in all)')
     top = acc.locator('#my-events .event').first.get_attribute('data-key')
+    TURN = '''(sel) => new Promise((done) => { const seen = []; const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target, k = a.effect.getKeyframes();
+      if (t?.closest?.(sel) && /translateY/.test(k[0].transform + k[1].transform)) seen.push((t.closest('.event')?.parentElement?.closest('.event') ? 'old ' : 'new ') + (k[0].transform === 'none' ? 'out ' + k[1].transform : 'in ' + k[0].transform)); }
+      if (seen.length) done([...new Set(seen.map((x) => x.replace(/[0-9.]+px/, 'N')))]); else requestAnimationFrame(look); }; look(); })'''
+    acc.evaluate("void (window.__turn = (" + TURN + ")('#my-events'))")
+    acc.click('#my-ev-next'); time.sleep(.6)
+    turn = acc.evaluate('window.__turn')
+    check('old out translateY(-N)' in turn and 'new in translateY(N)' in turn, f'next: in each row, the old goes up and out as the new comes up from below ({turn})')
+    acc.evaluate("void (window.__turn = (" + TURN + ")('#my-events'))")
+    acc.click('#my-ev-prev'); time.sleep(.6)
+    turn = acc.evaluate('window.__turn')
+    check('old out translateY(N)' in turn and 'new in translateY(-N)' in turn, f'back: the other way ({turn})')
     acc.click('#my-ev-next'); time.sleep(.6)
     check(acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top, 'next: page 2')
     acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); time.sleep(.6)

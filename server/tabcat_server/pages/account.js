@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { $, api, appear, tint, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
+import { turnRows, $, api, appear, tint, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -284,16 +284,15 @@ async function myEvents(to = null) {
   if (first) box.replaceChildren(...rows);
   else if (!dir) await flip(box, () => box.replaceChildren(...rows));
   else {
-    // (another page: the box glides to its height, its rows slide in from the side it's on)
+    // (another page: each row's place turns over, the old going up and out as the new comes in from below; going
+    // back, the other way. The box glides to its height.)
     const from = box.offsetHeight;
-    box.replaceChildren(...rows);
+    turnRows(box, rows, dir);
     const to2 = box.offsetHeight;
     if (Math.abs(from - to2) > .5) {
       box.style.overflow = 'clip';
-      box.animate([{ height: `${from}px` }, { height: `${to2}px` }], { duration: 300, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; }).catch(() => {});
+      box.animate([{ height: `${from}px` }, { height: `${to2}px` }], { duration: 340, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.finally(() => { box.style.overflow = ''; }).catch(() => {});
     }
-    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: `translateX(${dir * 18}px)` }, { opacity: 1, transform: 'none' }],
-      { duration: 260, delay: i * 12, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'backwards' }));
   }
 }
 // the pages: shown once there are more than five

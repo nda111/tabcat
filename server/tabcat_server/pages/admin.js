@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { appear, freshen, live, tint, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { turnRows, appear, freshen, live, tint, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -336,16 +336,15 @@ async function events(to = null) {
   const rows = r.events.length ? r.events.map(eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
   if (!dir) await flip(list, () => list.replaceChildren(...rows));
   else {
-    // (another page: the box glides to its height, its rows slide in from the side it's on)
+    // (another page: each row's place turns over, the old going up and out as the new comes in from below; going
+    // back, the other way. The box glides to its height.)
     const card = list.closest('.card'), from = card.offsetHeight;
-    list.replaceChildren(...rows);
+    turnRows(list, rows, dir);
     const h2 = card.offsetHeight;
     if (Math.abs(from - h2) > .5) {
       card.style.overflow = 'clip';
-      card.animate([{ height: `${from}px` }, { height: `${h2}px` }], { duration: 300, easing: GLIDE }).finished.finally(() => { card.style.overflow = ''; }).catch(() => {});
+      card.animate([{ height: `${from}px` }, { height: `${h2}px` }], { duration: 340, easing: GLIDE }).finished.finally(() => { card.style.overflow = ''; }).catch(() => {});
     }
-    rows.forEach((el, i) => el.animate([{ opacity: 0, transform: `translateX(${dir * 18}px)` }, { opacity: 1, transform: 'none' }],
-      { duration: 260, delay: i * 12, easing: GLIDE, fill: 'backwards' }));
   }
   $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
     ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));

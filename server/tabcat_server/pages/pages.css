@@ -495,7 +495,7 @@ th > span { display: inline-block; } /* (a column head, to slide as its column m
 .ev-head select { width: auto; margin: 0; padding-top: 5px; padding-bottom: 5px; font-size: 13px; }
 .ev-fails { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
 .ev-fails b { margin-right: 2px; }
-.events { display: flex; flex-direction: column; margin: 0 0 8px; }
+.events { position: relative; display: flex; flex-direction: column; margin: 0 0 8px; }
 /* the record's pages: ‹ [n] / N › under it */
 .ev-pager { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 4px; }
 .ev-pager .btn { min-width: 32px; justify-content: center; font-size: 15px; line-height: 1; }

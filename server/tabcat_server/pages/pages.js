@@ -432,6 +432,32 @@ export async function flip(list, change) {
   }
 }
 
+// Another page of a list (`dir`: 1 on, -1 back): each row's place turns over in place, within it: what was there
+// goes up (going back, down) and out as the new comes in from below (above). Rows more than before come the same way
+// in their places; rows fewer go the same way out of theirs, as the list closes up (the caller glides its height).
+export function turnRows(list, rows, dir) {
+  const olds = [...list.children].map((el) => ({ el, top: el.offsetTop, height: el.offsetHeight }));
+  list.replaceChildren(...rows);
+  const timing = { duration: 340, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  const out = (g, by) => g.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * by}px)`, opacity: 0 }], { ...timing, fill: 'forwards' })
+    .finished.then(() => g.remove(), () => g.remove());
+  const ghost = (o, style) => { Object.assign(o.el.style, { position: 'absolute', left: '0', right: '0', margin: '0', pointerEvents: 'none', ...style }); return o.el; };
+  rows.forEach((row, i) => {
+    const by = row.offsetHeight, kids = [...row.children], o = olds[i];
+    row.style.position = 'relative';
+    row.style.overflow = 'clip';
+    if (o) { const g = ghost(o, { top: '0', height: '100%', borderBottomColor: 'transparent' }); row.append(g); out(g, by); }
+    const anims = (kids.length ? kids : [row]).map((k) => k.animate([{ transform: `translateY(${dir * by}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], timing).finished);
+    Promise.allSettled(anims).then(() => { row.style.position = ''; row.style.overflow = ''; });
+  });
+  for (const o of olds.slice(rows.length)) {
+    const g = ghost(o, { top: `${o.top}px`, height: `${o.height}px`, overflow: 'clip' });
+    list.append(g);
+    [...g.children].forEach((k) => k.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * o.height}px)`, opacity: 0 }], { ...timing, fill: 'forwards' }));
+    g.animate([{ opacity: 1 }, { opacity: 1 }], timing).finished.then(() => g.remove(), () => g.remove());
+  }
+}
+
 // A random password, easy to read out (no 0/O, 1/l/I)
 export function randomPassword(n = 14) {
   const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
