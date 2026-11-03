@@ -349,8 +349,12 @@ function reloadWhenIdle() {
 }
 const apply = (...ops) => run(B.apply(...ops));
 
+// Text sizes (Settings > Appearance): each text's own size times this; symbols and icons keep theirs
+const FONT_SCALES = [.85, .92, 1, 1.1, 1.2];
+const fontScaleOf = (s) => FONT_SCALES[Number.isInteger(s.fontScale) ? Math.max(0, Math.min(4, s.fontScale)) : 2];
 function applyTheme() {
   const root = document.documentElement;
+  root.style.setProperty('--fs', fontScaleOf(settings));
   if (settings.theme === 'auto') delete root.dataset.theme;
   else root.dataset.theme = settings.theme;
   const hue = ACCENTS[settings.accent];
@@ -359,7 +363,7 @@ function applyTheme() {
   else { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
   tintFavicon();
   // remembered for the next visit's first paint (see the script in index.html)
-  try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
+  try { localStorage.setItem('tabcat:look', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue, fs: fontScaleOf(settings) })); } catch { /* storage unavailable */ }
 }
 
 // The tab's icon: the logo in the accent colour (a pinned dashboard tab shows nothing else), as .logo
@@ -895,7 +899,7 @@ function syncChildren(parent, kids) {
 const groupCache = new Map(); // id -> { key, el }
 function cachedGroup(g) {
   if (preview?.id === g.id) g = { ...g, ...preview.fields };
-  let key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}`;
+  let key = `${JSON.stringify(g)}|${editingNoteId === g.id}|${selected.has(g.id)}|${[...pickedItems]}|${getLang()}|${settings?.defaultGroupId === g.id}`; // (the default group's mark too)
   if (preview && preview.id !== g.id && key.includes(`"id":"${preview.id}"`)) key += JSON.stringify(preview.fields); // (an item in it)
   const c = groupCache.get(g.id);
   if (c && c.key === key && !c.el.getAnimations({ subtree: true }).length) return c.el;
@@ -1012,6 +1016,8 @@ function renderGroup(g) {
       h('div', { class: 'node-line' },
         h('span', { class: 'name' }, g.name),
         h('span', { class: 'count' }, T.countLinks(g)),
+        // (the default group, where the toolbar popup and the right-click menu save: a small mark, left of the arrow)
+        settings?.defaultGroupId === g.id && h('span', { class: 'default-mark', title: t('settings.defaultGroup'), dataset: { tipAt: 'pointer' } }, icon('save', 13)),
         !empty && Object.assign(btn(icon('chevron'), t(g.collapsed ? 'act.expand' : 'act.collapse'), () => toggleCollapse(g)), { className: 'icon-btn collapse-btn' })),
       // always-visible tools: add buttons | divider | everything else
       h('div', { class: 'node-tools' },
@@ -1342,9 +1348,16 @@ async function refreshRemote() {
   const [me, r] = await Promise.all([remote?.me ?? B.call('deviceId').catch(() => null),
     fetch('/api/sync/tabs', { credentials: 'same-origin', cache: 'no-store' }).then((x) => (x.ok ? x.json() : null), () => null)]);
   if (seq !== remoteSeq || !r || !me) return;
-  remote = { me, devices: r.devices.filter((d) => d.device !== me) };
+  // (what's changed here and still on its way to the server wins over an answer from before it: a tick quickly
+  // clicked again isn't undone by the first click's echo)
+  let devices = r.devices.filter((d) => d.device !== me);
+  for (const d of devices) if (pendingHidden.has(d.device)) d.hidden = pendingHidden.get(d.device);
+  if (pendingOrder) devices = pendingOrder.map((id) => devices.find((d) => d.device === id)).filter(Boolean).concat(devices.filter((d) => !pendingOrder.includes(d.device)));
+  remote = { me, devices };
   renderRemote();
 }
+const pendingHidden = new Map(); // (device: hidden, as ticked here and not yet kept by the server)
+let pendingOrder = null;
 const remoteKey = (el) => (el.matches('.dev') ? `d${el.dataset.device}` : `r${el.closest('.dev').dataset.device}|${el.dataset.url}|${el.dataset.n}`);
 // (folding open from nothing, or shut to nothing, the rest of the panel following as it goes)
 function foldIn(el, delay = 0) {
@@ -1380,7 +1393,7 @@ function devPart(d, isOpen) {
         const k = (seen.get(tb.url) || 0) + 1;
         seen.set(tb.url, k);
         return h('div', { class: 'rtab', draggable: 'true', dataset: { url: tb.url, title: tb.title || '', n: k }, title: [tb.title || tb.url, tb.url].join('\n'),
-          onclick: () => run(B.call('openUrls', { urls: [tb.url], active: true })) },
+          onclick: () => run(B.call('openUrls', { urls: [tb.url], active: true })), oncontextmenu: (e) => showMenu(e, remoteTabMenu(tb)) },
         iconImg(tb.url, tb.icon), h('span', { class: 'name' }, tb.title || tb.url));
       })))));
 }
@@ -1393,11 +1406,11 @@ function renderRemote({ opening = null } = {}) {
   const names = new Map([...devs.querySelectorAll('.dev')].map((el) => [el.dataset.device, el.querySelector('.dev-name').cloneNode(true)]));
   const oldDevs = [...devs.querySelectorAll(':scope > .dev')], oldTitle = devs.querySelector(':scope > .devs-title');
   const title = all.length ? h('div', { class: 'devs-title' }, h('span', { class: 'grow' }, t('remote.title')),
-    Object.assign(btn(icon('list', 15), t('remote.list'), (e) => { e.stopPropagation(); toggleDevList(); }), { className: 'icon-btn devs-list-btn' })) : null;
+    Object.assign(btn(icon('list', 15), t('remote.list'), (e) => { e.stopPropagation(); openDevList(); }), { className: 'icon-btn devs-list-btn' })) : null;
   const parts = list.map((d) => devPart(d, open.has(d.device)));
   devs.replaceChildren(...[title, ...parts].filter(Boolean));
   if (all.length) devs.dataset.shown = '1';
-  if (devPop) { if (all.length) fillDevList(); else closeDevList(); }
+  if ($('#devices').open) { if (all.length) fillDevList(); else $('#devices').close(); }
   // what's gone (hidden, or not heard from): back in its place a moment, folding shut; the heading too
   const leaving = oldDevs.filter((el) => !list.some((d) => d.device === el.dataset.device));
   for (const el of leaving) {
@@ -1433,6 +1446,18 @@ function renderRemote({ opening = null } = {}) {
     if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 360, easing: SPRING });
   }
 }
+// Another browser's tab, right-clicked: opened here (or in a new window), its address copied, or saved to the board
+// (the category on screen's first group, as a tab of this browser's would be)
+function remoteTabMenu(tb) {
+  const cat = currentCat();
+  return [
+    { icon: 'open', label: t('menu.open'), key: 'O', fn: () => run(B.call('openUrls', { urls: [tb.url], active: true })) },
+    { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => run(B.call('openUrls', { urls: [tb.url], newWindow: true })) },
+    { icon: 'copy', label: t('menu.copyUrl'), key: 'C', fn: () => navigator.clipboard.writeText(tb.url).then(() => toast(t('toast.urlCopied'))) },
+    cat && { icon: 'save', label: t('tab.save'), key: 'S', fn: () => createRemembered({ op: 'firstGroup', categoryId: cat.id },
+      { op: 'create', parentId: '$0', index: null, node: { type: 'link', url: tb.url, name: tb.title || tb.url } }) },
+  ];
+}
 // (opened or shut, at once: remembered on this device; shutting, its tabs fold away first)
 function toggleDev(id) {
   const open = new Set(ui.devOpen || []);
@@ -1448,66 +1473,131 @@ function toggleDev(id) {
     ui.devOpen = [...open]; saveUi(); renderRemote({ opening: id });
   }
 }
-// The list by the heading: each of the account's browsers, ticked when shown; unticked, it's hidden (for all of
-// the account's browsers). It opens beside the panel, where the tabs' tooltips show, level with its button, and
-// shuts on a click elsewhere or Escape. Its rows stay as they are while it's open (only their ticks and names
-// follow), so clicks in a row, however quick, each tick or untick it.
-let devPop = null;
-function toggleDevList() {
-  if (devPop) return closeDevList();
-  devPop = h('div', { class: 'devs-pop', role: 'dialog', 'aria-label': t('remote.list') });
-  document.body.append(devPop);
-  fillDevList();
-  devPop.animate([{ opacity: 0, transform: 'translateX(-4px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
-  setTimeout(() => document.addEventListener('pointerdown', outsideDevList, true));
-  document.addEventListener('keydown', escDevList, true);
+// The list by the heading, in a dialog: each of the account's browsers in a row of its own, a handle on its left
+// and a tick on its right. A click anywhere on a row ticks or unticks it (shown, or hidden, for all of the account's
+// browsers); pressed and moved, the row is lifted and put in order instead, the others gliding out of its way. The
+// rows themselves stay put while it's open (what changes, a name, a tick, the order, changes in them), so the
+// pointer over one stays over it and quick clicks each count.
+const devList = $('#devices-list');
+function openDevList() {
+  fillDevList({ glide: false });
+  $('#devices').showModal();
+  $('#devices').querySelector('button[type=submit]').blur();
 }
-const outsideDevList = (e) => { if (!e.target.closest?.('.devs-pop, .devs-list-btn')) closeDevList(); };
-const escDevList = (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeDevList(); } };
-function closeDevList() {
-  document.removeEventListener('pointerdown', outsideDevList, true);
-  document.removeEventListener('keydown', escDevList, true);
-  const pop = devPop;
-  devPop = null;
-  if (!pop) return;
-  pop.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-4px) scale(.97)' }], { duration: 140, easing: 'ease-in', fill: 'forwards' })
-    .finished.catch(() => {}).then(() => pop.remove());
+function devRow(d) {
+  const box = h('input', { type: 'checkbox', tabindex: '0', 'aria-label': d.name || t('remote.device'),
+    onchange: (e) => { const x = remote?.devices.find((y) => y.device === d.device); if (x) setDeviceHidden(x, !e.target.checked); } });
+  const row = h('li', { class: 'dev-row', dataset: { device: d.device } },
+    h('span', { class: 'dev-grip', 'aria-hidden': 'true' }, icon('grip', 16)),
+    h('span', { class: 'grow' }, h('span', { class: 'dev-name' }), h('span', { class: 'dev-meta' })),
+    box);
+  row.addEventListener('pointerdown', (e) => pressRow(e, row, box));
+  return row;
 }
-function fillDevList() {
-  const pop = devPop, list = remote?.devices || [];
-  const rows = new Map([...pop.children].map((r) => [r.dataset.device, r]));
-  pop.replaceChildren(...list.map((d) => {
-    let row = rows.get(d.device);
-    if (!row) row = h('label', { class: 'devs-pop-row', dataset: { device: d.device } },
-      h('input', { type: 'checkbox', onchange: (e) => { const x = remote?.devices.find((y) => y.device === d.device); if (x) setDeviceHidden(x, !e.target.checked); } }),
-      h('span', { class: 'dev-name' }));
-    row.querySelector('input').checked = !d.hidden;
-    row.querySelector('.dev-name').textContent = d.name || t('remote.device');
-    return row;
-  }));
-  // (beside the panel, as a tab's tooltip; level with the button)
-  const b = devs.querySelector('.devs-list-btn')?.getBoundingClientRect(), side = $('#tabs-panel').getBoundingClientRect();
-  if (!b) return;
-  pop.style.left = `${Math.max(4, Math.min(innerWidth - pop.offsetWidth - 4, side.right + 6))}px`;
-  pop.style.top = `${Math.max(4, Math.min(innerHeight - pop.offsetHeight - 4, b.top))}px`;
+function fillDevList({ glide = true } = {}) {
+  const list = remote?.devices || [];
+  if (devList.querySelector('.dragging-row')) return; // (being put in order: as it is, till let go)
+  const rows = new Map([...devList.children].map((r) => [r.dataset.device, r]));
+  const before = new Map([...devList.children].map((r) => [r.dataset.device, r.getBoundingClientRect().top]));
+  const want = list.map((d) => rows.get(d.device) || devRow(d));
+  // (only what's out of place is moved: a row left where it is keeps the pointer over it)
+  for (const r of [...devList.children]) if (!want.includes(r)) r.remove();
+  want.forEach((r, i) => { if (devList.children[i] !== r) devList.insertBefore(r, devList.children[i] || null); });
+  list.forEach((d, i) => {
+    const row = want[i], box = row.querySelector('input');
+    if (box.checked !== !d.hidden) box.checked = !d.hidden;
+    row.classList.toggle('off', !!d.hidden); // (hidden: its row dims, gliding there)
+    const name = row.querySelector('.dev-name'), now = d.name || t('remote.device');
+    if (name.textContent && name.textContent !== now) { const was = name.cloneNode(true); name.textContent = now; ghostOver(name, was); } else if (name.textContent !== now) name.textContent = now;
+    const meta = timeAgo(d.at * 1000);
+    if (row.querySelector('.dev-meta').textContent !== meta) row.querySelector('.dev-meta').textContent = meta;
+  });
+  // (put in another order, here or elsewhere: each row glides to its new place)
+  if (glide) for (const r of devList.children) {
+    const was = before.get(r.dataset.device);
+    if (was == null) continue;
+    const dy = was - r.getBoundingClientRect().top;
+    if (Math.abs(dy) > .5) r.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 260, easing: GLIDE });
+  }
+}
+// A row pressed: let go where it was pressed, a click (its tick turns over); moved a few pixels first, it's lifted
+// and follows the pointer up or down, taking the place of any row whose middle it passes (they glide aside), and
+// let go, it settles there and the order is kept.
+function pressRow(e, row, box) {
+  if (e.button) return;
+  e.preventDefault(); // (no text selected, no focus jump: the row has it all)
+  row.setPointerCapture(e.pointerId);
+  const y0 = e.clientY, top0 = row.getBoundingClientRect().top, was = [...devList.children].map((r) => r.dataset.device).join();
+  let dragging = false;
+  const follow = (y) => { row.style.transform = ''; row.style.transform = `translateY(${top0 + (y - y0) - row.getBoundingClientRect().top}px)`; };
+  const move = (ev) => {
+    if (!dragging) {
+      if (Math.abs(ev.clientY - y0) < 5) return;
+      dragging = true;
+      row.classList.add('dragging-row');
+    }
+    follow(ev.clientY);
+    const mid = top0 + (ev.clientY - y0) + row.offsetHeight / 2;
+    const others = [...devList.children].filter((r) => r !== row);
+    const next = others.find((r) => { const b = r.getBoundingClientRect(); return mid < b.top + b.height / 2; }) || null;
+    if (next === row.nextElementSibling) return;
+    const at = new Map(others.map((r) => [r, r.getBoundingClientRect().top]));
+    devList.insertBefore(row, next);
+    for (const r of others) {
+      const dy = at.get(r) - r.getBoundingClientRect().top;
+      if (Math.abs(dy) > .5) r.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 200, easing: GLIDE });
+    }
+    follow(ev.clientY);
+  };
+  const up = (ev) => {
+    row.removeEventListener('pointermove', move);
+    row.removeEventListener('pointerup', up);
+    row.removeEventListener('pointercancel', up);
+    if (!dragging) {
+      if (ev.type === 'pointerup') { box.checked = !box.checked; row.classList.toggle('off', !box.checked); box.dispatchEvent(new Event('change', { bubbles: true })); }
+      return;
+    }
+    const from = row.style.transform || 'none';
+    row.style.transform = '';
+    row.animate([{ transform: from }, { transform: 'none' }], { duration: 220, easing: GLIDE })
+      .finished.catch(() => {}).then(() => row.classList.remove('dragging-row'));
+    const ids = [...devList.children].map((r) => r.dataset.device);
+    if (ids.join() !== was) setDeviceOrder(ids);
+  };
+  row.addEventListener('pointermove', move);
+  row.addEventListener('pointerup', up);
+  row.addEventListener('pointercancel', up);
+}
+// The browsers in this order: at once here (the panel's parts gliding), then for the account's other browsers
+function setDeviceOrder(ids) {
+  const by = new Map((remote?.devices || []).map((d) => [d.device, d]));
+  remote.devices = ids.map((id) => by.get(id)).filter(Boolean).concat((remote.devices || []).filter((d) => !ids.includes(d.device)));
+  renderRemote();
+  const ids_ = remote.devices.map((x) => x.device);
+  pendingOrder = ids_;
+  return fetch('/api/sync/tabs/order', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ devices: ids_ }) }).catch(() => null)
+    .then(() => { if (pendingOrder === ids_) { pendingOrder = null; refreshRemote(); } });
 }
 // Put elsewhere in the list (its head dragged before or after another's): at once here, the rest gliding aside,
 // then for the account's other browsers (the server keeps the order)
 function deviceDropTarget(e, el, d) {
-  const dev = el.closest('.devs .dev[data-device]');
+  let dev = el.closest('.devs .dev[data-device]');
+  // (not on one, but in the panel: below the last one's middle, after it; above the first's, before it)
+  if (!dev && el.closest('#tabs-panel')) {
+    const all = [...devs.querySelectorAll(':scope > .dev[data-device]')], rect = (x) => x.getBoundingClientRect();
+    const last = all.at(-1), first = all[0];
+    if (last && e.clientY > rect(last).top + rect(last).height / 2) dev = last;
+    else if (first && e.clientY < rect(first).top + rect(first).height / 2 && e.clientY > rect(devs).top) dev = first;
+  }
   if (!dev || dev.dataset.device === d.device) return null;
   const r = dev.getBoundingClientRect(), before = e.clientY < r.top + r.height / 2;
   return { action: 'orderDevices', device: dev.dataset.device, before, line: hLine(r, before) };
 }
-async function orderDevices(id, t_) {
-  const list = remote?.devices;
-  const moving = list?.find((x) => x.device === id);
-  if (!moving) return;
-  list.splice(list.indexOf(moving), 1);
-  const at = list.findIndex((x) => x.device === t_.device);
-  list.splice(at < 0 ? list.length : at + (t_.before ? 0 : 1), 0, moving);
-  renderRemote();
-  await fetch('/api/sync/tabs/order', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ devices: list.map((x) => x.device) }) }).catch(() => null);
+function orderDevices(id, t_) {
+  const ids = (remote?.devices || []).map((x) => x.device).filter((x) => x !== id);
+  const at = ids.indexOf(t_.device);
+  ids.splice(at < 0 ? ids.length : at + (t_.before ? 0 : 1), 0, id);
+  return setDeviceOrder(ids);
 }
 // Signed out there (its menu, asked first): its sign-in ended, the browser shows the sign-in at once (live: 'gone')
 async function signOutDevice(d) {
@@ -1520,8 +1610,10 @@ async function signOutDevice(d) {
 // Hidden, or shown again: at once here, then for the account's other browsers (the server keeps it)
 async function setDeviceHidden(d, hidden) {
   d.hidden = hidden;
+  pendingHidden.set(d.device, hidden);
   renderRemote();
   await fetch(`/api/sync/tabs/${encodeURIComponent(d.device)}/hidden`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hidden }) }).catch(() => null);
+  if (pendingHidden.get(d.device) === hidden) { pendingHidden.delete(d.device); refreshRemote(); } // (kept: as the server has it now)
 }
 // Named in place (from its menu): Enter or leaving keeps it, Escape doesn't; empty, its own name again. For all of
 // the account's browsers (the server keeps it), and undoable (Ctrl+Z, the toast's Undo) like the data's changes.
@@ -2620,6 +2712,33 @@ async function patchRemembered(node, fields) {
 const addLink = (parentId) => addNode('link', parentId, t('new.link'));
 const addFolder = (parentId) => addNode('folder', parentId, t('new.folder'));
 
+// (the default group changed, here or elsewhere: the old one's mark shrinks away where it was as the new one's
+// springs in; `change` redraws the board)
+function moveDefaultMark(was, change) {
+  const old = was && document.querySelector(`#board .group[data-id="${CSS.escape(was)}"] .default-mark`);
+  const r = old?.getBoundingClientRect();
+  change();
+  if (old && r?.width) {
+    const g = old.cloneNode(true);
+    Object.assign(g.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, margin: '0', pointerEvents: 'none', zIndex: '5' });
+    document.body.append(g);
+    g.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.4)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).finished.then(() => g.remove(), () => g.remove());
+  }
+  const now = settings.defaultGroupId && document.querySelector(`#board .group[data-id="${CSS.escape(settings.defaultGroupId)}"] .default-mark`);
+  now?.animate([{ opacity: 0, transform: 'scale(.3)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: SPRING });
+}
+// The default group (a group's menu; cleared in Settings): the toolbar popup, the right-click menu and the shortcuts
+// save there, whatever was used last. For all of the account's browsers, as the rest of Settings.
+async function setDefaultGroup(g) {
+  const was = settings.defaultGroupId;
+  const s = await run(B.call('saveSettings', { defaultGroupId: g?.id ?? null }));
+  if (!s) return;
+  // (the push from the extension may have come first, and moved it already)
+  if (settings.defaultGroupId === s.defaultGroupId) settings = s; else moveDefaultMark(was, () => { settings = s; render(); });
+  if ($('#settings').open) fillSettings(s);
+  toast(g ? t('toast.defaultGroup', { name: g.name || t('noun.group') }) : t('toast.defaultGroupOff'));
+}
+
 /* ---------- context menu ---------- */
 
 function showMenu(e, entries) {
@@ -2667,7 +2786,9 @@ function nodeMenu(e, node) {
       { icon: 'link', label: t('act.addLink'), key: 'L', fn: () => addLink(node.id) }, { icon: 'folder', label: t('act.addFolder'), key: 'F', fn: () => addFolder(node.id) },
       { icon: 'tabs', label: t('menu.addWindowTabs'), key: 'T', fn: () => addWindowTabs(node.id) },
       ...open, { icon: 'sort', label: t('menu.sortName'), key: 'S', fn: () => sortItems(node) },
-      { icon: 'dedupe', label: t('menu.dedupe'), key: 'U', fn: () => dedupeLinks(node) }, '-', del],
+      { icon: 'dedupe', label: t('menu.dedupe'), key: 'U', fn: () => dedupeLinks(node) },
+      settings.defaultGroupId === node.id ? { icon: 'save', label: t('menu.unsetDefault'), key: 'B', fn: () => setDefaultGroup(null) }
+        : { icon: 'save', label: t('menu.setDefault'), key: 'B', fn: () => setDefaultGroup(node) }, '-', del],
     folder: [edit, { icon: 'link', label: t('act.addLink'), key: 'L', fn: () => addLink(node.id) }, T.folderDepth(state, node.id) < T.MAX_FOLDER_DEPTH && { icon: 'folder', label: t('act.addSubfolder'), key: 'F', fn: () => addFolder(node.id) },
       ...open, { icon: 'sort', label: t('menu.sortName'), key: 'S', fn: () => sortItems(node) }, '-', del],
     link: [{ icon: 'open', label: t('menu.open'), key: 'O', fn: () => openLink(node) }, { icon: 'window', label: t('menu.openWindow'), key: 'W', fn: () => openLink(node, { shiftKey: true }) },
@@ -3636,39 +3757,47 @@ $('#language').append(h('option', { value: 'auto', dataset: { i18n: 'settings.la
 // A new choice slides in where the old one was: from below when it's further down the list (the old one
 // going up), from above when it's further up. (The field's own text hides meanwhile; the new text follows
 // the language as it changes, see applyText. Settings' language spring leaves the field out: switchLang.)
+// (the same for any drop-down that wants it: `slideSelect(select, start)`; `start(begin)`, if given, says when to
+// begin, the language's waiting for the page's change of language to start)
+function slideSelect(sel, start = (begin) => begin()) {
+  const wrap = h('span', { class: 'select-wrap' });
+  sel.replaceWith(wrap);
+  wrap.append(sel);
+  let slide = null;
+  sel.addEventListener('change', () => {
+    const from = +(sel.dataset.shown ?? 0), to = sel.selectedIndex;
+    sel.dataset.shown = to;
+    if (from === to) return;
+    const dir = to > from ? 1 : -1;
+    slide?.remove();
+    const cs = getComputedStyle(sel);
+    // (each line as its option shows: its symbol too, where it has one)
+    const line = (opt) => h('span', { class: 'select-slide-line', style: `padding-left: ${cs.paddingLeft}; font-size: ${cs.fontSize}; font-weight: ${cs.fontWeight}; color: ${cs.color}` },
+      ...(opt ? [...opt.childNodes].map((n) => n.cloneNode(true)) : []));
+    const old = line(sel.options[from]), now = line(sel.options[to]);
+    const box = h('span', { class: 'select-slide', style: `inset: ${cs.borderTopWidth} ${cs.borderRightWidth} ${cs.borderBottomWidth} ${cs.borderLeftWidth}; border-radius: ${cs.borderRadius}` }, old, now);
+    wrap.append(box);
+    slide = box;
+    sel.classList.add('sliding');
+    const ease = { duration: 380, easing: GLIDE, fill: 'both' };
+    const out = old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 100}%)`, opacity: 0 }], ease);
+    const into = now.animate([{ transform: `translateY(${dir * 100}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], ease);
+    into.finished.then(() => {
+      if (slide !== box) return;
+      box.remove();
+      slide = null;
+      sel.classList.remove('sliding');
+    }, () => {});
+    out.pause(); into.pause();
+    start(() => { const at = document.timeline.currentTime; out.startTime = at; into.startTime = at; });
+  });
+  return wrap;
+}
 const langSelect = $('#language');
-const langWrap = h('span', { class: 'select-wrap' });
-langSelect.replaceWith(langWrap);
-langWrap.append(langSelect);
-let langSlide = null;
-langSelect.addEventListener('change', () => {
-  const from = +(langSelect.dataset.shown ?? 0), to = langSelect.selectedIndex;
-  langSelect.dataset.shown = to;
-  if (from === to) return;
-  const dir = to > from ? 1 : -1;
-  langSlide?.remove();
-  const cs = getComputedStyle(langSelect);
-  const line = (text) => h('span', { class: 'select-slide-line', style: `padding-left: ${cs.paddingLeft}; font-size: ${cs.fontSize}; font-weight: ${cs.fontWeight}; color: ${cs.color}` }, text);
-  const old = line(langSelect.options[from]?.textContent || ''), now = line(langSelect.options[to].textContent);
-  const box = h('span', { class: 'select-slide', style: `inset: ${cs.borderTopWidth} ${cs.borderRightWidth} ${cs.borderBottomWidth} ${cs.borderLeftWidth}; border-radius: ${cs.borderRadius}` }, old, now);
-  langWrap.append(box);
-  langSlide = box;
-  langSelect.classList.add('sliding');
-  const ease = { duration: 380, easing: GLIDE, fill: 'both' };
-  const out = old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 100}%)`, opacity: 0 }], ease);
-  const into = now.animate([{ transform: `translateY(${dir * 100}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], ease);
-  into.finished.then(() => {
-    if (langSlide !== box) return;
-    box.remove();
-    langSlide = null;
-    langSelect.classList.remove('sliding');
-  }, () => {});
-  // together with the page's change of language: the slide waits for it to start, and it starts now,
-  // not after the setting's round trip through the extension (whose answer then finds it done)
-  out.pause(); into.pause();
-  onLangStart = () => { const at = document.timeline.currentTime; out.startTime = at; into.startTime = at; }; // (from this frame, as the change's own animations)
-  switchLang(langSelect.value);
-});
+// together with the page's change of language: the slide waits for it to start, and it starts then, not after
+// the setting's round trip through the extension (whose answer then finds it done)
+slideSelect(langSelect, (begin) => { onLangStart = begin; switchLang(langSelect.value); });
+slideSelect($('#default-group'));
 
 // Number fields: − / + beside the value instead of the browser's spinners. A step slides the new
 // value in from the side it moved to; held down, a button repeats and saves once on release.
@@ -3747,9 +3876,89 @@ function fillSettings(s = settings) {
   f.theme.value = s.theme;
   f.accent.value = Object.hasOwn(ACCENTS, s.accent) ? s.accent : 'purple';
   set(f.columns, 'value', String(Math.min(MAX_COLUMNS, Math.max(1, s.columns || 5))));
+  fillDefaultGroup(s);
+  if (!fsDragging) { fsStep = Number.isInteger(s.fontScale) ? s.fontScale : 2; showFs(fsStep); }
   syncSteppers();
 }
 
+// The default group's field: the last used (none set), or any group, under its workspace and category
+function fillDefaultGroup(s = settings) {
+  const sel = $('#default-group');
+  if (document.activeElement === sel) return;
+  const opts = [h('option', { value: '' }, t('settings.defaultGroupNone'))];
+  for (const ws of state?.workspaces || []) for (const cat of ws.categories || []) {
+    if (!cat.groups?.length) continue;
+    // (each group set in under its workspace and category, its symbol before its name, or the room for one)
+    opts.push(h('optgroup', { label: `${ws.name} › ${cat.name}` }, cat.groups.map((g) => h('option', { value: g.id, class: 'group-opt' },
+      h('span', { class: 'opt-sym' }, g.symbol ? symbolEl(g.symbol) : ''), h('span', { class: 'opt-name' }, g.name || t('noun.group'))))));
+  }
+  const before = sel.value;
+  sel.replaceChildren(...opts);
+  sel.value = s.defaultGroupId && T.locate(state, s.defaultGroupId) ? s.defaultGroupId : '';
+  if (before && sel.value !== before) sel.animate([{ opacity: .2 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' }); // (changed elsewhere: the new name fades in)
+  sel.dataset.shown = sel.selectedIndex; // (where a slide starts from: see slideSelect)
+}
+// Text size (Settings > Appearance): five steps on a slider. Dragged, the thumb follows the pointer and the line
+// below takes each step's size as it's passed; let go (or a click on the track, or the arrow keys), the thumb
+// springs to its step and the whole page takes the size, cross-fading as for a new theme.
+const fsSlider = $('#fs-slider'), fsTrack = fsSlider.querySelector('.fs-track');
+const FS_NAMES = ['settings.fs0', 'settings.fs1', 'settings.fs2', 'settings.fs3', 'settings.fs4'];
+let fsStep = 2, fsDragging = false;
+function showFs(step, at = step / 4) {
+  fsSlider.style.setProperty('--at', at);
+  fsSlider.setAttribute('aria-valuenow', step);
+  fsSlider.setAttribute('aria-valuetext', t(FS_NAMES[step]));
+  fsSlider.querySelectorAll('.fs-tick').forEach((x, i) => x.classList.toggle('on', i <= step));
+  $('#fs-sample').style.setProperty('--sample-fs', FONT_SCALES[step]);
+}
+async function commitFs(step) {
+  fsStep = step;
+  showFs(step);
+  if (step === (settings.fontScale ?? 2)) return;
+  const s = await run(B.call('saveSettings', { fontScale: step }));
+  if (s) switchTheme(s);
+}
+// (between two steps, the thumb is drawn a little toward the nearer one, as by a light spring: it still follows the
+// pointer, with a pull)
+const FS_PULL = .35;
+fsTrack.addEventListener('pointerdown', (e) => {
+  if (e.button) return;
+  e.preventDefault();
+  fsSlider.focus();
+  fsTrack.setPointerCapture(e.pointerId);
+  const at = (x) => { const r = fsTrack.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)); };
+  const x0 = e.clientX;
+  // (pressed: the thumb glides from where it is to the pointer, drawn a little toward the nearer step; moved, it
+  // follows the pointer; let go, it glides on to its step)
+  { const a = at(x0), step = Math.round(a * 4); showFs(step, a + (step / 4 - a) * FS_PULL); }
+  const move = (ev) => {
+    if (!fsDragging) {
+      if (Math.abs(ev.clientX - x0) < 4) return;
+      fsDragging = true;
+      fsSlider.classList.add('dragging');
+    }
+    const a = at(ev.clientX), step = Math.round(a * 4);
+    showFs(step, a + (step / 4 - a) * FS_PULL);
+  };
+  const up = (ev) => {
+    fsTrack.removeEventListener('pointermove', move);
+    fsTrack.removeEventListener('pointerup', up);
+    fsTrack.removeEventListener('pointercancel', up);
+    fsDragging = false;
+    fsSlider.classList.remove('dragging');
+    commitFs(Math.round(at(ev.clientX) * 4)); // (let go: it glides to its step)
+  };
+  fsTrack.addEventListener('pointermove', move);
+  fsTrack.addEventListener('pointerup', up);
+  fsTrack.addEventListener('pointercancel', up);
+});
+fsSlider.addEventListener('keydown', (e) => {
+  const to = { ArrowLeft: fsStep - 1, ArrowDown: fsStep - 1, ArrowRight: fsStep + 1, ArrowUp: fsStep + 1, Home: 0, End: 4 }[e.key];
+  if (to == null) return;
+  e.preventDefault();
+  e.stopPropagation();
+  commitFs(Math.max(0, Math.min(4, to)));
+});
 function openSettings() {
   fillSettings();
   $('#settings').showModal();
@@ -3758,6 +3967,7 @@ function openSettings() {
 $('#settings-form').addEventListener('change', async (e) => {
   if (e.target.type === 'file') return; // the import pickers (their own handlers save what they read)
   if (e.target.id === 'install-side') return; // (kept on this device, not in the extension's settings)
+  if (e.target.id === 'default-group') return setDefaultGroup(e.target.value ? T.locate(state, e.target.value)?.node : null);
   const f = e.currentTarget;
   const s = await run(B.call('saveSettings', {
     closeOnSave: f.closeOnSave.checked,
@@ -3777,6 +3987,25 @@ let lookShown = ''; // `${theme}|${accent}` last applied or on its way (a transi
 function switchTheme(s) {
   const look = `${s.theme}|${s.accent}`;
   const changed = look !== (lookShown || `${settings.theme}|${settings.accent}`);
+  // (a new text size, alone: the page as it was fades into the page as it now is, its dialogs too. Pictures of the
+  // two, not the page laid out again each frame: smooth however big the board)
+  const from = fontScaleOf(settings), to = fontScaleOf(s);
+  if (from !== to && !changed && document.startViewTransition) {
+    const root = document.documentElement;
+    root.classList.add('fs-vt');
+    // (open dialogs, Settings with its slider, kept out of the pictures and shown live, not faded: the thumb
+    // slides on to its step meanwhile; only the page behind fades)
+    const live = [...document.querySelectorAll('dialog[open]')];
+    live.forEach((dlg, i) => { dlg.style.viewTransitionName = `fs-live-${i}`; dlg.style.viewTransitionClass = 'fs-live'; });
+    const vt = document.startViewTransition(() => { settings = s; applyTheme(); });
+    vt.ready.then(() => {
+      const ease = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'both' };
+      root.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, pseudoElement: '::view-transition-old(root)' });
+      root.animate([{ opacity: 0 }, { opacity: 1 }], { ...ease, pseudoElement: '::view-transition-new(root)' });
+    }, () => {});
+    vt.finished.finally(() => { root.classList.remove('fs-vt'); live.forEach((dlg) => { dlg.style.viewTransitionName = ''; dlg.style.viewTransitionClass = ''; }); });
+    return;
+  }
   lookShown = look;
   const swap = () => { settings = s; applyTheme(); };
   // (a transition cut short by the next one rejects `ready`: nothing to handle, the new one takes over)
@@ -3811,7 +4040,7 @@ async function switchLang(setting = 'auto', fade = true) {
   const frames = dlg.open ? [dlg, ...dlg.querySelectorAll('#settings-form > fieldset')] : [];
   const parts = frames.flatMap((f) => [...(f === dlg ? $('#settings-form') : f).children].filter((el) => el.tagName !== 'FIELDSET'));
   const named = [...frames.map((el) => [el, 'settings-frame']), ...parts.map((el) => [el, 'settings-part'])];
-  if (dlg.open) named.push([langWrap, 'settings-part', 'settings-lang']);
+  if (dlg.open) named.push([langSelect.parentElement, 'settings-part', 'settings-lang']);
   named.forEach(([el, cls, name], i) => { el.style.viewTransitionName = name || `settings-${i}`; el.style.viewTransitionClass = cls; });
   const vt = document.startViewTransition(swap);
   vt.ready.then(langStarted, () => { langStarted(); }); // (cut short by the next one: nothing else to handle)
@@ -3825,7 +4054,7 @@ async function switchLang(setting = 'auto', fade = true) {
 function applyText() {
   document.documentElement.lang = getLang();
   translateDom();
-  langSlide?.lastChild.replaceChildren(langSelect.selectedOptions[0]?.textContent || '');
+  langSelect.parentElement.querySelector(':scope > .select-slide')?.lastChild.replaceChildren(langSelect.selectedOptions[0]?.textContent || ''); // (sliding in: in the new language too)
   applyPanels();
   fitActions();
   if ($('#settings').open) fillSettings();
@@ -4286,7 +4515,12 @@ function showTip(el) {
   const r = el.getBoundingClientRect();
   const side = el.closest(RAILS) || (el.matches(BESIDE) && el.closest('.side-panel'));
   let left, top;
-  if (side) {
+  if (el.dataset.tipAt === 'pointer' && pointer) {
+    // (by the pointer, just below it: to its right, or to its left where there's no room on the right)
+    const [px, py] = pointer;
+    left = px + 12 + tip.offsetWidth > innerWidth - 4 ? px - 12 - tip.offsetWidth : px + 12;
+    top = py + 18;
+  } else if (side) {
     left = side.getBoundingClientRect().right + 6;
     top = r.top + r.height / 2 - tip.offsetHeight / 2;
   } else {
@@ -4378,7 +4612,6 @@ function devsAcross(collapsing) {
   if (!devs.childElementCount) return;
   // (held at its width all along, so nothing in it squeezes or rewraps as the panel narrows or widens: it only fades)
   if (collapsing) {
-    closeDevList();
     const g = devs.cloneNode(true);
     g.classList.add('devs-ghost');
     Object.assign(g.style, { position: 'absolute', left: `${devs.offsetLeft}px`, top: `${devs.offsetTop}px`, width: `${devs.offsetWidth}px`, margin: '0', pointerEvents: 'none' });
@@ -4586,6 +4819,7 @@ function leavingIds(a, b) {
   return out;
 }
 B.on('settings', (s) => {
+  if (s.defaultGroupId !== settings?.defaultGroupId && state) { const was = settings.defaultGroupId; moveDefaultMark(was, () => { settings = { ...settings, defaultGroupId: s.defaultGroupId }; render(); }); }
   const relayout = s.columns !== settings?.columns;
   switchTheme(s); // (the push may arrive before our own save resolves: it animates either way)
   if (relayout && state) render(); // e.g. columns changed in another dashboard tab
@@ -5084,7 +5318,6 @@ function showInstall(animate = true) {
   const offered = !!installPrompt || installKnown;
   fold($('#btn-install'), offered && store.get(INSTALL_HIDDEN) !== '1', animate);
   fold($('#install-row'), offered, animate);
-  fold($('#install-side-row'), offered, animate);
   $('#install-side').checked = store.get(INSTALL_HIDDEN) !== '1';
 }
 function fold(el, show, animate) {
@@ -5104,6 +5337,19 @@ function fold(el, show, animate) {
   const cs = getComputedStyle(el), border = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
   const open = { height: `${el.getBoundingClientRect().height}px`, opacity: 1 };
   const shut = { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: `${-border}px` };
+  // (gone, the margins on either side of it may fold into one, which its shut state still holds apart: measured,
+  // the difference is taken off its margin too, so what's after it ends exactly where it will stay)
+  const next = el.nextElementSibling;
+  if (next) {
+    const saved = el.getAttribute('style');
+    Object.assign(el.style, { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginTop: '0px', marginBottom: `${-border}px`, overflow: 'hidden' });
+    const shutTop = next.getBoundingClientRect().top;
+    el.hidden = true;
+    const goneTop = next.getBoundingClientRect().top;
+    el.hidden = false;
+    if (saved == null) el.removeAttribute('style'); else el.setAttribute('style', saved);
+    shut.marginBottom = `${-border + (goneTop - shutTop)}px`;
+  }
   el.style.overflow = 'hidden';
   el.animate(show ? [shut, open] : [open, shut], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.then(() => {
     el.style.overflow = '';
