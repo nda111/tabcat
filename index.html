@@ -117,6 +117,8 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
     <ul id="ws-list"></ul>
     <div class="side-bottom">
       <button class="side-btn" id="btn-install" hidden data-rail-title="Install app" data-i18n-attr="data-rail-title:side.install"><span class="sym" data-icon="download"></span><span class="label" data-i18n="side.install">Install app</span><span class="side-dismiss" id="install-dismiss" role="button" title="Hide" data-i18n-attr="title:install.hide"><span data-icon="close" data-size="12"></span></span></button>
+      <!-- on the user's own tabcat server: invites to shared workspaces and their answers (a badge: those not answered yet) -->
+      <button class="side-btn" id="btn-mail" hidden data-rail-title="Mailbox" data-i18n-attr="data-rail-title:side.mail"><span class="sym"><span data-icon="mail"></span><span class="mail-badge" hidden></span></span><span class="label" data-i18n="side.mail">Mailbox</span></button>
       <button class="side-btn" id="btn-trash" hidden data-rail-title="Recently deleted" data-i18n-attr="data-rail-title:side.trash"><span class="sym" data-icon="trash"></span><span class="label" data-i18n="side.trash">Recently deleted</span></button>
       <button class="side-btn" id="btn-help" data-rail-title="Help" data-i18n-attr="data-rail-title:side.help"><span class="sym" data-icon="help"></span><span class="label" data-i18n="side.help">Help</span></button>
       <button class="side-btn" id="btn-info" data-rail-title="About" data-i18n-attr="data-rail-title:side.info"><span class="sym"><span data-icon="info"></span><span class="update-dot" hidden></span></span><span class="label" data-i18n="side.info">About</span></button>
@@ -343,6 +345,39 @@ It can’t be used in phone or tablet browsers, Samsung Internet, Firefox, Safar
       <ul id="trash-list"></ul>
       <p class="muted trash-none" id="trash-none" hidden data-i18n="trash.none">Nothing deleted in the last 30 days.</p>
       <menu><button type="button" class="btn" id="trash-clear" data-i18n="trash.clear">Empty</button><span class="menu-gap"></span><button type="submit" class="btn primary" data-i18n="common.close">Close</button></menu>
+    </form>
+  </dialog>
+
+  <!-- the mailbox (see "shared workspaces" in app.js): newest first; invites answered here; ticked ones deleted together -->
+  <dialog id="mail" tabindex="-1">
+    <form method="dialog">
+      <h3 data-i18n="mail.title">Mailbox</h3>
+      <div class="mail-head" id="mail-head" hidden>
+        <label class="check"><input type="checkbox" id="mail-all"> <span data-i18n="mail.selectAll">Select all</span></label>
+        <span class="menu-gap"></span>
+        <button type="button" class="btn small" id="mail-del" hidden></button>
+      </div>
+      <ul id="mail-list"></ul>
+      <p class="muted mail-none" id="mail-none" hidden data-i18n="mail.none">No mail.</p>
+      <menu><span class="menu-gap"></span><button type="submit" class="btn primary" data-i18n="common.close">Close</button></menu>
+    </form>
+  </dialog>
+
+  <!-- who a workspace is shared with: the owner invites, changes roles, lets someone go; anyone else may leave -->
+  <dialog id="share" tabindex="-1">
+    <form method="dialog">
+      <h3 id="share-title"></h3>
+      <p class="muted small share-note" id="share-note" hidden data-i18n="share.note">Invite someone by their username to use this workspace together.</p>
+      <div class="share-invite" id="share-invite" hidden>
+        <div class="share-ask">
+          <input id="share-user" autocomplete="off" spellcheck="false" placeholder="Username" data-i18n-attr="placeholder:share.username; aria-label:share.username">
+          <select id="share-role" aria-label="Role" data-i18n-attr="aria-label:share.role"><option value="editor" data-i18n="role.editor">Editor</option><option value="viewer" data-i18n="role.viewer">Viewer</option></select>
+          <button type="button" class="btn primary" id="share-go" data-i18n="share.invite">Invite</button>
+        </div>
+        <p class="error" id="share-error"></p>
+      </div>
+      <ul id="share-list"></ul>
+      <menu><button type="button" class="btn" id="share-end" hidden></button><span class="menu-gap"></span><button type="submit" class="btn primary" data-i18n="common.close">Close</button></menu>
     </form>
   </dialog>
 

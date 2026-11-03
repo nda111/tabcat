@@ -264,6 +264,10 @@ const TOAST_GAP = 6;
 function toast(msg, actionLabel, action) {
   const stack = $('#toast');
   stack.hidden = false;
+  // (a dialog open, the rest of the page can't be clicked: the stack goes into it meanwhile, its Undo at hand, and
+  // back out as it closes)
+  const host = [...document.querySelectorAll('dialog[open]:not([data-closing])')].pop() || document.body;
+  if (stack.parentElement !== host) host.append(stack);
   const before = toastRects();
   // (clicked anywhere but its button, it goes: it shrinks away)
   const item = h('div', { class: 'toast-item', onclick: (e) => { if (!e.target.closest('button')) dismissToast(item, true); } }, h('span', {}, msg));
@@ -347,7 +351,18 @@ function reloadWhenIdle() {
   const attempt = () => (busy() ? setTimeout(attempt, 500) : location.reload());
   setTimeout(attempt, 300); // (a moment for the updated extension to start)
 }
-const apply = (...ops) => run(B.apply(...ops));
+// (a shared workspace this account only views: nothing in it changes, nor moves in or out; the extension wouldn't
+// keep it either, see its syncTxn)
+const wsOfId = (id) => { const r = id && state && T.locate(state, id); return r ? r.ancestors[0] || r.node : null; };
+const readOnly = (ws) => shareOf(ws)?.role === 'viewer';
+function blocked(ops) {
+  const ids = ops.flatMap((o) => [o.id, o.parentId, o.categoryId, o.workspaceId]);
+  return ids.some((id) => readOnly(wsOfId(id)));
+}
+const apply = (...ops) => {
+  if (blocked(ops)) { toast(t('share.readOnly')); return Promise.resolve(null); }
+  return run(B.apply(...ops));
+};
 
 // Text sizes (Settings > Appearance): each text's own size times this; symbols and icons keep theirs
 const FONT_SCALES = [.85, .92, 1, 1.1, 1.2];
@@ -714,6 +729,8 @@ function renderHead() {
     h('h1', {}, ws.symbol && symbolEl(ws.symbol), ws.name),
     ws.description && h('span', { class: 'desc' }, ws.description)));
   head.oncontextmenu = (e) => nodeMenu(e, orig);
+  if (sharing()) shareButton(head, orig); // (who it's shared with: see "shared workspaces")
+  else headShared = null;
 }
 
 // Another category picked: its underline slides over from the one picked before (a stand-in line glides
@@ -2112,6 +2129,8 @@ const undoHistory = (cmd, args = {}) => (extFeatures.has('sharedHistory') && (cm
 const rememberAct = (act, what) => undoHistory('rememberAct', { act, what });
 // (what an act says to do: done here, in whichever dashboard undoes it)
 async function runAct(a) {
+  // (mail put away, or brought back: see deleteMail)
+  if (a?.kind === 'mail') { await api(`/api/mail/${a.restore ? 'restore' : 'delete'}`, 'POST', { ids: a.ids }); refreshMail(); }
   if (a?.kind === 'deviceName') {
     await nameDevice(a.device, a.name);
     const d = remote?.devices.find((x) => x.device === a.device);
@@ -2140,6 +2159,8 @@ function undoText(dir, what) {
 }
 
 async function deleteNode(node) {
+  // (a shared workspace: deleted for everyone by its owner, else left; see endShare)
+  if (node.type === 'workspace' && node.share) return endShare(node);
   const n = T.countLinks(node);
   if ((node.type === 'workspace' || node.type === 'category') && n > 0 &&
       !(await confirmDialog({
@@ -3712,6 +3733,7 @@ for (const dlg of document.querySelectorAll('dialog')) {
     if (!dlg.open || closing) return;
     const id = (closing = Date.now());
     dlg.dataset.closing = '';
+    if (dlg.contains($('#toast'))) document.body.append($('#toast')); // (its toasts stay as it goes: see toast)
     const opts = { duration: 120, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' };
     const anims = [
       dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.95)' }], opts),
@@ -4982,6 +5004,7 @@ async function showAccount() {
   if (['tabcat.ghyeok.com', 'localhost', '127.0.0.1'].includes(location.hostname)) return;
   const me = await fetch('/api/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null), () => null);
   if (!me?.username) return;
+  startSharing(me);
   // (the sidebar's Account button, between About and Settings: its tooltip says who; it opens the Account dialog)
   const btn = $('#btn-account');
   btn.hidden = false;
@@ -5021,7 +5044,7 @@ async function showAccount() {
 // Live sync: the server says at once when the account has new changes (from its other browsers), and the
 // extension takes them (it would anyway, later: this makes it now). One stream for all of the server's pages open
 // in this browser, shared (the server's own live.js: see there why).
-let liveSync = null, meTimer = null, listTimer = null, remoteTimer = null;
+let liveSync = null, meTimer = null, listTimer = null, remoteTimer = null, mailTimer = null, sharesTimer = null;
 async function listenForChanges() {
   if (liveSync) return;
   liveSync = { stop() {}, start() {} };
@@ -5031,13 +5054,18 @@ async function listenForChanges() {
   liveSync = liveStream((kind) => {
     // (this sign-in ended, signed out of from another device: the server's sign-in, at once)
     if (kind === 'gone') return leaveFor(() => location.reload());
-    if (kind === 'head' || kind === 'open') { if (B.info) B.call('syncNow').catch(() => {}); }
+    // (a shared workspace changed too, or who's in it: the extension takes that the same way)
+    if (kind === 'head' || kind === 'shares' || kind === 'open') { if (B.info) B.call('syncNow').catch(() => {}); }
     // (one of the account's browsers changed its tabs: the open tabs panel's part for it, as it now is)
     if (kind === 'tabs' || kind === 'open') { clearTimeout(remoteTimer); remoteTimer = setTimeout(refreshRemote, 250); }
     // (the account changed elsewhere: its name, photo, 2FA... the Account dialog as it now is)
     if (kind === 'me' || kind === 'open') { clearTimeout(meTimer); meTimer = setTimeout(showAccount, 250); }
     // (another account signed in here changed, or this one: the list of them, open, brought up to date)
     if (kind === 'accounts' || kind === 'open') { clearTimeout(listTimer); listTimer = setTimeout(refreshAccountList, 250); }
+    // (the mailbox changed: its badge, and the list if it's open; the account's shares changed (who's in one, as
+    // what, their names and photos; a share joined or gone): the board's heading and the share manager)
+    if (kind === 'mail' || kind === 'open') { clearTimeout(mailTimer); mailTimer = setTimeout(refreshMail, 250); }
+    if (kind === 'shares' || kind === 'open') { clearTimeout(sharesTimer); sharesTimer = setTimeout(refreshShares, 250); }
   });
 }
 // (not held while in the back/forward cache: listening again on coming back)
@@ -5262,6 +5290,412 @@ addEventListener('pageshow', async (e) => {
   root.classList.add('opening');
   setTimeout(() => root.classList.remove('opening'), 700);
 });
+
+// Shared workspaces and the mailbox (on the user's own tabcat server, signed in, with an extension that can: feature
+// 'shares'). A workspace is shared by invite, by username: the invite comes to that account's Mailbox (in the
+// sidebar, a badge counting those not answered yet), is accepted or declined there, and the answer comes back to
+// the owner's. The board's heading has a button for who's in the workspace (the share manager): the owner invites,
+// changes what each may do, hands the ownership on, lets someone go or deletes it for everyone; anyone else sees who's
+// in it, and may leave. Both follow changes made elsewhere as they come ('mail', 'shares': see listenForChanges).
+let meNow = null; // (the account signed in, as /api/me last had it)
+let shareList = []; // (the account's shares, as /api/shares last had them: see shareOf)
+const sharing = () => !!meNow && extFeatures.has('shares');
+const api = (path, method = 'GET', body) => fetch(path, { method, credentials: 'same-origin', cache: 'no-store',
+  ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) })
+  .then(async (r) => ({ ok: r.ok, status: r.status, data: await r.json().catch(() => null) }), () => ({ ok: false, status: 0, data: null }));
+// A workspace's share as this account has it ({ id, role: owner | editor | viewer, members: how many }), or null:
+// not shared (or not with this account). (Its node says which share it is once the extension has it: until then,
+// the share made of it, by its id.)
+function shareOf(ws) {
+  if (!ws || !sharing()) return null;
+  const s = shareList.find((x) => x.root === ws.id && (!ws.share || ws.share === x.id));
+  return s ? { id: s.id, role: s.role, members: s.members } : null;
+}
+function startSharing(me) {
+  const was = sharing();
+  meNow = me;
+  if (was || !sharing()) { if ($('#share').open && !shareInfo) fillShare(); return; } // (its own row, unshared: as it now is)
+  fold($('#btn-mail'), true, true);
+  refreshMail();
+  refreshShares();
+  render(); // (the heading's button)
+}
+let sharesSeq = 0;
+async function refreshShares() {
+  if (!sharing()) return;
+  const seq = ++sharesSeq, r = await api('/api/shares');
+  if (seq !== sharesSeq || !r.ok) return;
+  const key = (l) => JSON.stringify(l.map((s) => [s.id, s.root, s.role, s.members]));
+  const changed = key(r.data.shares) !== key(shareList);
+  shareList = r.data.shares;
+  if (changed) render(); // (the heading's count, and what this account may do in each: see shareOf)
+  if ($('#share').open) fillShare();
+}
+// "{name} shared {ws}" with elements in its places
+const fillIn = (s, parts) => s.split(/(\{\w+\})/).flatMap((p) => { const k = p.match(/^\{(\w+)\}$/)?.[1]; return k && parts[k] ? [parts[k]].flat() : p ? [p] : []; });
+const whoOf = (p) => p.name || p.username;
+// A list's rows as `items` ([key, item]) have them now: a row gone folds away, a new one folds in, those kept glide
+// to their new places (if any) and are brought up to date in place (`update`), so a pointer over one stays over it.
+function syncRows(list, items, make, update, animate = true) {
+  const old = new Map([...list.children].filter((r) => r.dataset.leaving == null).map((r) => [r.dataset.key, r]));
+  const tops = new Map([...old.values()].map((r) => [r, r.getBoundingClientRect().top]));
+  const want = items.map(([k, it]) => {
+    const r = old.get(k);
+    if (r) { update(r, it, animate); return r; }
+    const n = make(it);
+    n.dataset.key = k;
+    n.style.display = 'none'; // (no room yet: it folds in once the rest have been measured)
+    return n;
+  });
+  for (const r of old.values()) if (!want.includes(r)) { r.dataset.leaving = ''; if (animate) foldOut(r); else r.remove(); }
+  let at = list.firstElementChild;
+  for (const r of want) {
+    while (at && at !== r && at.dataset.leaving != null) at = at.nextElementSibling;
+    if (at === r) at = r.nextElementSibling; else list.insertBefore(r, at);
+  }
+  for (const r of want) {
+    if (!tops.has(r)) continue;
+    const dy = tops.get(r) - r.getBoundingClientRect().top;
+    if (animate && Math.abs(dy) > .5) r.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 260, easing: GLIDE });
+  }
+  for (const r of want) if (r.style.display === 'none') { r.style.display = ''; if (animate) foldIn(r); }
+}
+
+// The heading's button: the people icon, and how many are in it once it's shared
+let headShared = null; // ({ ws, n, w }: what it showed last, for what changes to move)
+function shareButton(head, ws) {
+  const sh = shareOf(ws), n = sh?.members || 0, was = headShared, same = was?.ws === ws.id;
+  const b = h('button', { type: 'button', class: 'icon-btn ws-share' + (sh ? ' shared' : ''), title: t(sh ? 'share.manage' : 'share.share'),
+    onclick: () => openShare(ws), ondblclick: (e) => e.stopPropagation() },
+  icon('people', 17), sh && h('span', { class: 'ws-share-n' }, rollNum(`share:${ws.id}`, n)));
+  head.append(b);
+  // (only viewing it: said beside, and nothing in it can be changed)
+  if (sh?.role === 'viewer') {
+    const chip = h('span', { class: 'ws-readonly', title: t('share.readOnly') }, t('share.viewing'));
+    head.append(chip);
+    if (was?.ws !== ws.id || was?.role !== 'viewer') chip.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
+  }
+  const w = b.getBoundingClientRect().width;
+  headShared = { ws: ws.id, n, w, role: sh?.role };
+  // (come now, the feature just available: it pops in; a count come or gone, or longer: it grows or shrinks to it)
+  if (!was) b.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING });
+  if (!same) return;
+  if (n && !was.n) b.querySelector('.ws-share-n').animate([{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: SPRING });
+  if (Math.abs(was.w - w) > .5) b.animate([{ width: `${was.w}px`, overflow: 'hidden' }, { width: `${w}px`, overflow: 'hidden' }], { duration: 280, easing: GLIDE });
+  if (!!was.n !== !!n) b.animate([{ color: getComputedStyle(b).color }, {}], { duration: 280 }); // (to the accent, or back)
+}
+
+// The mailbox: newest first. An invite not answered yet has Accept and Decline (answered, what was said takes their
+// place); mail is deleted by its ×, or ticked and deleted together, once answered (undoable, as the board's deletes).
+let mail = [], mailSeq = 0;
+const mailPicked = new Set();
+const mailList = $('#mail-list');
+scrollFeel(mailList, { inner: true });
+const deletable = (m) => m.kind !== 'invite' || !!m.answer;
+async function refreshMail() {
+  if (!sharing()) return;
+  const seq = ++mailSeq, r = await api('/api/mail');
+  if (seq !== mailSeq || !r.ok) return;
+  mail = r.data.mail;
+  mailBadge(r.data.asking);
+  if ($('#mail').open) fillMail();
+}
+// (the badge: pops in, its number rolls as it changes, shrinks away at none; past 99, "99+")
+function mailBadge(n) {
+  const b = $('#btn-mail .mail-badge'), was = b.hidden ? 0 : +b.dataset.n || 0;
+  b.dataset.n = n;
+  if (n === was) return;
+  b.getAnimations().forEach((a) => a.cancel());
+  if (!n) {
+    b.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(0)', opacity: 0 }], { duration: 200, easing: 'ease-in' })
+      .finished.then(() => { b.hidden = true; }, () => {});
+    return;
+  }
+  const from = b.hidden ? 0 : b.offsetWidth;
+  b.hidden = false;
+  b.replaceChildren(n > 99 ? '99+' : rollNum('mail-badge', n));
+  b.setAttribute('aria-label', t('mail.badge', { n }));
+  if (!was) b.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  else if (Math.abs(b.offsetWidth - from) > .5) b.animate([{ width: `${from}px` }, { width: `${b.offsetWidth}px` }], { duration: 260, easing: GLIDE });
+}
+function openMail() {
+  mailPicked.clear();
+  fillMail(false);
+  $('#mail').showModal();
+  $('#mail').querySelector('button[type=submit]').blur();
+  refreshMail();
+}
+function fillMail(animate = true) {
+  for (const id of mailPicked) { const m = mail.find((x) => x.id === id); if (!m || !deletable(m)) mailPicked.delete(id); }
+  syncRows(mailList, mail.map((m) => [String(m.id), m]), mailRow, updateMailRow, animate);
+  fold($('#mail-head'), mail.length > 0, animate);
+  fold($('#mail-none'), !mail.length, animate);
+  mailHead(animate);
+}
+function mailRow(m) {
+  const box = h('input', { type: 'checkbox', class: 'mail-pick', 'aria-label': t('mail.select'), onchange: (e) => {
+    if (e.target.checked) mailPicked.add(row.m.id); else mailPicked.delete(row.m.id);
+    mailHead();
+  } });
+  const row = h('li', { class: 'mail-row' }, box, accountPhoto(m.from, 'account-avatar small'),
+    h('span', { class: 'mail-text' }, h('span', { class: 'mail-line' }), h('span', { class: 'mail-when' })),
+    h('span', { class: 'mail-acts' }),
+    h('button', { type: 'button', class: 'icon-btn mail-x', onclick: () => { if (deletable(row.m)) deleteMail([row.m.id]); } }, icon('close', 14)));
+  updateMailRow(row, m, false);
+  return row;
+}
+function mailText(m) {
+  const who = h('b', {}, whoOf(m.from));
+  const ws = h('span', { class: 'mail-ws' }, m.workspace.symbol ? symbolEl(m.workspace.symbol) : null, m.workspace.name);
+  const key = m.kind === 'invite' ? 'mail.invite' : m.answer === 'accepted' ? 'mail.accepted' : 'mail.declined';
+  return [...fillIn(t(key), { name: who, ws }), m.kind === 'invite' && m.role ? ` · ${t(`role.${m.role}`)}` : ''];
+}
+function mailActs(m) {
+  if (m.kind !== 'invite') return [];
+  if (m.answer) return [h('span', { class: `mail-answer ${m.answer}` }, t(m.answer === 'accepted' ? 'mail.didAccept' : 'mail.didDecline'))];
+  return [h('button', { type: 'button', class: 'btn small primary', onclick: (e) => answerMail(m, true, e.currentTarget) }, t('mail.accept')),
+    h('button', { type: 'button', class: 'btn small', onclick: (e) => answerMail(m, false, e.currentTarget) }, t('mail.decline'))];
+}
+// (brought up to date in place: what changed changes alone, the old fading as the new comes; the answer given, it
+// takes the buttons' place, the room for them gliding to its)
+function updateMailRow(row, m, animate = true) {
+  row.m = m;
+  const ok = deletable(m), box = row.querySelector('.mail-pick'), x = row.querySelector('.mail-x');
+  box.disabled = !ok;
+  box.checked = mailPicked.has(m.id);
+  x.classList.toggle('off', !ok);
+  x.setAttribute('aria-disabled', String(!ok));
+  const tip = t(ok ? 'mail.delete' : 'mail.answerFirst');
+  if (x.dataset.tip != null) x.dataset.tip = tip; else x.title = tip;
+  const when = timeAgo(m.at * 1000), whenEl = row.querySelector('.mail-when');
+  if (whenEl.textContent !== when) whenEl.textContent = when;
+  const was = row.look || {}, now = { text: JSON.stringify([m.from.name, m.from.username, m.workspace, m.role, m.kind, m.answer, getLang()]), photo: `${m.from.avatar}|${m.from.accent}`, acts: `${m.answer}|${getLang()}` };
+  row.look = now;
+  const put = (el, change) => (!was.text || !animate ? change() : crossfade(el, change));
+  const line = row.querySelector('.mail-line'), acts = row.querySelector('.mail-acts'), photo = row.querySelector('.account-avatar');
+  if (was.text !== now.text) put(line, () => line.replaceChildren(...mailText(m)));
+  if (was.photo !== now.photo && was.photo) crossfade(photo, () => { photo.replaceChildren(...accountPhoto(m.from, 'account-avatar small').childNodes); ACCENT_TINT(photo, m.from.accent); });
+  if (was.acts !== now.acts) {
+    const w = acts.offsetWidth;
+    put(acts, () => acts.replaceChildren(...mailActs(m)));
+    if (was.acts && animate && Math.abs(acts.offsetWidth - w) > .5) acts.animate([{ width: `${w}px` }, { width: `${acts.offsetWidth}px` }], { duration: 260, easing: GLIDE });
+  }
+}
+// (the row above the list: a tick for all that can be deleted, a dash when only some are; with any ticked, Delete (n)
+// at its end, coming and going, its number rolling)
+function mailHead(animate = true) {
+  const all = mail.filter(deletable), n = mailPicked.size, box = $('#mail-all');
+  box.disabled = !all.length;
+  box.checked = n > 0 && n === all.length;
+  box.indeterminate = n > 0 && n < all.length;
+  for (const row of mailList.children) { const c = row.querySelector('.mail-pick'); if (row.m && c.checked !== mailPicked.has(row.m.id)) c.checked = mailPicked.has(row.m.id); }
+  const del = $('#mail-del'), shown = !del.hidden && del.dataset.going == null, w = del.offsetWidth;
+  if (n) del.replaceChildren(...[counted('mail-del', 'mail.deleteN', n)].flat());
+  if (!animate) { del.hidden = !n; return; }
+  if (!!n === shown) { if (n && Math.abs(del.offsetWidth - w) > .5) del.animate([{ width: `${w}px` }, { width: `${del.offsetWidth}px` }], { duration: 240, easing: GLIDE }); return; }
+  if (n) { del.getAnimations().forEach((a) => a.cancel()); del.hidden = true; delete del.dataset.going; appear(del, true); return; }
+  del.dataset.going = '';
+  appear(del, false).then(() => { delete del.dataset.going; });
+}
+async function answerMail(m, accept, b) {
+  const btns = [...b.parentElement.querySelectorAll('button')];
+  btns.forEach((x) => { x.disabled = true; });
+  const r = await api(`/api/mail/${m.id}/answer`, 'POST', { accept });
+  if (!r.ok) {
+    btns.forEach((x) => { x.disabled = false; });
+    toast(t(r.status === 410 ? 'mail.gone' : r.status === 409 ? 'mail.answered' : 'mail.failed'));
+  } else {
+    const i = mail.findIndex((x) => x.id === m.id);
+    if (i >= 0) mail[i] = r.data;
+    if ($('#mail').open) fillMail();
+    // (joined: the extension takes the workspace now, rather than when it next looks)
+    if (accept) { B.call('syncNow').catch(() => {}); refreshShares(); }
+  }
+  refreshMail();
+}
+// Put away (their rows fold at once), kept by the server a while: undone from the toast or with Ctrl+Z (an act in
+// the shared history: see rememberAct, runAct)
+async function deleteMail(ids) {
+  ids = ids.filter((id) => { const m = mail.find((x) => x.id === id); return m && deletable(m); });
+  if (!ids.length) return;
+  for (const id of ids) mailPicked.delete(id);
+  mail = mail.filter((m) => !ids.includes(m.id));
+  fillMail();
+  const r = await api('/api/mail/delete', 'POST', { ids });
+  const done = r.data?.ids || [];
+  if (done.length) {
+    const entry = await rememberAct({ back: { kind: 'mail', restore: true, ids: done }, forth: { kind: 'mail', restore: false, ids: done } }, { verb: 'delete', type: 'mail', n: done.length });
+    const msg = t('toast.mailDeleted', { n: done.length });
+    if (entry) toast(msg, t('common.undo'), () => undo(entry, true)); else toast(msg);
+  }
+  refreshMail();
+}
+$('#btn-mail').addEventListener('click', openMail);
+$('#mail-all').addEventListener('change', (e) => {
+  mailPicked.clear();
+  if (e.target.checked) for (const m of mail) if (deletable(m)) mailPicked.add(m.id);
+  mailHead();
+});
+$('#mail-del').addEventListener('click', () => deleteMail([...mailPicked]));
+
+// The share manager: who's in the workspace (the owner first, then editors and viewers; whoever is asked and hasn't
+// answered yet after them), each with their photo or letter, their name (a 2FA chip if they have two-step sign-in)
+// and role. Not shared yet, it shows this account alone, and the invite: the first one makes it a shared workspace.
+let shareWs = null, shareId = null, shareInfo = null, shareSeq = 0;
+async function openShare(ws) {
+  shareWs = ws.id;
+  shareId = shareOf(ws)?.id || null;
+  shareInfo = null;
+  $('#share-user').value = '';
+  $('#share-error').textContent = '';
+  $('#share-list').replaceChildren();
+  await fillShare(false);
+  $('#share').showModal();
+  $('#share').querySelector('button[type=submit]').blur();
+}
+function shareTitle(animate) {
+  const ws = state?.workspaces.find((w) => w.id === shareWs), el = $('#share-title');
+  if (!ws) return;
+  const key = JSON.stringify([ws.symbol, ws.name, getLang()]);
+  if (el.dataset.look === key) return;
+  const change = () => { el.dataset.look = key; el.replaceChildren(...fillIn(t('share.title'), { ws: [ws.symbol ? symbolEl(ws.symbol) : null, h('span', { class: 'share-ws' }, ws.name)].filter(Boolean) })); };
+  if (animate && el.dataset.look) crossfade(el, change); else change();
+}
+// (`info`: the share as an answer just had it, rather than asked again)
+async function fillShare(animate = true, info = null) {
+  const ws = state?.workspaces.find((w) => w.id === shareWs);
+  if (!ws) { $('#share').close(); return; } // (gone: left, deleted, here or elsewhere)
+  shareId = shareOf(ws)?.id || shareId;
+  if (!info && shareId) {
+    const seq = ++shareSeq, r = await api(`/api/shares/${shareId}`);
+    if (seq !== shareSeq) return;
+    if (r.ok) info = r.data;
+    else if (r.status === 404) shareId = null; // (no longer: as not shared)
+    else return;
+  }
+  shareInfo = info;
+  shareTitle(animate);
+  const owner = !info || info.role === 'owner';
+  const members = info ? info.members : meNow ? [{ ...meNow, role: 'owner', me: true }] : [];
+  const items = [...members.map((p) => [`u${p.id}`, { p, role: p.role, owner }]),
+    ...(info?.invites || []).map((i) => [`i${i.mail}`, { p: i.user, role: i.role, invite: i.mail, owner }])];
+  syncRows($('#share-list'), items, shareRow, updateShareRow, animate);
+  fold($('#share-note'), !info, animate);
+  fold($('#share-invite'), owner, animate);
+  const end = $('#share-end'), text = info ? t(owner ? 'share.deleteAll' : 'share.leave') : '';
+  if (info && end.textContent && end.textContent !== text && animate) crossfade(end, () => { end.textContent = text; });
+  else if (info) end.textContent = text;
+  if (animate) appear(end, !!info); else end.hidden = !info;
+}
+function shareRow(it) {
+  const row = h('li', { class: 'share-row' + (it.invite ? ' pending' : '') }, accountPhoto(it.p, 'account-avatar small'),
+    h('span', { class: 'account-who' }, h('span', { class: 'account-name' }), h('span', { class: 'account-role' })),
+    h('span', { class: 'share-role' }),
+    h('button', { type: 'button', class: 'icon-btn share-x', hidden: true, onclick: () => shareX(row) }, icon('close', 14)));
+  updateShareRow(row, it, false);
+  return row;
+}
+// (its role: for the owner, a choice for each of the others, handing it on among them; else as words)
+const roleKey = (it) => JSON.stringify([it.invite ? '' : it.role, !it.invite && it.owner && !it.p.me, getLang()]);
+function roleCell(it, row) {
+  if (it.invite) return [];
+  if (!it.owner || it.p.me) return [h('span', { class: 'share-role-name' }, t(`role.${it.role}`))];
+  const sel = h('select', { 'aria-label': t('share.roleOf', { name: whoOf(it.p) }) },
+    ...['editor', 'viewer', 'owner'].map((r) => h('option', { value: r }, t(r === 'owner' ? 'share.makeOwner' : `role.${r}`))));
+  sel.value = it.role;
+  sel.dataset.shown = sel.selectedIndex;
+  sel.addEventListener('change', () => setRole(row, sel));
+  return [slideSelect(sel)];
+}
+function updateShareRow(row, it, animate = true) {
+  row.it = it;
+  const p = it.p, was = row.look || {};
+  const now = { name: JSON.stringify([p.name, p.username, p.twofa, p.me, getLang()]), sub: JSON.stringify([p.name && p.username, it.invite && it.role, getLang()]),
+    photo: `${p.avatar}|${p.accent}`, role: roleKey(it) };
+  row.look = now;
+  const first = !was.name, live = !first && animate;
+  const set = (el, parts) => (live ? morph(el, parts) : el.replaceChildren(...parts));
+  if (was.name !== now.name) {
+    const [nm, ...rest] = nameLine(p);
+    set(row.querySelector('.account-name'), [nm, ...(p.me ? [h('span', { class: 'share-me', 'data-p': 'me' }, t('share.me'))] : []), ...rest]);
+  }
+  if (was.sub !== now.sub) {
+    const parts = [p.name && p.username, it.invite && t('share.invited', { role: t(`role.${it.role}`) })].filter(Boolean);
+    set(row.querySelector('.account-role'), parts.flatMap((x, i) => [...(i ? [h('span', { 'data-p': 'sep' }, ' · ')] : []), h('span', { 'data-p': i ? 'invited' : 'id' }, x)]));
+  }
+  if (was.photo !== now.photo && !first) { const el = row.querySelector('.account-avatar'); crossfade(el, () => { el.replaceChildren(...accountPhoto(p, 'account-avatar small').childNodes); ACCENT_TINT(el, p.accent); }); }
+  if (was.role !== now.role) {
+    const cell = row.querySelector('.share-role'), w = cell.offsetWidth;
+    const change = () => cell.replaceChildren(...roleCell(it, row));
+    if (live) {
+      crossfade(cell, change);
+      if (Math.abs(cell.offsetWidth - w) > .5) cell.animate([{ width: `${w}px` }, { width: `${cell.offsetWidth}px` }], { duration: 260, easing: GLIDE });
+    } else change();
+  }
+  const x = row.querySelector('.share-x'), canX = it.owner && !p.me;
+  const tip = t(it.invite ? 'share.cancelInvite' : 'share.remove');
+  if (x.dataset.tip != null) x.dataset.tip = tip; else x.title = tip;
+  if (live) appear(x, canX); else x.hidden = !canX;
+}
+async function setRole(row, sel) {
+  if (sel.reverting) return;
+  const it = row.it, role = sel.value;
+  const back = () => { sel.reverting = true; sel.value = it.role; sel.dispatchEvent(new Event('change')); sel.reverting = false; };
+  if (role === it.role) return;
+  if (role === 'owner' && !(await confirmDialog({ title: t('share.ownerTitle', { name: whoOf(it.p) }), text: t('share.ownerText'), ok: t('share.ownerOk') }))) return back();
+  const r = await api(`/api/shares/${shareId}/members/${it.p.id}`, 'PUT', { role });
+  if (!r.ok) { toast(t('share.failed')); return back(); }
+  if (role !== 'owner') row.look.role = roleKey({ ...it, role }); // (shown already: the choice stays as it is)
+  fillShare(true, r.data);
+  refreshShares();
+}
+// (the ×: an invite taken back, or someone let go, asked first)
+async function shareX(row) {
+  const it = row.it;
+  if (!it.invite && !(await confirmDialog({ title: t('share.removeTitle', { name: whoOf(it.p) }), text: t('share.removeText'), ok: t('share.remove'), danger: true }))) return;
+  const r = await api(it.invite ? `/api/shares/${shareId}/invites/${it.invite}` : `/api/shares/${shareId}/members/${it.p.id}`, 'DELETE');
+  if (!r.ok) return toast(t('share.failed'));
+  fillShare(true, r.data);
+  refreshShares();
+}
+// (the server's reasons, said as the dashboard says things)
+const INVITE_ERRORS = { 'no such account': 'share.errNoUser', 'that is you': 'share.errSelf', 'already in it': 'share.errMember', 'already asked': 'share.errAsked' };
+function shareError(text) {
+  const el = $('#share-error');
+  if (el.textContent !== text) crossfade(el, () => { el.textContent = text; });
+}
+async function inviteShare() {
+  const ws = state?.workspaces.find((w) => w.id === shareWs), username = $('#share-user').value.trim(), go = $('#share-go');
+  if (!ws || go.disabled) return;
+  if (!username) { $('#share-user').focus(); return; }
+  go.disabled = true;
+  try {
+    // (the first invite: the workspace becomes a shared one first)
+    if (!shareId) { const r = await run(B.call('shareWorkspace', { id: ws.id })); if (!r?.id) return; shareId = r.id; }
+    const r = await api(`/api/shares/${shareId}/invites`, 'POST', { username, role: $('#share-role').value, name: ws.name, symbol: ws.symbol || '' });
+    if (!r.ok) { shareError(t(INVITE_ERRORS[r.data?.detail] || 'share.errFailed')); return; }
+    $('#share-user').value = '';
+    shareError('');
+    await fillShare(true, r.data);
+    refreshShares();
+  } finally { go.disabled = false; }
+}
+slideSelect($('#share-role'));
+$('#share-go').addEventListener('click', inviteShare);
+$('#share-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inviteShare(); } });
+$('#share-user').addEventListener('input', () => shareError(''));
+// Deleted for everyone (the owner; its content to the owner's Recently deleted), or left (anyone else): asked first
+$('#share-end').addEventListener('click', () => endShare(state?.workspaces.find((w) => w.id === shareWs), shareInfo?.role === 'owner', shareId));
+async function endShare(ws, owner = shareOf(ws)?.role === 'owner', id = shareOf(ws)?.id) {
+  if (!ws || !id) return;
+  if (!(await confirmDialog({ title: t(owner ? 'share.deleteTitle' : 'share.leaveTitle', { ws: ws.name }), text: t(owner ? 'share.deleteText' : 'share.leaveText'),
+    ok: t(owner ? 'share.deleteAll' : 'share.leaveOk'), danger: true }))) return;
+  if (!(await run(B.call(owner ? 'deleteShare' : 'leaveShare', { id })))) return;
+  if ($('#share').open) $('#share').close();
+  toast(t(owner ? 'toast.shareDeleted' : 'toast.shareLeft', { name: ws.name }));
+  refreshShares();
+}
+B.on('state', () => { if ($('#share').open) shareTitle(true); });
 
 async function start(ext) {
   setExtension(ext);
