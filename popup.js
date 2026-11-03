@@ -77,7 +77,8 @@ async function showCounts() {
       $('#server-card').hidden = false;
     }, () => show(true));
   }
-  const target = groupPicker(S.allTargets(state, settings.columns), settings.lastGroupId); // (as the board shows them)
+  // (as the board shows them; the default group picked to begin with, set in the dashboard, else the last used)
+  const target = groupPicker(S.allTargets(state, settings.columns), settings.defaultGroupId && S.locate(state, settings.defaultGroupId) ? settings.defaultGroupId : settings.lastGroupId);
   $('#close').checked = settings.closeOnSave;
   $('#close').addEventListener('change', () => S.saveSettings({ closeOnSave: $('#close').checked }));
 

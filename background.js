@@ -339,7 +339,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     case 'save-link': {
       const s = await S.loadSettings();
       await S.update((state) => {
-        const gid = S.ensureGroup(state, s.lastGroupId, { allowFolder: true });
+        const gid = S.ensureGroup(state, s.defaultGroupId || s.lastGroupId, { allowFolder: true }); // (the default group, set in the dashboard; else the last used)
         S.insertNode(state, gid, S.makeLink({ url: info.linkUrl, name: info.selectionText || info.linkUrl }));
       });
       break;

@@ -93,15 +93,15 @@ with sync_playwright() as p:
 
     # the Account dialog open: renamed elsewhere
     bd.wait_for_selector('#btn-account:not([hidden])', timeout=10000)
-    bd.click('#btn-account'); time.sleep(.5)
+    bd.click('#btn-account'); until(lambda: bd.evaluate("document.querySelector('#account-name').textContent.trim() !== ''")); settle(bd)
     ad.evaluate("fetch('/api/me/name', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Renamed' }) })")
     try: bd.wait_for_function("document.querySelector('#account-name').textContent.startsWith('Renamed')", timeout=5000); ok = True
     except Exception: ok = False
     check(ok, 'the Account dialog open, the account renamed in another browser: shown at once')
-    bd.keyboard.press('Escape'); time.sleep(.4)
+    bd.keyboard.press('Escape'); settle(bd)
 
     # Settings open: changed in A, followed in B
-    bd.click('#btn-settings'); time.sleep(.5)
+    bd.click('#btn-settings'); settle(bd)
     a.evaluate("chrome.storage.local.get('tabcat:settings').then(r => chrome.storage.local.set({ 'tabcat:settings': { ...r['tabcat:settings'], theme: 'dark', closeOnSave: false, columns: 3 } }))")
     try:
         bd.wait_for_function("(() => { const f = document.querySelector('#settings-form'); return f.theme.value === 'dark' && !f.closeOnSave.checked && f.columns.value === '3'; })()", timeout=8000); ok = True
@@ -110,7 +110,7 @@ with sync_playwright() as p:
     st = b.evaluate("chrome.storage.local.get('tabcat:settings').then(r => [r['tabcat:settings'].closeOnSave, r['tabcat:settings'].columns])")
     check(st == [False, 3], f'and kept in B ({st})')
 
-    bd.keyboard.press('Escape'); time.sleep(.4)
+    bd.keyboard.press('Escape'); settle(bd)
 
     # renamed in A (a workspace, a group): in B the old name fades out as the new fades in
     MOVED = """window.__moved = new Set(); (function f() { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t?.className) __moved.add(String(t.className)); if (t?.dataset?.p) __moved.add('p:' + t.dataset.p + ':' + (a.effect.getKeyframes()[0].transform ? 'slide' : 'fade')); } requestAnimationFrame(f); })()"""
@@ -130,14 +130,14 @@ with sync_playwright() as p:
     check(title and abs(title[0][0] - title[1][0]) < 1 and (title[0][1] is None or abs(title[0][1] - title[1][1]) < 1), f"the board's title: the old fading right where it was, not shifted aside ({title})")
 
     # the editor open in B on a workspace, saved in A: what B hasn't edited follows; what it has, stays
-    bd.dblclick('.ws-item[data-id="w2"]'); bd.wait_for_selector('#editor[open]'); time.sleep(.3)
+    bd.dblclick('.ws-item[data-id="w2"]'); bd.wait_for_selector('#editor[open]'); settle(bd)
     bd.fill('#editor textarea[name=description]', 'typed in B')
     edit(a, "const w = s.workspaces.find(w => w.id === 'w2'); w.name = 'Second (A)'; w.description = 'from A'")
     try: bd.wait_for_function("document.querySelector('#editor input[name=name]').value === 'Second (A)'", timeout=8000); ok = True
     except Exception: ok = False
     check(ok and bd.input_value('#editor textarea[name=description]') == 'typed in B',
           f"editor open in B, saved in A: the name (not edited in B) follows, the description typed in B stays ({bd.input_value('#editor input[name=name]')!r}, {bd.input_value('#editor textarea[name=description]')!r})")
-    bd.click('#editor button[type=submit]'); time.sleep(1)
+    bd.click('#editor button[type=submit]'); until(lambda: [(w['name'], w['description']) for w in b.evaluate(TREE)['workspaces'] if w['id'] == 'w2'] == [('Second (A)', 'typed in B')])
     w2 = [w for w in b.evaluate(TREE)['workspaces'] if w['id'] == 'w2'][0]
     check(w2['name'] == 'Second (A)' and w2['description'] == 'typed in B', f"saved in B: both ({w2['name']}, {w2['description']})")
 
@@ -158,7 +158,7 @@ with sync_playwright() as p:
     check(hs[-1] > hs[0] and last_step(hs) < 1.5, f'the list of accounts opening: no jump at the end (its last step {last_step(hs):.2f}px)')
     bd.evaluate(SAMPLE); bd.click('#account-more'); hs = bd.evaluate('window.__hs')
     check(hs[-1] < hs[0] and last_step(hs) < 1.5, f'and closing: none either ({last_step(hs):.2f}px)')
-    bd.click('#account-more'); bd.wait_for_selector('#account-list .account-other'); time.sleep(.6)
+    bd.click('#account-more'); bd.wait_for_selector('#account-list .account-other'); settle(bd)
     tinted = bd.evaluate("document.querySelector('#account-list .account-avatar').dataset.tint")
     check(tinted == 'hue', f"another account's letter: in its own colour ({tinted})")
     bd.evaluate(MOVED)

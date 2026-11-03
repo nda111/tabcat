@@ -102,14 +102,14 @@ with sync_playwright() as p:
 
     # moved and deleted
     edit(b, "const g = s.workspaces[0].categories[0].groups[0]; s.workspaces[1].categories.push({ id: 'cb', type: 'category', name: 'Moved here', groups: [g] }); s.workspaces[0].categories[0].groups = []")
-    ask(bc, 'syncNow'); time.sleep(1.5); ask(ac, 'syncNow')
+    ask(bc, 'syncNow'); wait(lambda: ask(bc, 'syncStatus')['pending'] == 0, 'B sent'); ask(ac, 'syncNow')
     wait(lambda: a.evaluate(TREE) == b.evaluate(TREE), 'the same')
     check(a.evaluate(TREE)['workspaces'][1]['categories'][0]['groups'][0]['id'] == 'g-A', 'a group moved to another workspace in B: moved in A, with its link')
 
     # Recently deleted, and the look
     a.evaluate("chrome.storage.local.set({ 'tabcat:trash': [{ id: 't1', node: { id: 'x', type: 'link', url: 'https://gone.example/', name: 'Gone' }, parentId: null, index: 0, trail: [], deletedAt: Date.now() }] })")
     a.evaluate("chrome.storage.local.get('tabcat:settings').then(r => chrome.storage.local.set({ 'tabcat:settings': { ...r['tabcat:settings'], accent: 'green', theme: 'dark' } }))")
-    time.sleep(1.5); ask(ac, 'syncNow'); time.sleep(1.5); ask(bc, 'syncNow')
+    time.sleep(1.5); ask(ac, 'syncNow'); wait(lambda: ask(ac, 'syncStatus')['pending'] == 0, 'A sent'); ask(bc, 'syncNow')
     wait(lambda: b.evaluate("chrome.storage.local.get('tabcat:trash').then(r => (r['tabcat:trash'] || []).map(e => e.id))") == ['t1'], 'trash')
     check(b.evaluate("chrome.storage.local.get('tabcat:trash').then(r => (r['tabcat:trash'] || []).map(e => e.id))") == ['t1'], 'Recently deleted: the same in B')
     look = wait(lambda: (l := b.evaluate("chrome.storage.local.get('tabcat:settings').then(r => [r['tabcat:settings'].theme, r['tabcat:settings'].accent])")) == ['dark', 'green'] and l, 'look')
@@ -122,8 +122,8 @@ with sync_playwright() as p:
     for i in range(3):
         edit(b, f"s.workspaces.push({{ id: 'off{i}', type: 'workspace', name: 'Offline {i}', symbol: '', description: '', categories: [] }})")
         time.sleep(.8)
-    ask(bc, 'syncNow'); time.sleep(1.5)
-    st = ask(bc, 'syncStatus')
+    ask(bc, 'syncNow')
+    st = wait(lambda: (s := ask(bc, 'syncStatus'))['unsent'] >= 1 and s['lastError'] and s, 'waiting') or ask(bc, 'syncStatus')
     check(st['unsent'] >= 1 and st['lastError'], f'offline: the changes kept, waiting ({st["unsent"]} waiting, {st["lastError"]})')
     # (kept in storage: the worker going to sleep loses nothing)
     check(b.evaluate("chrome.storage.local.get('tabcat:sync').then(r => r['tabcat:sync'].pending.length)") >= 1, 'in storage, not only in memory')

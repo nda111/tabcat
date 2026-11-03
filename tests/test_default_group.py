@@ -1,0 +1,56 @@
+# The default group: set from a group's right-click menu, it's marked on its card and named in Settings (where it's
+# cleared); the toolbar popup picks it to begin with, and saving without picking (the shortcut, the right-click menu)
+# goes there, whatever was used last.
+from harness import *
+
+serve()
+errors = []
+with sync_playwright() as p:
+    ctx, sw = launch(p)
+    d = dashboard(ctx, errors)
+    seed(sw, d, workspace('W', [group('Inbox', [link('a')], column=0), group('Reading', [link('b')], column=1)]))
+    d.locator('.group', has_text='Reading').locator('.group-head .name').click(button='right'); d.wait_for_selector('#menu:not([hidden])')
+    d.locator('#menu button', has_text='Make it the default group').click()
+    until(lambda: sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => r['tabcat:settings'].defaultGroupId)") == 'Reading')
+    check(sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => r['tabcat:settings'].defaultGroupId)") == 'Reading', "a group's menu: made the default group")
+    check(until(lambda: d.locator('.group', has_text='Reading').locator('.default-mark').count() == 1) and d.locator('#board .default-mark').count() == 1, 'marked on its card, and only there')
+    mark = d.locator('#board .default-mark')
+    grey = d.evaluate("getComputedStyle(document.querySelector('#board .default-mark')).color")
+    b = mark.bounding_box(); d.mouse.move(b['x'] + b['width'] / 2, b['y'] + b['height'] / 2)
+    until(lambda: d.is_visible('#tip')); settle(d)
+    lit = d.evaluate("getComputedStyle(document.querySelector('#board .default-mark')).color")
+    tb = d.locator('#tip').bounding_box()
+    check(grey != lit and d.inner_text('#tip').strip() == 'Default group', f"its mark: grey, lit under the pointer; its tooltip 'Default group' ({grey} -> {lit}, {d.inner_text('#tip')!r})")
+    check(tb['y'] > b['y'] + b['height'] / 2 and abs(tb['y'] - (b['y'] + b['height'] / 2 + 18)) <= 2 and (tb['x'] > b['x'] or tb['x'] + tb['width'] < b['x'] + b['width']), f'the tooltip just below the pointer, beside it ({tb})')
+    d.mouse.move(5, 5)
+    d.locator('.group', has_text='Reading').locator('.group-head .name').click(button='right'); d.wait_for_selector('#menu:not([hidden])')
+    items = d.evaluate("[...document.querySelectorAll('#menu button')].map(b => b.textContent.trim())")
+    check(any(i.startswith('Stop it being the default group') for i in items), f'its menu now offers to stop it ({items})')
+    d.keyboard.press('Escape')
+    d.click('#btn-settings'); d.wait_for_selector('#settings[open]'); settle(d)
+    shown = d.evaluate("(s => s.selectedOptions[0]?.textContent)(document.querySelector('#default-group'))")
+    check(shown == 'Reading', f"Settings shows it, its value the control to change it ({shown!r})")
+    d.keyboard.press('Escape'); settle(d)
+
+    # the popup picks it to begin with, though another was used last
+    sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => chrome.storage.local.set({'tabcat:settings': {...r['tabcat:settings'], lastGroupId: 'Inbox'}}))")
+    pp = ctx.new_page(); pp.goto(sw.url.replace('background.js', 'popup.html')); pp.wait_for_selector('#target-name'); settle(pp)
+    check(pp.inner_text('#target-name') == 'Reading', f"the toolbar popup: the default group picked to begin with, not the last used ({pp.inner_text('#target-name')!r})")
+    pp.close()
+
+    # changed in Settings, by picking another; then none (the last used)
+    d.click('#btn-settings'); d.wait_for_selector('#settings[open]'); settle(d)
+    pick = lambda v: d.evaluate("v => { const s = document.querySelector('#default-group'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); }", v)  # (by id: two groups may share a name)
+    pick('Inbox')
+    check(until(lambda: sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => r['tabcat:settings'].defaultGroupId)") == 'Inbox')
+          and until(lambda: d.locator('.group', has_text='Inbox').locator('.default-mark').count() == 1) and d.locator('#board .default-mark').count() == 1, f"another picked in Settings: the default now, its mark moved there ({sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => r['tabcat:settings'].defaultGroupId)")}, {d.evaluate("[...document.querySelectorAll('#board .default-mark')].map(m => m.closest('.group').dataset.id)")})")
+    pick('')
+    check(until(lambda: sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => r['tabcat:settings'].defaultGroupId)") is None) and until(lambda: not d.locator('#board .default-mark').count()),
+          'the last used picked: no default group, no mark')
+    name_w = d.evaluate("(r => [r.width, document.querySelector('#default-group-label').scrollWidth])(document.querySelector('#default-group-label').getBoundingClientRect())")
+    check(name_w[1] <= name_w[0] + 1, f'its name not cut ({name_w})')
+    ends = d.evaluate("[document.querySelector('#default-group').getBoundingClientRect().right, document.querySelector('#language').getBoundingClientRect().right]")
+    check(abs(ends[0] - ends[1]) <= 1, f'its field ends where the language field does ({ends})')
+    check(not errors, f'no page errors {errors}')
+    ctx.close()
+done()

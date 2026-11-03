@@ -91,11 +91,11 @@ with sync_playwright() as p:
     check('INPUT' in adm.evaluate('[...window.__moved]'), f"the new choice springing in ({adm.evaluate('[...window.__moved]')})")
 
     # the only admin, making themselves a member: said at once, nothing asked
-    adm.locator('#users tr').first.locator('.seg button').nth(1).click(); time.sleep(.4)
+    adm.locator('#users tr').first.locator('.seg button').nth(1).click(); until(lambda: adm.locator('#users-msg').inner_text().strip())
     check(not adm.locator('dialog.modal[open]').count() and adm.locator('#users-msg').inner_text().strip(), f"the only admin to a member: refused at once ({adm.locator('#users-msg').inner_text()!r})")
 
     # the only admin: no Delete button on their account page, a red word why
-    oa = one.new_page(); oa.goto(SERVER + '/account'); oa.wait_for_selector('#name-view'); time.sleep(.5)
+    oa = one.new_page(); oa.goto(SERVER + '/account'); oa.wait_for_selector('#name-view'); until(lambda: oa.is_visible('#only-admin') and not oa.is_visible('#delete-me') and 'only admin' in oa.inner_text('#only-admin'))
     check(oa.is_visible('#only-admin') and not oa.is_visible('#delete-me') and 'only admin' in oa.inner_text('#only-admin'), f"the only admin: no Delete button, a word why ({oa.inner_text('#only-admin')!r})")
     oa_open = True
     # the account page's admin button, made an admin elsewhere: it comes, moving
@@ -121,25 +121,26 @@ with sync_playwright() as p:
     # (a few sign-ins more, put straight in: more through the API would be held back as too many)
     with sqlite3.connect(os.path.join(DATA, 'tabcat.db')) as c:
         for i in range(6): c.execute("insert into events (at, user_id, username, kind, ip) select ?, id, username, 'login_ok', ? from users where username = 'boss'", (time.time() - 3600 * (i + 1), f'10.0.0.{i}'))
-    acc = one.new_page(); acc.on('pageerror', lambda e: errors.append(str(e))); acc.goto(SERVER + '/account'); acc.wait_for_selector('#my-events .event'); time.sleep(.6)
+    acc = one.new_page(); acc.on('pageerror', lambda e: errors.append(str(e))); acc.goto(SERVER + '/account'); acc.wait_for_selector('#my-events .event')
     mine = acc.evaluate("fetch('/api/me/events?limit=1').then(r => r.json()).then(r => r.total)")
     mp = -(-mine // 5)
+    until(lambda: acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp)); settle(acc)
     check(acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp), f'the account page: its record five a page, {mp} pages ({mine} in all)')
     top = acc.locator('#my-events .event').first.get_attribute('data-key')
     TURN = '''(sel) => new Promise((done) => { const seen = []; const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target, k = a.effect.getKeyframes();
       if (t?.closest?.(sel) && /translateY/.test(k[0].transform + k[1].transform)) seen.push((t.closest('.event')?.parentElement?.closest('.event') ? 'old ' : 'new ') + (k[0].transform === 'none' ? 'out ' + k[1].transform : 'in ' + k[0].transform)); }
       if (seen.length) done([...new Set(seen.map((x) => x.replace(/[0-9.]+px/, 'N')))]); else requestAnimationFrame(look); }; look(); })'''
     acc.evaluate("void (window.__turn = (" + TURN + ")('#my-events'))")
-    acc.click('#my-ev-next'); time.sleep(.6)
-    turn = acc.evaluate('window.__turn')
+    acc.click('#my-ev-next')
+    turn = acc.evaluate('window.__turn'); settle(acc)
     check('old out translateY(-N)' in turn and 'new in translateY(N)' in turn, f'next: in each row, the old goes up and out as the new comes up from below ({turn})')
     acc.evaluate("void (window.__turn = (" + TURN + ")('#my-events'))")
-    acc.click('#my-ev-prev'); time.sleep(.6)
-    turn = acc.evaluate('window.__turn')
+    acc.click('#my-ev-prev')
+    turn = acc.evaluate('window.__turn'); settle(acc)
     check('old out translateY(N)' in turn and 'new in translateY(-N)' in turn, f'back: the other way ({turn})')
-    acc.click('#my-ev-next'); time.sleep(.6)
+    acc.click('#my-ev-next'); until(lambda: acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top); settle(acc)
     check(acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top, 'next: page 2')
-    acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); time.sleep(.6)
+    acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); until(lambda: acc.locator('#my-ev-page').input_value() == str(mp) and acc.locator('#my-events .event').count() == mine - 5 * (mp - 1))
     check(acc.locator('#my-ev-page').input_value() == str(mp) and acc.locator('#my-events .event').count() == mine - 5 * (mp - 1), 'a page typed, past the last: the last')
     if os.environ.get('SHOT2'): acc.locator('#my-events').locator('..').screenshot(path=os.environ['SHOT2'])
     acc.close()
@@ -147,9 +148,10 @@ with sync_playwright() as p:
     # the record: 15 a page
     bad = b.new_context().new_page(); bad.goto(SERVER + '/login')
     for i in range(20): call(bad, 'POST', '/api/login', {'username': f'ghost{i}', 'password': 'wrongwrong'})
-    adm.reload(); adm.wait_for_selector('#events .event'); time.sleep(.8)
+    adm.reload(); adm.wait_for_selector('#events .event')
     total = adm.evaluate("fetch('/api/admin/events?limit=1').then(r => r.json()).then(r => r.total)")
     pages_n = -(-total // 15)
+    until(lambda: adm.locator('#events .event').count() == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n)); settle(adm)
     check(adm.locator('#events .event').count() == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n),
           f'the record: 15 a page, {pages_n} pages ({adm.locator("#events .event").count()}, {total} in all)')
     first = adm.locator('#events .event').first.inner_text()
@@ -158,15 +160,15 @@ with sync_playwright() as p:
       const a = document.getAnimations().filter((a) => a.effect?.target?.matches?.('#events > .event, #events') && 'height' in (a.effect.getKeyframes()[0] || {}));
       if (a.length || performance.now() - t0 > 600) done({ rows: a.filter((x) => x.effect.target.id !== 'events').map((x) => x.effect.getTiming().duration), list: a.some((x) => x.effect.target.id === 'events') }); else requestAnimationFrame(f); })(); }))''')
     hts = [adm.evaluate("[...document.querySelectorAll('#events > .event')].map(e => e.offsetHeight)")]
-    adm.click('#ev-next'); grow = adm.evaluate('window.__grow'); time.sleep(.6)
+    adm.click('#ev-next'); grow = adm.evaluate('window.__grow'); settle(adm)
     hts.append(adm.evaluate("[...document.querySelectorAll('#events > .event')].map(e => e.offsetHeight)"))
     differ = any(abs(a - b) > .5 for a, b in zip(*hts))
     check(not differ or (grow['rows'] and set(grow['rows']) == {340}), f'rows taller or shorter on the next page: their heights glide, at the turn\'s pace ({grow}, heights differ: {differ})')
     check(not differ or grow['list'], 'and the record itself grows or shrinks to them, the box with it')
     check(adm.locator('#ev-page').input_value() == '2' and adm.locator('#events .event').first.inner_text() != first, 'next: page 2')
-    adm.fill('#ev-page', '99'); adm.press('#ev-page', 'Enter'); time.sleep(.6)
+    adm.fill('#ev-page', '99'); adm.press('#ev-page', 'Enter'); until(lambda: adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1)); settle(adm)
     check(adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1), 'a page typed, past the last: the last')
-    adm.fill('#ev-page', '1'); adm.press('#ev-page', 'Enter'); time.sleep(.6)
+    adm.fill('#ev-page', '1'); adm.press('#ev-page', 'Enter'); until(lambda: adm.locator('#events .event').first.inner_text() == first and adm.locator('#ev-prev').is_disabled())
     check(adm.locator('#events .event').first.inner_text() == first and adm.locator('#ev-prev').is_disabled(), 'page 1 typed: the first again')
     if os.environ.get('SHOT'): adm.screenshot(path=os.environ['SHOT'], full_page=True)
 

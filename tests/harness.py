@@ -18,8 +18,8 @@ def _roomier(f):
 for _cls in (Page, Frame):
     for _name in ('wait_for_function', 'wait_for_selector', 'wait_for_url', 'wait_for_event'):
         if hasattr(_cls, _name): setattr(_cls, _name, _roomier(getattr(_cls, _name)))
+_sleep = time.sleep  # (the real one, for until and settle: their own waits end when they may)
 if SLOW != 1:
-    _sleep = time.sleep
     time.sleep = lambda s: _sleep(s * SLOW)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,6 +31,23 @@ failures = []
 os.environ.setdefault('TABCAT_NO_DIALOG', '1')  # (servers started by tests never show the OS's file dialog)
 os.environ.setdefault('TABCAT_NO_UPDATES', '1')  # (nor look for updates on GitHub)
 os.environ.setdefault('TABCAT_NO_TAILSCALE', '1')  # (nor touch this computer's Tailscale)
+
+def until(fn, timeout=10, step=.05):
+    """Waits for fn() to come true, and returns it (or, after `timeout` seconds, what it last gave): in place of a
+    fixed pause before a look, it goes on as soon as what it waits for is there."""
+    end = time.time() + timeout
+    while True:
+        try: v = fn()
+        except Exception: v = None
+        if v or time.time() > end: return v
+        _sleep(step)
+
+def settle(page, at_most=3):
+    """Waits for what moves on the page to stop (its animations ended, endless ones aside), at most `at_most` seconds:
+    in place of a fixed pause for an animation to play out."""
+    _sleep(.05)  # (one that's about to start: started)
+    try: page.wait_for_function("!document.getAnimations().some(a => a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity)", timeout=at_most * 1000 / WAIT)
+    except Exception: pass
 
 def check(cond, msg):
     print(('PASS ' if cond else 'FAIL ') + msg, flush=True)
@@ -129,4 +146,4 @@ def workspace(i, groups):
             'categories': [{'id': i + '-c', 'type': 'category', 'name': 'C', 'groups': groups}]}
 
 __all__ = ['sync_playwright', 'check', 'done', 'serve', 'launch', 'dashboard', 'seed', 'settings',
-           'second_dashboard', 'link', 'folder', 'group', 'workspace', 'URL', 'PORT', 'time']
+           'second_dashboard', 'link', 'folder', 'group', 'workspace', 'URL', 'PORT', 'time', 'until', 'settle']
