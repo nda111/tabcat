@@ -32,7 +32,10 @@ with sync_playwright() as p:
     check(d.url.endswith('/setup') and d.is_visible('#username'), f'connected (it loads again): make the first account ({d.url})')
     # the toolbar popup: no saving before the server is set up (and signed in); what to do instead
     def popup():
-        pp = ctx.new_page(); pp.goto(sw.url.replace('background.js', 'popup.html')); time.sleep(1.2)
+        pp = ctx.new_page(); pp.goto(sw.url.replace('background.js', 'popup.html'))
+        try: pp.wait_for_selector('#server-card:visible, #save-card:visible', timeout=5000)  # (it asks the server first)
+        except Exception: pass
+        time.sleep(.4)
         out = (pp.is_visible('#server-card'), pp.inner_text('#server-card') if pp.is_visible('#server-card') else '', pp.is_visible('#save-card'), pp.is_visible('#suspend') or pp.is_visible('#open'))
         pp.close(); return out
     pop = popup()

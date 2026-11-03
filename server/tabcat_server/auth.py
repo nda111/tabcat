@@ -52,7 +52,7 @@ def session_user(db, token, touch=True, ip=None):
     if not token:
         return None
     now = time.time()
-    row = db.one('''select u.*, s.last_seen session_seen, s.ip session_ip from sessions s join users u on u.id = s.user_id
+    row = db.one('''select u.*, s.last_seen session_seen, s.ip session_ip, s.created_at session_created from sessions s join users u on u.id = s.user_id
                     where s.token = ? and s.expires_at > ? and u.disabled = 0''', token_hash(token), now)
     if row and touch:
         db.run('update users set last_seen = ? where id = ?', now, row['id'])

@@ -5,7 +5,7 @@
 //
 // The one holding it is chosen by a lock (Web Locks; on a plain http:// address, where there are none, by a note in
 // localStorage). Closed or gone, another takes over at once. Everything heard is passed as { kind, data }:
-//   'head' (the account's latest sync change), 'me' (the account changed), 'admin' (for admins), 'accounts' (another
+//   'head' (the account's latest sync change), 'tabs' (one of its browsers' open tabs), 'me' (the account changed), 'admin' (for admins), 'accounts' (another
 //   account signed in in this browser changed: its name, photo...), 'open' (connected
 //   again after a break, or newly held: whatever came meanwhile was missed, so look again), 'gone' (signed out).
 // liveStream(handle) starts listening (handle(kind, data) in this page) and returns { stop, start }: stop, for the
@@ -23,7 +23,7 @@ export function liveStream(handle) {
   const hold = (done) => {
     const open = () => {
       es = new EventSource('/api/live');
-      for (const k of ['head', 'me', 'admin', 'accounts']) es.addEventListener(k, (e) => { let d = null; try { d = JSON.parse(e.data); } catch { /* none */ } tell(k, d); });
+      for (const k of ['head', 'me', 'admin', 'accounts', 'tabs']) es.addEventListener(k, (e) => { let d = null; try { d = JSON.parse(e.data); } catch { /* none */ } tell(k, d); });
       // (newly held, taken over from a page closed meanwhile, or back after a break: what came between was missed)
       es.addEventListener('open', () => { tell('open'); });
       es.addEventListener('error', async () => { // (the server away a moment: it tries again by itself)

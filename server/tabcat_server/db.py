@@ -47,6 +47,16 @@ create table if not exists sync_snapshots (
   at real not null,
   body text not null
 );
+create table if not exists device_tabs (  -- each of an account's browsers: its windows and tabs open, as it last said
+  user_id integer not null references users(id) on delete cascade,
+  device text not null,            -- (the browser's own id for itself, as sync gives it)
+  name text not null default '',   -- (how it calls itself: "Chrome on Windows")
+  at real not null,
+  body text not null,              -- ({windows: [{focused, tabs: [{url, title, icon, pinned, active, group}], groups: [{id, title, color}]}]})
+  label text not null default '',  -- (a name given it by the user, in place of its own)
+  forgotten real,                  -- (let go from the list, when: not taken back until it signs in again after)
+  primary key (user_id, device)
+);
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
   id integer primary key,
   at real not null,
@@ -98,6 +108,10 @@ class DB:
                 self.conn.execute('alter table events add column tried text')
             if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
                 self.conn.execute('alter table users add column name text')
+            dcols = [r['name'] for r in self.conn.execute('pragma table_info(device_tabs)')]
+            if dcols and 'label' not in dcols:  # (each browser's tabs, before they could be named or let go)
+                self.conn.execute("alter table device_tabs add column label text not null default ''")
+                self.conn.execute('alter table device_tabs add column forgotten real')
             if 'avatar' not in cols:
                 self.conn.execute('alter table users add column avatar text')
                 self.conn.execute('alter table users add column avatar_at real')

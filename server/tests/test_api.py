@@ -1,6 +1,6 @@
 """The server's API, without a browser: first account, signing in, accounts, sign-up modes, invitations,
 the admin's limits, and the dashboard behind the sign-in. Run: python tests/test_api.py"""
-import os, sys, tempfile
+import os, sys, tempfile, time
 os.environ.setdefault('TABCAT_NO_UPDATES', '1'); os.environ.setdefault('TABCAT_NO_DIALOG', '1'); os.environ.setdefault('TABCAT_NO_TAILSCALE', '1')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from fastapi.testclient import TestClient
@@ -360,6 +360,31 @@ bomb = _gz.compress(b'{"device":"x","ops":[{"id":"b","body":"' + b'0' * (9 * 102
 check(sa.post('/api/sync/ops', content=bomb, headers={'Content-Type': 'application/json', 'Content-Encoding': 'gzip'}).status_code == 413, f'a "zip bomb" ({len(bomb)} bytes unpacking past 8 MB): refused')
 r = sa.get('/api/sync/state', headers={'Accept-Encoding': 'gzip'})
 check(r.headers.get('content-encoding') == 'gzip', 'answers worth it come back gzipped')
+
+# each browser's open tabs, for the account's others
+win = {'focused': True, 'tabs': [{'url': 'https://a.example/', 'title': 'A', 'icon': 'javascript:alert(1)', 'group': 3}, {'url': 'https://b.example/', 'title': 'B' * 999}, {'title': 'no url'}], 'groups': [{'id': 3, 'title': 'G', 'color': 'blue'}]}
+check(sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win, {'tabs': []}]}).status_code == 200, "a browser's open tabs: taken")
+sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': []})
+got = sa.get('/api/sync/tabs').json()['devices']
+pc1 = next(d for d in got if d['device'] == 'pc1')
+check([d['device'] for d in got] == ['pc2', 'pc1'] and pc1['name'] == 'Chrome on Windows', f"each browser of the account, the latest heard first ({[d['device'] for d in got]})")
+t = pc1['windows'][0]['tabs']
+check(len(pc1['windows']) == 1 and len(t) == 2 and t[0]['icon'] == '' and t[0]['group'] == 3 and len(t[1]['title']) == 300, 'kept tidy: a window with no tabs, a tab with no address, an icon not on the web: left out; a long title cut')
+check(sb.get('/api/sync/tabs').json()['devices'] == [], "another account doesn't see them")
+check(sa.put('/api/sync/tabs', json={'windows': []}).status_code == 400 and sa.put('/api/sync/tabs', headers={'X-Tabcat-Account': 'someone-else'}, json={'device': 'x'}).status_code == 409, 'no browser named, or as another account: refused')
+sa.put('/api/sync/tabs/pc2/name', json={'name': '  Work   laptop  '})
+pc2 = next(d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2')
+check(pc2['name'] == 'Work laptop' and pc2['own'] == 'Edge on macOS', f"a browser named: that name, its own kept beside ({pc2['name']!r})")
+sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': []})
+check(next(d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2')['name'] == 'Work laptop', 'and kept as it goes on sending')
+sa.delete('/api/sync/tabs/pc2')
+check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1'], 'a browser let go from the list')
+r = sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]}).json()
+check(r.get('forgotten') and [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1'], "it goes on sending: not taken back (it's let go until it signs in again)")
+time.sleep(.01); sa.post('/api/login', json=J(username='ann', password='annpass99'))
+r = sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]}).json()
+pc2 = next((d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2'), None)
+check(r.get('ok') and pc2 and pc2['name'] == 'Edge on macOS', f"signed in again: back, under its own name ({pc2 and pc2['name']!r})")
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

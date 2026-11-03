@@ -24,6 +24,7 @@ from .db import DB
 PAGES = Path(__file__).parent / 'pages'
 MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
 MAX_SYNC_BODY = 8 * 1024 * 1024  # (sync's: a whole copy of someone's tabcat at most)
+DEVICE_TABS_DAYS = 30           # (a browser's open tabs, unheard from this long: let go)
 SYNC_KEEP_OPS = 5000             # (changes kept past the latest copy, for browsers a little behind)
 API_PER_MINUTE = 240          # (per address)
 NO_STORE = {'Cache-Control': 'no-store'}
@@ -1055,6 +1056,72 @@ def create_app(config) -> FastAPI:
             return {'reload': True, 'head': sync_head(u['id'])}
         ops = sync_ops_after(u['id'], after)
         return {'ops': ops, 'head': sync_head(u['id']), 'more': len(ops) == 1000}
+
+    # Each browser's open windows and tabs, for the account's others to see (the open tabs panel, one part a device):
+    # sent as they change (the latest only, nothing kept of before), told live to the account's pages ('tabs'). A
+    # browser not heard from in DEVICE_TABS_DAYS is let go; one can be named, or let go from the list until it signs in again.
+    def clean_tabs(windows) -> list:
+        text = lambda v, n: str(v or '')[:n]
+        out = []
+        for w in (windows if isinstance(windows, list) else [])[:50]:
+            if not isinstance(w, dict):
+                continue
+            tabs = []
+            for t in (w.get('tabs') if isinstance(w.get('tabs'), list) else [])[:500]:
+                if not isinstance(t, dict) or not text(t.get('url'), 4000):
+                    continue
+                icon = text(t.get('icon'), 1000)
+                tabs.append({'url': text(t.get('url'), 4000), 'title': text(t.get('title'), 300), 'icon': icon if re.match(r'^https?://', icon) else '',
+                             'pinned': bool(t.get('pinned')), 'active': bool(t.get('active')), 'group': t.get('group') if isinstance(t.get('group'), int) else -1})
+            groups = [{'id': g.get('id'), 'title': text(g.get('title'), 100), 'color': text(g.get('color'), 20)}
+                      for g in (w.get('groups') if isinstance(w.get('groups'), list) else [])[:100] if isinstance(g, dict) and isinstance(g.get('id'), int)]
+            if tabs:
+                out.append({'focused': bool(w.get('focused')), 'tabs': tabs, 'groups': groups})
+        return out
+
+    @app.put('/api/sync/tabs')
+    async def put_device_tabs(request: Request):
+        """This browser's tabs, the latest. Let go from the list since it signed in: not taken (`forgotten`), until it
+        signs in again; then it's back, under its own name."""
+        u = sync_user(request)
+        data = await body(request)
+        device = str(data.get('device', ''))[:64]
+        if not device:
+            raise HTTPException(400, 'which browser?')
+        had = db.one('select forgotten from device_tabs where user_id = ? and device = ?', u['id'], device)
+        if had and had['forgotten'] and (u['session_created'] or 0) < had['forgotten']:
+            return {'ok': False, 'forgotten': True}
+        db.run("""insert into device_tabs (user_id, device, name, at, body) values (?, ?, ?, ?, ?) on conflict(user_id, device) do update set
+                  name = excluded.name, at = excluded.at, body = excluded.body,
+                  label = case when device_tabs.forgotten is null then device_tabs.label else '' end, forgotten = null""",
+               u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')))
+        notify([u['id']], 'tabs')
+        return {'ok': True}
+
+    @app.get('/api/sync/tabs')
+    def get_device_tabs(request: Request):
+        """The account's browsers and what each has open, the latest heard first (`name`: its own, or the one given)."""
+        u = need_user(request)
+        db.run('delete from device_tabs where forgotten is null and at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
+        rows = db.q('select device, name, label, at, body from device_tabs where user_id = ? and forgotten is null order by at desc', u['id'])
+        return {'devices': [{'device': r['device'], 'name': r['label'] or r['name'], 'own': r['name'], 'at': r['at'], **json.loads(r['body'])} for r in rows]}
+
+    @app.put('/api/sync/tabs/{device}/name')
+    async def name_device(device: str, request: Request):
+        """A name for one of the account's browsers (empty: its own again), for all of them to show."""
+        u = need_user(request)
+        label = ' '.join(str((await body(request)).get('name') or '').split())[:30]
+        db.run('update device_tabs set label = ? where user_id = ? and device = ? and forgotten is null', label, u['id'], device[:64])
+        notify([u['id']], 'tabs')
+        return {'ok': True}
+
+    @app.delete('/api/sync/tabs/{device}')
+    async def forget_device_tabs(device: str, request: Request):
+        """Let go from the list: its tabs gone, and not taken again until it signs in again."""
+        u = need_user(request)
+        db.run("update device_tabs set forgotten = ?, body = '{\"windows\":[]}', label = '' where user_id = ? and device = ?", time.time(), u['id'], device[:64])
+        notify([u['id']], 'tabs')
+        return {'ok': True}
 
     @app.post('/api/sync/ops')
     async def sync_push(request: Request):

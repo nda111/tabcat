@@ -722,7 +722,8 @@ const handlers = {
   suspendTabs: (args) => A.suspendTabs(args || {}),
   // `groups` ([{ title, color, urls }], optional): open those instead, each set in its own tab group
   // named after it (older dashboards send only `urls`)
-  async openUrls({ urls, groups, newWindow, windowId, active }, senderTab) {
+  // (`index`: where in the window, as the open tabs panel shows them dropped; none, the end. feature: deviceTabs)
+  async openUrls({ urls, groups, newWindow, windowId, active, index }, senderTab) {
     const ok = (u) => /^(https?|ftp|file|chrome|edge|brave|about):/i.test(u);
     const sets = groups?.length && chrome.tabGroups
       ? groups.map((g) => ({ ...g, urls: (g.urls || []).filter(ok) })).filter((g) => g.urls.length)
@@ -738,7 +739,7 @@ const handlers = {
       const target = windowId ?? senderTab?.windowId;
       tabIds = [];
       for (let i = 0; i < all.length; i++) {
-        tabIds.push((await chrome.tabs.create({ url: all[i], windowId: target, active: !!active && i === 0 })).id);
+        tabIds.push((await chrome.tabs.create({ url: all[i], windowId: target, active: !!active && i === 0, ...(Number.isInteger(index) && index >= 0 ? { index: index + i } : {}) })).id);
       }
     }
     let at = 0;
@@ -1182,6 +1183,7 @@ async function syncOnce() {
       await syncTxn(space, async (y) => (y && y.seq >= at ? { sync: { ...y, snapAt: at } } : null));
     }
     syncInfo.lastOk = Date.now(); syncInfo.lastError = null; syncInfo.fails = 0;
+    if (!tabsSent) sendTabsSoon(0); // (newly linked up, or the worker woken: this browser's tabs told at once)
   } catch (e) {
     // offline, the server down or signed out: tried again (sooner at first, then less often), and on coming
     // back online, a dashboard opening, a window coming to the front; the alarm wakes the worker meanwhile
@@ -1195,7 +1197,7 @@ async function syncAlarm() {
   if (s.server) chrome.alarms.create('sync', { periodInMinutes: 1 });
   else chrome.alarms.clear('sync');
 }
-chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'sync') syncNow(); });
+chrome.alarms.onAlarm.addListener((a) => { if (a.name === 'sync') { syncNow(); sendTabs(); } });
 self.addEventListener('online', () => syncNow());
 chrome.runtime.onStartup.addListener(() => syncNow());
 syncAlarm();
@@ -1217,6 +1219,7 @@ chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'tabcat-bridge' || !port.sender?.tab) return;
   ports.add(port);
   syncSoon(0); // (a dashboard opening: up to date with the server)
+  if (tabsForgotten) { tabsSent = ''; sendTabsSoon(0, true); } // (signed in again, maybe: this browser's tabs, back on the list)
   port.onDisconnect.addListener(() => { ports.delete(port); markEditing(port.sender.tab.id, false); });
   port.onMessage.addListener(async (msg) => {
     if ('editing' in msg) return markEditing(port.sender.tab.id, msg.editing);
@@ -1275,8 +1278,52 @@ let tabsTimer;
 function tabsChanged() {
   clearTimeout(tabsTimer);
   tabsTimer = setTimeout(() => broadcast('tabs'), 100);
+  sendTabsSoon();
 }
 for (const ev of ['onCreated', 'onRemoved', 'onUpdated', 'onMoved', 'onAttached', 'onDetached', 'onActivated', 'onReplaced']) {
   chrome.tabs[ev].addListener(tabsChanged);
 }
 chrome.windows.onRemoved.addListener(tabsChanged);
+for (const ev of ['onCreated', 'onUpdated', 'onRemoved']) chrome.tabGroups?.[ev]?.addListener(() => sendTabsSoon());
+
+/* ================= this browser's open tabs, for the account's others ================= */
+
+// Connected to a server and signed in, this browser tells it which windows and tabs it has open (the latest only:
+// see /api/sync/tabs), a moment after they change, so the account's other browsers show them in their open tabs
+// panel (feature: deviceTabs). Not its private windows, nor the dashboard, nor new tabs, nor tabcat's own pages. The same as last sent:
+// not again, but now and then all the same (the alarm), to say it's still there.
+let tabsSent = '', tabsSentAt = 0, tabsSendTimer = null, tabsForgotten = false;
+function sendTabsSoon(ms = 2000, again = false) {
+  clearTimeout(tabsSendTimer);
+  tabsSendTimer = setTimeout(() => sendTabs(again), ms);
+}
+// (what this browser calls itself: "Chrome on Windows", as the server's list of devices does)
+function browserName() {
+  const ua = navigator.userAgentData;
+  const brand = ua?.brands?.map((b) => b.brand).find((b) => !/not.?a.?brand|^chromium$/i.test(b)) || 'Chromium';
+  const os = { macOS: 'macOS', Windows: 'Windows', Linux: 'Linux', 'Chrome OS': 'ChromeOS', ChromeOS: 'ChromeOS', Android: 'Android' }[ua?.platform] || ua?.platform || '';
+  return [brand.replace(/^(Google|Microsoft) /, ''), os].filter(Boolean).join(' on ');
+}
+async function sendTabs(again = false) {
+  if (tabsForgotten && again !== true) return; // (let go from the list: see below)
+  const s = await S.loadSettings();
+  if (!s.server || !s.serverUser) return;
+  A.setDashboardUrl(s.dashboardUrl);
+  const [wins, groups] = await Promise.all([chrome.windows.getAll({ populate: true, windowTypes: ['normal'] }), chrome.tabGroups?.query({}).catch(() => []) ?? []]);
+  const own = chrome.runtime.getURL(''); // (tabcat's own pages: another browser's tabcat is another extension)
+  const windows = wins.filter((w) => !w.incognito).map((w) => ({
+    tabs: w.tabs.map((t) => ({ t, url: t.url || t.pendingUrl || '' })).filter(({ url }) => url && !A.isDashboard(url) && !A.isNewTab(url) && !url.startsWith(own))
+      .map(({ t, url }) => ({ url, title: t.title || '', icon: /^https?:/.test(t.favIconUrl || '') ? t.favIconUrl : '', pinned: t.pinned, group: t.groupId ?? -1 })),
+    groups: groups.filter((g) => g.windowId === w.id).map(({ id, title, color }) => ({ id, title: title || '', color })),
+  })).filter((w) => w.tabs.length);
+  const now = JSON.stringify([s.server, s.serverUser, windows]);
+  if (now === tabsSent && Date.now() - tabsSentAt < 10 * 60_000) return;
+  try {
+    const r = await syncApi(s, 'tabs', { method: 'PUT', json: { device: await deviceId(), name: browserName(), windows } });
+    // (let go from the account's list: not taken until this browser signs in again; it's tried again then, as a
+    // dashboard links up, rather than at every change meanwhile)
+    tabsForgotten = !!r?.forgotten;
+    tabsSent = now; tabsSentAt = Date.now();
+  } catch { /* (offline, or signed out: next time) */ }
+}
+handlers.deviceId = () => deviceId(); // (for the dashboard: which of the account's browsers is this one)
