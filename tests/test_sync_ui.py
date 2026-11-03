@@ -146,7 +146,18 @@ with sync_playwright() as p:
     bd.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'ann', password: 'annpass123' }) })")
     bd.evaluate(f"fetch('/api/accounts/switch', {{ method: 'POST', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ id: {boss} }}) }})")
     time.sleep(1); bd.reload(); bd.wait_for_selector('#btn-account:not([hidden])', timeout=15000); time.sleep(1.5)
-    bd.click('#btn-account'); time.sleep(.4); bd.click('#account-more'); bd.wait_for_selector('#account-list .account-other'); time.sleep(.6)
+    bd.click('#btn-account'); time.sleep(.4)
+    SAMPLE = '''void (window.__hs = new Promise((done) => { const hs = [], t0 = performance.now(); (function f() { const l = document.querySelector('#account-list');
+      const n = l.nextElementSibling; hs.push(+(n.getBoundingClientRect().top).toFixed(2)); if (performance.now() - t0 < 700) requestAnimationFrame(f); else done(hs); })(); }))'''
+    def last_step(hs):
+        steps = [abs(b - a) for a, b in zip(hs, hs[1:]) if abs(b - a) > .01]
+        return steps[-1] if steps else 0
+    if bd.get_attribute('#account-more', 'aria-expanded') == 'true': bd.click('#account-more'); time.sleep(.6)
+    bd.evaluate(SAMPLE); bd.click('#account-more'); hs = bd.evaluate('window.__hs')
+    check(hs[-1] > hs[0] and last_step(hs) < 1.5, f'the list of accounts opening: no jump at the end (its last step {last_step(hs):.2f}px)')
+    bd.evaluate(SAMPLE); bd.click('#account-more'); hs = bd.evaluate('window.__hs')
+    check(hs[-1] < hs[0] and last_step(hs) < 1.5, f'and closing: none either ({last_step(hs):.2f}px)')
+    bd.click('#account-more'); bd.wait_for_selector('#account-list .account-other'); time.sleep(.6)
     tinted = bd.evaluate("document.querySelector('#account-list .account-avatar').dataset.tint")
     check(tinted == 'hue', f"another account's letter: in its own colour ({tinted})")
     bd.evaluate(MOVED)

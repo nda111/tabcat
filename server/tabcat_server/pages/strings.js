@@ -1,6 +1,7 @@
 // The server pages' text, in tabcat's 8 languages ({name}: filled in)
 export const STRINGS = {
   en: {
+    evColId: 'ID', evColRole: 'Type', evColName: 'Name', evColIp: 'IP', evColBrowser: 'Browser',
     evPrev: 'Previous page', evNext: 'Next page', evPage: 'Page',
     evColWhere: 'Where from',
     csvCode: 'Event code', csvDetailCode: 'Detail code',
@@ -62,6 +63,7 @@ export const STRINGS = {
     errGeneric: 'Something went wrong: {detail}', noDashTitle: 'The dashboard isn’t here yet.', noDashText: 'The server couldn’t get the tabcat dashboard. An admin can get it on the admin page.',
   },
   ko: {
+    evColId: '아이디', evColRole: '계정 유형', evColName: '이름', evColIp: 'IP', evColBrowser: '브라우저',
     evPrev: '이전 페이지', evNext: '다음 페이지', evPage: '페이지',
     evColWhere: '접속 정보',
     csvCode: '코드', csvDetailCode: '세부 코드',
@@ -123,6 +125,7 @@ export const STRINGS = {
     errGeneric: '문제가 생겼습니다: {detail}', noDashTitle: '대시보드가 아직 없습니다.', noDashText: '서버가 tabcat 대시보드를 받아 오지 못했습니다. 관리자가 서버 관리 페이지에서 받아 올 수 있습니다.',
   },
   ja: {
+    evColId: 'ID', evColRole: '種類', evColName: '名前', evColIp: 'IP', evColBrowser: 'ブラウザー',
     evPrev: '前のページ', evNext: '次のページ', evPage: 'ページ',
     evColWhere: '接続元',
     csvCode: 'コード', csvDetailCode: '詳細コード',
@@ -184,6 +187,7 @@ export const STRINGS = {
     errGeneric: '問題が発生しました: {detail}', noDashTitle: 'ダッシュボードがまだありません。', noDashText: 'サーバーが tabcat ダッシュボードを取得できませんでした。管理者がサーバー管理ページから取得できます。',
   },
   'zh-CN': {
+    evColId: '用户名', evColRole: '类型', evColName: '名称', evColIp: 'IP', evColBrowser: '浏览器',
     evPrev: '上一页', evNext: '下一页', evPage: '页码',
     evColWhere: '来源',
     csvCode: '代码', csvDetailCode: '详情代码',
@@ -245,6 +249,7 @@ export const STRINGS = {
     errGeneric: '出现问题：{detail}', noDashTitle: '看板还不在这里。', noDashText: '服务器未能获取 tabcat 看板。管理员可以在服务器管理页面获取。',
   },
   es: {
+    evColId: 'Usuario', evColRole: 'Tipo', evColName: 'Nombre', evColIp: 'IP', evColBrowser: 'Navegador',
     evPrev: 'Página anterior', evNext: 'Página siguiente', evPage: 'Página',
     evColWhere: 'Desde',
     csvCode: 'Código', csvDetailCode: 'Código de detalle',
@@ -306,6 +311,7 @@ export const STRINGS = {
     errGeneric: 'Algo salió mal: {detail}', noDashTitle: 'El panel aún no está aquí.', noDashText: 'El servidor no pudo obtener el panel de tabcat. Un administrador puede obtenerlo en la página de administración.',
   },
   de: {
+    evColId: 'Benutzer', evColRole: 'Art', evColName: 'Name', evColIp: 'IP', evColBrowser: 'Browser',
     evPrev: 'Vorherige Seite', evNext: 'Nächste Seite', evPage: 'Seite',
     evColWhere: 'Von wo',
     csvCode: 'Code', csvDetailCode: 'Detail-Code',
@@ -367,6 +373,7 @@ export const STRINGS = {
     errGeneric: 'Etwas ist schiefgelaufen: {detail}', noDashTitle: 'Das Dashboard ist noch nicht da.', noDashText: 'Der Server konnte das tabcat-Dashboard nicht holen. Ein Admin kann es auf der Verwaltungsseite holen.',
   },
   fr: {
+    evColId: 'Identifiant', evColRole: 'Type', evColName: 'Nom', evColIp: 'IP', evColBrowser: 'Navigateur',
     evPrev: 'Page précédente', evNext: 'Page suivante', evPage: 'Page',
     evColWhere: 'Provenance',
     csvCode: 'Code', csvDetailCode: 'Code du détail',
@@ -428,6 +435,7 @@ export const STRINGS = {
     errGeneric: 'Un problème est survenu : {detail}', noDashTitle: 'Le tableau de bord n’est pas encore là.', noDashText: 'Le serveur n’a pas pu récupérer le tableau de bord tabcat. Un admin peut le récupérer depuis la page d’administration.',
   },
   'pt-BR': {
+    evColId: 'Usuário', evColRole: 'Tipo', evColName: 'Nome', evColIp: 'IP', evColBrowser: 'Navegador',
     evPrev: 'Página anterior', evNext: 'Próxima página', evPage: 'Página',
     evColWhere: 'De onde',
     csvCode: 'Código', csvDetailCode: 'Código do detalhe',

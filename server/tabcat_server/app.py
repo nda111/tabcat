@@ -899,7 +899,11 @@ def create_app(config) -> FastAPI:
         rows = db.q('select *' + q + ' order by id desc limit ? offset ?', *args, min(max(limit, 1), 200), max(offset, 0))
         day = time.time() - 86400
         fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked', 'password_wrong', 'rate_limited') and at > ? group by ip order by n desc limit 5", day)
-        return {'events': [event(r) for r in rows], 'total': total, 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
+        # (each one's account as it is now: its name and whether an admin, for the record's own columns)
+        ids = sorted({r['user_id'] for r in rows if r['user_id'] is not None})
+        who = {u['id']: dict(u) for u in db.q(f"select id, name, admin from users where id in ({','.join('?' * len(ids))})", *ids)} if ids else {}
+        out = [{**event(r), 'name': (who.get(r['user_id']) or {}).get('name') or '', 'admin': bool((who.get(r['user_id']) or {}).get('admin')) if r['user_id'] in who else None} for r in rows]
+        return {'events': out, 'total': total, 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
 
     @app.get('/api/me/events')
     def my_events(request: Request, limit: int = 20, offset: int = 0):

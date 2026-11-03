@@ -315,12 +315,17 @@ async function updateServer() {
 const PER_PAGE = 15;
 let evPage = 1;
 function eventRow(e) {
+  // (no account: a sign-in tried with a username that's no one's, a dash; an account gone since: its username, no
+  // type nor name)
+  const none = () => h('span', { class: 'muted no-account' }, t('evNoAccount'));
   return h('div', { class: `event${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
     h('span', { class: 'ev-when muted small' }, date(e.at)),
-    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null),
-    // (no account: a sign-in tried with a username that's no one's, said so, not as an account's name)
-    h('span', { class: 'ev-who' }, e.username || h('span', { class: 'muted no-account' }, t('evNoAccount')), e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
-    h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · ')));
+    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
+    h('span', { class: 'ev-id' }, e.username || none()),
+    h('span', { class: 'ev-role muted small' }, e.admin == null ? '' : t(e.admin ? 'admin' : 'member')),
+    h('span', { class: 'ev-name' }, e.name || ''),
+    h('span', { class: 'ev-ip muted small' }, e.ip || ''),
+    h('span', { class: 'ev-browser muted small' }, (e.agent && deviceName(e.agent)) || ''));
 }
 // `to`: another page (its rows slide in from the side it's on); none: this one again, as it now is
 async function events(to = null) {

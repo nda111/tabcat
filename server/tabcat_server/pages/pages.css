@@ -508,9 +508,16 @@ th > span { display: inline-block; } /* (a column head, to slide as its column m
 .ev-cols { padding: 4px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
 .event.bad .ev-what { color: var(--danger); }
 .ev-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the admin page's: who and from where, each in a column of its own (ID, type, name; IP, browser) */
+#events .event, #ev-cols { grid-template-columns: 128px minmax(150px, 1.6fr) minmax(64px, .8fr) minmax(52px, .5fr) minmax(56px, .8fr) minmax(84px, .8fr) minmax(90px, .9fr); gap: 10px; }
+.ev-id, .ev-role, .ev-name, .ev-ip, .ev-browser { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .event.mine { grid-template-columns: 1fr auto; row-gap: 0; }
 .event.mine .ev-where { grid-column: 1 / -1; }
-@media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } .ev-cols { display: none; } }
+@media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } .ev-cols { display: none; }
+  /* (narrow: time and event, then who on a line, then from where) */
+  #events .event { grid-template-columns: auto auto auto 1fr; column-gap: 8px; }
+  #events .ev-when { grid-column: 1 / 4; } #events .ev-what { grid-column: 4; justify-self: end; text-align: end; }
+  #events .ev-ip { grid-column: 1 / 3; } #events .ev-browser { grid-column: 3 / -1; } }
 
 /* drop-downs, as the dashboard's: a chevron instead of the native arrow; where the browser lets the list be
    styled (appearance: base-select), it drops in from the field, the chevron flips, the chosen one in the accent */
