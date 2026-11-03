@@ -114,6 +114,7 @@ with sync_playwright() as p:
 
     # renamed in A (a workspace, a group): in B the old name fades out as the new fades in
     MOVED = """window.__moved = new Set(); (function f() { for (const a of document.getAnimations()) { const t = a.effect?.target; if (t?.className) __moved.add(String(t.className)); if (t?.dataset?.p) __moved.add('p:' + t.dataset.p + ':' + (a.effect.getKeyframes()[0].transform ? 'slide' : 'fade')); } requestAnimationFrame(f); })()"""
+    time.sleep(1)  # (a change coming within a moment of this page's own is taken for its own: see ownChange)
     bd.evaluate(MOVED)
     edit(a, "s.workspaces.find(w => w.id === 'own-A').name = 'Own A renamed'")
     bd.wait_for_function("[...document.querySelectorAll('.ws-item .name')].some(e => e.textContent === 'Own A renamed')", timeout=8000)
@@ -148,7 +149,7 @@ with sync_playwright() as p:
     time.sleep(1); bd.reload(); bd.wait_for_selector('#btn-account:not([hidden])', timeout=15000); time.sleep(1.5)
     bd.click('#btn-account'); time.sleep(.4)
     SAMPLE = '''void (window.__hs = new Promise((done) => { const hs = [], t0 = performance.now(); (function f() { const l = document.querySelector('#account-list');
-      const n = l.nextElementSibling; hs.push(+(n.getBoundingClientRect().top).toFixed(2)); if (performance.now() - t0 < 700) requestAnimationFrame(f); else done(hs); })(); }))'''
+      const n = l.nextElementSibling; hs.push(+(n.getBoundingClientRect().top).toFixed(2)); if (performance.now() - t0 < 1600) requestAnimationFrame(f); else done(hs); })(); }))'''
     def last_step(hs):
         steps = [abs(b - a) for a, b in zip(hs, hs[1:]) if abs(b - a) > .01]
         return steps[-1] if steps else 0
@@ -173,12 +174,13 @@ with sync_playwright() as p:
     ann = oc.evaluate("fetch('/api/me').then(r => r.json()).then(m => m.id)")
     ad.evaluate(f"fetch('/api/admin/users/{ann}', {{ method: 'PATCH', headers: {{ 'Content-Type': 'application/json' }}, body: JSON.stringify({{ admin: true }}) }})")
     was = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
+    check(was == 'ann', f"a member in the list: no type said, the username alone ({was!r})")
     try: bd.wait_for_function("w => document.querySelector('#account-list .account-role').textContent !== w", arg=was, timeout=6000); ok = True
     except Exception: ok = False
     role = bd.evaluate("document.querySelector('#account-list .account-role').textContent")
     time.sleep(.5)
     if os.environ.get('SHOT'): bd.locator('#account').screenshot(path=os.environ['SHOT'])
-    check(ok and 'p:role:fade' in bd.evaluate('[...__moved]') and not {'nm', 'p:id:fade', 'p:sep:fade', 'p:name:fade'} & set(bd.evaluate('[...__moved]')), f'made an admin elsewhere: the role alone changes, cross-fading ({role})')
+    check(ok and 'p:role:fade' in bd.evaluate('[...__moved]') and not {'nm', 'p:id:fade', 'p:id:slide', 'p:name:fade'} & set(bd.evaluate('[...__moved]')), f'made an admin elsewhere: its type comes, fading in, the username still ({role})')
     other.close()
 
     check(not errors, f'no page errors {errors}')
