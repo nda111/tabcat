@@ -443,11 +443,15 @@ export function turnRows(list, rows, dir) {
     .finished.then(() => g.remove(), () => g.remove());
   const ghost = (o, style) => { Object.assign(o.el.style, { position: 'absolute', left: '0', right: '0', margin: '0', pointerEvents: 'none', ...style }); return o.el; };
   rows.forEach((row, i) => {
-    const by = row.offsetHeight, kids = [...row.children], o = olds[i];
+    const o = olds[i], to = row.offsetHeight, from = o ? o.height : to, by = Math.max(from, to), kids = [...row.children];
     row.style.position = 'relative';
     row.style.overflow = 'clip';
-    if (o) { const g = ghost(o, { top: '0', height: '100%', borderBottomColor: 'transparent' }); row.append(g); out(g, by); }
-    const anims = (kids.length ? kids : [row]).map((k) => k.animate([{ transform: `translateY(${dir * by}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], timing).finished);
+    // (taller or shorter now, a line more say: the row grows or shrinks to it at the same pace, its line under it
+    // gliding down or up with it: still the same row, turning over)
+    const anims = [];
+    if (o && Math.abs(from - to) > .5) anims.push(row.animate([{ height: `${from}px` }, { height: `${to}px` }], timing).finished);
+    if (o) { const g = ghost(o, { top: '0', height: `${from}px`, borderBottomColor: 'transparent' }); row.append(g); out(g, by); }
+    for (const k of kids.length ? kids : [row]) anims.push(k.animate([{ transform: `translateY(${dir * by}px)`, opacity: 0 }, { transform: 'none', opacity: 1 }], timing).finished);
     Promise.allSettled(anims).then(() => { row.style.position = ''; row.style.overflow = ''; });
   });
   for (const o of olds.slice(rows.length)) {

@@ -148,7 +148,15 @@ with sync_playwright() as p:
     check(adm.locator('#events .event').count() == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n),
           f'the record: 15 a page, {pages_n} pages ({adm.locator("#events .event").count()}, {total} in all)')
     first = adm.locator('#events .event').first.inner_text()
-    adm.click('#ev-next'); time.sleep(.6)
+    # (rows taller or shorter on the next page: each grows or shrinks at the turn's own pace, its line gliding with it)
+    adm.evaluate('''void (window.__grow = new Promise((done) => { const t0 = performance.now(); (function f() {
+      const a = document.getAnimations().filter((a) => a.effect?.target?.matches?.('#events > .event') && 'height' in (a.effect.getKeyframes()[0] || {}));
+      if (a.length || performance.now() - t0 > 600) done(a.map((x) => x.effect.getTiming().duration)); else requestAnimationFrame(f); })(); }))''')
+    hts = [adm.evaluate("[...document.querySelectorAll('#events > .event')].map(e => e.offsetHeight)")]
+    adm.click('#ev-next'); grow = adm.evaluate('window.__grow'); time.sleep(.6)
+    hts.append(adm.evaluate("[...document.querySelectorAll('#events > .event')].map(e => e.offsetHeight)"))
+    differ = any(abs(a - b) > .5 for a, b in zip(*hts))
+    check(not differ or (grow and set(grow) == {340}), f'rows taller or shorter on the next page: their heights glide, at the turn\'s pace ({grow}, heights differ: {differ})')
     check(adm.locator('#ev-page').input_value() == '2' and adm.locator('#events .event').first.inner_text() != first, 'next: page 2')
     adm.fill('#ev-page', '99'); adm.press('#ev-page', 'Enter'); time.sleep(.6)
     check(adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1), 'a page typed, past the last: the last')
