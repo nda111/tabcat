@@ -85,7 +85,7 @@ with sync_playwright() as p:
     ask(bc, 'syncNow')
     wait(lambda: 'From A' in names(b), 'B got it')
     check(names(b) == ['Own A', 'From A'], f'a workspace added in A: in B too ({names(b)})')
-    bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.title.includes('From A'))", timeout=10000)
+    bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.querySelector('.name').textContent.includes('From A'))", timeout=10000)
     check(True, "and B's open dashboard shows it")
 
     # two changes at once, to different things: both kept, both browsers the same
@@ -148,11 +148,11 @@ with sync_playwright() as p:
     wait(lambda: 'Live' in names(b), 'live', 10)
     took = time.time() - t0
     check('Live' in names(b) and took < 4, f'live: a change in A shows in B by itself, at once ({took:.1f} s)')
-    bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.title.includes('Live'))", timeout=5000)
+    bd.wait_for_function("[...document.querySelectorAll('.ws-item')].some(e => e.querySelector('.name').textContent.includes('Live'))", timeout=5000)
     check(True, "on B's dashboard too")
     # as changes made there: what's added springs in, what's deleted leaves (not just there / gone)
     watch = '''(name) => { window.__seen = { anim: false, leaving: false }; const t0 = performance.now();
-      (function f() { const el = [...document.querySelectorAll('.ws-item')].find((e) => e.title === name);
+      (function f() { const el = [...document.querySelectorAll('.ws-item')].find((e) => e.querySelector('.name').textContent === name);
         if (el) { if (el.getAnimations().length) __seen.anim = true; if (el.dataset.leaving) __seen.leaving = true; }
         if (performance.now() - t0 < 8000) requestAnimationFrame(f); })(); }'''
     bd.bring_to_front(); bd.evaluate(watch, 'Live 2')

@@ -21,7 +21,7 @@ with sync_playwright() as p:
     d.mouse.move(track['x'] + track['width'] / 2, y); d.mouse.down()
     d.mouse.move(track['x'] + track['width'] * .97, y, steps=8); settle(d)
     check(d.get_attribute('#fs-slider', 'aria-valuenow') == '4' and sample() > 15 and abs(body() - base) < .01, f'dragged to the end: the line below at the largest, the page not yet ({sample()}px, page {body()}px)')
-    d.evaluate("window.__vt = false; window.__dlgFaded = false; (function f() { const p = document.getAnimations().map(a => a.effect?.pseudoElement || ''); if (p.some(x => /fs-live/.test(x))) window.__dlgFaded = true; if (p.some(x => /view-transition/.test(x))) window.__vt = true; else requestAnimationFrame(f); })()")
+    d.evaluate("window.__vt = false; window.__dlgFaded = false; (function f() { const as = document.getAnimations(), p = as.map(a => a.effect?.pseudoElement || ''); if (as.some(a => /fs-live/.test(a.effect?.pseudoElement || '') && (k => k.length && k[0].opacity !== k[k.length - 1].opacity)(a.effect.getKeyframes()))) window.__dlgFaded = true; if (p.some(x => /view-transition/.test(x))) window.__vt = true; else requestAnimationFrame(f); })()")
     d.mouse.up()
     check(until(lambda: d.evaluate('window.__vt'), timeout=2), 'let go: the page fades over to the new size')
     slides = d.evaluate("document.getAnimations().some(a => a.transitionProperty === 'left' && a.effect?.target?.classList?.contains('fs-thumb'))")

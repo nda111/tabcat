@@ -73,7 +73,7 @@ with sync_playwright() as p:
     check(len([pg for pg in ctx.pages if pg.url.startswith(SERVER)]) == 1, 'and no second one is opened')
     s = sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r=>r['tabcat:settings'])")
     check(s['server'] == SERVER and s['dashboardUrl'].startswith(SERVER), f"the shortcut opens it ({s['dashboardUrl']})")
-    names = srv.evaluate("[...document.querySelectorAll('.ws-item')].map(e=>e.title)")
+    names = srv.evaluate("[...document.querySelectorAll('.ws-item')].map(e=>e.querySelector('.name').textContent)")
     check('Mine' not in names and sw.evaluate(WS) != [], f"the server has data of its own, not the browser's ({names})")
     # the browser's own dashboard: loaded again, it says tabcat is on the server
     time.sleep(1)
@@ -97,7 +97,7 @@ with sync_playwright() as p:
     time.sleep(2)
     check(srv.is_visible('#no-ext'), "the server's dashboard loads again: no longer linked")
     local.wait_for_selector('.ws-item', timeout=15000)
-    check(not local.is_visible('#elsewhere') and 'Mine' in local.evaluate("[...document.querySelectorAll('.ws-item')].map(e=>e.title)"), "the browser's dashboard loads again with its data")
+    check(not local.is_visible('#elsewhere') and 'Mine' in local.evaluate("[...document.querySelectorAll('.ws-item')].map(e=>e.querySelector('.name').textContent)"), "the browser's dashboard loads again with its data")
     # connecting again: the server's data is still there
     c.evaluate(f"chrome.runtime.sendMessage({{ cmd: 'connectServer', args: {{ origin: '{SERVER}' }} }})")
     check('OnServer' in sw.evaluate(WS) and 'Mine' not in sw.evaluate(WS), f"connected again, the server's data is back ({sw.evaluate(WS)})")

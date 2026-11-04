@@ -33,7 +33,7 @@ with sync_playwright() as p:
     with open(f, 'w') as fh: json.dump({'app': 'tabcat', 'workspaces': [workspace('Imported', [group('G', [link('x')])])]}, fh)
     d.click('#btn-settings'); settle(d)
     d.set_input_files('#import-file', f); d.wait_for_selector('#picker-ok')
-    d.evaluate("window.__sprung = false; new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.matches?.('.ws-item') && n.title === 'Imported') requestAnimationFrame(() => { window.__sprung = n.getAnimations().length > 0; }); }))).observe(document.querySelector('#ws-list'), { childList: true })")
+    d.evaluate("window.__sprung = false; new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.matches?.('.ws-item') && n.querySelector('.name')?.textContent === 'Imported') requestAnimationFrame(() => { window.__sprung = n.getAnimations().length > 0; }); }))).observe(document.querySelector('#ws-list'), { childList: true })")
     d.click('#picker-ok')
     until(lambda: sw.evaluate(WS) == before + ['Imported'] and not d.evaluate("document.querySelector('#settings').open"))
     until(lambda: d.evaluate('__sprung') and d.evaluate("document.querySelector('#ws-head h1').textContent").endswith('Imported'))

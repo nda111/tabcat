@@ -36,7 +36,7 @@ with sync_playwright() as p:
     d = opened.value; d.on('pageerror', lambda e: errors.append(str(e))); d.bring_to_front()
     d.set_viewport_size({'width': 1200, 'height': 800}); d.wait_for_selector('.ws-item', timeout=15000); time.sleep(1)
     sw.evaluate("chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces.push({id:'bossws',type:'workspace',name:'BossOnly',symbol:'',description:'',categories:[{id:'bossc',type:'category',name:'C',groups:[]}]}); return chrome.storage.local.set({tabcat:s})})")
-    names = lambda: d.evaluate("[...document.querySelectorAll('.ws-item')].map(e => e.title)")
+    names = lambda: d.evaluate("[...document.querySelectorAll('.ws-item')].map(e => e.querySelector('.name').textContent)")
     who = lambda: d.inner_text('#account-name')
     until(lambda: 'BossOnly' in names())
 

@@ -1452,12 +1452,15 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/shares')
     def list_shares(request: Request):
-        """The account's shares: each one's workspace (root), what the account may do, and how many are in it."""
+        """The account's shares: each one's workspace (root), what the account may do, how many are in it, its owner."""
         u = need_user(request)
         rows = db.q('select s.id, s.root, m.role, (select count(*) from share_members x where x.share_id = s.id) n, '
                     "(select count(*) from mail x where x.share_id = s.id and x.kind = 'invite' and x.answer is null) asked "
                     'from share_members m join shares s on s.id = m.share_id where m.user_id = ? order by m.at', u['id'])
-        return {'shares': [{'id': r['id'], 'root': r['root'], 'role': r['role'], 'members': r['n'], 'invited': r['asked']} for r in rows]}
+        def owner(sid):  # (whose it is: named in the sidebar's tooltip for one shared with this account)
+            o = db.one("select u.* from share_members m join users u on u.id = m.user_id where m.share_id = ? and m.role = 'owner'", sid)
+            return {'name': o['name'] or '', 'username': o['username']} if o else None
+        return {'shares': [{'id': r['id'], 'root': r['root'], 'role': r['role'], 'members': r['n'], 'invited': r['asked'], 'owner': owner(r['id'])} for r in rows]}
 
     @app.get('/api/shares/{sid}')
     def get_share(sid: str, request: Request):

@@ -120,7 +120,7 @@ with sync_playwright() as p:
     check(d.inner_text('#account-name') == 'kid' and not d.is_visible('#account-admin'), 'a user signs in: no admin page for them')
     look = sw.evaluate("chrome.storage.local.get('tabcat:settings').then(r => [r['tabcat:settings'].theme, r['tabcat:settings'].accent])")
     check(look == ['auto', 'purple'], f"each account has its own look: kid, who never set one, gets the defaults ({look})")
-    names = lambda: d.evaluate("[...document.querySelectorAll('.ws-item')].map(e => e.title)")
+    names = lambda: d.evaluate("[...document.querySelectorAll('.ws-item')].map(e => e.querySelector('.name').textContent)")
     check('BossOnly' not in names(), f"each account has its own data: kid doesn't see boss's ({names()})")
     d.keyboard.press('Escape'); settle(d)
     d.evaluate("fetch('/api/logout', { method: 'POST' })"); time.sleep(.3)

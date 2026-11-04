@@ -492,6 +492,7 @@ sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json=
 info = sa.post(f'/api/shares/{s9}/end').json()
 check([x['username'] for x in info['members']] == ['ann'] and sb.get('/api/sync/shares').json()['shares'] == [] and sb.get('/api/mail').json()['mail'][0]['kind'] == 'removed', 'shared with no one any more: the owner alone, the rest told')
 check([x['id'] for x in sa.get('/api/sync/shares').json()['shares']] == [s9], "the owner's still there")
+check(sa.get('/api/shares').json()['shares'][-1]['owner'] == {'name': '', 'username': 'ann'}, "each share's owner listed (for the sidebar's tooltip)")
 
 # managers: change it, and what the others may do (not the owner, and never to an owner); their own, down only
 s9u = lambda cl: cl.get('/api/mail').json()['mail'][0]['id']

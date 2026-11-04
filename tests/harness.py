@@ -129,7 +129,7 @@ def seed(sw, d, ws):
     """Replaces workspace `ws` (by id) in the stored data and opens it on the dashboard."""
     sw.evaluate("(w)=>chrome.storage.local.get('tabcat').then(r=>{const s=r.tabcat; s.workspaces=s.workspaces.filter(x=>x.id!==w.id); s.workspaces.push(w); return chrome.storage.local.set({tabcat:s})})", ws)
     time.sleep(.8)
-    d.click(f'.ws-item[title="{ws["name"]}"]')
+    d.click(f'.ws-item:has(.name:text-is("{ws["name"]}"))')
     time.sleep(1.2)
     d.mouse.move(5, d.viewport_size['height'] - 10)
 

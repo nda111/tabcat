@@ -12,7 +12,7 @@ errors = []
 with sync_playwright() as p:
     ctx, sw = launch(p)
     a = dashboard(ctx, errors); seed(sw, a, ws)
-    b = second_dashboard(ctx, sw, errors); b.click('.ws-item[title="Hist"]'); until(lambda: b.evaluate(LINKS) == 'a,b,c'); settle(b); b.mouse.move(5, 790)
+    b = second_dashboard(ctx, sw, errors); b.click('.ws-item:has(.name:text-is("Hist"))'); until(lambda: b.evaluate(LINKS) == 'a,b,c'); settle(b); b.mouse.move(5, 790)
     for pg in (a, b): pg.on('dialog', lambda dl: dl.accept())
     delete(a, 'b'); until(lambda: b.evaluate(LINKS) == 'a,c')
     check(b.evaluate(LINKS) == 'a,c', 'a delete in tab A shows in tab B')

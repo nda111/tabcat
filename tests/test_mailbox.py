@@ -257,6 +257,12 @@ with sync_playwright() as p:
     settle(bd)
     lab = bd.evaluate("(s => { const i = s.querySelector('svg').getBoundingClientRect(), l = s.querySelector('.label').getBoundingClientRect(); return [s.querySelector('.label').textContent, i.right <= l.left, Math.abs((i.top + i.bottom) / 2 - (l.top + l.bottom) / 2)]; })(document.querySelector('#ws-list .ws-split'))")
     check(lab[0] == 'Shared' and lab[1] and lab[2] <= 1, f'"Shared" right of its icon, in the middle up and down ({lab})')
+    # tooltips: open, none on her own; on one shared with her, whose it is (name, username beside it)
+    def tip_of(sel):
+        bd.mouse.move(700, 500); time.sleep(.5); bd.hover(sel); time.sleep(.6)
+        return bd.evaluate("(t => t.hidden ? null : [...t.children].map(l => l.textContent))(document.querySelector('#tip'))")
+    check(tip_of("#ws-list .ws-item:has-text('Own B')") is None, 'open: her own workspace, no tooltip')
+    check(tip_of("#ws-list .ws-item:has-text('Own A')") == ['boss'], f"one shared with her: whose it is ({tip_of(chr(35) + 'ws-list .ws-item:has-text(' + chr(39) + 'Own A' + chr(39) + ')')})")
     if os.environ.get('SHOT'): bd.locator('#sidebar').screenshot(path=os.environ['SHOT'] + '-split.png')
     bd.click("#ws-list .ws-item:has-text('Own A')"); settle(bd)
     if os.environ.get('SHOT'):
