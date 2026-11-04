@@ -1,6 +1,16 @@
 # Chrome Web Store listing: tabcat
 
 Everything to paste into the Developer Dashboard (https://chrome.google.com/webstore/devconsole).
+
+## Submitting a new version
+
+1. **Package** tab → *Upload new package*: `tabcat-extension-<version>-store.zip` (the release workflow's artifact,
+   or `python tools/release.py extension` from the release's commit).
+2. **Store listing** tab: paste the English description, then each language's under *Localized listings*.
+3. **Privacy practices** tab: check the single purpose, every permission's justification (new ones are marked
+   *new in 1.1.0*), the host permissions, remote code and data usage as below. Save.
+4. **Submit for review** (with *Publish automatically after review* if wanted). The test instructions below go in
+   the box the submission asks for them in.
 Upload `releases/tabcat-extension-<version>-store.zip` (built by `python tools/release.py extension`).
 Images are in `en/` (the default listing) and `ko/` (the Korean listing); the other languages use the English ones.
 
@@ -63,8 +73,13 @@ AND
 • Light and dark themes, accent colours, 8 languages.
 • Install the dashboard as an app for a window of its own.
 
+YOUR OWN SERVER (OPTIONAL)
+• Run tabcat server on a computer of yours, and connect tabcat to it from the toolbar button's menu.
+• Your groups, notes and settings stay the same in every browser signed in to your account, live.
+• See the tabs open in your other browsers, and share workspaces with your team.
+
 YOUR DATA STAYS WITH YOU
-Everything is kept in your browser. No account, no tabcat server, no analytics, no ads. Export it to a file whenever you like.
+Without a server, everything is kept in your browser: no account, no analytics, no ads. Connected to your own server, your data goes to that server only, never to us. Export it to a file whenever you like.
 
 tabcat is open source (MIT): https://github.com/nda111/tabcat
 ```
@@ -101,8 +116,13 @@ tabcat은 탭에게 보드를 만들어 줘요. Ctrl+Shift+X로 열 수 있어�
 • 밝은 테마와 어두운 테마, 테마 색, 8개 언어를 지원해요.
 • 대시보드를 앱으로 설치하면 전용 창에서 열려요.
 
+내 서버 (선택)
+• 내 컴퓨터에 tabcat 서버를 실행하고, 툴바 버튼 메뉴에서 연결해요.
+• 같은 계정으로 로그인한 모든 브라우저에서 그룹, 메모, 설정이 실시간으로 똑같이 맞춰져요.
+• 다른 브라우저에 열린 탭을 보고, 팀과 워크스페이스를 함께 써요.
+
 데이터는 내 브라우저에만
-모든 것이 브라우저 안에 저장돼요. 계정도, tabcat 서버도, 분석 도구도, 광고도 없어요. 언제든 파일로 내보낼 수 있어요.
+서버 없이 쓰면 모든 것이 브라우저 안에 저장돼요. 계정도, 분석 도구도, 광고도 없어요. 내 서버에 연결하면 데이터는 그 서버로만 가고, 개발자에게는 가지 않아요. 언제든 파일로 내보낼 수 있어요.
 
 tabcat은 오픈 소스(MIT)예요: https://github.com/nda111/tabcat
 ```
@@ -139,8 +159,13 @@ tabcat はタブのためのボードです。Ctrl+Shift+X で開きます。
 • ライト / ダークテーマ、アクセントカラー、8 言語に対応。
 • ダッシュボードをアプリとしてインストールすると、専用のウィンドウで開きます。
 
+自分のサーバー（任意）
+• 自分のパソコンで tabcat サーバーを動かし、ツールバーボタンのメニューから接続できます。
+• 同じアカウントでサインインしたすべてのブラウザで、グループ、メモ、設定がリアルタイムに同じになります。
+• ほかのブラウザで開いているタブを見たり、チームとワークスペースを共有したりできます。
+
 データはあなたのブラウザに
-すべてブラウザの中に保存されます。アカウントも、tabcat のサーバーも、アクセス解析も、広告もありません。いつでもファイルに書き出せます。
+サーバーなしなら、すべてブラウザの中に保存されます。アカウントも、アクセス解析も、広告もありません。自分のサーバーに接続すると、データはそのサーバーにだけ送られ、開発者には送られません。いつでもファイルに書き出せます。
 
 tabcat はオープンソース (MIT) です: https://github.com/nda111/tabcat
 ```
@@ -177,8 +202,13 @@ tabcat 为你的标签页准备了一块看板。按 Ctrl+Shift+X 打开。
 • 浅色和深色主题、强调色、8 种语言。
 • 把看板安装为应用，在独立窗口中打开。
 
+你自己的服务器（可选）
+• 在你的电脑上运行 tabcat 服务器，从工具栏按钮的菜单连接。
+• 登录同一账户的所有浏览器中，分组、备注和设置实时保持一致。
+• 查看其他浏览器中打开的标签页，与团队共享工作区。
+
 数据只留在你的浏览器里
-所有内容都保存在浏览器中。没有账号，没有 tabcat 服务器，没有统计分析，没有广告。随时可以导出为文件。
+不使用服务器时，所有内容都保存在浏览器中：没有账号，没有统计分析，没有广告。连接到你自己的服务器后，数据只会发送到该服务器，绝不会发给我们。随时可以导出为文件。
 
 tabcat 是开源软件 (MIT)：https://github.com/nda111/tabcat
 ```
@@ -215,8 +245,13 @@ UND
 • Helles und dunkles Design, Akzentfarben, 8 Sprachen.
 • Installiere das Dashboard als App für ein eigenes Fenster.
 
+DEIN EIGENER SERVER (OPTIONAL)
+• Betreibe tabcat server auf einem deiner Computer und verbinde tabcat über das Menü der Symbolleisten-Schaltfläche.
+• Gruppen, Notizen und Einstellungen bleiben in jedem Browser mit deinem Konto live gleich.
+• Sieh die offenen Tabs deiner anderen Browser und teile Arbeitsbereiche mit deinem Team.
+
 DEINE DATEN BLEIBEN BEI DIR
-Alles bleibt in deinem Browser. Kein Konto, kein tabcat-Server, keine Analyse, keine Werbung. Exportieren kannst du jederzeit in eine Datei.
+Ohne Server bleibt alles in deinem Browser: kein Konto, keine Analyse, keine Werbung. Mit deinem eigenen Server gehen deine Daten nur an diesen Server, nie an uns. Exportieren kannst du jederzeit in eine Datei.
 
 tabcat ist Open Source (MIT): https://github.com/nda111/tabcat
 ```
@@ -253,8 +288,13 @@ Y ADEMÁS
 • Tema claro y oscuro, colores de acento, 8 idiomas.
 • Instala el panel como aplicación para tener su propia ventana.
 
+TU PROPIO SERVIDOR (OPCIONAL)
+• Ejecuta tabcat server en un equipo tuyo y conéctalo desde el menú del botón de la barra de herramientas.
+• Tus grupos, notas y ajustes son los mismos en cada navegador con tu cuenta, al instante.
+• Mira las pestañas abiertas en tus otros navegadores y comparte espacios de trabajo con tu equipo.
+
 TUS DATOS SE QUEDAN CONTIGO
-Todo se guarda en tu navegador. Sin cuenta, sin servidor de tabcat, sin analíticas, sin anuncios. Puedes exportarlo a un archivo cuando quieras.
+Sin servidor, todo se guarda en tu navegador: sin cuenta, sin analíticas, sin anuncios. Conectado a tu propio servidor, tus datos van solo a ese servidor, nunca a nosotros. Puedes exportarlo a un archivo cuando quieras.
 
 tabcat es de código abierto (MIT): https://github.com/nda111/tabcat
 ```
@@ -291,8 +331,13 @@ ET AUSSI
 • Thèmes clair et sombre, couleurs d'accent, 8 langues.
 • Installez le tableau de bord comme application, dans sa propre fenêtre.
 
+VOTRE PROPRE SERVEUR (FACULTATIF)
+• Faites tourner tabcat server sur un de vos ordinateurs et connectez-y tabcat depuis le menu du bouton de la barre d'outils.
+• Vos groupes, notes et réglages restent identiques dans chaque navigateur connecté à votre compte, en direct.
+• Voyez les onglets ouverts dans vos autres navigateurs et partagez des espaces de travail avec votre équipe.
+
 VOS DONNÉES RESTENT CHEZ VOUS
-Tout est conservé dans votre navigateur. Pas de compte, pas de serveur tabcat, pas de statistiques, pas de publicité. Exportez-les dans un fichier quand vous voulez.
+Sans serveur, tout est conservé dans votre navigateur : pas de compte, pas de statistiques, pas de publicité. Connecté à votre propre serveur, vos données ne vont qu'à ce serveur, jamais chez nous. Exportez-les dans un fichier quand vous voulez.
 
 tabcat est open source (MIT) : https://github.com/nda111/tabcat
 ```
@@ -329,8 +374,13 @@ E MAIS
 • Tema claro e escuro, cores de destaque, 8 idiomas.
 • Instale o painel como aplicativo para ter uma janela só dele.
 
+SEU PRÓPRIO SERVIDOR (OPCIONAL)
+• Rode o tabcat server em um computador seu e conecte o tabcat pelo menu do botão da barra de ferramentas.
+• Seus grupos, notas e configurações ficam iguais em todos os navegadores com a sua conta, ao vivo.
+• Veja as abas abertas nos seus outros navegadores e compartilhe espaços de trabalho com a sua equipe.
+
 SEUS DADOS FICAM COM VOCÊ
-Tudo fica no seu navegador. Sem conta, sem servidor do tabcat, sem análises, sem anúncios. Exporte para um arquivo quando quiser.
+Sem servidor, tudo fica no seu navegador: sem conta, sem análises, sem anúncios. Conectado ao seu próprio servidor, seus dados vão só para esse servidor, nunca para nós. Exporte para um arquivo quando quiser.
 
 O tabcat é código aberto (MIT): https://github.com/nda111/tabcat
 ```
@@ -342,7 +392,7 @@ O tabcat é código aberto (MIT): https://github.com/nda111/tabcat
 **Single purpose**
 
 ```
-tabcat saves the user's tabs into groups on a board, and opens them again when the user wants them; it also puts idle tabs to sleep to keep the browser light. The board (dashboard) is the web page at https://tabcat.ghyeok.com, which talks to the extension to read and change the user's saved tabs and open tabs.
+tabcat saves the user's tabs into groups on a board, and opens them again when the user wants them; it also puts idle tabs to sleep to keep the browser light. The board (dashboard) is the web page at https://tabcat.ghyeok.com, which talks to the extension to read and change the user's saved tabs and open tabs. Optionally, the user can connect tabcat to a tabcat server they run themselves, which then hosts the dashboard and keeps the user's saved tabs the same across their own browsers.
 ```
 
 **Permission justifications**
@@ -382,9 +432,19 @@ When the user turns on automatic sleep in Settings, a one-minute alarm checks fo
 Shows each saved link's and open tab's icon on the dashboard and in the toolbar popup, from Chrome's own favicon cache (chrome-extension://…/_favicon/), without fetching icons from the web.
 ```
 
+`scripting` (*new in 1.1.0*)
+```
+Only when the user connects tabcat to a tabcat server of their own (from the toolbar button's menu): tabcat registers its content script for that server's address, so the dashboard the server hosts can talk to the extension as tabcat.ghyeok.com does. Disconnecting unregisters it. No script is injected into any other page, and no code is executed from strings.
+```
+
+**Optional host permissions** `http://*/*`, `https://*/*` (*new in 1.1.0*)
+```
+Optional: not granted on install. When the user connects tabcat to their own tabcat server, tabcat asks Chrome for access to that one server's address only (Chrome shows the prompt), to run its content script there and to send the user's saved tabs to it for sync. The user's server can be at any address of theirs, so the optional permission can't name one in advance. Disconnecting removes the permission again.
+```
+
 **Host permissions / content script** (`https://tabcat.ghyeok.com/*`)
 ```
-The content script runs only on tabcat's own dashboard (https://tabcat.ghyeok.com), where it passes messages between the dashboard page and the extension. It runs on no other site and reads no page content.
+The content script runs only on tabcat's own dashboard (https://tabcat.ghyeok.com), and on the user's own tabcat server once they connect to it, where it passes messages between the dashboard page and the extension. It runs on no other site and reads no page content.
 ```
 
 **Remote code**: "No, I am not using remote code."
@@ -393,9 +453,10 @@ All of the extension's JavaScript is in the package. The dashboard at tabcat.ghy
 ```
 
 **Data usage**
-- What user data do you collect? tabcat sends nothing off the user's computer. Chrome's definition of
-  "collect" includes data an extension only handles locally, so the cautious choice is to tick
-  **Web history** (tab titles and URLs the user saves) and leave everything else unticked.
+- What user data do you collect? Without a server, tabcat sends nothing off the user's computer. With a server the
+  user runs and connects to themselves, the saved tabs (titles and URLs), the user's open tabs and their settings go
+  to that server, never to the developer. Tick **Web history** (tab titles and URLs) and leave everything else
+  unticked; sign-in (username and password) is on the server's own web pages, not in the extension.
 - Tick all three certifications (not sold, not used for unrelated purposes, not used for creditworthiness).
 
 **Privacy policy URL**: https://tabcat.ghyeok.com/privacy
@@ -411,7 +472,8 @@ All of the extension's JavaScript is in the package. The dashboard at tabcat.ghy
 
 ```
 No account or login is needed.
-1. Install the extension: it opens the dashboard at https://tabcat.ghyeok.com.
+1. Install the extension: it opens a welcome page at https://tabcat.ghyeok.com/welcome; choose "Open the dashboard".
 2. Open a few web pages, then press the toolbar button and "Save this tab", or drag a tab from "Open tabs" on the dashboard onto a group.
 3. Ctrl+Shift+X opens the dashboard at any time.
+4. (Optional) Connecting to a server needs one the user runs themselves (tabcat server, https://github.com/nda111/tabcat/tree/main/server): without one, the extension works entirely on its own, as above. "Connect to a server…" in the toolbar button's right-click menu asks for an address and, only then, Chrome's permission for that address.
 ```

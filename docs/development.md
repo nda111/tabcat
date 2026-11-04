@@ -87,7 +87,8 @@ The extension and the server are released apart from this one repository, each w
 
 1. Bump the version (and, for a server release, point `SERVER_WHEEL` in `web/js/welcome.js` and the install line in
    `server/README.md` at the new wheel), add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md`
-   (server), and write the release's notes as `docs/releases/<tag>.md`. Commit, and merge into `main`.
+   (server), write the release's notes as `docs/releases/<tag>.md`, and add the version to the compatibility
+   tables (README.md, *Which versions work together*, and server/README.md, *Install*). Commit, and merge into `main`.
 2. Deploy the dashboard first if the release needs it (`pages`): the extension opens its welcome page, and a server
    takes the dashboard from there.
 3. Tag the commit and push the tag (`git tag extension-v1.2.0 && git push origin extension-v1.2.0`). GitHub Actions

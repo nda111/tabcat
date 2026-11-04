@@ -117,7 +117,18 @@ and connect the extension to it.
 - **Yours to run.** Two-step sign-in, a list of devices signed in, waits after wrong passwords, a security record,
   backups and updates from an admin page. One process and one SQLite file: pip or Docker.
 
-Install it, put it behind HTTPS and keep it backed up: see [server/README.md](server/README.md). Then right-click
+Install it, put it behind HTTPS and keep it backed up: see [server/README.md](server/README.md).
+
+### Which versions work together
+
+The extension and the server have version numbers of their own (tagged `extension-v…` and `server-v…`). The dashboard
+has none: tabcat.ghyeok.com is always the newest, and a server fetches the newest every day.
+
+| Extension | Without a server (tabcat.ghyeok.com, or the dashboard hosted yourself) | tabcat server 1.0.0 |
+|---|:-:|:-:|
+| 1.1.0 | ✅ | ✅ |
+| 1.0.0 – 1.0.4 | ✅ | ❌ (no *Connect to a server*: update the extension) |
+ Then right-click
 tabcat's toolbar button, choose **Connect to a server…** and enter its address. Disconnecting brings back the
 browser's own tabcat, as it was.
 

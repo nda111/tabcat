@@ -31,7 +31,14 @@ A change shows in the account's other browsers within a second or so while their
 
 ## Install
 
-tabcat server works with the tabcat extension 1.1.0 or later. It's released apart from the extension, tagged
+tabcat server works with the tabcat extension 1.1.0 or later:
+
+| Extension | Without a server (tabcat.ghyeok.com, or the dashboard hosted yourself) | tabcat server 1.0.0 |
+|---|:-:|:-:|
+| 1.1.0 | ✅ | ✅ |
+| 1.0.0 – 1.0.4 | ✅ | ❌ (no *Connect to a server*: update the extension) |
+
+It's released apart from the extension, tagged
 `server-v<version>` on [GitHub Releases](https://github.com/nda111/tabcat/releases?q=server-v); what changed is in
 [CHANGELOG.md](CHANGELOG.md).
 
