@@ -289,7 +289,7 @@ from tabcat_server import updates as U
 U._cache.update(release='v9.9.9', checked=10**12)
 rel = c.get('/api/admin/info').json()['release']
 check(rel['latest'] == 'v9.9.9' and rel['newer'] is True and rel['install'] in ('pip', 'checkout', 'docker'), f'info says a newer release is out, and how this server was installed ({rel})')
-check(U.newer('v1.1.0') and not U.newer('v1.0.9'), '1.1.0.dev0 is before 1.1.0, after 1.0.9')
+check(U.newer('v1.1.1') and U.newer('v1.2.0') and not U.newer('v1.1.0') and not U.newer('v1.0.9'), 'a release after 1.1.0 is newer; 1.1.0 itself and before are not')
 check(c.post('/api/admin/server/update').status_code in (409, 502) and a3.post('/api/admin/server/update').status_code == 403, 'updating the server: only on its computer, and not a working copy (this one)')
 
 # "stay signed in" unticked: a cookie for as long as the browser's open, a day at most on the server

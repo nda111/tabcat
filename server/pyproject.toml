@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabcat-server"
-version = "1.1.0.dev0"
+version = "1.1.0"
 description = "Your own tabcat server: hosts the tabcat dashboard with accounts, for your own computers"
 readme = "README.md"
 license = { text = "MIT" }
