@@ -72,7 +72,7 @@ create table if not exists shares (
 create table if not exists share_members (
   share_id text not null references shares(id) on delete cascade,
   user_id integer not null references users(id) on delete cascade,
-  role text not null,              -- owner (one) | editor | viewer
+  role text not null,              -- owner (one) | manager | editor | viewer
   at real not null,
   primary key (share_id, user_id)
 );
@@ -148,7 +148,7 @@ def _columns(conn, table):
 
 
 def _v1(conn):
-    """1.1.0, the first server release: the tables as SCHEMA has them. A file from while 1.1.0 was written
+    """tabcat-server 1.0.0, the first release: the tables as SCHEMA has them. A file from while it was written
     (before the version was kept) is brought up to it: the columns added along the way, if missing."""
     for stmt in _statements(SCHEMA):
         conn.execute(stmt)
@@ -189,7 +189,7 @@ def _v1(conn):
 
 
 # Each version's step from the one before (index n takes version n to n + 1). Versions:
-#   1  tabcat-server 1.1.0
+#   1  tabcat-server 1.0.0
 MIGRATIONS = [_v1]
 SCHEMA_VERSION = len(MIGRATIONS)
 
@@ -210,7 +210,7 @@ class DB:
             self.conn.execute('pragma synchronous = normal')
             self.migrate()
 
-    # The database's shape, by number (sqlite's user_version): 0 is a new file, or one made while 1.1.0 was being
+    # The database's shape, by number (sqlite's user_version): 0 is a new file, or one made while 1.0.0 was being
     # written (before the number was kept); each step below takes it one further, in a transaction of its own, a copy
     # of the file kept first (<name>.v<n>.bak, beside it). A file from a newer server isn't opened: going back a
     # version would read what it doesn't know. New changes go at the end of MIGRATIONS (never edit one released).

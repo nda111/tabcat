@@ -1,7 +1,7 @@
 # Chrome Web Store listing: tabcat
 
 Everything to paste into the Developer Dashboard (https://chrome.google.com/webstore/devconsole).
-Upload `releases/v<version>-store.zip` (built by `python tools/store_zip.py`).
+Upload `releases/tabcat-extension-<version>-store.zip` (built by `python tools/release.py extension`).
 Images are in `en/` (the default listing) and `ko/` (the Korean listing); the other languages use the English ones.
 
 ---

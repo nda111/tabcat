@@ -29,27 +29,80 @@ the same thing, the later one wins. Now and then a browser sends a whole copy, a
 
 A change shows in the account's other browsers within a second or so while their dashboard is open (and within a minute otherwise). Bodies up to 8 MB, gzipped or not; answers are gzipped when it's worth it.
 
-## Run it
+## Install
 
-With Python 3.10 or newer:
+tabcat server works with the tabcat extension 1.1.0 or later. It's released apart from the extension, tagged
+`server-v<version>` on [GitHub Releases](https://github.com/nda111/tabcat/releases?q=server-v); what changed is in
+[CHANGELOG.md](CHANGELOG.md).
+
+**With pip** (Python 3.10 or newer), in a virtual environment of its own:
 
 ```sh
-pip install ./server          # from a checkout of the tabcat repository
-tabcat-server --port 8080
+python3 -m venv ~/tabcat-server && cd ~/tabcat-server
+bin/pip install https://github.com/nda111/tabcat/releases/download/server-v1.0.0/tabcat_server-1.0.0-py3-none-any.whl
+bin/tabcat-server --port 8080
 ```
 
-Or with Docker:
+(On Windows: `Scripts\pip` and `Scripts\tabcat-server`.) From a checkout of the repository, `pip install ./server`.
+
+**With Docker**, from a checkout: `docker compose up -d` in this folder (see `compose.yaml`: the data in a volume,
+started again after a crash or a reboot, reachable from this computer only until you put HTTPS in front). Or by hand:
 
 ```sh
 docker build -t tabcat-server server
-docker run -d -p 8080:8080 -v tabcat-data:/data tabcat-server
+docker run -d -p 127.0.0.1:8080:8080 -v tabcat-data:/data tabcat-server
 ```
 
-Then open it in your browser. The first visit makes the first account, an admin. To use the dashboard
-there, right-click tabcat's toolbar button, choose **Connect to a server…**, and enter its address.
+### First visit
 
-Put it behind HTTPS (Caddy, nginx, Tailscale's `serve`…) when other computers reach it: passwords and
-your data travel to it.
+Open it in a browser **on the server's own computer** (<http://localhost:8080>): the first visit makes the first
+account, an admin. (Only this computer may, unless `--setup-from` says otherwise: anyone else reaching a new server
+would make themselves its admin.) Then, in each browser, right-click tabcat's toolbar button, choose
+**Connect to a server…**, enter the server's address and sign in. Invite others from the admin page (`/admin`), or
+open sign-up there.
+
+## HTTPS
+
+Passwords and everyone's data travel to the server, so when other computers reach it, put it behind HTTPS. Keep
+tabcat-server listening on this computer only (`--host 127.0.0.1`, the default) and let a reverse proxy take the
+outside connections:
+
+**Caddy** gets and renews a certificate by itself:
+
+```
+tabcat.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+**nginx** (with a certificate from Let's Encrypt's certbot, or your own):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name tabcat.example.com;
+    ssl_certificate     /etc/letsencrypt/live/tabcat.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tabcat.example.com/privkey.pem;
+    client_max_body_size 10m;                      # (the largest sync body is 8 MB)
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 1h;                     # (live updates are long-lived streams: /api/live, /api/sync/events)
+    }
+}
+```
+
+- The proxy must set `X-Forwarded-For`: tabcat-server reads each visitor's address from it (for sign-in waits,
+  the security record, and who may set it up or use the admin page). It believes it only from
+  `--trusted-proxies` (this computer by default); a proxy on another computer goes in that list.
+- Live updates are server-sent events; the server already tells nginx not to buffer them (`X-Accel-Buffering: no`).
+  Other proxies may need buffering turned off for `/api/live` and `/api/sync/events`.
+- **Tailscale:** on a tailnet with HTTPS on, the admin page serves the server at its `https://<machine>.<tailnet>.ts.net`
+  address in one switch (`tailscale serve`), with no certificate or proxy to set up.
 
 ## Working on it
 
@@ -126,13 +179,49 @@ page. What anyone keeps in tabcat is never in it.
 
 Everything else (accounts, sign-up and invitations, how long sign-ins last and how many wrong passwords before a wait, signing everyone out, updating the dashboard, backups) is on the admin page, at `/admin`.
 
-## Back it up
+## Back it up and restore
 
-The admin page downloads a copy of the database. Or copy `tabcat.db` from the data folder.
+Everything the server keeps is one SQLite file, `tabcat.db` in the data folder (or where the admin page moved it:
+`database` in `config.toml`). To back it up:
 
-The database is `tabcat.db` in the data folder. To keep it elsewhere (another disk, a synced folder), move it on the
-admin page, from the server's own computer (the addresses setup is allowed from); the new place is kept in
-`config.toml` as `database`.
+- **Download a copy** from the admin page (a consistent copy, made while it runs), or
+- **copy the file** while the server is stopped, with its `tabcat.db-wal` and `tabcat.db-shm` if they're there.
+
+To restore: stop the server, put the copy in place as `tabcat.db`, delete any `tabcat.db-wal` and `tabcat.db-shm`
+beside it, and start the server. A copy from an older version is brought up to date as it starts (see below).
+
+To keep it elsewhere (another disk, a synced folder), move it on the admin page, from the server's own computer;
+the new place is kept in `config.toml` as `database`.
+
+## Upgrade
+
+The admin page says when a newer server release is out.
+
+- **pip:** installed with pip and opened on the server's own computer, the admin page installs it and starts the
+  server again in one click. Or by hand: `pip install --upgrade <the new release's .whl address>`, then start it again.
+- **Docker:** in your checkout, `git pull`, then `docker compose up -d --build`. The data stays in its volume.
+- **A checkout** (`pip install -e`): `git pull` and start it again.
+
+The dashboard updates by itself once a day (turn that off on the admin page; then **Update now** there).
+
+On its first start after an upgrade, the server brings its database up to date if the new version changed its
+shape. It first keeps a copy beside it, `tabcat.db.v<n>.bak` (`n`, the database version it came from), then makes
+each change in a transaction of its own; [docs/database.md](../docs/database.md) has the versions. A database from a
+newer server than the one starting isn't opened: the server says so and stops. To go back to an older server, restore
+the `.bak` copy made before upgrading (changes since then are lost).
+
+## Known limits
+
+- There's no storage limit per account: anyone with an account can keep as much as they like (each sync body is at
+  most 8 MB).
+- Behind a reverse proxy, the proxy must send `X-Forwarded-For` and be in `--trusted-proxies` (see [HTTPS](#https)).
+- One server process with one database file: run one copy of it per data folder.
+
+## More
+
+- [docs/api.md](../docs/api.md): the HTTP API, for your own scripts or clients.
+- [docs/database.md](../docs/database.md): the database's tables.
+- [docs/structure.md](../docs/structure.md): where the server's code is, and the extension's and dashboard's.
 
 ## Security record codes
 

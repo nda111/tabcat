@@ -63,18 +63,7 @@ Workspace  (Name*, Symbol, Description)
 
 ## Files
 
-```
-manifest.json
-background.js     service worker: RPC handlers, bridge ports, context menu, shortcuts, auto-suspend
-content.js        bridge between the dashboard page and the background worker
-popup.html/css/js toolbar popup
-fonts/            Pretendard stylesheet (size-adjusted copy; font files load from jsDelivr)
-lib/store.js      data model, tree ops, op application, persistence
-lib/actions.js    save / close / suspend tabs
-docs/             this file
-tests/            browser tests (Playwright)
-icons/            logo.svg (the drawing; pages tint it in the accent colour) and the toolbar PNGs in the default accent
-```
+Every file's job, and how a change travels between them: [structure.md](structure.md). The server's API: [api.md](api.md); its database: [database.md](database.md).
 
 ## Bridge protocol
 

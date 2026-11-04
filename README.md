@@ -99,10 +99,31 @@ Install the dashboard as an app to give it a window of its own.
 | <img src="store/en/2-dark.png" alt="Dark theme, with open tabs beside the board"> | <img src="store/en/3-search.png" alt="Searching links"> | <img src="store/en/4-popup.png" alt="Saving a tab from the toolbar"> |
 | Dark theme, open tabs beside the board | Search | Save from the toolbar |
 
+## Your own server: sync and teams
+
+tabcat needs no account and no server. When you want your tabs on every computer, or a board your team works on
+together, run **tabcat server** on a computer of yours (a home server, a NAS, a small cloud machine, or your desktop)
+and connect the extension to it.
+
+- **The same tabcat in every browser.** Sign in to your account in each browser: groups, notes, Recently deleted,
+  the look and the settings stay in step, live. Offline changes wait and go once the server is back; none are lost.
+- **Your other computers' tabs.** See what's open in your account's other browsers, and open it here.
+- **Shared workspaces.** Invite people on the same server to a workspace as viewers, editors or managers; everyone
+  sees each change as it's made. Invitations and news come to a Mailbox.
+- **Accounts for your team or family.** Each person has their own account and data; sign-up closed, by invitation
+  or open; several accounts in one browser to switch between.
+- **Yours to run.** Two-step sign-in, a list of devices signed in, waits after wrong passwords, a security record,
+  backups and updates from an admin page. One process and one SQLite file: pip or Docker.
+
+Install it, put it behind HTTPS and keep it backed up: see [server/README.md](server/README.md). Then right-click
+tabcat's toolbar button, choose **Connect to a server…** and enter its address. Disconnecting brings back the
+browser's own tabcat, as it was.
+
 ## Your data
 
-Everything stays in your browser, kept by the extension. There's no account and no server:
+Without a server, everything stays in your browser, kept by the extension. There's no account:
 the dashboard is a static page that only reads and edits what the extension holds.
+Connected to a server of your own, your account's data is kept there too, and nowhere else.
 You can export it to a file, and import it again, in Settings.
 The full [privacy policy](https://tabcat.ghyeok.com/privacy) is on the dashboard's site.
 
@@ -114,9 +135,12 @@ tabcat is provided as is, without warranty, as per the [MIT](LICENSE) License.
 Found a bug or have an idea? Tell us in [Issues](https://github.com/nda111/tabcat/issues).
 Every shortcut and gesture is in **Help** on the dashboard.
 
-If you'd like to look under the hood or change tabcat, see [docs/development.md](docs/development.md).
+If you'd like to look under the hood or change tabcat, see [docs/development.md](docs/development.md):
+how the code is laid out ([docs/structure.md](docs/structure.md)), the server's API ([docs/api.md](docs/api.md))
+and its database ([docs/database.md](docs/database.md)).
 
 ## License
 
 tabcat is free and open source under the [MIT License](LICENSE).
-The bundled Pretendard font is under the SIL Open Font License 1.1.
+The fonts and libraries it uses (Pretendard, Archivo, Noto Sans, MathJax, emoji data, Feather icons, and the server's
+Python packages) are under their own licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
