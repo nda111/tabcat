@@ -19,7 +19,7 @@ export const TEXT = {
       self: {
         title: 'Host the dashboard yourself', go: 'More in the README',
         text: 'Use a dashboard of your own on this computer, with no account and no server. Your data stays on your computer.',
-        tags: ['Works offline', 'Needs Python', 'Just for you'],
+        tags: ['Use offline', 'Needs Python', 'Just for you'],
         steps: ['Download the dashboard\'s files {copy}', 'Start the dashboard on this computer {copy}', 'Open {dashboard} and choose {allow} when tabcat asks.'],
       },
       server: {
@@ -47,7 +47,7 @@ export const TEXT = {
       self: {
         title: '대시보드를 직접 호스팅하기', go: 'README에서 더 보기',
         text: '계정이나 서버 없이 이 컴퓨터에서 나만의 대시보드를 사용할 수 있어요. 데이터는 컴퓨터 안에만 저장돼요.',
-        tags: ['오프라인 가능', 'Python 필요', '혼자 사용'],
+        tags: ['오프라인 사용', 'Python 필요', '혼자 사용'],
         steps: ['대시보드 파일을 다운로드 받아요. {copy}', '이 컴퓨터에서 대시보드를 시작해요. {copy}', '{dashboard}를 열고, tabcat이 물으면 {allow}을 눌러요.'],
       },
       server: {
@@ -75,7 +75,7 @@ export const TEXT = {
       self: {
         title: 'ダッシュボードを自分でホストする', go: 'README で詳しく',
         text: 'アカウントもサーバーもなしに、このパソコンで自分だけのダッシュボードを使えます。データはパソコンの中だけに保存されます。',
-        tags: ['オフラインで使える', 'Python が必要', 'ひとりで使う'],
+        tags: ['オフラインで使う', 'Python が必要', 'ひとりで使う'],
         steps: ['ダッシュボードのファイルをダウンロード {copy}', 'このパソコンでダッシュボードを起動します。 {copy}', '{dashboard}を開き、tabcat に聞かれたら {allow} を選びます。'],
       },
       server: {
@@ -103,7 +103,7 @@ export const TEXT = {
       self: {
         title: '自行托管仪表板', go: '在 README 中了解更多',
         text: '无需账户和服务器，就能在这台电脑上使用你自己的仪表板。数据只保存在你的电脑中。',
-        tags: ['可离线使用', '需要 Python', '个人使用'],
+        tags: ['离线使用', '需要 Python', '个人使用'],
         steps: ['下载仪表板文件 {copy}', '在这台电脑上启动仪表板。 {copy}', '打开{dashboard}，tabcat 询问时选择{allow}。'],
       },
       server: {
@@ -131,7 +131,7 @@ export const TEXT = {
       self: {
         title: 'Alojar el panel tú mismo', go: 'Más en el README',
         text: 'Usa tu propio panel en este equipo, sin cuenta ni servidor. Tus datos se quedan en tu equipo.',
-        tags: ['Funciona sin conexión', 'Requiere Python', 'Para ti solo'],
+        tags: ['Uso sin conexión', 'Requiere Python', 'Para ti solo'],
         steps: ['Descarga los archivos del panel {copy}', 'Inicia el panel en este equipo. {copy}', 'Abre {dashboard} y elige {allow} cuando tabcat lo pregunte.'],
       },
       server: {
@@ -159,7 +159,7 @@ export const TEXT = {
       self: {
         title: 'Das Dashboard selbst hosten', go: 'Mehr in der README',
         text: 'Nutze dein eigenes Dashboard auf diesem Computer, ohne Konto und ohne Server. Deine Daten bleiben auf deinem Computer.',
-        tags: ['Auch offline', 'Braucht Python', 'Nur für dich'],
+        tags: ['Offline nutzbar', 'Braucht Python', 'Nur für dich'],
         steps: ['Lade die Dateien des Dashboards herunter {copy}', 'Starte das Dashboard auf diesem Computer. {copy}', 'Öffne {dashboard} und wähle {allow}, wenn tabcat fragt.'],
       },
       server: {
@@ -187,7 +187,7 @@ export const TEXT = {
       self: {
         title: 'Héberger le tableau de bord vous-même', go: 'En savoir plus dans le README',
         text: 'Utilisez votre propre tableau de bord sur cet ordinateur, sans compte ni serveur. Vos données restent sur votre ordinateur.',
-        tags: ['Fonctionne hors ligne', 'Python requis', 'Pour vous seul'],
+        tags: ['Utilisation hors ligne', 'Python requis', 'Pour vous seul'],
         steps: ['Téléchargez les fichiers du tableau de bord {copy}', 'Lancez le tableau de bord sur cet ordinateur. {copy}', 'Ouvrez {dashboard} et choisissez {allow} quand tabcat le demande.'],
       },
       server: {
@@ -215,7 +215,7 @@ export const TEXT = {
       self: {
         title: 'Hospedar o painel você mesmo', go: 'Mais no README',
         text: 'Use seu próprio painel neste computador, sem conta e sem servidor. Seus dados ficam no seu computador.',
-        tags: ['Funciona off-line', 'Requer Python', 'Só para você'],
+        tags: ['Uso off-line', 'Requer Python', 'Só para você'],
         steps: ['Baixe os arquivos do painel {copy}', 'Inicie o painel neste computador. {copy}', 'Abra {dashboard} e escolha {allow} quando o tabcat perguntar.'],
       },
       server: {
