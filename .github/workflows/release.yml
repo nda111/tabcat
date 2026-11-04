@@ -110,7 +110,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$TAG" "out/tabcat-extension-${{ needs.check.outputs.version }}.zip" \
-            --verify-tag --title "tabcat ${{ needs.check.outputs.version }}" --notes-file "docs/releases/$TAG.md" --latest
+            --verify-tag --title "$TAG" --notes-file "docs/releases/$TAG.md" --latest
 
   server:
     name: Server
@@ -144,7 +144,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$TAG" out/tabcat_server-*.whl \
-            --verify-tag --title "tabcat server ${{ needs.check.outputs.version }}" --notes-file "docs/releases/$TAG.md" --latest=false
+            --verify-tag --title "$TAG" --notes-file "docs/releases/$TAG.md" --latest=false
       - name: Docker Hub's overview
         if: env.PUBLISH == 'true'
         uses: peter-evans/dockerhub-description@v4
