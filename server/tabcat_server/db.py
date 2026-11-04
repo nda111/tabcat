@@ -106,7 +106,8 @@ create table if not exists mail (  -- each account's mailbox: asked to join a sh
   invite_id integer,               -- (a reply: to which invite)
   at real not null,
   answered_at real,
-  deleted real                     -- (put away by its owner: kept a while, to be undone)
+  deleted real,                    -- (put away by its owner: kept a while, to be undone)
+  seen real                        -- (when its owner first had the Mailbox open with it in: read)
 );
 create index if not exists mail_to on mail(to_id, at);
 create index if not exists share_members_user on share_members(user_id);
@@ -176,6 +177,9 @@ class DB:
             if shcols and 'name' not in shcols:
                 self.conn.execute("alter table shares add column name text not null default ''")
                 self.conn.execute("alter table shares add column symbol text not null default ''")
+            mcols = [r['name'] for r in self.conn.execute('pragma table_info(mail)')]
+            if mcols and 'seen' not in mcols:  # (before mail was told apart read from not)
+                self.conn.execute('alter table mail add column seen real')
             if 'avatar' not in cols:
                 self.conn.execute('alter table users add column avatar text')
                 self.conn.execute('alter table users add column avatar_at real')

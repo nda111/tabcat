@@ -81,6 +81,14 @@ with sync_playwright() as p:
     meta = bd.inner_text('.devs .dev-meta')
     check(name.strip() != '' and 'tab' in meta and 'just now' in meta, f"named for its browser, with how many tabs and when ('just now', not 'this minute') ({name!r}, {meta!r})")
     check(bd.locator('.devs .dev').count() == 1 and not bd.locator(f".devs .dev[data-device='{b.evaluate('chrome.storage.local.get(\'tabcat:device\').then(r => r[\'tabcat:device\'])') or 'x'}']").count(), "not B itself")
+    # B's own name above its windows, written as the heading of the others; renamed there, for A to see too
+    own = lambda: bd.text_content('#windows > .self-title .self-name').strip() if bd.locator('#windows > .self-title:visible').count() else None
+    check(wait(lambda: own(), 'its own name', timeout=10) and bd.evaluate("(s => getComputedStyle(s).textTransform === getComputedStyle(document.querySelector('.devs .devs-title')).textTransform && s.nextElementSibling.matches('.win'))(document.querySelector('#windows > .self-title'))"),
+          f'B: its own name above its windows, as the heading below is written ({own()!r})')
+    bd.hover('#windows > .self-title'); bd.click('#windows > .self-title .self-edit')
+    bd.keyboard.press('Control+A'); bd.keyboard.type('Desk B'); bd.keyboard.press('Enter')
+    check(wait(lambda: own() == 'Desk B', 'renamed', timeout=10), f'renamed in place ({own()!r})')
+    check(wait(lambda: 'Desk B' in [d['name'] for d in ad.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(j => j.devices)")], 'kept', timeout=10), 'kept by the server: the name the others show')
     bd.click('.devs .dev-head'); time.sleep(.08)
     check(bd.locator('.devs .dev:not(.collapsed)').count() == 1, 'a click opens it at once')
     urls = lambda: bd.evaluate("[...document.querySelectorAll('.devs .rtab')].map(r => r.dataset.url)")

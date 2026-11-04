@@ -18,7 +18,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
-from . import __version__, auth, dashboard, tailscale, totp, updates
+from . import __version__, auth, dashboard, hangul, tailscale, totp, updates
 from .db import DB
 
 PAGES = Path(__file__).parent / 'pages'
@@ -439,6 +439,7 @@ def create_app(config) -> FastAPI:
         # (the account in use goes; the next one signed in here, if any, takes over)
         if gone := user_of(request):
             log('logout', request, user=gone)
+        drop_tabs(request.cookies.get(auth.COOKIE))
         auth.end_session(db, request.cookies.get(auth.COOKIE))
         rest = [(t, u) for t, u in accounts_of(request)[1:] if u]
         return set_accounts(JSONResponse({'ok': True, 'next': rest[0][1]['username'] if rest else None}), request, [t for t, _ in rest])
@@ -464,6 +465,7 @@ def create_app(config) -> FastAPI:
         if not tok:
             raise HTTPException(404, 'that account is not signed in here')
         log('logout', request, user=next(u for t, u in found if t == tok))
+        drop_tabs(tok)
         auth.end_session(db, tok)
         return set_accounts(JSONResponse({'ok': True}), request, [t for t, u in found if u and t != tok])
 
@@ -475,6 +477,7 @@ def create_app(config) -> FastAPI:
         pick = next((t for t, u in found[1:] if u and u['id'] == uid), None)
         if not pick:
             raise HTTPException(404, 'that account is not signed in here')
+        drop_tabs(found[0][0])  # (this browser is the other account's now: no longer among the one before's)
         return set_accounts(JSONResponse({'ok': True}), request, [pick] + [t for t, u in found if u and t != pick])
 
     @app.get('/api/me')
@@ -1093,6 +1096,17 @@ def create_app(config) -> FastAPI:
                 out.append({'focused': bool(w.get('focused')), 'tabs': tabs, 'groups': groups})
         return out
 
+    def drop_tabs(token):
+        """A browser signed out of an account (or gone over to another): out of that account's open tabs panel at once
+        (its tabs aren't the account's to see any more)."""
+        if not token:
+            return
+        h = auth.token_hash(token)[:16]
+        users = [r['user_id'] for r in db.q('select user_id from device_tabs where session = ?', h)]
+        if users:
+            db.run('delete from device_tabs where session = ?', h)
+            notify(users, 'tabs')
+
     @app.put('/api/sync/tabs')
     async def put_device_tabs(request: Request):
         """This browser's tabs, the latest. Hidden from the list since it signed in: shown again once it signs in again
@@ -1107,6 +1121,11 @@ def create_app(config) -> FastAPI:
                   forgotten = case when device_tabs.forgotten is not null and device_tabs.forgotten < ? then null else device_tabs.forgotten end""",
                u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')),
                auth.token_hash(request.cookies.get(auth.COOKIE, ''))[:16], u['session_created'] or 0)
+        # (the same browser, signed in to another account before: no longer that one's)
+        before = [r['user_id'] for r in db.q('select user_id from device_tabs where device = ? and user_id != ?', device, u['id'])]
+        if before:
+            db.run('delete from device_tabs where device = ? and user_id != ?', device, u['id'])
+            notify(before, 'tabs')
         notify([u['id']], 'tabs')
         return {'ok': True}
 
@@ -1120,8 +1139,10 @@ def create_app(config) -> FastAPI:
         rows = db.q('''select d.device, d.name, d.label, d.at, d.body, d.forgotten, d.session,
                               exists(select 1 from sessions s where s.user_id = d.user_id and substr(s.token, 1, 16) = d.session and s.expires_at > ?) signed_in
                        from device_tabs d where d.user_id = ? order by coalesce(d.position, 1e18), d.rowid''', time.time(), u['id'])
+        # (only browsers still signed in to the account: one signed out, its sign-in run out or ended from the account
+        # page, no longer shows what it has open)
         return {'devices': [{'device': r['device'], 'name': r['label'] or r['name'], 'own': r['name'], 'at': r['at'], 'hidden': r['forgotten'] is not None,
-                             'session': r['session'] if r['signed_in'] else None, **json.loads(r['body'])} for r in rows]}
+                             'session': r['session'], **json.loads(r['body'])} for r in rows if r['signed_in']]}
 
     @app.put('/api/sync/tabs/order')
     async def order_devices(request: Request):
@@ -1211,11 +1232,14 @@ def create_app(config) -> FastAPI:
     # ---------- shared workspaces: one workspace, kept in step between accounts ----------
     # A workspace shared is data of its own (not in any account's): its changes numbered and handed on as an
     # account's are (see sync above), to its members' browsers, which show it among their workspaces (each keeps
-    # only where it goes in its list). Its owner (one) and editors change it; viewers only see it. The owner asks
+    # only where it goes in its list). Its owner (one), managers and editors change it; viewers only see it. Managers
+    # also change what the others may do (not the owner's, and never making anyone the owner). The owner asks
     # others to join by mail (an invite, answered: accepted or declined, the answer mailed back), changes what
     # each may do, hands the ownership on, or lets someone go; anyone may leave but the owner (who hands it on
     # first, or deletes it: gone for everyone).
-    ROLES = ('owner', 'editor', 'viewer')
+    ROLES = ('owner', 'manager', 'editor', 'viewer')
+    EDITS = ('owner', 'manager', 'editor')  # (may change it)
+    RANK = "case m.role when 'owner' then 0 when 'manager' then 1 when 'editor' then 2 else 3 end"
     MAIL_KEEP_DAYS = 30  # (mail put away: kept this long, for undoing)
 
     def share_role(sid, uid):
@@ -1273,7 +1297,7 @@ def create_app(config) -> FastAPI:
         for r in db.q('select s.id from shares s where not exists (select 1 from share_members m where m.share_id = s.id)'):
             end_share(r['id'])
         for r in db.q("select s.id from shares s where not exists (select 1 from share_members m where m.share_id = s.id and m.role = 'owner')"):
-            heir = db.one("select user_id from share_members where share_id = ? order by role = 'editor' desc, at limit 1", r['id'])
+            heir = db.one("select user_id from share_members m where share_id = ? order by " + RANK + ", at limit 1", r['id'])
             if heir:
                 db.run("update share_members set role = 'owner' where share_id = ? and user_id = ?", r['id'], heir['user_id'])
                 notify(share_users(r['id']), 'shares')
@@ -1358,7 +1382,7 @@ def create_app(config) -> FastAPI:
     async def share_push(sid: str, request: Request):
         """Changes to it, from an owner's or editor's browser (a viewer's: refused, 403), as an account's are."""
         u = sync_user(request)
-        need_share(request, sid, ('owner', 'editor'), user=u)
+        need_share(request, sid, EDITS, user=u)
         data = await body(request)
         device = str(data.get('device', ''))[:64]
         ops = data.get('ops') if isinstance(data.get('ops'), list) else []
@@ -1384,7 +1408,7 @@ def create_app(config) -> FastAPI:
     @app.put('/api/sync/shares/{sid}/snapshot')
     async def share_snapshot(sid: str, request: Request):
         u = sync_user(request)
-        need_share(request, sid, ('owner', 'editor'), user=u)
+        need_share(request, sid, EDITS, user=u)
         data = await body(request)
         seq = data.get('seq')
         if not isinstance(seq, int) or seq < 0 or seq > share_head(sid) or not isinstance(data.get('body'), dict):
@@ -1419,11 +1443,11 @@ def create_app(config) -> FastAPI:
     # (the dashboard's side: who's in it and as what, asking others, the mailbox)
     def share_info(sid, uid) -> dict:
         members = db.q('select u.*, m.role, m.at joined from share_members m join users u on u.id = m.user_id where m.share_id = ? '
-                       "order by case m.role when 'owner' then 0 when 'editor' then 1 else 2 end, m.at", sid)
-        invites = db.q("select m.id, m.role, m.at, u.* from mail m join users u on u.id = m.to_id where m.share_id = ? and m.kind = 'invite' and m.answer is null order by m.at", sid)
+                       'order by ' + RANK + ', m.at', sid)
+        invites = db.q("select u.*, m.id mail_id, m.role mail_role, m.at mail_at from mail m join users u on u.id = m.to_id where m.share_id = ? and m.kind = 'invite' and m.answer is null order by m.at", sid)
         return {'id': sid, 'root': db.one('select root from shares where id = ?', sid)['root'], 'role': share_role(sid, uid),
                 'members': [{**person(r), 'role': r['role'], 'me': r['id'] == uid} for r in members],
-                'invites': [{'mail': r[0], 'role': r[1], 'at': r[2], 'user': person(r)} for r in invites]}
+                'invites': [{'mail': r['mail_id'], 'role': r['mail_role'], 'at': r['mail_at'], 'user': person(r)} for r in invites]}
 
     @app.get('/api/shares')
     def list_shares(request: Request):
@@ -1441,11 +1465,11 @@ def create_app(config) -> FastAPI:
 
     @app.post('/api/shares/{sid}/invites')
     async def invite(sid: str, request: Request):
-        """The owner asks someone (by username) to join, as an editor or a viewer: mailed to them."""
+        """The owner asks someone (by username) to join, as a manager, an editor or a viewer: mailed to them."""
         u, _ = need_share(request, sid, ('owner',))
         data = await body(request)
         role = data.get('role')
-        if role not in ('editor', 'viewer'):
+        if role not in ('manager', 'editor', 'viewer'):
             raise HTTPException(400, 'as what?')
         to = db.one('select * from users where username = ? and disabled = 0', str(data.get('username') or '').strip())
         if not to:
@@ -1476,15 +1500,20 @@ def create_app(config) -> FastAPI:
 
     @app.put('/api/shares/{sid}/members/{uid}')
     async def set_role(sid: str, uid: int, request: Request):
-        """The owner changes what someone may do; making them the owner hands it on (the owner an editor then)."""
-        u, _ = need_share(request, sid, ('owner',))
+        """The owner changes what someone may do; making them the owner hands it on (the owner an editor then). A
+        manager changes what anyone but the owner may do (their own too, down to an editor or a viewer), never making
+        anyone the owner."""
+        u, mine = need_share(request, sid, ('owner', 'manager'))
         role = (await body(request)).get('role')
         if role not in ROLES:
             raise HTTPException(400, 'as what?')
-        if uid == u['id']:
-            raise HTTPException(409, 'hand it on to someone else')
-        if not share_role(sid, uid):
+        theirs = share_role(sid, uid)
+        if not theirs:
             raise HTTPException(404, 'not in it')
+        if mine == 'owner' and uid == u['id']:
+            raise HTTPException(409, 'hand it on to someone else')
+        if mine == 'manager' and (role == 'owner' or theirs == 'owner'):
+            raise HTTPException(403, 'owners only')
         with db.lock:
             if role == 'owner':
                 db.run("update share_members set role = 'editor' where share_id = ? and user_id = ?", sid, u['id'])
@@ -1530,29 +1559,51 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/users/search')
     def find_users(request: Request, q: str = ''):
-        """Accounts to invite: those whose username or name has `q` in it (the start first), not oneself."""
+        """Accounts to invite: those whose username or name has `q` in it, letter by letter for Korean (see hangul.py;
+        the start first), not oneself."""
         u = need_user(request)
-        q = q.strip()[:60]
+        q = hangul.letters(q.strip()[:60])
         if not q:
             return {'users': []}
-        like = '%' + q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
-        rows = db.q(r"""select * from users where id != ? and disabled = 0 and (username like ? escape '\' or coalesce(name, '') like ? escape '\')
-                       order by (username like ? escape '\') desc, username collate nocase limit 8""", u['id'], like, like, like[1:])
-        return {'users': [person(r) for r in rows]}
+        rows = [r for r in db.q('select * from users where id != ? and disabled = 0', u['id'])
+                if q in hangul.letters(r['username']) or q in hangul.letters(r['name'] or '')]
+        rows.sort(key=lambda r: (not hangul.letters(r['username']).startswith(q), r['username'].lower()))
+        return {'users': [person(r) for r in rows[:30]]}
 
     def mail_item(r) -> dict:
         frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None
+        name, symbol = r['ws_name'], r['ws_symbol']
+        if not name and r['share_id']:  # (mail from before shares kept their names: named by the share, or other mail about it)
+            o = db.one("select name, symbol from shares where id = ? and name != ''", r['share_id']) \
+                or db.one("select ws_name name, ws_symbol symbol from mail where share_id = ? and ws_name != '' order by abs(at - ?) limit 1", r['share_id'], r['at'])
+            if o:
+                name, symbol = o['name'], o['symbol']
         return {'id': r['id'], 'kind': r['kind'], 'from': person(frm) or {'id': None, 'username': r['from_name'], 'name': '', 'avatar': None, 'accent': 'purple', 'twofa': False},
-                'share': r['share_id'], 'workspace': {'name': r['ws_name'], 'symbol': r['ws_symbol']}, 'role': r['role'],
-                'answer': r['answer'], 'at': r['at'], 'answered_at': r['answered_at']}
+                'share': r['share_id'], 'workspace': {'name': name, 'symbol': symbol}, 'role': r['role'],
+                'answer': r['answer'], 'at': r['at'], 'answered_at': r['answered_at'], 'seen': r['seen']}
 
     @app.get('/api/mail')
     def mailbox(request: Request):
-        """The account's mail, newest first (`asking`: invites not answered yet, for the badge)."""
+        """The account's mail, newest first (`asking`, for the badge: mail not read yet, and invites not answered yet)."""
         u = need_user(request)
         db.run('delete from mail where deleted is not null and deleted < ?', time.time() - MAIL_KEEP_DAYS * 86400)
         rows = db.q('select * from mail where to_id = ? and deleted is null order by at desc, id desc limit 500', u['id'])
-        return {'mail': [mail_item(r) for r in rows], 'asking': sum(1 for r in rows if r['kind'] == 'invite' and r['answer'] is None)}
+        return {'mail': [mail_item(r) for r in rows], 'asking': sum(1 for r in rows if r['seen'] is None or (r['kind'] == 'invite' and r['answer'] is None))}
+
+    @app.post('/api/mail/seen')
+    async def saw_mail(request: Request):
+        """Mail read: the Mailbox open with it in."""
+        u = need_user(request)
+        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        n = 0
+        with db.lock:
+            for mid in ids:
+                if db.one('select 1 from mail where id = ? and to_id = ? and seen is null', mid, u['id']):
+                    db.run('update mail set seen = ? where id = ?', time.time(), mid)
+                    n += 1
+        if n:
+            notify([u['id']], 'mail')
+        return {'ok': True}
 
     @app.post('/api/mail/{mid}/answer')
     async def answer(mid: int, request: Request):

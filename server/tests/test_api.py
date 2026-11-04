@@ -395,6 +395,15 @@ sa.put('/api/sync/tabs/pc2/hidden', json={'hidden': True})
 time.sleep(.01); sa.post('/api/login', json=J(username='ann', password='annpass99'))
 sa.put('/api/sync/tabs', json={'device': 'pc2', 'name': 'Edge on macOS', 'windows': [win]})
 check(not {d['device']: d for d in sa.get('/api/sync/tabs').json()['devices']}['pc2']['hidden'], 'hidden, then signed in again there: shown again by itself')
+# a browser signed out, or signed in to another account: its tabs no longer the account's to see
+sx = TestClient(app, follow_redirects=False, client=('192.0.2.93', 1)); sx.post('/api/login', json=J(username='ann', password='annpass99'))
+sx.put('/api/sync/tabs', json={'device': 'pcx', 'name': 'Firefox', 'windows': [win]})
+check('pcx' in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'another browser of ann: listed')
+sx.post('/api/logout')
+check('pcx' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'signed out there: gone from the list at once')
+sb.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
+check('pc1' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] and [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']] == ['pc1'],
+      "the same browser, signed in to ben now: ben's, no longer among ann's")
 
 # shared workspaces and the mailbox
 ws = {'id': 'w1', 'type': 'workspace', 'name': 'Research', 'categories': []}
@@ -409,6 +418,7 @@ check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ann', 'role': 'ed
 check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'owner'}).status_code == 400, 'asked as an owner: refused (handed on later)')
 info = sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'viewer', 'name': 'Research', 'symbol': '🔬'}).json()
 check([i['user']['username'] for i in info['invites']] == ['ben'] and [m['role'] for m in info['members']] == ['owner'], 'ben asked: listed as asked, not in it yet')
+check(info['invites'][0]['user']['id'] == ben_id, f"the one asked: their account's id, not the invite's ({info['invites'][0]})")
 check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'viewer'}).status_code == 409, 'asked twice: refused')
 box = sb.get('/api/mail').json()
 inv = box['mail'][0]
@@ -422,7 +432,12 @@ check(mine == [{'id': sid, 'root': 'w1', 'role': 'viewer', 'head': 0}], 'in it n
 check(sb.get(f'/api/sync/shares/{sid}/state').json()['snapshot']['body']['workspaces'][0]['name'] == 'Research', 'and sees it')
 check(sb.post(f'/api/sync/shares/{sid}/ops', json={'device': 'b', 'ops': [{'id': 'x1', 'body': {}}]}).status_code == 403, "a viewer's changes: refused")
 reply = sa.get('/api/mail').json()
-check(reply['asking'] == 0 and reply['mail'][0]['kind'] == 'reply' and reply['mail'][0]['answer'] == 'accepted' and reply['mail'][0]['from']['username'] == 'ben', 'ann gets the answer by mail (not counted as asking)')
+check(reply['asking'] == 1 and reply['mail'][0]['kind'] == 'reply' and reply['mail'][0]['answer'] == 'accepted' and reply['mail'][0]['from']['username'] == 'ben' and reply['mail'][0]['seen'] is None, 'ann gets the answer by mail (counted, not read yet)')
+sa.post('/api/mail/seen', json={'ids': [m['id'] for m in reply['mail']]})
+reply = sa.get('/api/mail').json()
+check(reply['asking'] == 0 and reply['mail'][0]['seen'], 'read: not counted any more')
+sb.post('/api/mail/seen', json={'ids': [inv['id']]})
+check(sb.get('/api/mail').json()['asking'] == 0, "an answered invite, read: not counted")
 r = sa.post(f'/api/sync/shares/{sid}/ops', json={'device': 'a', 'ops': [{'id': 's1', 'body': {'v': 1, 'ops': []}}]}).json()
 check(r['head'] == 1 and sb.get(f'/api/sync/shares/{sid}/ops', params={'after': 0}).json()['ops'][0]['id'] == 's1', "the owner's changes reach the others")
 check(sa.put(f'/api/shares/{sid}/members/{ann_id}', json={'role': 'viewer'}).status_code == 409, "the owner can't change their own role (hands it on instead)")
@@ -471,6 +486,23 @@ sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json=
 info = sa.post(f'/api/shares/{s9}/end').json()
 check([x['username'] for x in info['members']] == ['ann'] and sb.get('/api/sync/shares').json()['shares'] == [] and sb.get('/api/mail').json()['mail'][0]['kind'] == 'removed', 'shared with no one any more: the owner alone, the rest told')
 check([x['id'] for x in sa.get('/api/sync/shares').json()['shares']] == [s9], "the owner's still there")
+
+# managers: change it, and what the others may do (not the owner, and never to an owner); their own, down only
+s9u = lambda cl: cl.get('/api/mail').json()['mail'][0]['id']
+sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'manager', 'name': 'Big plans'})
+sb.post(f'/api/mail/{s9u(sb)}/answer', json={'accept': True})
+sc = TestClient(app, follow_redirects=False, client=('192.0.2.92', 1)); sc.post('/api/login', json=J(username='cal', password='calpass99'))
+sa.post(f'/api/shares/{s9}/invites', json={'username': 'cal', 'role': 'viewer', 'name': 'Big plans'})
+sc.post(f'/api/mail/{s9u(sc)}/answer', json={'accept': True})
+check(sb.post(f'/api/sync/shares/{s9}/ops', json={'device': 'b', 'ops': [{'id': 'm1', 'body': {}}]}).status_code == 200, 'a manager changes it')
+info = sb.put(f'/api/shares/{s9}/members/{cal_id}', json={'role': 'editor'}).json()
+check({x['username']: x['role'] for x in info['members']} == {'ann': 'owner', 'ben': 'manager', 'cal': 'editor'} and [x['username'] for x in info['members']] == ['ann', 'ben', 'cal'], f"a manager makes cal an editor (listed owner, manager, editor) ({info.get('members')})")
+check(sb.put(f'/api/shares/{s9}/members/{cal_id}', json={'role': 'owner'}).status_code == 403, 'but not the owner')
+check(sb.put(f'/api/shares/{s9}/members/{ann_id}', json={'role': 'editor'}).status_code == 403, "nor changes the owner's role")
+check(sb.put(f'/api/shares/{s9}/members/{ben_id}', json={'role': 'owner'}).status_code == 403, 'nor makes themselves the owner')
+check(sc.put(f'/api/shares/{s9}/members/{ben_id}', json={'role': 'viewer'}).status_code == 403, "an editor changes no one's role")
+info = sb.put(f'/api/shares/{s9}/members/{ben_id}', json={'role': 'editor'}).json()
+check({x['username']: x['role'] for x in info['members']}['ben'] == 'editor' and sb.put(f'/api/shares/{s9}/members/{cal_id}', json={'role': 'viewer'}).status_code == 403, 'down to an editor by their own choice: no longer changes roles')
 
 # the rest
 check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info tells where the dashboard comes from')

@@ -90,6 +90,13 @@ with sync_playwright() as p:
     check(until(lambda: gname(a) == 'From ben', timeout=20), f"ben (an editor) renames a group: boss sees it ({gname(a)})")
     call(ac, 'apply', [{'op': 'patch', 'id': 'own-A', 'fields': {'name': 'Team'}}])
     check(until(lambda: ['Team', sid] in wss(b), timeout=20), f'boss renames the workspace: ben sees it ({wss(b)})')
+    # a card's colour changed by boss: on ben's board it fades to the new one, as when changed there
+    bd.click(".ws-item:has-text('Team')"); bd.wait_for_selector("#board .group[data-id='g-A']")
+    bd.evaluate("""() => { window.__fades = []; new MutationObserver(() => { const g = document.querySelector("#board .group[data-id='g-A']");
+      for (const an of g?.getAnimations() || []) { const k = an.effect.getKeyframes()[0]; if (k && 'backgroundColor' in k) window.__fades.push([g.dataset.color || '', k.backgroundColor]); } })
+      .observe(document.querySelector('#board'), { childList: true, subtree: true }); }""")
+    call(ac, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'color': 'blue'}}])
+    check(until(lambda: bd.evaluate("window.__fades").__len__() > 0, timeout=20) and bd.evaluate("window.__fades")[0][0] == 'blue', f"boss colours a card: on ben's board it fades into blue ({bd.evaluate('window.__fades')})")
     # moved in from one's own workspace: a copy there for the others, gone from one's own
     call(bc, 'apply', [{'op': 'move', 'id': 'g-B', 'parentId': 'c-A', 'index': 1}])
     check(until(lambda: gname(a, 'g-B') == 'G B', timeout=20), f"a group moved into it by ben: boss has it ({gname(a, 'g-B')})")
