@@ -161,8 +161,21 @@ keeps it up is whatever starts services on your machine. Pick one:
   ```
 
   then `sudo systemctl enable --now tabcat-server`.
-- **Windows**: Task Scheduler, a task "At startup" running `…\.venv\Scripts\tabcat-server.exe` with
-  "Restart if the task fails" on; or a service wrapper such as NSSM.
+- **Windows**: Task Scheduler, starting it as you sign in, with no window, and again within a minute if it stops.
+  In PowerShell (with tabcat-server installed in `C:\tabcat-server` and its data in `C:\tabcat-server-data`):
+
+  ```powershell
+  $action = New-ScheduledTaskAction -Execute 'conhost.exe' -WorkingDirectory 'C:\tabcat-server-data' `
+    -Argument '--headless C:\tabcat-server\Scripts\python.exe -m tabcat_server --data-dir C:\tabcat-server-data --port 8080'
+  $trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+  $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
+    -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
+  Register-ScheduledTask -TaskName 'tabcat server' -Action $action -Trigger $trigger -Settings $settings
+  Start-ScheduledTask -TaskName 'tabcat server'
+  ```
+
+  It keeps running while the computer is locked. To have it start before anyone signs in, make the trigger
+  `-AtStartup` and run it as another account (that needs an administrator's PowerShell).
 
 While working on the server, `--reload` starts it again whenever its code changes.
 

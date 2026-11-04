@@ -24,6 +24,12 @@ def main(argv=None):
     a = ap.parse_args(argv)
     from . import config as C
     cfg = C.load(a.data_dir, a.host, a.port, a.dashboard, a.setup_from, a.admin_from, a.trusted_proxies)
+    # (started with no console, as pythonw is from Windows' Task Scheduler: nowhere to write, and the web server's logging
+    # stops it before it starts; what it says goes to tabcat-server.log in the data folder instead)
+    if sys.stdout is None or sys.stderr is None:
+        cfg.data_dir.mkdir(parents=True, exist_ok=True)
+        log = open(cfg.data_dir / 'tabcat-server.log', 'a', encoding='utf-8', buffering=1)
+        sys.stdout, sys.stderr = sys.stdout or log, sys.stderr or log
     if a.command != 'reset-server':  # (the database brought up to this version first: or, from a newer server, not opened)
         from .db import DB, TooNew
         # (a folder it can't write to, as a new one bind-mounted into Docker is (root's): said so, and what to do)

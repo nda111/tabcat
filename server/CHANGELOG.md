@@ -2,6 +2,11 @@
 
 What changed in each release of tabcat server (tagged `server-v<version>`; the extension's: [../CHANGELOG.md](../CHANGELOG.md)). The full notes, with how to install, are on [GitHub Releases](https://github.com/nda111/tabcat/releases?q=server-v).
 
+## Unreleased
+
+- Started with no console (pythonw, as from Windows' Task Scheduler), the server runs, writing what it says to
+  `tabcat-server.log` in the data folder; it stopped before starting.
+
 ## 1.0.0
 
 The first release of tabcat server: the tabcat dashboard at an address of your own, behind sign-in, with your tabs in step across browsers, shared workspaces, and accounts for everyone you invite.

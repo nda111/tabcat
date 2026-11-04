@@ -602,5 +602,20 @@ for code, used, ends in (('old-used', now - 200 * 86400, None), ('old-ended', No
 idx_db.purge_invites()
 check({r['code'] for r in idx_db.q('select code from invites')} == {'fresh', 'open'}, 'invitations used or ended longer ago than the record keeps: let go; the rest kept')
 check(c.post('/api/logout').status_code == 200 and c.get('/api/me').status_code == 401, 'signing out ends the session')
+# Started with no console (pythonw, as Windows' Task Scheduler does): it runs all the same, saying what it says in
+# tabcat-server.log in the data folder
+import json, socket, subprocess, urllib.request
+quiet_dir = tempfile.mkdtemp()
+with socket.socket() as s_:
+    s_.bind(('127.0.0.1', 0)); quiet_port = s_.getsockname()[1]
+code = (f"import sys; sys.stdout = sys.stderr = None; sys.argv = ['tabcat-server', '--data-dir', {quiet_dir!r}, '--port', '{quiet_port}', '--dashboard', {quiet_dir!r}];"
+        "from tabcat_server.__main__ import main; main()")
+quiet = subprocess.Popen([sys.executable, '-c', code], cwd=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'), env={**os.environ, 'TABCAT_NO_UPDATES': '1'})
+answered = None
+for _ in range(60):
+    try: answered = json.loads(urllib.request.urlopen(f'http://127.0.0.1:{quiet_port}/api/server', timeout=1).read()); break
+    except Exception: time.sleep(.25)
+quiet.terminate(); quiet.wait(10)
+check(answered and answered.get('tabcat') and os.path.exists(os.path.join(quiet_dir, 'tabcat-server.log')), f'started with no console: it answers, its words in tabcat-server.log ({answered})')
 print('all passed' if not failed else f'{len(failed)} failed')
 sys.exit(1 if failed else 0)
