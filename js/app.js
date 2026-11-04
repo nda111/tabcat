@@ -489,12 +489,16 @@ function setViewing(on, animate) {
   if (on === is) return;
   const parts = () => [...document.querySelectorAll('#board .edits, #board .tools-split, #cat-bar .cat-add')].filter((el) => el.offsetParent);
   const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
-  const keys = (el) => { const cs = getComputedStyle(el); return [{ width: `${el.getBoundingClientRect().width}px`, opacity: 1, transform: 'none', ...Object.fromEntries(sides.map((k) => [k, cs[k]])) },
-    { width: '0px', opacity: 0, transform: 'scale(.7)', ...Object.fromEntries(sides.map((k) => [k, '0px'])) }]; };
+  // (only their room and how much they show: no scaling, which would draw them a fraction off and settle them a
+  // pixel over when it stops)
+  const keys = (el) => { const cs = getComputedStyle(el); return [{ width: `${el.getBoundingClientRect().width}px`, opacity: 1, ...Object.fromEntries(sides.map((k) => [k, cs[k]])) },
+    { width: '0px', opacity: 0, ...Object.fromEntries(sides.map((k) => [k, '0px'])) }]; };
+  const EASE = 'cubic-bezier(.45, 0, .2, 1)'; // (slow to start, slower still to stop: what slides in settles, not knocks)
   if (!animate) { viewingTo = null; body.classList.toggle('viewing', on); return; }
   viewingTo = on;
   if (on) {
-    const anims = parts().map((el) => { el.style.overflow = 'hidden'; return el.animate(keys(el), { duration: 200, easing: 'ease-in', fill: 'forwards' }); });
+    const anims = parts().map((el) => { el.style.overflow = 'clip'; // (clip, not hidden: hidden moves a button's baseline)
+       return el.animate(keys(el), { duration: 300, easing: EASE, fill: 'forwards' }); });
     Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(() => {
       if (viewingTo !== true) return;
       viewingTo = null;
@@ -507,8 +511,8 @@ function setViewing(on, animate) {
     for (const el of parts()) {
       el.getAnimations().forEach((x) => x.cancel()); // (still going the other way: from where it is now)
       const [full, none] = keys(el);
-      el.style.overflow = 'hidden';
-      el.animate([none, full], { duration: 300, easing: GLIDE }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
+      el.style.overflow = 'clip';
+      el.animate([none, full], { duration: 320, easing: EASE }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
     }
   }
 }
@@ -802,10 +806,16 @@ const previewed = (n) => (n && preview?.id === n.id ? { ...n, ...preview.fields 
 
 function renderSidebar() {
   const cur = currentWs();
+  // (the tooltip: the rail's, its name (and description, or whose it is, for one shared with this account); open,
+  // the name's there to read: none, or whose it is for one shared with this account. Its owner: their name, their
+  // username beside it, smaller (after a tab: see showTip))
+  const tips = (orig, ws) => {
+    const o = received(orig) && shareOf(orig)?.owner, who = o && (o.name ? `${o.name}\t${o.username}` : o.username);
+    return { railTitle: [ws.name, who || ws.description].filter(Boolean).join('\n'), wideTitle: who || '' };
+  };
   const item = ([orig, ws]) =>
     h('li', {
-      class: 'ws-item' + (ws.id === cur?.id ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace' },
-      title: ws.description ? `${ws.name}\n${ws.description}` : ws.name,
+      class: 'ws-item' + (ws.id === cur?.id ? ' active' : ''), draggable: 'true', dataset: { id: ws.id, type: 'workspace', ...tips(orig, ws) },
       onclick: () => select(ws.id),
       ondblclick: () => editNode(orig),
       oncontextmenu: (e) => nodeMenu(e, orig),
@@ -1412,6 +1422,7 @@ async function renderTabs() {
   const hadRows = document.querySelectorAll('#windows .tab-row').length > 0;
   const before = new Map([...document.querySelectorAll('#windows .tab-row, #windows .win')].map((el) => [keyOf(el), el.getBoundingClientRect()]));
   $('#windows').replaceChildren(selfHead, ...blocks, devs); // (this browser's name above its windows, the account's other browsers after them: see renderRemote)
+  if (selfHead.dataset.pending != null) renderSelf();
   // a window being expanded: its tabs are held shut while the rest is measured (so the windows below
   // get no slide of their own), then open up with them following
   let opening = null;
@@ -1484,21 +1495,33 @@ async function refreshRemote() {
 // This browser's own name, above its windows, as the other browsers' heading is written: named here as they are (its
 // pencil, a double click, or its menu)
 const selfHead = h('div', { class: 'devs-title self-title', hidden: true });
+// (what the extension calls this browser, "Chrome on Windows": until the server has heard from it, its name here)
+function ownBrowserName() {
+  const ua = navigator.userAgentData;
+  const brand = ua?.brands?.map((b) => b.brand).find((b) => !/not.?a.?brand|^chromium$/i.test(b)) || 'Chromium';
+  const os = { macOS: 'macOS', Windows: 'Windows', Linux: 'Linux', 'Chrome OS': 'ChromeOS', ChromeOS: 'ChromeOS', Android: 'Android' }[ua?.platform] || ua?.platform || '';
+  return [brand.replace(/^(Google|Microsoft) /, ''), os].filter(Boolean).join(' on ');
+}
+// (it comes in folding open once it's in the panel (never just there); its name changed, here or elsewhere, the old
+// fades as the new comes)
 function renderSelf() {
   if (selfHead.querySelector('input')) return; // (being named: once that's done)
-  const d = remote?.self, name = d ? d.name || t('remote.device') : '', look = d ? `${name}|${getLang()}` : '';
+  if (!selfHead.isConnected) { selfHead.dataset.pending = ''; return; } // (drawn when the panel has it: see renderTabs)
+  delete selfHead.dataset.pending;
+  const d = remote?.self, name = d ? d.name || t('remote.device') : remote ? ownBrowserName() : '', look = name ? `${name}|${getLang()}` : '';
+  const rename = () => remote?.self && renameDevice(remote.self, selfHead.querySelector('.self-name'));
+  let text = selfHead.querySelector('.self-name');
   if (look && selfHead.dataset.look !== look) {
-    const was = selfHead.dataset.look;
+    if (!text) {
+      text = h('span', { class: 'self-name', ondblclick: rename }, name);
+      selfHead.replaceChildren(h('span', { class: 'grow' }, text),
+        Object.assign(btn(icon('edit', 14), t('remote.rename'), (e) => { e.stopPropagation(); rename(); }), { className: 'icon-btn self-edit' }));
+      selfHead.oncontextmenu = (e) => showMenu(e, [remote?.self && { icon: 'edit', label: t('remote.rename'), key: 'R', fn: rename }]);
+    } else if (text.textContent !== name) crossfade(text, () => { text.textContent = name; });
     selfHead.dataset.look = look;
-    const text = h('span', { class: 'self-name', title: name, ondblclick: () => renameDevice(d, text) }, name);
-    selfHead.replaceChildren(h('span', { class: 'grow' }, text),
-      Object.assign(btn(icon('edit', 14), t('remote.rename'), (e) => { e.stopPropagation(); renameDevice(remote.self, selfHead.querySelector('.self-name')); }), { className: 'icon-btn self-edit' }));
-    selfHead.oncontextmenu = (e) => showMenu(e, [{ icon: 'edit', label: t('remote.rename'), key: 'R', fn: () => renameDevice(remote.self, selfHead.querySelector('.self-name')) }]);
-    if (was) text.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
   }
   if (!look) delete selfHead.dataset.look;
-  fold(selfHead, !!look, selfHead.isConnected && selfHead.dataset.seen != null);
-  selfHead.dataset.seen = '';
+  fold(selfHead, !!look, true);
 }
 const pendingHidden = new Map(); // (device: hidden, as ticked here and not yet kept by the server)
 let pendingOrder = null;
@@ -1772,7 +1795,7 @@ function renameDevice(d, el = null) {
     if (done) return;
     done = true;
     const label = input.value.replace(/\s+/g, ' ').trim();
-    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } if (el) { selfHead.dataset.look = `${d.name || t('remote.device')}|${getLang()}`; el.title = d.name || ''; renderSelf(); } }; // (shown already, faded in once: not again)
+    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } if (el) { selfHead.dataset.look = `${d.name || t('remote.device')}|${getLang()}`; renderSelf(); } }; // (shown already, faded in once: not again)
     if (!keep || label === (d.name || '')) { name.textContent = d.name || t('remote.device'); caughtUp(); return; }
     const was = d.name === d.own ? '' : d.name;
     d.name = label || d.own || d.name;
@@ -4159,14 +4182,19 @@ $('#settings-form').addEventListener('change', async (e) => {
 });
 
 // Apply new settings; a changed theme or accent cross-fades the whole page from the old look.
-let lookShown = ''; // `${theme}|${accent}` last applied or on its way (a transition applies it a frame later)
+let lookShown = '';
+let fsGoing = null, fsVt = null; // (a new text size on its way, and its transition) // `${theme}|${accent}` last applied or on its way (a transition applies it a frame later)
 function switchTheme(s) {
   const look = `${s.theme}|${s.accent}`;
   const changed = look !== (lookShown || `${settings.theme}|${settings.accent}`);
   // (a new text size, alone: the page as it was fades into the page as it now is, its dialogs too. Pictures of the
   // two, not the page laid out again each frame: smooth however big the board)
   const from = fontScaleOf(settings), to = fontScaleOf(s);
+  // (the same size again on its way already (our own save, then the same coming back from the extension): once only;
+  // a second would cut the first short, its pictures taken with the dialogs no longer kept apart: two thumbs)
+  if (from !== to && to === fsGoing) return;
   if (from !== to && !changed && document.startViewTransition) {
+    fsGoing = to;
     const root = document.documentElement;
     root.classList.add('fs-vt');
     // (open dialogs, Settings with its slider, kept out of the pictures and shown live, not faded: the thumb
@@ -4178,8 +4206,21 @@ function switchTheme(s) {
       const ease = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'both' };
       root.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, pseudoElement: '::view-transition-old(root)' });
       root.animate([{ opacity: 0 }, { opacity: 1 }], { ...ease, pseudoElement: '::view-transition-new(root)' });
+      // (the open dialogs: their pictures from before never shown, only them live (else the thumb, the text, as they
+      // were would fade out beside them as they are); set here, not by the stylesheet alone, which not every browser
+      // matches by class)
+      live.forEach((_, i) => {
+        root.animate([{ opacity: 0 }, { opacity: 0 }], { ...ease, pseudoElement: `::view-transition-old(fs-live-${i})` });
+        root.animate([{ opacity: 1 }, { opacity: 1 }], { ...ease, pseudoElement: `::view-transition-new(fs-live-${i})` });
+      });
     }, () => {});
-    vt.finished.finally(() => { root.classList.remove('fs-vt'); live.forEach((dlg) => { dlg.style.viewTransitionName = ''; dlg.style.viewTransitionClass = ''; }); });
+    fsVt = vt;
+    vt.finished.finally(() => {
+      if (fsVt !== vt) return; // (another took over: it tidies up)
+      fsVt = null; fsGoing = null;
+      root.classList.remove('fs-vt');
+      live.forEach((dlg) => { dlg.style.viewTransitionName = ''; dlg.style.viewTransitionClass = ''; });
+    });
     return;
   }
   lookShown = look;
@@ -4681,9 +4722,11 @@ function showTip(el) {
   // (one with no icon of its own, an extension's page say, shows the accent globe: that, not its blank pixel)
   const fav = !rowImg ? null : rowImg.classList.contains('fav-blank') ? Object.assign(rowImg.cloneNode(true), { loading: 'eager' }) : iconImg(el.dataset.url, rowImg.currentSrc || rowImg.src);
   fav?.removeAttribute('loading');
+  // (a line's part after a tab: beside it, smaller, as a username beside a name)
+  const parts = (line) => { const [a, b] = line.split('\t'); return [h('span', {}, a), b && h('span', { class: 'tip-small' }, b)]; };
   tip.replaceChildren(
-    h('div', { class: 'tip-head' }, fav && h('span', { class: 'tip-icon' }, fav), h('span', {}, head)),
-    ...rest.map((line) => h('div', { class: 'tip-sub' }, line)));
+    h('div', { class: 'tip-head' }, fav && h('span', { class: 'tip-icon' }, fav), ...parts(head)),
+    ...rest.map((line) => h('div', { class: 'tip-sub' }, ...parts(line))));
   tip.hidden = false;
   // a popover, so it shows above an open (top-layer) dialog too: shown again each time to come out on top
   if (tip.matches(':popover-open')) tip.hidePopover();
@@ -4750,11 +4793,13 @@ function applyPanels() {
 }
 
 // Controls labelled in the expanded sidebar get their tooltip (data-rail-title) only when collapsed.
+// (`data-wide-title`: the one it has when expanded instead, if any)
 function applyRailTitles() {
   const collapsed = document.body.classList.contains('ws-collapsed');
   for (const el of document.querySelectorAll('#sidebar [data-rail-title]')) {
-    if (collapsed) el.title = el.dataset.railTitle;
-    else el.removeAttribute('title');
+    const tip = collapsed ? el.dataset.railTitle : el.dataset.wideTitle;
+    if (el === tipEl) { if (tip) el.dataset.tip = tip; continue; } // (its tooltip up: changed in place)
+    if (tip) el.title = tip; else el.removeAttribute('title');
   }
 }
 
@@ -5148,7 +5193,7 @@ function appear(el, show) {
   const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
   const full = { width: `${w}px`, opacity: 1, transform: 'none', ...Object.fromEntries(sides.map((k) => [k, cs[k]])) };
   const none = { width: '0px', opacity: 0, transform: 'scale(.85)', ...Object.fromEntries(sides.map((k) => [k, '0px'])) };
-  Object.assign(el.style, { overflow: 'hidden', whiteSpace: 'nowrap' });
+  Object.assign(el.style, { overflow: 'clip', whiteSpace: 'nowrap' }); // (clip: hidden would move an inline button's baseline, a pixel when it ends)
   let cancelled = false;
   const a = el.animate(show ? [none, full] : [full, none], show ? { duration: 300, easing: GLIDE } : { duration: 200, easing: 'ease-in' });
   a.oncancel = () => { cancelled = true; };
@@ -5301,10 +5346,11 @@ function morph(el, parts) {
 const swapName = (el, a) => morph(el, nameLine(a));
 // In place, the old fades out as the new fades in, both at once: the old pictured over it while it goes (in the
 // box it's placed by, with its text's look)
-function ghostOver(el, old) {
+// (`at`: where the old was, if it was elsewhere or another size: it fades there, whole, not clipped to the new)
+function ghostOver(el, old, at = null) {
   const box = el.offsetParent;
   if (!box || !el.getClientRects().length) return;
-  const r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), cs = getComputedStyle(el);
+  const r = at?.width ? at : el.getBoundingClientRect(), b = box.getBoundingClientRect(), cs = getComputedStyle(el);
   old.removeAttribute('id');
   Object.assign(old.style, {
     position: 'absolute', margin: '0', pointerEvents: 'none', zIndex: '1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -5318,9 +5364,9 @@ function ghostOver(el, old) {
   el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-in-out' });
 }
 function crossfade(el, change) {
-  const old = el.cloneNode(true);
+  const old = el.cloneNode(true), at = el.getBoundingClientRect();
   change();
-  ghostOver(el, old);
+  ghostOver(el, old, at);
 }
 const accountRow = (a) => h('div', { class: 'account-other', 'data-key': a.id },
   h('button', { type: 'button', class: 'account-pick', onclick: () => switchAccount(a) },
@@ -5464,7 +5510,7 @@ const api = (path, method = 'GET', body) => fetch(path, { method, credentials: '
 function shareOf(ws) {
   if (!ws || !sharing()) return null;
   const s = shareList.find((x) => x.root === ws.id && (!ws.share || ws.share === x.id));
-  return s ? { id: s.id, role: s.role, members: s.members, invited: s.invited || 0 } : null;
+  return s ? { id: s.id, role: s.role, members: s.members, invited: s.invited || 0, owner: s.owner || null } : null;
 }
 // (someone else in it, or asked: what the heading's button and the sidebar's split go by)
 const sharedWithOthers = (sh) => !!sh && (sh.members > 1 || sh.invited > 0);
@@ -5484,7 +5530,7 @@ async function refreshShares() {
   if (!sharing()) return;
   const seq = ++sharesSeq, r = await api('/api/shares');
   if (seq !== sharesSeq || !r.ok) return;
-  const key = (l) => JSON.stringify(l.map((s) => [s.id, s.root, s.role, s.members, s.invited]));
+  const key = (l) => JSON.stringify(l.map((s) => [s.id, s.root, s.role, s.members, s.invited, s.owner]));
   const changed = key(r.data.shares) !== key(shareList);
   shareList = r.data.shares;
   if (changed) render(); // (the heading's count, and what this account may do in each: see shareOf)
@@ -5766,11 +5812,13 @@ function mailHead(animate = true) {
   appear(del, false).then(() => { delete del.dataset.going; });
 }
 async function answerMail(m, accept, b) {
+  // (no more clicks meanwhile, though not greyed: the answer cross-fades in over them as they are)
   const btns = [...b.parentElement.querySelectorAll('button')];
-  btns.forEach((x) => { x.disabled = true; });
+  if (btns.some((x) => x.dataset.busy)) return;
+  btns.forEach((x) => { x.dataset.busy = '1'; x.style.pointerEvents = 'none'; });
   const r = await api(`/api/mail/${m.id}/answer`, 'POST', { accept });
   if (!r.ok) {
-    btns.forEach((x) => { x.disabled = false; });
+    btns.forEach((x) => { delete x.dataset.busy; x.style.pointerEvents = ''; });
     toast(t(r.status === 410 ? 'mail.gone' : r.status === 409 ? 'mail.answered' : 'mail.failed'));
   } else {
     const i = mail.findIndex((x) => x.id === m.id);

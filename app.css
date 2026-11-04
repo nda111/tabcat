@@ -672,6 +672,8 @@ body.tabs-collapsed .devs:not(.devs-ghost) { display: none; } /* (the rail: this
   font-size: calc(12px * var(--fs, 1)); line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,.14);
 }
 .tip-head { display: flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
+.tip-small { margin-left: 5px; font-size: .88em; font-weight: 400; opacity: .7; } /* (beside the line's words, smaller: a username by a name) */
+.tip-head .tip-small { margin-left: 0; } /* (the head spaces its parts already) */
 .tip-icon { display: grid; place-items: center; flex: none; }
 .tip-icon img { width: 16px; height: 16px; display: block; }
 .tip-sub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
