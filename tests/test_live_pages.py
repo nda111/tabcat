@@ -23,7 +23,7 @@ def soon(pg, js, timeout=4000):
 errors = []
 with sync_playwright() as p:
     b = p.chromium.launch()
-    one, two = b.new_context(), b.new_context()  # (two browsers, the same account)
+    one, two = b.new_context(bypass_csp=True), b.new_context(bypass_csp=True)  # (two browsers, the same account)
     a = one.new_page(); a.on('pageerror', lambda e: errors.append(str(e)))
     a.goto(SERVER + '/setup'); call(a, 'POST', '/api/setup', {'username': 'boss', 'password': 'correct horse'})
     o = two.new_page(); o.goto(SERVER + '/login'); call(o, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
@@ -32,7 +32,7 @@ with sync_playwright() as p:
     devices = a.locator('#devices .device').count()
     call(o, 'PUT', '/api/me/name', {'name': 'Big Boss'})
     check(soon(a, "document.querySelector('#name-view').textContent === 'Big Boss'"), 'the name changed in another browser: the account page shows it at once')
-    t3 = b.new_context(); x = t3.new_page(); x.goto(SERVER + '/login'); call(x, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
+    t3 = b.new_context(bypass_csp=True); x = t3.new_page(); x.goto(SERVER + '/login'); call(x, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
     check(soon(a, f"document.querySelectorAll('#devices .device').length === {devices + 1}"), 'signed in on another device: it joins the list')
     check(soon(a, "document.querySelector('#my-events').textContent.length > 0 && [...document.querySelectorAll('#my-events .event')].reduce((n, e) => n + e.dataset.key.split('-').length, 0) >= 3"), 'and the recent security activity')
     check(a.is_visible('#ev-act') and a.is_visible('#ev-pw') and a.is_visible('#ev-others'), 'under it: not you? change the password, sign out of other devices')

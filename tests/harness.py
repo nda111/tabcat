@@ -91,9 +91,14 @@ def launch(p, developer_mode=False, fresh=False, manifest=None, extra_args=(), *
     if developer_mode:
         os.makedirs(prof + '/Default', exist_ok=True)
         with open(prof + '/Default/Preferences', 'w') as f: f.write('{"extensions":{"ui":{"developer_mode":true}}}')
+    # (bypass_csp: the pages' Content-Security-Policy runs no script made from a string, which Playwright's own
+    # checks (wait_for_function and the like) are; the pages themselves keep to it all the same)
+    kw.setdefault('bypass_csp', True)
     ctx = p.chromium.launch_persistent_context(prof, channel='chromium', headless=True,
         args=[f'--disable-extensions-except={ext}', f'--load-extension={ext}', *extra_args], **kw)
     sw = ctx.service_workers[0] if ctx.service_workers else ctx.wait_for_event('serviceworker')
+    # (the dashboard served here, on this computer: allowed already, as the user would once (see allow.html))
+    sw.evaluate(f"chrome.storage.local.set({{ 'tabcat:allowedOrigins': ['http://localhost:{PORT}'] }})")
     if not fresh:
         ctx.add_init_script("try { localStorage.setItem('tabcat:tourOffered', '1'); } catch {}")
         for _ in range(30):  # (the dashboard it opens on install: gone)

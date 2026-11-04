@@ -644,7 +644,10 @@ const handlers = {
   ...historyHandlers,
   getState: () => S.load(),
   getSettings: () => S.loadSettings(),
-  saveSettings: (patch) => S.saveSettings(patch),
+  // (what a page may change: the user's settings, never where the data goes (the server, its account, the dashboard's
+  // address): those only through connect.html and the extension itself, or any page the bridge reaches could send
+  // everything elsewhere)
+  saveSettings: (patch) => S.saveSettings(Object.fromEntries(Object.entries(patch || {}).filter(([k]) => !PRIVATE_SETTINGS.has(k)))),
   // ops: array of store ops, applied atomically; returns array of results. A remove marked `trash` (a
   // delete) keeps what it removed in Recently deleted.
   async apply(ops) {
@@ -822,6 +825,7 @@ const handlers = {
   getShortcuts: () => chrome.commands.getAll().then((cs) => Object.fromEntries(cs.map((c) => [c.name, c.shortcut || '']))),
 };
 
+const PRIVATE_SETTINGS = new Set(['server', 'serverUser', 'dashboardUrl', 'lastGroupId']);
 async function handle(msg, senderTab) {
   const fn = handlers[msg?.cmd];
   if (!fn) throw new Error('unknown command ' + msg?.cmd);
@@ -990,7 +994,38 @@ async function disconnectServer() {
   if (server) await chrome.permissions.remove({ origins: hostPatterns(server) }).catch(() => {});
   return true;
 }
-const SERVER_CMDS = { connectServer, disconnectServer };
+// A page on this computer (localhost, 127.0.0.1: any program here may serve one) is linked up with the extension only
+// once the user has allowed its address, in a window of the extension's own (allow.html); tabcat.ghyeok.com and the
+// connected server's dashboard always are
+const ALLOWED_KEY = 'tabcat:allowedOrigins';
+const isLocal = (origin) => { try { return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname); } catch { return false; } };
+async function originAllowed(origin) {
+  if (!isLocal(origin)) return true;
+  const { server } = await S.loadSettings();
+  if (server && origin === server) return true;
+  return ((await chrome.storage.local.get(ALLOWED_KEY))[ALLOWED_KEY] || []).includes(origin);
+}
+const asking = new Map(); // origin -> the window asking
+async function askToAllow(origin) {
+  if (asking.has(origin)) { chrome.windows.update(asking.get(origin), { focused: true }).catch(() => {}); return; }
+  asking.set(origin, null);
+  const { theme, accent } = await S.loadSettings();
+  const q = new URLSearchParams({ origin, theme, accent, hue: S.ACCENT_HUES[accent] ?? '' });
+  const w = await chrome.windows.create({ url: `allow.html?${q}`, type: 'popup', width: 440, height: 260, focused: true }).catch(() => null);
+  if (!w) { asking.delete(origin); return; }
+  asking.set(origin, w.id);
+  const gone = (id) => { if (id !== w.id) return; asking.delete(origin); chrome.windows.onRemoved.removeListener(gone); };
+  chrome.windows.onRemoved.addListener(gone);
+}
+async function allowOrigin({ origin }) {
+  if (!isLocal(origin)) return false;
+  const list = (await chrome.storage.local.get(ALLOWED_KEY))[ALLOWED_KEY] || [];
+  if (!list.includes(origin)) await chrome.storage.local.set({ [ALLOWED_KEY]: [...list, origin] });
+  // (its pages, waiting: loaded again, linked up now)
+  for (const t of await chrome.tabs.query({})) { try { if (new URL(t.url).origin === origin) chrome.tabs.reload(t.id); } catch { /* no page */ } }
+  return true;
+}
+const SERVER_CMDS = { connectServer, disconnectServer, allowOrigin };
 // (the registration and the permission can go apart: taken back in chrome://extensions, the server is gone)
 async function checkServer() {
   const { server } = await S.loadSettings();
@@ -1099,6 +1134,8 @@ function shown(sync) {
 
 class SyncError extends Error {}
 async function syncApi(s, path, { method = 'GET', json } = {}) {
+  // (only to a server the user let the extension talk to (connect.html asked the browser): never one set some other way)
+  if (!(await chrome.permissions.contains({ origins: hostPatterns(s.server) }))) { checkServer(); throw new SyncError('not-allowed'); }
   const opts = { method, credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(20000), headers: { 'X-Tabcat-Account': s.serverUser } };
   if (json !== undefined) {
     const { body, headers } = await Y.packed(json);
@@ -1423,11 +1460,12 @@ const ports = new Set();
 
 chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'tabcat-bridge' || !port.sender?.tab) return;
-  ports.add(port);
-  syncSoon(0); // (a dashboard opening: up to date with the server)
-  sendTabsSoon(0, true); // (signed in again, maybe: told at once, a browser hidden from the list is shown again then)
-  port.onDisconnect.addListener(() => { ports.delete(port); markEditing(port.sender.tab.id, false); });
+  // (a page on this computer not allowed yet: nothing for it (no answers, nothing sent its way); the user asked)
+  const origin = new URL(port.sender.url || port.sender.tab.url).origin;
+  const allowed = originAllowed(origin);
+  // (listened to at once, what comes meanwhile answered once it's known whether the page may)
   port.onMessage.addListener(async (msg) => {
+    if (!(await allowed)) { if (!('editing' in msg)) port.postMessage({ reply: msg.id, error: 'not-allowed' }); return; }
     if ('editing' in msg) return markEditing(port.sender.tab.id, msg.editing);
     try {
       // (connected to a server, only its dashboard has the data: another one is told where it is)
@@ -1442,6 +1480,11 @@ chrome.runtime.onConnect.addListener(async (port) => {
       port.postMessage({ reply: msg.id, error: e.message });
     }
   });
+  if (!(await allowed)) { askToAllow(origin); return; }
+  ports.add(port);
+  syncSoon(0); // (a dashboard opening: up to date with the server)
+  sendTabsSoon(0, true); // (signed in again, maybe: told at once, a browser hidden from the list is shown again then)
+  port.onDisconnect.addListener(() => { ports.delete(port); markEditing(port.sender.tab.id, false); });
   // remember where the dashboard lives so the popup / shortcut can open it
   const url = port.sender.url || port.sender.tab.url;
   if (url) {

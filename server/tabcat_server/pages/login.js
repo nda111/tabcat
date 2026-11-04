@@ -13,7 +13,12 @@ if (linked) ($('#username').value && !$('#username').closest('label').hidden ? $
 
 async function main() {
   const params = new URLSearchParams(location.search);
-  const next = /^\/(?!\/)/.test(params.get('next') || '') ? params.get('next') : '/';
+  // (where to go after: a page of this server only, read as the browser reads it (so "/\\evil.com" and the like,
+  // which browsers take for another site, don't pass), and kept to its path)
+  const next = (() => {
+    try { const u = new URL(params.get('next') || '/', location.origin); return u.origin === location.origin ? u.pathname + u.search + u.hash : '/'; }
+    catch { return '/'; }
+  })();
   const info = await api('server');
   // signing up: when anyone may, or by invitation (its code from the link, or typed); closed: never, links too
   const invite = info.signup === 'invite' ? params.get('invite') || '' : '';

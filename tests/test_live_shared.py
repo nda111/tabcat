@@ -44,7 +44,7 @@ n_ev = lambda pg, sel: pg.evaluate(f"[...document.querySelectorAll('{sel} .event
 errors = []
 with sync_playwright() as p:
     b = p.chromium.launch()
-    one, two = b.new_context(), b.new_context()
+    one, two = b.new_context(bypass_csp=True), b.new_context(bypass_csp=True)
     one.add_init_script(COUNT)
     a = one.new_page(); a.on('pageerror', lambda e: errors.append(str(e)))
     a.goto(SERVER + '/setup'); call(a, 'POST', '/api/setup', {'username': 'boss', 'password': 'correct horse'})
@@ -66,7 +66,7 @@ with sync_playwright() as p:
     check(all(soon(pg, "document.querySelector('#name-view')?.textContent === 'Boss' || document.querySelector('#users b')?.textContent === 'Boss'") for pg in pages), 'and they all still hear')
 
     # (no locks: a note in storage)
-    three = b.new_context(); three.add_init_script(COUNT); three.add_init_script(NOLOCKS)
+    three = b.new_context(bypass_csp=True); three.add_init_script(COUNT); three.add_init_script(NOLOCKS)
     n = three.new_page(); n.goto(SERVER + '/login'); call(n, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
     plain = [three.new_page() for _ in range(3)]
     for pg in plain: pg.goto(SERVER + '/account')
@@ -114,7 +114,7 @@ with sync_playwright() as p:
     check(items == ['Suspend account', 'Reset password', 'Delete'], f'its menu: suspend, a new password, delete ({items})')
     adm.keyboard.press('Escape')
     check(until(lambda: not adm.evaluate("document.querySelector('#row-menu').matches(':popover-open')")), 'Escape: shut')
-    four = b.new_context(); four.add_init_script(COUNT)
+    four = b.new_context(bypass_csp=True); four.add_init_script(COUNT)
     ann = four.new_page(); ann.goto(SERVER + '/login'); call(ann, 'POST', '/api/login', {'username': 'ann', 'password': 'annpass123'})
     ann.goto(SERVER + '/account'); time.sleep(1.2)
     check(ann.locator('#admin-link').is_hidden(), 'a member: no admin button')
@@ -160,7 +160,7 @@ with sync_playwright() as p:
     acc.close()
 
     # the record: 15 a page
-    bad = b.new_context().new_page(); bad.goto(SERVER + '/login')
+    bad = b.new_context(bypass_csp=True).new_page(); bad.goto(SERVER + '/login')
     for i in range(20): call(bad, 'POST', '/api/login', {'username': f'ghost{i}', 'password': 'wrongwrong'})
     adm.reload(); adm.wait_for_selector('#events .event')
     total = adm.evaluate("fetch('/api/admin/events?limit=1').then(r => r.json()).then(r => r.total)")

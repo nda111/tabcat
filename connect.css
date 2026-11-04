@@ -10,3 +10,6 @@ body.connect { padding: 16px 18px; }
 .connect .msg { min-height: 1.45em; margin: 8px 0 10px; font-size: 12px; color: var(--muted); }
 .connect .msg.error { color: var(--danger, #d64545); }
 .connect .actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* the address asking to be allowed (allow.html) */
+.allow-origin { margin: 4px 0 8px; font-weight: 600; overflow-wrap: anywhere; }

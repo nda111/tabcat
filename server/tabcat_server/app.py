@@ -12,11 +12,14 @@ import secrets
 import mimetypes
 import tempfile
 import time
+import shutil
 from collections import deque
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.background import BackgroundTask
 
 from . import __version__, auth, dashboard, hangul, tailscale, totp, updates
 from .db import DB
@@ -38,7 +41,8 @@ def create_app(config) -> FastAPI:
     db.purge_events()    # (the security record's old entries too)
     if not os.environ.get('TABCAT_NO_UPDATES'):  # (tests: no looking things up on GitHub)
         updates.keep_up(db, config, dashboard)
-    tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when); see login)
+    tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when, kept signed in, wrong codes); see login)
+    TICKET_TRIES = 5
     throttle = auth.Throttle(lambda: (int(db.setting('login_tries')), int(db.setting('login_lock_minutes')) * 60))
     app = FastAPI(title='tabcat server', version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.db, app.state.config = db, config
@@ -223,6 +227,8 @@ def create_app(config) -> FastAPI:
         # and small: read only up to MAX_BODY (sync: MAX_SYNC_BODY), however it's sent)
         if request.headers.get('content-type', '').split(';')[0] != 'application/json':
             raise HTTPException(415, 'JSON expected')
+        if hasattr(request.state, 'body'):  # (read once already, by a check before: the same again)
+            return request.state.body
         limit = limit_for(request.url.path)
         raw = bytearray()
         async for chunk in request.stream():
@@ -246,7 +252,8 @@ def create_app(config) -> FastAPI:
             data = json.loads(raw or b'{}')
         except Exception:
             raise HTTPException(400, 'bad JSON')
-        return data if isinstance(data, dict) else {}
+        request.state.body = data if isinstance(data, dict) else {}
+        return request.state.body
 
     # (who's asking: the connection's address, or, from a trusted proxy, the one it says it's passing on:
     # uvicorn does that, believing only config.trusted_proxies)
@@ -274,7 +281,17 @@ def create_app(config) -> FastAPI:
     @app.middleware('http')
     async def guard(request: Request, call_next):
         if request.url.path.startswith('/api/'):
-            if int(request.headers.get('content-length') or 0) > limit_for(request.url.path):
+            # (a change asked from another site, or another port or subdomain of this one (the browser says which):
+            # refused, the extension's own aside. SameSite cookies don't stop a page on localhost:3000 posting to
+            # localhost:8080, nor a request with no body, which the JSON check (see body) doesn't see)
+            if request.method not in ('GET', 'HEAD', 'OPTIONS') and request.headers.get('sec-fetch-site') in ('cross-site', 'same-site') \
+                    and not request.headers.get('origin', '').startswith(('chrome-extension://', 'moz-extension://')):
+                return JSONResponse({'detail': 'not from another site'}, 403)
+            try:
+                length = int(request.headers.get('content-length') or 0)
+            except ValueError:
+                return JSONResponse({'detail': 'bad content-length'}, 400)
+            if length > limit_for(request.url.path):
                 return JSONResponse({'detail': 'too large'}, 413)
             now, who = time.time(), client(request)
             q = hits.setdefault(who, deque())
@@ -302,8 +319,14 @@ def create_app(config) -> FastAPI:
 
     # ---------- pages ----------
 
+    # (the server's own pages: their scripts and styles from here only (Google's fonts aside), nothing written into a
+    # page run, nothing of theirs shown in another site's frame. The dashboard has its own, in its page)
+    PAGE_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; "
+                "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
+
     def page(name: str) -> FileResponse:
-        return FileResponse(PAGES / name, headers=NO_STORE)
+        return FileResponse(PAGES / name, headers={**NO_STORE, 'Content-Security-Policy': PAGE_CSP})
 
     @app.get('/login')
     def login_page(request: Request):
@@ -390,10 +413,10 @@ def create_app(config) -> FastAPI:
         # (two-step sign-in on: not yet; a ticket for a few minutes, to come back with a code)
         if u['totp_secret']:
             now = time.time()
-            for k in [k for k, (_, exp, _k) in tickets.items() if exp < now]:
+            for k in [k for k, v in tickets.items() if v[1] < now]:
                 tickets.pop(k, None)
             ticket = secrets.token_urlsafe(24)
-            tickets[ticket] = (u['id'], now + 300, keep)
+            tickets[ticket] = (u['id'], now + 300, keep, 0)
             return {'need': 'code', 'ticket': ticket}
         log('login_ok', request, user=u)
         return sign_in(request, u['id'], keep)
@@ -405,7 +428,7 @@ def create_app(config) -> FastAPI:
         who = client(request)
         if throttle.blocked(who):
             raise HTTPException(429, 'too many tries: wait a few minutes')
-        uid, exp, keep = tickets.get(str(data.get('ticket', '')), (None, 0, True))
+        uid, exp, keep = tickets.get(str(data.get('ticket', '')), (None, 0, True))[:3]
         if not uid or exp < time.time():
             raise HTTPException(401, 'start again: the sign-in took too long')
         u = db.one('select * from users where id = ? and disabled = 0', uid)
@@ -421,6 +444,14 @@ def create_app(config) -> FastAPI:
             if h not in hashes:
                 throttle.failed(who)
                 log('twofa_fail', request, user=u)
+                # (so many wrong codes: the sign-in starts again, from the password, whatever address they come from)
+                t = str(data.get('ticket'))
+                if t in tickets:
+                    tid, texp, tkeep, wrong = tickets[t]
+                    if wrong + 1 >= TICKET_TRIES:
+                        tickets.pop(t, None)
+                    else:
+                        tickets[t] = (tid, texp, tkeep, wrong + 1)
                 raise HTTPException(401, 'wrong code')
             hashes.remove(h)
             db.run('update users set recovery = ? where id = ?', json.dumps(hashes), uid)
@@ -533,7 +564,7 @@ def create_app(config) -> FastAPI:
     # last admin can't go
     @app.delete('/api/me')
     async def delete_me(request: Request):
-        u = need_user(request)
+        u = await with_password(request)  # (the password too: a session left open somewhere can't end the account)
         data = await body(request)
         if data.get('confirm') is not True:
             raise HTTPException(400, 'not confirmed')
@@ -548,8 +579,8 @@ def create_app(config) -> FastAPI:
 
     # ---------- two-step sign-in (optional: each account turns it on, or not) ----------
     @app.post('/api/me/2fa/start')
-    def twofa_start(request: Request):
-        u = need_user(request)
+    async def twofa_start(request: Request):
+        u = await with_password(request)  # (the password first: a session left open can't lock its owner out with a phone of its own)
         secret = totp.new_secret()
         db.run('update users set totp_pending = ? where id = ?', secret, u['id'])
         issuer = f'tabcat ({request.url.hostname})'
@@ -958,6 +989,9 @@ def create_app(config) -> FastAPI:
     # `admin`. Each listener a queue; at most so many an account.
     listeners: dict[int, set] = {}
     LISTENERS = 20
+    STREAMS_FROM = 40   # (from one address, at most: a few accounts can't hold every connection the server takes)
+    STREAMS = 150       # (in all: room left for everything else (the server takes 200 at once))
+    streams_from: dict[str, int] = {}
 
     def notify(uids, kind, data=None):
         # (most changes are made in handlers on worker threads: a queue of the event loop's, put to from there, wouldn't
@@ -1006,8 +1040,10 @@ def create_app(config) -> FastAPI:
         import asyncio
         u = need_user(request)
         mine = listeners.setdefault(u['id'], set())
-        if len(mine) >= LISTENERS:
+        who = client(request)
+        if len(mine) >= LISTENERS or streams_from.get(who, 0) >= STREAMS_FROM or sum(streams_from.values()) >= STREAMS:
             raise HTTPException(429, 'too many listening')
+        streams_from[who] = streams_from.get(who, 0) + 1
         q = asyncio.Queue(maxsize=50)
         q.loop = asyncio.get_running_loop()  # (for notify, from other threads)
         # (and the browser's other accounts, signed in beside it: one of them changed, `accounts`, for the list of them)
@@ -1051,6 +1087,10 @@ def create_app(config) -> FastAPI:
             finally:
                 for uid in uids:
                     listeners.get(uid, set()).discard(q)
+                if streams_from.get(who, 0) <= 1:
+                    streams_from.pop(who, None)
+                else:
+                    streams_from[who] -= 1
 
         return StreamingResponse(stream(), media_type='text/event-stream', headers={**NO_STORE, 'X-Accel-Buffering': 'no'})
 
@@ -1150,10 +1190,16 @@ def create_app(config) -> FastAPI:
                auth.token_hash(request.cookies.get(auth.COOKIE, ''))[:16], u['session_created'] or 0)
         # (the same browser, signed in to another account before: no longer shown to that one, its tabs gone; kept
         # there with the name given it in that account, for when it comes back)
-        before = [r['user_id'] for r in db.q('select user_id from device_tabs where device = ? and user_id != ? and session is not null', device, u['id'])]
+        # (only this very browser's: one of its own sign-ins, or one ended since; a browser's id alone, which others in
+        # a share can see, isn't enough to blank someone else's)
+        mine = {auth.token_hash(t)[:16] for t, _ in accounts_of(request) if t}
+        live = lambda r: db.one('select 1 from sessions where substr(token, 1, 16) = ? and expires_at > ?', r['session'], time.time())
+        before = [r for r in db.q('select user_id, session from device_tabs where device = ? and user_id != ? and session is not null', device, u['id'])
+                  if r['session'] in mine or not live(r)]
+        for r in before:
+            db.run('''update device_tabs set session = null, body = '{"windows":[]}' where device = ? and user_id = ?''', device, r['user_id'])
         if before:
-            db.run('''update device_tabs set session = null, body = '{"windows":[]}' where device = ? and user_id != ?''', device, u['id'])
-            notify(before, 'tabs')
+            notify([r['user_id'] for r in before], 'tabs')
         notify([u['id']], 'tabs')
         return {'ok': True}
 
@@ -1269,6 +1315,8 @@ def create_app(config) -> FastAPI:
     EDITS = ('owner', 'manager', 'editor')  # (may change it)
     RANK = "case m.role when 'owner' then 0 when 'manager' then 1 when 'editor' then 2 else 3 end"
     MAIL_KEEP_DAYS = 30  # (mail put away: kept this long, for undoing)
+    MAX_INVITES_WAITING = 50  # (an account's invites not answered yet, at most)
+    MAX_SHARES = 200  # (workspaces an account shares, at most)
 
     def share_role(sid, uid):
         r = db.one('select role from share_members where share_id = ? and user_id = ?', sid, uid)
@@ -1355,6 +1403,8 @@ def create_app(config) -> FastAPI:
             had = db.one('select s.id from shares s join share_members m on m.share_id = s.id where s.root = ? and m.user_id = ?', root, u['id'])
             if had:
                 return {'id': had['id'], 'created': False}
+            if db.one("select count(*) n from share_members where user_id = ? and role = 'owner'", u['id'])['n'] >= MAX_SHARES:
+                raise HTTPException(429, 'too many shared workspaces')
             sid = secrets.token_hex(12)
             now = time.time()
             w = doc['workspaces'][0]
@@ -1439,7 +1489,10 @@ def create_app(config) -> FastAPI:
         need_share(request, sid, EDITS, user=u)
         data = await body(request)
         seq = data.get('seq')
-        if not isinstance(seq, int) or seq < 0 or seq > share_head(sid) or not isinstance(data.get('body'), dict):
+        doc, root = data.get('body'), db.one('select root from shares where id = ?', sid)['root']
+        # (its one workspace, the shared one, as when it was shared: nothing else put in members' data)
+        if not isinstance(seq, int) or seq < 0 or seq > share_head(sid) or not isinstance(doc, dict) or not isinstance(doc.get('workspaces'), list) \
+                or len(doc['workspaces']) != 1 or not isinstance(doc['workspaces'][0], dict) or doc['workspaces'][0].get('id') != root:
             raise HTTPException(400, 'bad snapshot')
         with db.lock:
             have = db.one('select seq from share_snapshots where share_id = ?', sid)
@@ -1454,11 +1507,13 @@ def create_app(config) -> FastAPI:
     def drop_share(sid: str, request: Request):
         """The owner: deleted, for everyone. Anyone else: leaving it."""
         u = sync_user(request)
-        _, role = need_share(request, sid, user=u)
-        if role == 'owner':
-            end_share(sid, u)
-        else:
-            db.run('delete from share_members where share_id = ? and user_id = ?', sid, u['id'])
+        with db.lock:  # (as set_role: looked at and done as one)
+            _, role = need_share(request, sid, user=u)
+            if role == 'owner':
+                end_share(sid, u)
+            else:
+                db.run('delete from share_members where share_id = ? and user_id = ?', sid, u['id'])
+        if role != 'owner':
             notify(share_users(sid) + [u['id']], 'shares')
             owner_left_mail(sid, u)
         return {'ok': True}
@@ -1511,8 +1566,14 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, 'already in it')
         if db.one("select 1 from mail where share_id = ? and to_id = ? and kind = 'invite' and answer is null", sid, to['id']):
             raise HTTPException(409, 'already asked')
+        # (so many waiting for an answer at once at most, from one account: no one's mailbox flooded)
+        if db.one("select count(*) n from mail where from_id = ? and kind = 'invite' and answer is null", u['id'])['n'] >= MAX_INVITES_WAITING:
+            raise HTTPException(429, 'too many invites waiting')
+        # (named as the share is, not as asked: an invite can't call a workspace something it isn't)
+        sh = db.one('select name, symbol from shares where id = ?', sid)
+        name, symbol = (sh['name'], sh['symbol']) if sh and sh['name'] else (str(data.get('name') or '')[:100], str(data.get('symbol') or '')[:40])
         db.run("insert into mail (to_id, from_id, from_name, kind, share_id, ws_name, ws_symbol, role, at) values (?, ?, ?, 'invite', ?, ?, ?, ?, ?)",
-               to['id'], u['id'], u['username'], sid, str(data.get('name') or '')[:100], str(data.get('symbol') or '')[:40], role, time.time())
+               to['id'], u['id'], u['username'], sid, name, symbol, role, time.time())
         notify([to['id']], 'mail')
         notify(share_users(sid), 'shares')
         return share_info(sid, u['id'])
@@ -1534,18 +1595,21 @@ def create_app(config) -> FastAPI:
         """The owner changes what someone may do; making them the owner hands it on (the owner a manager then). A
         manager changes what anyone but the owner may do (their own too, down to an editor or a viewer), never making
         anyone the owner."""
-        u, mine = need_share(request, sid, ('owner', 'manager'))
+        u = need_user(request)
         role = (await body(request)).get('role')
         if role not in ROLES:
             raise HTTPException(400, 'as what?')
-        theirs = share_role(sid, uid)
-        if not theirs:
-            raise HTTPException(404, 'not in it')
-        if mine == 'owner' and uid == u['id']:
-            raise HTTPException(409, 'hand it on to someone else')
-        if mine == 'manager' and (role == 'owner' or theirs == 'owner'):
-            raise HTTPException(403, 'owners only')
+        # (who may, and to whom, looked at and done as one: two at once (the ownership handed to two, or someone made
+        # the owner as they're made a viewer) can't leave two owners, or none)
         with db.lock:
+            _, mine = need_share(request, sid, ('owner', 'manager'), user=u)
+            theirs = share_role(sid, uid)
+            if not theirs:
+                raise HTTPException(404, 'not in it')
+            if mine == 'owner' and uid == u['id']:
+                raise HTTPException(409, 'hand it on to someone else')
+            if mine == 'manager' and (role == 'owner' or theirs == 'owner'):
+                raise HTTPException(403, 'owners only')
             if role == 'owner':
                 db.run("update share_members set role = 'manager' where share_id = ? and user_id = ?", sid, u['id'])
             db.run('update share_members set role = ? where share_id = ? and user_id = ?', role, sid, uid)
@@ -1555,16 +1619,18 @@ def create_app(config) -> FastAPI:
     @app.delete('/api/shares/{sid}/members/{uid}')
     def remove_member(sid: str, uid: int, request: Request):
         """The owner lets someone go (or anyone else leaves: themselves)."""
-        u, role = need_share(request, sid)
-        if uid == u['id']:
-            if role == 'owner':
-                raise HTTPException(409, 'hand it on first')
-        elif role != 'owner':
-            raise HTTPException(403, 'owners only')
-        if not share_role(sid, uid):
-            raise HTTPException(404, 'not in it')
-        others = share_users(sid)
-        db.run('delete from share_members where share_id = ? and user_id = ?', sid, uid)
+        with db.lock:  # (as set_role: looked at and done as one)
+            u, role = need_share(request, sid)
+            if uid == u['id']:
+                if role == 'owner':
+                    raise HTTPException(409, 'hand it on first')
+            elif role != 'owner':
+                raise HTTPException(403, 'owners only')
+            theirs = share_role(sid, uid)
+            if not theirs or theirs == 'owner' and uid != u['id']:
+                raise HTTPException(404, 'not in it')
+            others = share_users(sid)
+            db.run('delete from share_members where share_id = ? and user_id = ?', sid, uid)
         notify(others, 'shares')
         if uid == u['id']:
             owner_left_mail(sid, u)
@@ -1602,7 +1668,7 @@ def create_app(config) -> FastAPI:
             if scores:
                 found.append((min(scores), r['username'].lower(), r))
         found.sort(key=lambda x: x[:2])
-        return {'users': [person(r) for _, _, r in found[:30]]}
+        return {'users': [{**person(r), 'twofa': False} for _, _, r in found[:30]]}  # (whether they have 2FA: not said to strangers)
 
     def mail_item(r) -> dict:
         frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None
@@ -1710,7 +1776,8 @@ def create_app(config) -> FastAPI:
         need_admin(request)
         tmp = Path(tempfile.mkdtemp()) / f'tabcat-{time.strftime("%Y%m%d-%H%M%S")}.db'
         db.backup_to(tmp)
-        return FileResponse(tmp, filename=tmp.name, media_type='application/octet-stream')
+        # (the copy gone once sent: no copies of everyone's data left lying in the temporary folder)
+        return FileResponse(tmp, filename=tmp.name, media_type='application/octet-stream', background=BackgroundTask(shutil.rmtree, tmp.parent, ignore_errors=True))
 
     @app.api_route('/api/{rest:path}', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
     def api_missing(rest: str):
@@ -1732,6 +1799,9 @@ def create_app(config) -> FastAPI:
             if not dashboard.present(folder):
                 return page('nodashboard.html')
             return FileResponse(folder / 'index.html', headers=NO_STORE)
+        # (nothing hidden: a file or folder named with a dot (a .git checkout's, say) isn't the dashboard's to hand out)
+        if any(part.startswith('.') for part in Path(path).parts):
+            raise HTTPException(404)
         f = (folder / path).resolve()
         if folder.resolve() not in f.parents or not f.is_file():
             # (a path without an extension, like /privacy: its .html)
@@ -1744,6 +1814,31 @@ def create_app(config) -> FastAPI:
         if f.name.endswith('.webmanifest'):
             media = 'application/manifest+json'
         return FileResponse(f, media_type=media, headers={'Cache-Control': 'no-cache'})
+
+    # ---------- what went wrong, said as a page ----------
+    # A page asked for in the browser that can't be shown (no such page, not allowed, too many requests, the server's
+    # own failing...): a page saying so, in the look and language of the others (error.html), with the way back. The
+    # API, and anything not asking for a page, is answered as ever: JSON.
+    ERROR_KEYS = {400: '400', 403: '403', 404: '404', 405: '405', 413: '413', 429: '429', 500: '500', 502: '503', 503: '503', 504: '503'}
+
+    def error_page(request: Request, code: int):
+        if request.url.path.startswith('/api/') or 'text/html' not in request.headers.get('accept', ''):
+            return None
+        html = (PAGES / 'error.html').read_text(encoding='utf-8')
+        html = html.replace('{{code}}', str(code)).replace('{{key}}', ERROR_KEYS.get(code, 'Other'))
+        html = html.replace('{{retry}}', '' if code in (429, 502, 503, 504) else 'hidden')  # (what may pass: tried again)
+        return HTMLResponse(html, code, headers={**NO_STORE, 'Content-Security-Policy': PAGE_CSP})
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException):
+        return error_page(request, exc.status_code) or JSONResponse({'detail': exc.detail}, exc.status_code, headers=getattr(exc, 'headers', None))
+
+    @app.exception_handler(Exception)
+    async def server_error(request: Request, exc: Exception):
+        # (the server's own failing: what happened, in its log for whoever runs it; to the browser, only that it did)
+        import logging
+        logging.getLogger('tabcat').exception('unhandled error on %s %s', request.method, request.url.path)
+        return error_page(request, 500) or JSONResponse({'detail': 'something went wrong on the server'}, 500)
 
     return app
 

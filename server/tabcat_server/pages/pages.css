@@ -614,3 +614,11 @@ select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%);
 /* under one's own record: what to do if something there wasn't you */
 .ev-act { margin: 8px 0 0; }
 .ev-act .link-btn { font-size: inherit; }
+
+/* a page that couldn't be shown (error.html): its number large, in the accent, over what it means */
+.err-card { text-align: left; }
+.err-code { margin: 0 0 4px; font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums;
+  animation: err-in .6s cubic-bezier(.34, 1.32, .64, 1) .08s backwards; }
+@keyframes err-in { from { opacity: 0; transform: translateY(8px) scale(.92); } }
+.err-card h1 { margin-top: 6px; }
+.err-card .row { flex-wrap: wrap; }

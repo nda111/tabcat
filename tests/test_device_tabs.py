@@ -161,7 +161,7 @@ with sync_playwright() as p:
 
     # put in order: B gets a third browser's tabs (straight to the server), then drags one head above the other
     import json as _j
-    cc = p.chromium.launch().new_context(); cp = cc.new_page(); cp.goto(SERVER + '/login')
+    cc = p.chromium.launch().new_context(bypass_csp=True); cp = cc.new_page(); cp.goto(SERVER + '/login')
     cp.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'boss', password: 'correct horse' }) })")
     cp.evaluate("fetch('/api/sync/tabs', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ device: 'third', name: 'Third', windows: [{ tabs: [{ url: 'https://example.com/' }] }] }) })")
     wait(lambda: bd.locator('.devs .dev').count() == 2, 'third', timeout=10)

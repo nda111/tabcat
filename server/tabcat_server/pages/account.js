@@ -112,9 +112,12 @@ function twofaView() {
   }
 }
 async function startTwofa(setup, button) {
+  // (the password first: a session left open somewhere can't turn it on with a phone of its own)
+  const password = await modal({ title: t('twofaOn'), text: t('twofaPwText'), ok: t('twofaPwOk'), password: true });
+  if (!password) return;
   button.disabled = true;
   try {
-    const s = await api('me/2fa/start', { method: 'POST' });
+    const s = await api('me/2fa/start', { method: 'POST', body: { password } });
     const code = h('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '6', placeholder: '123456', class: 'code-input' });
     const msg = h('p', { class: 'msg' });
     const qr = h('div', { class: 'qr' }); qr.innerHTML = s.qr;
@@ -348,9 +351,11 @@ function onlyAdmin(only, animate = false) {
 onlyAdmin(!!me.only_admin);
 $('#delete-me').addEventListener('click', async () => {
   const phrase = t('deletePhrase', { name: me.username });
-  if (!(await modal({ title: t('deleteAccount'), text: t('deleteAccountText', { phrase }), input: phrase, ok: t('deleteAccount'), danger: true }))) return;
+  // (the phrase typed out, and the password: a session left open somewhere can't end the account)
+  const password = await modal({ title: t('deleteAccount'), text: t('deleteAccountText', { phrase }), input: phrase, password: true, ok: t('deleteAccount'), danger: true });
+  if (!password) return;
   try {
-    await api('me', { method: 'DELETE', body: { confirm: true } });
+    await api('me', { method: 'DELETE', body: { confirm: true, password } });
     location.replace('/login');
   } catch (err) { say($('#delete-msg'), err.message, 'error'); }
 });

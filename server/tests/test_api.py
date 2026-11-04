@@ -27,6 +27,9 @@ check(c.get('/').headers.get('location') == '/setup', 'no account yet: / goes to
 check(c.get('/manifest.webmanifest').json()['name'] == 'tabcat', "the dashboard's manifest is public (the extension looks at it)")
 check(c.get('/api/server').json()['setup'] is True, '/api/server says it needs setting up')
 check(c.post('/api/setup', data='x').status_code == 415, 'the API takes JSON only')
+check(c.post('/api/logout', headers={'Sec-Fetch-Site': 'same-site'}).status_code == 403 and c.post('/api/logout', headers={'Sec-Fetch-Site': 'cross-site', 'Origin': 'http://localhost:3000'}).status_code == 403,
+      "a change asked from another site, or another port of this one: refused")
+check(c.post('/api/setup', json=J(username='a', password='12345678'), headers={'Sec-Fetch-Site': 'cross-site', 'Origin': 'chrome-extension://abc'}).status_code == 400, "the extension's own: let through")
 check(c.post('/api/setup', json=J(username='a', password='12345678')).status_code == 400, 'a one-letter username is refused')
 r = c.post('/api/setup', json=J(username='boss', password='correct horse'))
 check(r.status_code == 200 and 'tabcat_session' in r.cookies, 'the first account is made, and signed in')
@@ -82,7 +85,8 @@ check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite
 check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()], 'the admin sees who used it')
 
 # deleting your own account (the last admin can't)
-check(n2.request('DELETE', '/api/me', json={'confirm': True}).status_code == 200 and n2.get('/api/me').status_code == 401, 'a user deletes their own account, and is signed out')
+check(n2.request('DELETE', '/api/me', json={'confirm': True}).status_code == 403, 'deleting your account: not without your password')
+check(n2.request('DELETE', '/api/me', json={'confirm': True, 'password': '12345678'}).status_code == 200 and n2.get('/api/me').status_code == 401, 'a user deletes their own account, and is signed out')
 check(n2.post('/api/login', json=J(username='new2', password='12345678')).status_code == 401, 'it is gone')
 c.put('/api/admin/settings', json=J(signup='open'))
 n4 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50007))
@@ -98,7 +102,7 @@ con.executescript("create table users (id integer primary key, username text not
 con.commit(); con.close()
 from tabcat_server.db import DB
 check(DB(old_dir / 'tabcat.db').one("select space from users where username = 'old'")['space'] == '1', 'an account from before keeps its id as its data key')
-check(c.request('DELETE', '/api/me', json={'confirm': True}).status_code == 409, 'the last admin can’t delete themselves')
+check(c.request('DELETE', '/api/me', json={'confirm': True, 'password': 'correct horse'}).status_code == 409, 'the last admin can’t delete themselves')
 
 # throttling
 t = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
@@ -248,7 +252,8 @@ z = TestClient(app, follow_redirects=False, client=('192.0.2.60', 1))
 c.post('/api/admin/users', json=J(username='zed', password='zedpass99'))
 z.post('/api/login', json=J(username='zed', password='zedpass99'))
 check(z.get('/api/me').json()['twofa'] is False, 'two-step sign-in: off unless turned on')
-st = z.post('/api/me/2fa/start').json()
+check(z.post('/api/me/2fa/start', json={}).status_code == 403, 'turning 2FA on: not without the password')
+st = z.post('/api/me/2fa/start', json={'password': 'zedpass99'}).json()
 check(st['uri'].startswith('otpauth://totp/') and '<svg' in st['qr'], 'turning it on: a secret, its link and QR code')
 check(z.post('/api/me/2fa/confirm', json={'code': '000000'}).status_code == 400, 'a wrong code: not on')
 now = int(_t.time()) // 30
@@ -263,6 +268,10 @@ check(z.post('/api/login/code', json={'ticket': tk, 'code': T2._code(st['secret'
 z.post('/api/logout')
 tk = z.post('/api/login', json=J(username='zed', password='zedpass99')).json()['ticket']
 check(z.post('/api/login/code', json={'ticket': tk, 'code': rc[0].upper()}).status_code == 200, 'a recovery code signs in too')
+# wrong codes, from wherever: five, and the sign-in starts again from the password
+tk = z.post('/api/login', json=J(username='zed', password='zedpass99')).json()['ticket']
+codes = [TestClient(app, follow_redirects=False, client=(f'198.51.100.{i}', 1)).post('/api/login/code', json={'ticket': tk, 'code': '000000'}).json()['detail'] for i in range(6)]
+check(codes[:5] == ['wrong code'] * 5 and codes[5].startswith('start again'), f'five wrong 2FA codes: the sign-in starts again ({codes})')
 z.post('/api/logout')
 tk = z.post('/api/login', json=J(username='zed', password='zedpass99')).json()['ticket']
 check(z.post('/api/login/code', json={'ticket': tk, 'code': rc[0]}).status_code == 401, 'but only once')
@@ -407,14 +416,22 @@ sx.put('/api/sync/tabs', json={'device': 'pcx', 'name': 'Firefox', 'windows': [w
 check('pcx' in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'another browser of ann: listed')
 sx.post('/api/logout')
 check('pcx' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'signed out there: gone from the list at once')
-sa.put('/api/sync/tabs/pc1/name', json={'name': 'Ann desk'})
-sb.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
-check('pc1' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] and [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']] == ['pc1'],
+# one browser, signed in to ann and then to ben as well (in use now): its tabs ben's, gone from ann's list; back to
+# ann: there again, with the name ann gave it
+sw = TestClient(app, follow_redirects=False, client=('192.0.2.94', 1)); sw.post('/api/login', json=J(username='ann', password='annpass99'))
+sw.put('/api/sync/tabs', json={'device': 'pc9', 'name': 'Chrome on Windows', 'windows': [win]}); sw.put('/api/sync/tabs/pc9/name', json={'name': 'Ann desk'})
+sw.post('/api/login', json=J(username='ben', password='benpass99'))
+sw.put('/api/sync/tabs', json={'device': 'pc9', 'name': 'Chrome on Windows', 'windows': [win]})
+check('pc9' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] and 'pc9' in [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']],
       "the same browser, signed in to ben now: ben's, no longer among ann's")
-sb.put('/api/sync/tabs/pc1/name', json={'name': 'Ben desk'})
-sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
+sw.put('/api/sync/tabs/pc9/name', json={'name': 'Ben desk'})
+sw.post('/api/accounts/switch', json={'id': ann_id})
+sw.put('/api/sync/tabs', json={'device': 'pc9', 'name': 'Chrome on Windows', 'windows': [win]})
 got = {d['device']: d['name'] for d in sa.get('/api/sync/tabs').json()['devices']}
-check(got.get('pc1') == 'Ann desk' and 'pc1' not in [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']], f"back to ann: the name ann gave it, not ben's ({got})")
+check(got.get('pc9') == 'Ann desk' and 'pc9' not in [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']], f"back to ann: the name ann gave it, not ben's ({got})")
+# another browser using the same browser id (seen by someone sharing a workspace): blanks no one's
+sb.put('/api/sync/tabs', json={'device': 'pc9', 'name': 'x', 'windows': []})
+check('pc9' in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], "another browser with the same id: ann's stays")
 
 # shared workspaces and the mailbox
 ws = {'id': 'w1', 'type': 'workspace', 'name': 'Research', 'categories': []}
@@ -433,7 +450,7 @@ check(info['invites'][0]['user']['id'] == ben_id, f"the one asked: their account
 check(sa.post(f'/api/shares/{sid}/invites', json={'username': 'ben', 'role': 'viewer'}).status_code == 409, 'asked twice: refused')
 box = sb.get('/api/mail').json()
 inv = box['mail'][0]
-check(box['asking'] == 1 and inv['kind'] == 'invite' and inv['from']['username'] == 'ann' and inv['workspace'] == {'name': 'Research', 'symbol': '🔬'} and inv['role'] == 'viewer', "in ben's mailbox: the invite, from ann, for Research as a viewer")
+check(box['asking'] == 1 and inv['kind'] == 'invite' and inv['from']['username'] == 'ann' and inv['workspace'] == {'name': 'Research', 'symbol': ''} and inv['role'] == 'viewer', f"in ben's mailbox: the invite, from ann, for Research as a viewer (named as the share is, not as asked: {inv['workspace']})")
 check(sb.post('/api/mail/delete', json={'ids': [inv['id']]}).json()['ids'] == [], 'an invite not answered yet: not put away')
 check(sb.get(f'/api/sync/shares/{sid}/state').status_code == 404, 'not in it before accepting')
 check(sb.post(f'/api/mail/{inv["id"]}/answer', json={'accept': True}).json()['answer'] == 'accepted', 'ben accepts')
@@ -481,6 +498,9 @@ ws = {'id': 'w9', 'type': 'workspace', 'name': 'Plans', 'symbol': '', 'categorie
 s9 = sa.post('/api/sync/shares', json={'root': 'w9', 'body': {'workspaces': [ws]}}).json()['id']
 check([x['username'] for x in sa.get('/api/users/search', params={'q': 'be'}).json()['users']] == ['ben'] and sa.get('/api/users/search', params={'q': 'ann'}).json()['users'] == [], 'search: by username, not oneself')
 check([x['username'] for x in sa.get('/api/users/search', params={'q': 'bn'}).json()['users']] == ['ben'], "search: its letters in order, others between ('bn': ben)")
+check(all(x['twofa'] is False for x in sa.get('/api/users/search', params={'q': 'b'}).json()['users']), 'search: whether someone has 2FA, not said')
+check(sa.put(f'/api/sync/shares/{s9}/snapshot', json={'seq': 0, 'body': {'workspaces': [{'id': 'other', 'type': 'workspace', 'name': 'X', 'categories': []}]}}).status_code == 400
+      and sa.put(f'/api/sync/shares/{s9}/snapshot', json={'seq': 0, 'body': {'workspaces': []}}).status_code == 400, "a share's copy: its own workspace only, nothing else")
 sa.post('/api/sync/ops', json={'device': 'a', 'ops': []})
 sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'editor', 'name': 'Plans'})
 sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json={'accept': True})

@@ -53,8 +53,10 @@ def save_file(title: str, start: Path) -> str | None | bool:
                 got = _run(['wslpath', '-u', got])
             return got
         if platform.system() == 'Darwin':
-            script = f'POSIX path of (choose file name with prompt {title!r} default name {name!r} default location (POSIX file {folder!r}))'
-            return _run(['osascript', '-e', script.replace("'", '"')])
+            # (what's asked and the names handed over as arguments, never written into the script: a quote in them
+            # can't end a string and run something)
+            return _run(['osascript', '-e', 'on run argv', '-e', 'POSIX path of (choose file name with prompt (item 1 of argv) default name (item 2 of argv)'
+                         ' default location ((item 3 of argv) as POSIX file))', '-e', 'end run', title, name, str(folder)])
         if os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY'):
             if shutil.which('zenity'):
                 return _run(['zenity', '--file-selection', '--save', f'--title={title}', f'--filename={start}'])

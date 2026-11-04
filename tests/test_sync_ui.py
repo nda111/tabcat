@@ -162,7 +162,7 @@ with sync_playwright() as p:
     tinted = bd.evaluate("document.querySelector('#account-list .account-avatar').dataset.tint")
     check(tinted == 'hue', f"another account's letter: in its own colour ({tinted})")
     bd.evaluate(MOVED)
-    other = p.chromium.launch(); oc = other.new_context().new_page(); oc.goto(SERVER + '/login')
+    other = p.chromium.launch(); oc = other.new_context(bypass_csp=True).new_page(); oc.goto(SERVER + '/login')
     oc.evaluate("fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'ann', password: 'annpass123' }) })")
     oc.evaluate("fetch('/api/me/name', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Annie' }) })")
     try: bd.wait_for_function("document.querySelector('#account-list .account-name').textContent.startsWith('Annie')", timeout=6000); ok = True

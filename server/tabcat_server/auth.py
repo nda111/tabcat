@@ -90,7 +90,13 @@ class Throttle:
         tries, window = self.limits()
         now = time.time()
         recent = [t for t in self.seen.get(key, []) if now - t < window]
-        self.seen[key] = recent
+        if recent:
+            self.seen[key] = recent
+        else:
+            self.seen.pop(key, None)  # (nothing recent: forgotten, not kept as an empty list)
+        if len(self.seen) > 10000:  # (many addresses: those gone quiet forgotten, so it can't grow without end)
+            for k in [k for k, v in self.seen.items() if not v or now - v[-1] >= window]:
+                self.seen.pop(k, None)
         return len(recent) >= tries
 
     def failed(self, key):

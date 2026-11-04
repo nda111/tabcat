@@ -17,7 +17,7 @@ SAMSUNG = ("Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 (KHTML,
 serve()
 with sync_playwright() as p:
     b = p.chromium.launch(headless=True)
-    c = b.new_context(locale='ko-KR')
+    c = b.new_context(locale='ko-KR', bypass_csp=True)
     c.grant_permissions(['clipboard-read', 'clipboard-write'], origin=URL.rstrip('/'))
     pg = c.new_page(); pg.add_init_script(REC); pg.goto(URL); time.sleep(2.6)
     s = seen(pg)

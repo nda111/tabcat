@@ -17,6 +17,11 @@ threading.Thread(target=srv.run, daemon=True).start()
 while not srv.started: time.sleep(.05)
 code_at = lambda secret, ahead=0: totp._code(secret, int(time.time()) // 30 + ahead)
 
+# (turning it on asks for the password first)
+def turn_on(d):
+    d.click('#twofa button'); d.wait_for_selector('dialog.modal[open] input[type=password]')
+    d.fill('dialog.modal[open] input[type=password]', 'correct horse'); d.click('dialog.modal[open] button[type=submit]')
+
 errors = []
 with sync_playwright() as p:
     ctx, sw = launch(p, manifest={'host_permissions': ['*://tabcat.localhost/*']})
@@ -33,10 +38,10 @@ with sync_playwright() as p:
 
     d.goto(SERVER + '/account'); d.wait_for_selector('#twofa button'); settle(d)
     d.bring_to_front()
-    d.click('#twofa button'); d.wait_for_selector('.qr svg', timeout=5000); settle(d)
+    turn_on(d); d.wait_for_selector('.qr svg', timeout=5000); settle(d)
     d.click('.twofa-setup .btn:not(.primary)'); until(lambda: d.is_hidden('.twofa-setup') and d.is_enabled('#twofa button'))
     check(d.is_hidden('.twofa-setup') and d.is_enabled('#twofa button'), 'cancelled: the setup folds away, Turn on back')
-    d.click('#twofa button'); d.wait_for_selector('.qr svg:visible', timeout=5000); settle(d)
+    turn_on(d); d.wait_for_selector('.qr svg:visible', timeout=5000); settle(d)
     box = d.locator('.qr').bounding_box(); svg = d.locator('.qr svg').bounding_box()
     check(abs(svg['width'] - box['width']) < 3 and abs(svg['height'] - box['height']) < 3, f"the QR code fills its box, nothing cut off ({svg['width']:.0f}x{svg['height']:.0f} in {box['width']:.0f})")
     secret = d.inner_text('.secret').replace(' ', '')

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tabcat</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="fonts/pretendard.css">
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="connect.css">
+  <script src="connect-look.js"></script>
+  <script type="module" src="allow.js"></script>
+</head>
+<body class="connect">
+  <form id="form" novalidate>
+    <div class="brand"><span class="logo"></span><span data-i18n="allowTitle">Let this page use tabcat?</span></div>
+    <p class="allow-origin" id="origin"></p>
+    <p class="muted" data-i18n="allowText">It could show your saved links and open tabs, and open or close tabs. Allow it only if it's a tabcat dashboard you run yourself.</p>
+    <div class="actions">
+      <button type="button" class="btn" id="cancel" data-i18n="connectCancel">Cancel</button>
+      <button type="submit" class="btn primary" id="go" data-i18n="allowButton">Allow</button>
+    </div>
+  </form>
+</body>
+</html>
