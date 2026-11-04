@@ -23,6 +23,12 @@ def main(argv=None):
     a = ap.parse_args(argv)
     from . import config as C
     cfg = C.load(a.data_dir, a.host, a.port, a.dashboard, a.setup_from, a.admin_from, a.trusted_proxies)
+    if a.command != 'reset-server':  # (the database brought up to this version first: or, from a newer server, not opened)
+        from .db import DB, TooNew
+        try:
+            DB(cfg.db_path).conn.close()
+        except TooNew as e:
+            sys.exit(str(e))
 
     if a.command == 'reset-password':
         from . import auth

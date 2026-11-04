@@ -102,6 +102,30 @@ con.executescript("create table users (id integer primary key, username text not
 con.commit(); con.close()
 from tabcat_server.db import DB
 check(DB(old_dir / 'tabcat.db').one("select space from users where username = 'old'")['space'] == '1', 'an account from before keeps its id as its data key')
+# The database's version: a file from before it was kept is brought up (a copy kept first), numbered, and opened as
+# it is after; a new file is numbered and not copied; one from a newer server isn't opened
+from tabcat_server.db import SCHEMA_VERSION, TooNew
+old = DB(old_dir / 'tabcat.db')
+check(old.one('pragma user_version')[0] == SCHEMA_VERSION and (old_dir / 'tabcat.db.v0.bak').exists(), 'a file from before: brought up to this version, a copy kept')
+check({'avatar', 'name', 'totp_secret', 'space'} <= {r['name'] for r in old.q('pragma table_info(users)')} and old.one("select 1 from sqlite_master where name = 'mail'"), 'its columns and tables added')
+bak = sqlite3.connect(old_dir / 'tabcat.db.v0.bak')
+check(bak.execute('pragma user_version').fetchone()[0] == 0 and bak.execute("select username from users").fetchone()[0] == 'old', 'the copy is the file as it was')
+bak.close(); old.conn.close()
+before = (old_dir / 'tabcat.db.v0.bak').stat().st_mtime
+check(DB(old_dir / 'tabcat.db').one("select username from users")['username'] == 'old' and (old_dir / 'tabcat.db.v0.bak').stat().st_mtime == before
+      and len(list(old_dir.glob('*.bak'))) == 1, 'opened again: nothing to do, no copy')
+new_dir = pathlib.Path(tempfile.mkdtemp())
+fresh = DB(new_dir / 'tabcat.db')
+check(fresh.one('pragma user_version')[0] == SCHEMA_VERSION and not list(new_dir.glob('*.bak')), 'a new file: numbered, no copy')
+fresh.run(f'pragma user_version = {SCHEMA_VERSION + 1}'); fresh.conn.close()
+try:
+    DB(new_dir / 'tabcat.db'); check(False, 'a file from a newer server is refused')
+except TooNew as e:
+    check('newer' in str(e), 'a file from a newer server is refused, saying why')
+import subprocess
+r = subprocess.run([sys.executable, '-m', 'tabcat_server', 'make-admin', 'x', '--data-dir', str(new_dir)], capture_output=True, text=True,
+                   cwd=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+check(r.returncode != 0 and 'newer tabcat-server' in r.stderr and 'Traceback' not in r.stderr, f'the command line says so, not a traceback ({r.stderr.strip()[:80]})')
 check(c.request('DELETE', '/api/me', json={'confirm': True, 'password': 'correct horse'}).status_code == 409, 'the last admin can’t delete themselves')
 
 # throttling

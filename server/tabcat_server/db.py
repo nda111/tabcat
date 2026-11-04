@@ -1,4 +1,5 @@
 """The server's database: one SQLite file in the data folder (copy it to back up)."""
+import re
 import sqlite3
 import threading
 import time
@@ -132,6 +133,67 @@ create index if not exists events_user on events(user_id, at);
 DEFAULTS = {'signup': 'closed', 'session_days': '30', 'login_tries': '5', 'login_lock_minutes': '10', 'dashboard_auto': '1', 'log_days': '90'}  # signup: closed | invite | open
 
 
+class TooNew(RuntimeError):
+    """The database file is from a newer tabcat-server than this one."""
+
+
+def _statements(sql):
+    """A script's statements one by one (executescript would end the migration's transaction): its comments left
+    out, as they may hold a ';' (no string in it does)."""
+    return [x.strip() for x in re.sub(r'--[^\n]*', '', sql).split(';') if x.strip()]
+
+
+def _columns(conn, table):
+    return [r['name'] for r in conn.execute(f'pragma table_info({table})')]
+
+
+def _v1(conn):
+    """1.1.0, the first server release: the tables as SCHEMA has them. A file from while 1.1.0 was written
+    (before the version was kept) is brought up to it: the columns added along the way, if missing."""
+    for stmt in _statements(SCHEMA):
+        conn.execute(stmt)
+    cols = _columns(conn, 'users')
+    # Each account's key for its data in the browser (see the extension's spaceName): random and its own, never
+    # another's (ids come round again once the newest account goes). Accounts from before keep their id as theirs.
+    if 'space' not in cols:
+        conn.execute('alter table users add column space text')
+        conn.execute('update users set space = cast(id as text)')
+    if 'totp_secret' not in cols:  # (two-step sign-in, when turned on: see totp.py)
+        for col in ('totp_secret text', 'totp_pending text', 'totp_step integer', 'recovery text'):
+            conn.execute(f'alter table users add column {col}')
+    if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
+        conn.execute('alter table users add column name text')
+    if 'avatar' not in cols:  # (a profile photo: a small image as a data: URL, and when it was set)
+        conn.execute('alter table users add column avatar text')
+        conn.execute('alter table users add column avatar_at real')
+    if 'ip' not in _columns(conn, 'sessions'):  # (each sign-in's address and when it was last used)
+        conn.execute('alter table sessions add column ip text')
+        conn.execute('alter table sessions add column last_seen real')
+    if 'tried' not in _columns(conn, 'events'):  # (a sign-in attempt: the username tried, apart from the account)
+        conn.execute('alter table events add column tried text')
+    dcols = _columns(conn, 'device_tabs')
+    if 'label' not in dcols:  # (each browser's tabs, before they could be named or let go)
+        conn.execute("alter table device_tabs add column label text not null default ''")
+        conn.execute('alter table device_tabs add column forgotten real')
+    if 'position' not in dcols:  # (before they could be put in order, or signed out from the list)
+        conn.execute('alter table device_tabs add column position integer')
+        conn.execute('alter table device_tabs add column session text')
+    if 'name' not in _columns(conn, 'shares'):
+        conn.execute("alter table shares add column name text not null default ''")
+        conn.execute("alter table shares add column symbol text not null default ''")
+    if 'seen' not in _columns(conn, 'mail'):  # (before mail was told apart read from not)
+        conn.execute('alter table mail add column seen real')
+    conn.execute('create unique index if not exists users_space on users(space)')
+    conn.execute('create trigger if not exists users_space_new after insert on users when new.space is null '
+                 'begin update users set space = lower(hex(randomblob(12))) where id = new.id; end')
+
+
+# Each version's step from the one before (index n takes version n to n + 1). Versions:
+#   1  tabcat-server 1.1.0
+MIGRATIONS = [_v1]
+SCHEMA_VERSION = len(MIGRATIONS)
+
+
 class DB:
     def __init__(self, path):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -146,50 +208,30 @@ class DB:
             # corrupt, and a power cut may undo only the last writes. Each request notes when it was last used, so
             # waiting each time had every request take some 20 ms more)
             self.conn.execute('pragma synchronous = normal')
-            self.conn.executescript(SCHEMA)
-            # Each account's key for its data in the browser (see the extension's spaceName): random and its own,
-            # never another's (ids come round again once the newest account goes: one made after would get its
-            # data). Accounts from before keep their id as theirs, their data staying where it is.
-            if 'space' not in [r['name'] for r in self.conn.execute('pragma table_info(users)')]:
-                self.conn.execute('alter table users add column space text')
-                self.conn.execute('update users set space = cast(id as text)')
-            # (a profile photo: a small image as a data: URL, and when it was set, for its address to change with it)
-            cols = [r['name'] for r in self.conn.execute('pragma table_info(users)')]
-            # (each sign-in's address and when it was last used: the account page lists them)
-            scols = [r['name'] for r in self.conn.execute('pragma table_info(sessions)')]
-            if 'ip' not in scols:
-                self.conn.execute('alter table sessions add column ip text')
-                self.conn.execute('alter table sessions add column last_seen real')
-            if 'totp_secret' not in cols:  # (two-step sign-in, when turned on: see totp.py)
-                for col in ('totp_secret text', 'totp_pending text', 'totp_step integer', 'recovery text'):
-                    self.conn.execute(f'alter table users add column {col}')
-            ecols = [r['name'] for r in self.conn.execute('pragma table_info(events)')]
-            if ecols and 'tried' not in ecols:  # (a sign-in attempt: the username tried, apart from the account)
-                self.conn.execute('alter table events add column tried text')
-            if 'name' not in cols:  # (a name to go by, beside the username one signs in with; may be empty)
-                self.conn.execute('alter table users add column name text')
-            dcols = [r['name'] for r in self.conn.execute('pragma table_info(device_tabs)')]
-            if dcols and 'label' not in dcols:  # (each browser's tabs, before they could be named or let go)
-                self.conn.execute("alter table device_tabs add column label text not null default ''")
-                self.conn.execute('alter table device_tabs add column forgotten real')
-            if dcols and 'position' not in dcols:  # (before they could be put in order, or signed out from the list)
-                self.conn.execute('alter table device_tabs add column position integer')
-                self.conn.execute('alter table device_tabs add column session text')
-            shcols = [r['name'] for r in self.conn.execute('pragma table_info(shares)')]
-            if shcols and 'name' not in shcols:
-                self.conn.execute("alter table shares add column name text not null default ''")
-                self.conn.execute("alter table shares add column symbol text not null default ''")
-            mcols = [r['name'] for r in self.conn.execute('pragma table_info(mail)')]
-            if mcols and 'seen' not in mcols:  # (before mail was told apart read from not)
-                self.conn.execute('alter table mail add column seen real')
-            if 'avatar' not in cols:
-                self.conn.execute('alter table users add column avatar text')
-                self.conn.execute('alter table users add column avatar_at real')
-            self.conn.executescript('''
-              create unique index if not exists users_space on users(space);
-              create trigger if not exists users_space_new after insert on users when new.space is null
-              begin update users set space = lower(hex(randomblob(12))) where id = new.id; end;
-            ''')
+            self.migrate()
+
+    # The database's shape, by number (sqlite's user_version): 0 is a new file, or one made while 1.1.0 was being
+    # written (before the number was kept); each step below takes it one further, in a transaction of its own, a copy
+    # of the file kept first (<name>.v<n>.bak, beside it). A file from a newer server isn't opened: going back a
+    # version would read what it doesn't know. New changes go at the end of MIGRATIONS (never edit one released).
+    def migrate(self):
+        have = self.conn.execute('pragma user_version').fetchone()[0]
+        if have > SCHEMA_VERSION:
+            raise TooNew(f'{self.path} is from a newer tabcat-server (database version {have}; this one knows up to '
+                         f'{SCHEMA_VERSION}). Update tabcat-server, or use a copy made before.')
+        if have == SCHEMA_VERSION:
+            return
+        if have > 0 or self.conn.execute("select count(*) from sqlite_master where type = 'table'").fetchone()[0]:
+            self.backup_to(self.path.with_name(f'{self.path.name}.v{have}.bak'))  # (not for a new, empty file)
+        for n in range(have, SCHEMA_VERSION):
+            self.conn.execute('begin immediate')
+            try:
+                MIGRATIONS[n](self.conn)
+                self.conn.execute(f'pragma user_version = {n + 1}')
+                self.conn.execute('commit')
+            except BaseException:
+                self.conn.execute('rollback')
+                raise
 
     def q(self, sql, *args):
         with self.lock:
