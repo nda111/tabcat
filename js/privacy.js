@@ -5,7 +5,7 @@ import { LANGS, resolveLang } from './i18n.js';
 import { TEXT } from './privacy-text.js';
 import { scrollFeel } from './scroll-feel.js';
 
-const EFFECTIVE = new Date(2026, 10, 1);
+const EFFECTIVE = new Date(2026, 10, 4);
 
 const $ = (s) => document.querySelector(s);
 const card = $('#doc'), pick = $('#doc-lang');
