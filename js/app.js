@@ -4694,8 +4694,18 @@ B.on('state', trashChanged);
 // Updates: installed from a GitHub release, the extension doesn't update itself, so (unless turned off in
 // Settings) the dashboard looks up the latest release, at most twice a day, and when it's newer than the
 // connected extension says so: a dot on About, and in About a link to the release. Installed from the
-// Chrome Web Store, the browser updates it: none of this.
-const LATEST_RELEASE = 'https://api.github.com/repos/nda111/tabcat/releases/latest';
+// Chrome Web Store, the browser updates it: none of this. (The server is released from the same repository, tagged
+// server-v1.0.0: of the newest releases, the extension's are those tagged extension-v1.1.0, or v1.0.4 from before.)
+const RELEASES = 'https://api.github.com/repos/nda111/tabcat/releases?per_page=50';
+const EXTENSION_TAG = /^(extension-)?v(\d+(\.\d+)*)$/;
+function newestExtension(releases) {
+  let best = null;
+  for (const r of Array.isArray(releases) ? releases : []) {
+    const m = !r.draft && !r.prerelease && EXTENSION_TAG.exec(String(r.tag_name));
+    if (m && (!best || olderThan(best.version, m[2]))) best = { version: m[2], url: r.html_url };
+  }
+  return best;
+}
 const LATEST = 'tabcat:latest'; // { version, url, checkedAt } of the last look
 const CHECK_EVERY = 12 * 60 * 60 * 1000;
 let latest = null;
@@ -4706,10 +4716,10 @@ async function checkUpdates(s = settings, now = false) {
   if (extUpdatesItself || (s.checkUpdates === false && !now)) return showUpdate();
   if (now || !latest || !(Date.now() - latest.checkedAt < CHECK_EVERY)) {
     try {
-      const r = await fetch(LATEST_RELEASE, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+      const r = await fetch(RELEASES, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
       if (!r.ok) throw new Error(r.status);
-      const rel = await r.json();
-      latest = { version: String(rel.tag_name).replace(/^v/, ''), url: rel.html_url, checkedAt: Date.now() };
+      const rel = newestExtension(await r.json());
+      latest = rel && { ...rel, checkedAt: Date.now() };
       try { localStorage.setItem(LATEST, JSON.stringify(latest)); } catch { /* storage unavailable */ }
     } catch { /* offline, or GitHub said no: ask again next time */
       showUpdate();
