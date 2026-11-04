@@ -470,10 +470,12 @@ All of the extension's JavaScript is in the package. The dashboard at tabcat.ghy
 
 ## Test instructions (for the reviewer)
 
+The box takes 500 characters at most (this is 476).
+
 ```
-No account or login is needed.
-1. Install the extension: it opens a welcome page at https://tabcat.ghyeok.com/welcome; choose "Open the dashboard".
-2. Open a few web pages, then press the toolbar button and "Save this tab", or drag a tab from "Open tabs" on the dashboard onto a group.
-3. Ctrl+Shift+X opens the dashboard at any time.
-4. (Optional) Connecting to a server needs one the user runs themselves (tabcat server, https://github.com/nda111/tabcat/tree/main/server): without one, the extension works entirely on its own, as above. "Connect to a server…" in the toolbar button's right-click menu asks for an address and, only then, Chrome's permission for that address.
+No account needed.
+1. Install: a welcome page opens; choose "Open the dashboard" (https://tabcat.ghyeok.com).
+2. Save a tab with the toolbar button, or drag one from "Open tabs" onto a group.
+3. Ctrl+Shift+X opens the dashboard anytime.
+Optional: "Connect to a server…" (toolbar right-click menu) needs a tabcat server the user runs (github.com/nda111/tabcat/tree/main/server). Only then does Chrome ask for that one address's permission. Without it, everything works locally.
 ```
