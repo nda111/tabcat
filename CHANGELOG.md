@@ -1,26 +1,14 @@
 # Changelog
 
-What changed in each release of tabcat. The full notes, with how to install and update, are on [GitHub Releases](https://github.com/nda111/tabcat/releases).
+What changed in each release of the tabcat extension (the server's: [server/CHANGELOG.md](server/CHANGELOG.md)). The full notes, with how to install and update, are on [GitHub Releases](https://github.com/nda111/tabcat/releases).
 
 ## 1.1.0
 
-Your own tabcat server: your tabs in step across browsers, shared workspaces, and accounts for everyone you invite.
+Connect tabcat to a tabcat server of your own: your tabs in step across browsers, and workspaces shared with others.
 
-#### tabcat server
-
-`tabcat-server` hosts the dashboard at an address of your own, behind sign-in. Run it on a computer of yours (pip, Docker, or a service), then choose **Connect to a server** from the toolbar button's menu.
-
-- **Sync**: each account's groups, Recently deleted, look and settings (the default group, the text size) are kept the same in every browser signed in to it, live: a change made in one shows in the others at once. Changes made offline are kept and sent once the server is back. Which cards are open stays each browser's own.
-- **Your other browsers' tabs**: the tabs open in your account's other browsers, in the order you put them, each one hidden or shown as you like.
-- **Shared workspaces**: invite others to a workspace as a viewer, editor or manager; it stays in step for everyone in it. Invites, removals and leaving come as mail, in a Mailbox with a badge for what's unread.
-- **Accounts**: the first visit makes the admin. Sign-up closed, by invitation or open. A name to go by beside the username, a profile photo, several accounts in one browser (up to 5) to switch between.
-- **Security**: two-step sign-in (2FA) with recovery codes; the devices you're signed in on, any signed out of in two clicks; waits after wrong passwords; a security record of sign-ins and account changes, for you and for the admin (export as CSV).
-- **Admin page**: users (roles, suspend, reset a password), security settings, the database file's place, Tailscale HTTPS, and a newer server release said and installed from there.
-- **Pages of its own** in tabcat's look and your language, with error pages that say what went wrong.
-- **Safe by default**: the server is set up only from its own computer; changes from other sites are refused; a page on this computer (localhost) links up with the extension only once you allow it, in a window of the extension's own.
-
-#### Extension and dashboard
-
+- **Connect to a server**: from the toolbar button's menu. Run [tabcat server](https://github.com/nda111/tabcat/releases?q=server-v) on a computer of yours, and tabcat keeps each account's groups, Recently deleted, look and settings the same in every browser signed in to it, live; shows the tabs open in your other browsers; and shares workspaces with others. Without a server, nothing is sent anywhere. See the server's release for everything it does.
+- **Several servers, several accounts**: each server and each account on it has its data and look of its own; disconnecting brings back the browser's own.
+- **Pages on this computer** (localhost) link up with the extension only once you allow them, in a window of the extension's own.
 - **New tabs** are listed with the open tabs, and can be saved.
 - **Open tabs** move where you drop them, into or out of tab groups.
 - **Default group**: set it in the dashboard; the popup, the right-click menu and the shortcuts save there.

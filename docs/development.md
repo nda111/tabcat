@@ -89,12 +89,28 @@ refers to the result of op *n*. See `applyOp` in `lib/store.js`.
 
 ## Releases
 
-Bump `version` in `manifest.json`, commit, then zip the extension files (not `web/`, `tests/` or `docs/`) into
-`releases/v<version>.zip` under a `tabcat/` folder (with `LICENSE` and `README.md`), for example with `git archive --prefix=tabcat/`.
-Tag the commit `v<version>` and attach the zip to a GitHub release. (`releases/` is ignored: the zips and notes live on GitHub releases only.)
+The extension and the server are released apart from this one repository, each with its own version and tags:
 
-The same version goes to the Chrome Web Store: `python tools/store_zip.py` writes `releases/v<version>-store.zip`
-(the manifest at the top, without the localhost pages); upload it in the Developer Dashboard.
+| Part | Version in | Tag | Files (`python tools/release.py [extension\|server]`) |
+|---|---|---|---|
+| Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `tabcat-extension-<version>.zip` (a `tabcat/` folder, to install by hand), `tabcat-extension-<version>-store.zip` (for the Chrome Web Store only) |
+| Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl` |
+
+1. Bump the version, add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md` (server), commit.
+2. `python tools/release.py <part>` builds the files from `HEAD` into `releases/` (ignored by git; `--worktree` to try
+   it with uncommitted changes). The extension's zips hold every tracked file but the server, tests, tools, docs,
+   store listing and icon source; `tests/test_release.py` checks they hold all the extension refers to and load.
+3. Tag the commit and make a GitHub release with the files and its notes (`releases/<tag>.md`). An extension release
+   is the **latest** release (the README and the install notes link to `releases/latest`); a server release is
+   published with **Set as the latest release** off.
+
+The update checks find their own part's newest release by its tag, among the newest 50: the dashboard looks for the
+extension's (`newestExtension` in `web/js/app.js`), the server for its own (`updates.newest_tag`), so a release of one
+never tells the other's users to update. The dashboard has no releases: the `pages` branch is deployed as it's pushed,
+and a server takes it up once a day.
+
+The extension's store zip goes to the Chrome Web Store's Developer Dashboard (the manifest at the top, without the
+localhost pages).
 The listing's text and images are in `store/` (`listing.md`, and screenshots / promo tiles in `en/` and `ko/`).
 Installed from the store, the extension updates itself: its manifest has the store's `update_url`, so `content.js`
 tells the dashboard (`updatesItself` in `ready`), which then doesn't look for GitHub releases.

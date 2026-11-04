@@ -26,15 +26,34 @@ def latest_dashboard_commit() -> str | None:
     return _get(f'https://api.github.com/repos/{REPO}/commits/pages').get('sha')
 
 
+# The extension and the server are released from one repository, each with tags of its own: server-v1.0.0 for the
+# server, extension-v1.1.0 (or, from before, v1.0.4) for the extension. The extension's are GitHub's "latest" (what
+# the README and the install notes link to): the server's are published without being made so, and found here by
+# their tags among the newest releases.
+TAG = 'server-v'
+
+
+def newest_tag(releases, prefix: str) -> str | None:
+    """Of a list of GitHub releases, the newest published one tagged with that prefix."""
+    tags = [r.get('tag_name') or '' for r in releases if not r.get('draft') and not r.get('prerelease')]
+    tags = [t for t in tags if t.startswith(prefix) and t[len(prefix):][:1].isdigit()]
+    return max(tags, key=_parts, default=None)
+
+
 def latest_release(max_age=6 * 3600) -> str | None:
-    """The newest release's tag (v1.2.0), looked up at most every few hours."""
+    """The newest server release's tag (server-v1.2.0), looked up at most every few hours."""
     if time.time() - _cache['checked'] > max_age:
         try:
-            _cache['release'] = _get(f'https://api.github.com/repos/{REPO}/releases/latest').get('tag_name')
+            _cache['release'] = newest_tag(_get(f'https://api.github.com/repos/{REPO}/releases?per_page=50'), TAG)
         except Exception:
             pass  # (offline: as it was)
         _cache['checked'] = time.time()
     return _cache['release']
+
+
+def shown(tag: str | None) -> str | None:
+    """A release's tag as said to people: server-v1.2.0 -> v1.2.0."""
+    return tag and 'v' + tag.split('-v')[-1].lstrip('v')
 
 
 def known_release() -> str | None:
@@ -44,7 +63,7 @@ def known_release() -> str | None:
 
 def _parts(v: str):
     out = []
-    for p in v.lstrip('v').split('.')[:3]:
+    for p in v.split('-v')[-1].lstrip('v').split('.')[:3]:
         digits = ''.join(c for c in p if c.isdigit())
         out.append(int(digits or 0))
     return tuple(out + [0] * (3 - len(out)))

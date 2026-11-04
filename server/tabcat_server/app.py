@@ -852,7 +852,7 @@ def create_app(config) -> FastAPI:
             'db_bytes': config.db_path.stat().st_size if config.db_path.exists() else 0,
             'db_path': str(config.db_path),
             'here': allowed(request, config.setup_from),  # (on the server's own computer: see /api/admin/database)
-            'release': {'latest': (tag := updates.known_release()), 'newer': updates.newer(tag), 'install': updates.install_kind()},
+            'release': {'latest': updates.shown(tag := updates.known_release()), 'newer': updates.newer(tag), 'install': updates.install_kind()},
             'dashboard': {'source': 'github' if config.dashboard == 'auto' else 'folder', 'folder': str(folder),
                           'present': dashboard.present(folder), 'version': dashboard.version(folder)},
             'users': db.one('select count(*) n from users')['n'],
@@ -926,7 +926,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(502, f'could not update: {e}')
         log('server_updated', request, actor=user_of(request), detail=tag)
         updates.restart()
-        return {'ok': True, 'version': tag}
+        return {'ok': True, 'version': updates.shown(tag)}
 
     # Tailscale on the server's computer: its state, and serving this server at its HTTPS address (on its own
     # computer only: that changes the computer's settings)

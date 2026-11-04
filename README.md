@@ -40,7 +40,7 @@ any time, and press it again to go back to your tab.
 
 For a browser that can't use the Chrome Web Store, or to try a release before it reaches the store:
 
-1. Download the `.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
+1. Download `tabcat-extension-<version>.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
 2. Open `chrome://extensions` (`edge://extensions` in Edge) and turn on **Developer mode**.
 3. Click **Load unpacked** and pick the unzipped `tabcat` folder.
 

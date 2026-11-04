@@ -310,10 +310,14 @@ check(z.get('/api/me').json()['twofa'] is False, 'an admin turns it off for some
 # keeping up to date: the dashboard by itself (a setting), the server told of newer releases
 check(c.get('/api/admin/settings').json()['dashboard_auto'] is True and c.put('/api/admin/settings', json={'dashboard_auto': False}).json()['dashboard_auto'] is False, 'the dashboard updates itself unless turned off')
 from tabcat_server import updates as U
-U._cache.update(release='v9.9.9', checked=10**12)
+U._cache.update(release='server-v9.9.9', checked=10**12)
 rel = c.get('/api/admin/info').json()['release']
 check(rel['latest'] == 'v9.9.9' and rel['newer'] is True and rel['install'] in ('pip', 'checkout', 'docker'), f'info says a newer release is out, and how this server was installed ({rel})')
-check(U.newer('v1.1.1') and U.newer('v1.2.0') and not U.newer('v1.1.0') and not U.newer('v1.0.9'), 'a release after 1.1.0 is newer; 1.1.0 itself and before are not')
+check(U.newer('server-v1.0.1') and U.newer('server-v1.1.0') and not U.newer('server-v1.0.0') and not U.newer('server-v0.9.9'), 'a release after 1.0.0 is newer; 1.0.0 itself and before are not')
+rels = [{'tag_name': 'extension-v1.2.0'}, {'tag_name': 'server-v1.0.10'}, {'tag_name': 'server-v1.1.0', 'draft': True}, {'tag_name': 'server-v2.0.0', 'prerelease': True},
+        {'tag_name': 'v1.0.4'}, {'tag_name': 'server-v1.0.9'}, {'tag_name': 'server-vx'}]
+check(U.newest_tag(rels, 'server-v') == 'server-v1.0.10', "the server's newest release found by its tag (not the extension's, a draft or a prerelease; 1.0.10 after 1.0.9)")
+check(U.newest_tag([{'tag_name': 'extension-v1.2.0'}], 'server-v') is None and U.shown('server-v1.0.10') == 'v1.0.10', 'none of its own: none; said as v1.0.10')
 check(c.post('/api/admin/server/update').status_code in (409, 502) and a3.post('/api/admin/server/update').status_code == 403, 'updating the server: only on its computer, and not a working copy (this one)')
 
 # "stay signed in" unticked: a cookie for as long as the browser's open, a day at most on the server

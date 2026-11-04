@@ -4,9 +4,12 @@ from harness import *
 
 RELEASE = {'tag_name': 'v9.9.9', 'html_url': 'https://github.com/nda111/tabcat/releases/tag/v9.9.9'}
 asked = []
+# (the server's releases come from the same repository: never taken for the extension's, however new)
+OTHERS = [{'tag_name': 'server-v99.0.0', 'html_url': 'https://github.com/nda111/tabcat/releases/tag/server-v99.0.0'},
+          {'tag_name': 'extension-v99.0.0', 'draft': True, 'html_url': 'x'}, {'tag_name': 'v1.0.0', 'html_url': 'old'}]
 def github(route):
     asked.append(route.request.url)
-    route.fulfill(json=RELEASE, headers={'Access-Control-Allow-Origin': '*'})
+    route.fulfill(json=OTHERS[:1] + [RELEASE] + OTHERS[1:], headers={'Access-Control-Allow-Origin': '*'})
 dot = lambda d: d.evaluate("!document.querySelector('#btn-info .update-dot').hidden")
 
 serve()
@@ -57,7 +60,7 @@ with sync_playwright() as p:
     d.click('#info-check'); time.sleep(.8)
     check(len(asked) == n + 1 and state()[1], f'again within a minute: the answer it just had, not asked again {state()}')
     d.keyboard.press('Escape'); settle(d)
-    RELEASE['tag_name'] = 'v9.9.10'
+    RELEASE['tag_name'] = 'extension-v9.9.10'  # (tagged as from 1.1.0 on)
     aged(); d.reload(); d.wait_for_selector('.ws-item'); time.sleep(1)
     d.evaluate("localStorage.setItem('tabcat:latest', JSON.stringify({version: '%s', url: 'x', checkedAt: Date.now() - 2*60*1000}))" % version)
     d.reload(); d.wait_for_selector('.ws-item'); time.sleep(1)
