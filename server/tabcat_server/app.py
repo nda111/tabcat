@@ -1559,16 +1559,19 @@ def create_app(config) -> FastAPI:
 
     @app.get('/api/users/search')
     def find_users(request: Request, q: str = ''):
-        """Accounts to invite: those whose username or name has `q` in it, letter by letter for Korean (see hangul.py;
-        the start first), not oneself."""
+        """Accounts to invite: those whose username or name has `q` in it, letter by letter for Korean, or its letters
+        in order with others between (Korean by initials too: see hangul.py); the closest first; not oneself."""
         u = need_user(request)
-        q = hangul.letters(q.strip()[:60])
+        q = q.strip()[:60]
         if not q:
             return {'users': []}
-        rows = [r for r in db.q('select * from users where id != ? and disabled = 0', u['id'])
-                if q in hangul.letters(r['username']) or q in hangul.letters(r['name'] or '')]
-        rows.sort(key=lambda r: (not hangul.letters(r['username']).startswith(q), r['username'].lower()))
-        return {'users': [person(r) for r in rows[:30]]}
+        found = []
+        for r in db.q('select * from users where id != ? and disabled = 0', u['id']):
+            scores = [x for x in (hangul.score(r['username'], q), hangul.score(r['name'] or '', q)) if x is not None]
+            if scores:
+                found.append((min(scores), r['username'].lower(), r))
+        found.sort(key=lambda x: x[:2])
+        return {'users': [person(r) for _, _, r in found[:30]]}
 
     def mail_item(r) -> dict:
         frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None

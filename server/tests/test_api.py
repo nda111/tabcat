@@ -469,6 +469,7 @@ check(len(sb.get('/api/mail').json()['mail']) >= 2, 'answered mail stays')
 ws = {'id': 'w9', 'type': 'workspace', 'name': 'Plans', 'symbol': '', 'categories': []}
 s9 = sa.post('/api/sync/shares', json={'root': 'w9', 'body': {'workspaces': [ws]}}).json()['id']
 check([x['username'] for x in sa.get('/api/users/search', params={'q': 'be'}).json()['users']] == ['ben'] and sa.get('/api/users/search', params={'q': 'ann'}).json()['users'] == [], 'search: by username, not oneself')
+check([x['username'] for x in sa.get('/api/users/search', params={'q': 'bn'}).json()['users']] == ['ben'], "search: its letters in order, others between ('bn': ben)")
 sa.post('/api/sync/ops', json={'device': 'a', 'ops': []})
 sa.post(f'/api/shares/{s9}/invites', json={'username': 'ben', 'role': 'editor', 'name': 'Plans'})
 sb.post(f"/api/mail/{sb.get('/api/mail').json()['mail'][0]['id']}/answer", json={'accept': True})

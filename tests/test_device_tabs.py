@@ -88,6 +88,7 @@ with sync_playwright() as p:
     bd.hover('#windows > .self-title'); bd.click('#windows > .self-title .self-edit')
     bd.keyboard.press('Control+A'); bd.keyboard.type('Desk B'); bd.keyboard.press('Enter')
     check(wait(lambda: own() == 'Desk B', 'renamed', timeout=10), f'renamed in place ({own()!r})')
+    check(bd.evaluate("getComputedStyle(document.querySelector('#windows > .self-title')).textTransform") == 'none', 'shown as written, its capitals kept')
     check(wait(lambda: 'Desk B' in [d['name'] for d in ad.evaluate("fetch('/api/sync/tabs').then(r => r.json()).then(j => j.devices)")], 'kept', timeout=10), 'kept by the server: the name the others show')
     bd.click('.devs .dev-head'); time.sleep(.08)
     check(bd.locator('.devs .dev:not(.collapsed)').count() == 1, 'a click opens it at once')
