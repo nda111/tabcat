@@ -45,13 +45,28 @@ bin/tabcat-server --port 8080
 
 (On Windows: `Scripts\pip` and `Scripts\tabcat-server`.) From a checkout of the repository, `pip install ./server`.
 
-**With Docker**, from a checkout: `docker compose up -d` in this folder (see `compose.yaml`: the data in a volume,
-started again after a crash or a reboot, reachable from this computer only until you put HTTPS in front). Or by hand:
+**With Docker**: the image [`nda111/tabcat-server`](https://hub.docker.com/r/nda111/tabcat-server) runs on amd64
+and arm64 (a Raspberry Pi, an ARM Mac or server):
 
 ```sh
-docker build -t tabcat-server server
-docker run -d -p 127.0.0.1:8080:8080 -v tabcat-data:/data tabcat-server
+docker run -d --name tabcat --restart unless-stopped \
+  -p 127.0.0.1:8080:8080 -v tabcat-data:/data nda111/tabcat-server:latest
 ```
+
+Or with [`compose.yaml`](compose.yaml) from this folder: `docker compose up -d`. To build the image from a checkout instead:
+`docker compose up -d --build`, or `docker build -t tabcat-server server`.
+
+- **Tags:** `latest`, and each release's version (`1.0.0`): pin a version to update only when you choose.
+- **Data:** everything (the database, the dashboard's files, `config.toml`) is in `/data`. Keep it in a volume, as
+  above, or a folder of yours (`-v /srv/tabcat:/data`), owned by uid 10001: the server runs as that user, not root
+  (`sudo chown -R 10001:10001 /srv/tabcat`).
+- **Health:** the image checks that the server answers every 30 seconds; `docker ps` shows `healthy`.
+- **Keep the port this computer's** (`-p 127.0.0.1:...`) and put HTTPS in front for others. From inside the
+  container, this computer's browser and a reverse proxy on it come through Docker's network, so the image lets
+  that network (`172.16.0.0/12`) set the server up and believes its `X-Forwarded-For`; published to everyone,
+  others could too.
+- **Settings:** the environment variables in [Settings](#settings) (`-e TABCAT_ADMIN_FROM=...`). Port 8080 inside the
+  container; publish it on any port outside.
 
 ### First visit
 
@@ -199,7 +214,9 @@ The admin page says when a newer server release is out.
 
 - **pip:** installed with pip and opened on the server's own computer, the admin page installs it and starts the
   server again in one click. Or by hand: `pip install --upgrade <the new release's .whl address>`, then start it again.
-- **Docker:** in your checkout, `git pull`, then `docker compose up -d --build`. The data stays in its volume.
+- **Docker:** `docker compose pull && docker compose up -d` (or `docker pull nda111/tabcat-server:latest`, then
+  remove the container and run it again with the same volume). Built from a checkout: `git pull`, then
+  `docker compose up -d --build`. The data stays in its volume.
 - **A checkout** (`pip install -e`): `git pull` and start it again.
 
 The dashboard updates by itself once a day (turn that off on the admin page; then **Update now** there).

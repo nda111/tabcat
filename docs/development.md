@@ -83,7 +83,7 @@ The extension and the server are released apart from this one repository, each w
 | Part | Version in | Tag | Files (`python tools/release.py [extension\|server]`) |
 |---|---|---|---|
 | Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `tabcat-extension-<version>.zip` (a `tabcat/` folder, to install by hand), `tabcat-extension-<version>-store.zip` (for the Chrome Web Store only) |
-| Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl` |
+| Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl`; the Docker image (`python tools/release.py docker --push`) |
 
 1. Bump the version, add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md` (server), commit. For a
    server release, also point `SERVER_WHEEL` in `web/js/welcome.js` (the welcome page's install command) and the
@@ -99,6 +99,16 @@ The update checks find their own part's newest release by its tag, among the new
 extension's (`newestExtension` in `web/js/app.js`), the server for its own (`updates.newest_tag`), so a release of one
 never tells the other's users to update. The dashboard has no releases: the `pages` branch is deployed as it's pushed,
 and a server takes it up once a day.
+
+### Docker Hub
+
+The server's image is `nda111/tabcat-server` (`TABCAT_IMAGE` to name another), for `linux/amd64` and `linux/arm64`,
+tagged with the release's version and `latest`. Once, to set it up: make the repository on Docker Hub (public), paste
+`server/DOCKERHUB.md` as its overview (its first comment has the short description), and, for releasing from GitHub
+Actions, make an access token (Account settings → Personal access tokens, read and write) kept as the repository's
+secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. To release by hand: `docker login`, then
+`python tools/release.py docker --push` (Docker with buildx; Docker Desktop has both platforms). Without `--push` it
+builds both, to check, and loads this computer's into Docker to try.
 
 The extension's store zip goes to the Chrome Web Store's Developer Dashboard (the manifest at the top, without the
 localhost pages).

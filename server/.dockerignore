@@ -1,0 +1,6 @@
+# (only what the image needs: pyproject.toml, README.md, tabcat_server/)
+*
+!pyproject.toml
+!README.md
+!tabcat_server/
+tabcat_server/**/__pycache__

@@ -1,12 +1,13 @@
-# docker compose up -d: tabcat-server, started again after a crash or a reboot, its data in a volume
+# docker compose up -d: tabcat server, started again after a crash or a reboot, its data in a volume of its own.
+# The image from Docker Hub (amd64 and arm64); to build it from this folder instead: docker compose up -d --build
 services:
   tabcat:
+    image: nda111/tabcat-server:latest
     build: .
     restart: unless-stopped
-    ports: ["127.0.0.1:8080:8080"]   # (only this computer: put HTTPS in front for others)
+    ports: ["127.0.0.1:8080:8080"]   # (this computer only: put HTTPS in front for others, see README.md)
     volumes: [tabcat-data:/data]
-    environment:
-      # (from inside the container this computer's browser comes from Docker's network: let it set the server up)
-      TABCAT_SETUP_FROM: "127.0.0.1/32,::1/128,172.16.0.0/12"
+    # (the image lets this computer set it up and believes a proxy on it, through Docker's network: keep the port
+    # this computer's only, as above; settings by environment: see README.md, Settings)
 volumes:
   tabcat-data:

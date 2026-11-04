@@ -3,12 +3,16 @@
 #   extension-v<version>   (manifest.json)          tabcat-extension-<version>.zip         on GitHub: to install by hand
 #                                                   tabcat-extension-<version>-store.zip   to the Chrome Web Store only
 #   server-v<version>      (server/pyproject.toml)  tabcat_server-<version>-py3-none-any.whl
+#                                                   the Docker image nda111/tabcat-server:<version> and :latest,
+#                                                   for linux/amd64 and linux/arm64 (`docker`; TABCAT_IMAGE to name
+#                                                   another; --push sends it to Docker Hub, signed in with
+#                                                   `docker login`)
 #
 # The extension's releases are GitHub's "latest" (the README and the install notes link there); the server's are
 # published with "Set as the latest release" off. Both update checks find their own by tag (the dashboard: web/js/app.js
 # newestExtension; the server: updates.newest_tag). The notes for each go beside the files: releases/<tag>.md.
 #
-# Usage: python tools/release.py [extension|server] [--worktree] [--out DIR]
+# Usage: python tools/release.py [extension|server|docker] [--worktree] [--out DIR] [--push]
 #   (from HEAD, as committed; --worktree: the files as they are now, to try it out before committing)
 import argparse, io, json, os, shutil, subprocess, sys, tempfile, tomllib, zipfile
 
@@ -67,13 +71,43 @@ def server(out, worktree=False) -> list:
     return made
 
 
+IMAGE = os.environ.get('TABCAT_IMAGE', 'nda111/tabcat-server')
+PLATFORMS = 'linux/amd64,linux/arm64'
+
+
+def docker_cli() -> str:
+    """docker, or Docker Desktop's docker.exe from WSL when the Linux one has no daemon to talk to."""
+    for cli in ('docker', 'docker.exe'):
+        if shutil.which(cli) and subprocess.run([cli, 'info'], capture_output=True).returncode == 0:
+            return cli
+    sys.exit('no Docker to build with (is Docker running?)')
+
+
+def docker(out=None, worktree=False, push=False) -> list:
+    """The server's image for both platforms, tagged with its version and latest. Pushed (--push), or else built for
+    both (to know they build) and the one for this computer loaded here, to run."""
+    version = tomllib.load(open(os.path.join(ROOT, 'server', 'pyproject.toml'), 'rb'))['project']['version']
+    if not worktree and git('status', '--porcelain', '--', 'server'):
+        sys.exit('server/ has changes not committed: commit them, or try it with --worktree')
+    cli, tags = docker_cli(), [f'{IMAGE}:{version}', f'{IMAGE}:latest']
+    base = [cli, 'buildx', 'build', '--build-arg', f'VERSION={version}', *sum((['-t', t] for t in tags), [])]
+    if push:
+        subprocess.run([*base, '--platform', PLATFORMS, '--push', 'server'], cwd=ROOT, check=True)
+    else:
+        subprocess.run([*base, '--platform', PLATFORMS, 'server'], cwd=ROOT, check=True)
+        subprocess.run([*base, '--load', 'server'], cwd=ROOT, check=True)
+    return tags
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description="Build a release's files.")
-    ap.add_argument('part', nargs='?', choices=['extension', 'server'], help='one part only (default: both)')
+    ap.add_argument('part', nargs='?', choices=['extension', 'server', 'docker'], help='one part only (default: the extension and the server)')
     ap.add_argument('--worktree', action='store_true', help='the files as they are now, not as committed')
     ap.add_argument('--out', default=os.path.join(ROOT, 'releases'))
+    ap.add_argument('--push', action='store_true', help='docker: push the image to its registry')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     for part in [a.part] if a.part else ['extension', 'server']:
-        for path in {'extension': extension, 'server': server}[part](a.out, a.worktree):
+        build = {'extension': extension, 'server': server, 'docker': lambda out, wt: docker(out, wt, a.push)}[part]
+        for path in build(a.out, a.worktree):
             print(path)
