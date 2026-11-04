@@ -4,6 +4,7 @@ tabcat-server make-admin USERNAME [--data-dir D]       (an admin again, and turn
 tabcat-server reset-2fa USERNAME [--data-dir D]        (two-step sign-in off: the phone and the recovery codes gone)
 tabcat-server reset-server [--data-dir D]              (every account, invitation and setting gone: set it up again)"""
 import argparse
+import os
 import getpass
 import sys
 
@@ -25,6 +26,12 @@ def main(argv=None):
     cfg = C.load(a.data_dir, a.host, a.port, a.dashboard, a.setup_from, a.admin_from, a.trusted_proxies)
     if a.command != 'reset-server':  # (the database brought up to this version first: or, from a newer server, not opened)
         from .db import DB, TooNew
+        # (a folder it can't write to, as a new one bind-mounted into Docker is (root's): said so, and what to do)
+        for folder in (cfg.data_dir, cfg.db_path.parent):
+            if folder.exists() and not os.access(folder, os.W_OK):
+                uid = os.getuid() if hasattr(os, 'getuid') else None  # (not on Windows)
+                sys.exit(f"tabcat-server can't write to {folder}: give it to the user the server runs as"
+                         + (f' (uid {uid}): chown -R {uid}:{uid} <that folder>' if uid is not None else '.'))
         try:
             DB(cfg.db_path).conn.close()
         except TooNew as e:
@@ -81,7 +88,7 @@ def main(argv=None):
     common = dict(host=cfg.host, port=cfg.port, proxy_headers=True, forwarded_allow_ips=list(cfg.trusted_proxies), log_level='warning', timeout_graceful_shutdown=3,
                   limit_concurrency=200, timeout_keep_alive=5)  # (so many connections at once; idle ones closed soon)
     if a.reload:  # (working on the server: it starts again when its code changes)
-        import os
+
         os.environ.update(TABCAT_DATA=str(cfg.data_dir), TABCAT_HOST=cfg.host, TABCAT_PORT=str(cfg.port), TABCAT_DASHBOARD=cfg.dashboard, TABCAT_SETUP_FROM=','.join(cfg.setup_from),
                           TABCAT_ADMIN_FROM=','.join(cfg.admin_from), TABCAT_TRUSTED_PROXIES=','.join(cfg.trusted_proxies))
         uvicorn.run('tabcat_server.app:from_env', factory=True, reload=True, reload_dirs=[os.path.dirname(__file__)], **common)

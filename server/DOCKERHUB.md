@@ -19,7 +19,8 @@ Then open <http://localhost:8080> **on the same computer** to make the first acc
 browser choose **Connect to a server…** from tabcat's toolbar menu. Put it behind HTTPS (Caddy, nginx, Tailscale)
 before other computers reach it: see the [server guide](https://github.com/nda111/tabcat/tree/main/server#readme).
 
-With Compose: [`compose.yaml`](https://github.com/nda111/tabcat/blob/main/server/compose.yaml).
+With Compose: [`compose.yaml`](https://github.com/nda111/tabcat/blob/main/server/compose.yaml). To keep the data, or the
+database alone, in a folder of your own: [DOCKER.md](https://github.com/nda111/tabcat/blob/main/server/DOCKER.md).
 
 ## Tags
 

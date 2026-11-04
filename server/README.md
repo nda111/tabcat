@@ -45,28 +45,16 @@ bin/tabcat-server --port 8080
 
 (On Windows: `Scripts\pip` and `Scripts\tabcat-server`.) From a checkout of the repository, `pip install ./server`.
 
-**With Docker**: the image [`nda111/tabcat-server`](https://hub.docker.com/r/nda111/tabcat-server) runs on amd64
-and arm64 (a Raspberry Pi, an ARM Mac or server):
+**With Docker**: the image [`nda111/tabcat-server`](https://hub.docker.com/r/nda111/tabcat-server), for amd64 and
+arm64:
 
 ```sh
 docker run -d --name tabcat --restart unless-stopped \
   -p 127.0.0.1:8080:8080 -v tabcat-data:/data nda111/tabcat-server:latest
 ```
 
-Or with [`compose.yaml`](compose.yaml) from this folder: `docker compose up -d`. To build the image from a checkout instead:
-`docker compose up -d --build`, or `docker build -t tabcat-server server`.
-
-- **Tags:** `latest`, and each release's version (`1.0.0`): pin a version to update only when you choose.
-- **Data:** everything (the database, the dashboard's files, `config.toml`) is in `/data`. Keep it in a volume, as
-  above, or a folder of yours (`-v /srv/tabcat:/data`), owned by uid 10001: the server runs as that user, not root
-  (`sudo chown -R 10001:10001 /srv/tabcat`).
-- **Health:** the image checks that the server answers every 30 seconds; `docker ps` shows `healthy`.
-- **Keep the port this computer's** (`-p 127.0.0.1:...`) and put HTTPS in front for others. From inside the
-  container, this computer's browser and a reverse proxy on it come through Docker's network, so the image lets
-  that network (`172.16.0.0/12`) set the server up and believes its `X-Forwarded-For`; published to everyone,
-  others could too.
-- **Settings:** the environment variables in [Settings](#settings) (`-e TABCAT_ADMIN_FROM=...`). Port 8080 inside the
-  container; publish it on any port outside.
+[DOCKER.md](DOCKER.md) has the rest: keeping the data (or the database alone) in a folder of your own, Compose, tags,
+settings, updating, backing up and restoring.
 
 ### First visit
 

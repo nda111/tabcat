@@ -6,7 +6,8 @@ from harness import *
 from harness import ROOT
 
 LANGS = ['en', 'ko', 'ja', 'zh-CN', 'de', 'es', 'fr', 'pt-BR']
-holes = lambda v: sorted(set(re.findall(r'\{[a-zA-Z]+\}', json.dumps(v, ensure_ascii=False))))
+# (the extension's own words, {allow} {connect} {command}, a language may name or leave out: the rest must all be there)
+holes = lambda v: sorted(set(re.findall(r'\{[a-zA-Z]+\}', json.dumps(v, ensure_ascii=False))) - {'{allow}', '{connect}', '{command}'})
 
 def shape(v):
     """What a value is made of, words left out: its keys, list lengths, and placeholders."""
