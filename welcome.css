@@ -62,5 +62,5 @@
   .welcome-hero h1 { font-size: 22px; }
   .way { padding: 16px 16px 14px; }
   .way-head { gap: 12px; }
-  .way-icon { width: 34px; height: 34px; }
+  .way-icon { display: none; } /* (the text the room instead) */
 }
