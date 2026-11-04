@@ -911,17 +911,18 @@ async function reloadDashboards(also) {
 // looked at (in front, in the window in use): those reload themselves once nothing is being edited (the dashboard's
 // reloadWhenIdle). (The server's account and admin pages don't use the extension: they needn't load again.)
 const EDITING_KEY = 'tabcat:editing';
+const editingTabs = async () => new Set((await chrome.storage.local.get(EDITING_KEY))[EDITING_KEY] || []);
 async function markEditing(tabId, on) {
-  const ids = new Set((await chrome.storage.local.get(EDITING_KEY))[EDITING_KEY] || []);
+  const ids = await editingTabs();
   if (on === ids.has(tabId)) return;
   if (on) ids.add(tabId); else ids.delete(tabId);
   await chrome.storage.local.set({ [EDITING_KEY]: [...ids] });
 }
 async function reloadDashboardsAfterUpdate() {
   A.setDashboardUrl((await S.loadSettings()).dashboardUrl);
-  const editing = new Set((await chrome.storage.local.get(EDITING_KEY))[EDITING_KEY] || []);
-  const tabs = await chrome.tabs.query({});
-  await chrome.storage.local.set({ [EDITING_KEY]: [...editing].filter((id) => tabs.some((t) => t.id === id)) });
+  const editing = await editingTabs();
+  const tabs = await chrome.tabs.query({}), open = new Set(tabs.map((t) => t.id));
+  await chrome.storage.local.set({ [EDITING_KEY]: [...editing].filter((id) => open.has(id)) }); // (tabs since closed: forgotten)
   // (the one looked at: the front tab of the window in use, none if it's another app's; a window behind, its front
   // tab is not looked at, and loads again with the rest)
   const win = await chrome.windows.getLastFocused().catch(() => null);
@@ -1122,7 +1123,7 @@ function syncTxn(space, fn, pre = null) {
     return out;
   }));
 }
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const same = Y.same;
 const shadows = (sync) => Object.fromEntries(Object.entries(sync.shares || {}).map(([id, sh]) => [id, sh.shadow]));
 // the browser's doc: the server's, with this browser's changes not handed back yet on top (the account's, and each
 // shared workspace's: what's shown from now on, so each part's shadow too)

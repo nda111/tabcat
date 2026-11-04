@@ -3,26 +3,18 @@
 // of the extension's own, which no web page can click for them. Allowed, the address is remembered (see
 // originAllowed in background.js) and its pages loaded again.
 import * as S from './lib/store.js';
-import { setLang, getLang, t } from './lib/i18n.js';
+import { localizePage, applyLook, fitWindow } from './lib/page.js';
 
 const $ = (s) => document.querySelector(s);
 const settings = await S.loadSettings();
-setLang(settings.language);
-document.documentElement.lang = getLang();
-for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+localizePage(settings.language);
+applyLook(settings, { keep: true });
 const origin = new URLSearchParams(location.search).get('origin') || '';
 $('#origin').textContent = origin;
 document.title = 'tabcat';
 $('#go').focus();
 
-// The window fits what it holds, in this language
-(async () => {
-  const w = await chrome.windows.getCurrent().catch(() => null);
-  if (w?.type !== 'popup') return;
-  await document.fonts.ready;
-  const need = Math.ceil(document.body.getBoundingClientRect().height) + window.outerHeight - window.innerHeight;
-  if (Math.abs(w.height - need) > 1) await chrome.windows.update(w.id, { height: need }).catch(() => {});
-})();
+fitWindow(); // (the window as tall as what it holds, in this language)
 addEventListener('keydown', (e) => { if (e.key === 'Escape') window.close(); });
 $('#cancel').addEventListener('click', () => window.close());
 $('#form').addEventListener('submit', async (e) => {

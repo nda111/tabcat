@@ -135,27 +135,36 @@ def create_app(config) -> FastAPI:
                 'created_at': u['created_at'], 'last_seen': u['last_seen']}
 
     # An account's accent colour (its look, in its synced data: the latest change of it, or the copy's), for its
-    # letter in a circle where it has no photo. (Read from the copy once a copy: kept until the next.)
-    accents: dict[int, tuple] = {}
+    # letter in a circle where it has no photo. Worked out once for each state of its data (its latest change and its
+    # copy, by number): asked again with nothing new, as for every row of a list, the same answer at once.
+    DEFAULT_ACCENT = 'purple'
+    accents: dict[int, tuple] = {}  # (user id -> (latest change, copy, accent))
 
     def accent_of(uid) -> str:
+        head = db.one('select max(seq) n from sync_ops where user_id = ?', uid)['n']
+        snap = db.one('select seq from sync_snapshots where user_id = ?', uid)
+        state = (head, snap['seq'] if snap else None)
+        if uid in accents and accents[uid][:2] == state:
+            return accents[uid][2]
+        accent = None
         for r in db.q('select body from sync_ops where user_id = ? and body like ? order by seq desc limit 20', uid, '%"o":"look"%'):
             try:
                 for op in reversed(json.loads(r['body']).get('ops') or []):
                     if isinstance(op, dict) and op.get('o') == 'look' and isinstance((op.get('f') or {}).get('accent'), str):
-                        return op['f']['accent'][:20]
+                        accent = op['f']['accent']
+                        break
             except (ValueError, AttributeError):
                 pass
-        snap = db.one('select seq, body from sync_snapshots where user_id = ?', uid)
-        if not snap:
-            return 'purple'
-        if accents.get(uid, (None,))[0] != snap['seq']:
+            if accent:
+                break
+        if accent is None and snap:
             try:
-                a = (json.loads(snap['body']).get('look') or {}).get('accent')
-            except (ValueError, AttributeError):
+                a = (json.loads(db.one('select body from sync_snapshots where user_id = ?', uid)['body']).get('look') or {}).get('accent')
+            except (ValueError, AttributeError, TypeError):
                 a = None
-            accents[uid] = (snap['seq'], a if isinstance(a, str) else 'purple')
-        return accents[uid][1][:20]
+            accent = a if isinstance(a, str) else None
+        accents[uid] = (*state, (accent or DEFAULT_ACCENT)[:20])
+        return accents[uid][2]
 
     # Several accounts at once in one browser: the one in use (auth.COOKIE) and the others (auth.MORE), each a
     # session of its own. Signing in again adds an account (the one in use joins the others); switching swaps
@@ -1663,22 +1672,34 @@ def create_app(config) -> FastAPI:
         if not q:
             return {'users': []}
         found = []
-        for r in db.q('select * from users where id != ? and disabled = 0', u['id']):
+        for r in db.q(f'select {PERSON_COLS} from users where id != ? and disabled = 0', u['id']):
             scores = [x for x in (hangul.score(r['username'], q), hangul.score(r['name'] or '', q)) if x is not None]
             if scores:
                 found.append((min(scores), r['username'].lower(), r))
         found.sort(key=lambda x: x[:2])
         return {'users': [{**person(r), 'twofa': False} for _, _, r in found[:30]]}  # (whether they have 2FA: not said to strangers)
 
-    def mail_item(r) -> dict:
-        frm = db.one('select * from users where id = ?', r['from_id']) if r['from_id'] else None
+    # (an account as a person shows: what person() reads, not its photo itself)
+    PERSON_COLS = 'id, username, name, totp_secret, avatar_at, avatar is not null as avatar'
+
+    def people(ids) -> dict:
+        """Several accounts at once, by id (one query, not one each: as for a mailbox's senders)."""
+        ids = sorted({i for i in ids if i is not None})
+        return {u['id']: u for u in db.q(f"select {PERSON_COLS} from users where id in ({','.join('?' * len(ids))})", *ids)} if ids else {}
+
+    async def ids_of(request: Request, most=500) -> list:
+        """The mail ids a request names (whole numbers only, so many at most)."""
+        return [x for x in ((await body(request)).get('ids') or [])[:most] if isinstance(x, int) and not isinstance(x, bool)]
+
+    def mail_item(r, senders=None) -> dict:
+        frm = (senders if senders is not None else people([r['from_id']])).get(r['from_id'])
         name, symbol = r['ws_name'], r['ws_symbol']
         if not name and r['share_id']:  # (mail from before shares kept their names: named by the share, or other mail about it)
             o = db.one("select name, symbol from shares where id = ? and name != ''", r['share_id']) \
                 or db.one("select ws_name name, ws_symbol symbol from mail where share_id = ? and ws_name != '' order by abs(at - ?) limit 1", r['share_id'], r['at'])
             if o:
                 name, symbol = o['name'], o['symbol']
-        return {'id': r['id'], 'kind': r['kind'], 'from': person(frm) or {'id': None, 'username': r['from_name'], 'name': '', 'avatar': None, 'accent': 'purple', 'twofa': False},
+        return {'id': r['id'], 'kind': r['kind'], 'from': person(frm) or {'id': None, 'username': r['from_name'], 'name': '', 'avatar': None, 'accent': DEFAULT_ACCENT, 'twofa': False},
                 'share': r['share_id'], 'workspace': {'name': name, 'symbol': symbol}, 'role': r['role'],
                 'answer': r['answer'], 'at': r['at'], 'answered_at': r['answered_at'], 'seen': r['seen']}
 
@@ -1688,13 +1709,14 @@ def create_app(config) -> FastAPI:
         u = need_user(request)
         db.run('delete from mail where deleted is not null and deleted < ?', time.time() - MAIL_KEEP_DAYS * 86400)
         rows = db.q('select * from mail where to_id = ? and deleted is null order by at desc, id desc limit 500', u['id'])
-        return {'mail': [mail_item(r) for r in rows], 'asking': sum(1 for r in rows if r['seen'] is None or (r['kind'] == 'invite' and r['answer'] is None))}
+        senders = people(r['from_id'] for r in rows)
+        return {'mail': [mail_item(r, senders) for r in rows], 'asking': sum(1 for r in rows if r['seen'] is None or (r['kind'] == 'invite' and r['answer'] is None))}
 
     @app.post('/api/mail/seen')
     async def saw_mail(request: Request):
         """Mail read: the Mailbox open with it in."""
         u = need_user(request)
-        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        ids = await ids_of(request)
         n = 0
         with db.lock:
             for mid in ids:
@@ -1735,7 +1757,7 @@ def create_app(config) -> FastAPI:
     async def delete_mail(request: Request):
         """Mail put away (kept a while, to be undone: see /api/mail/restore); an invite only once answered."""
         u = need_user(request)
-        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        ids = await ids_of(request)
         done = []
         with db.lock:
             for mid in ids:
@@ -1750,7 +1772,7 @@ def create_app(config) -> FastAPI:
     @app.post('/api/mail/restore')
     async def restore_mail(request: Request):
         u = need_user(request)
-        ids = [int(x) for x in ((await body(request)).get('ids') or [])[:500] if isinstance(x, int)]
+        ids = await ids_of(request)
         done = []
         with db.lock:
             for mid in ids:

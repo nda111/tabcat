@@ -2,33 +2,17 @@
 // the browser to let tabcat work there (only a click in an extension page may ask), checks that a tabcat
 // dashboard answers, then the extension links up with it (see connectServer in background.js) and opens it.
 import * as S from './lib/store.js';
-import { setLang, getLang, t } from './lib/i18n.js';
+import { t } from './lib/i18n.js';
+import { localizePage, applyLook, fitWindow } from './lib/page.js';
 
 const $ = (s) => document.querySelector(s);
 const settings = await S.loadSettings();
-setLang(settings.language);
-document.documentElement.lang = getLang();
-for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
-for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
-if (settings.theme !== 'auto') document.documentElement.dataset.theme = settings.theme;
-const hue = S.ACCENT_HUES[settings.accent];
-if (settings.accent === 'mono') document.documentElement.dataset.accent = 'mono';
-else if (hue != null && settings.accent !== 'orange') {
-  document.documentElement.dataset.accent = settings.accent;
-  document.documentElement.style.setProperty('--hue', hue);
-}
+localizePage(settings.language);
+applyLook(settings, { keep: true });
 document.title = 'tabcat';
 $('#address').focus();
 
-// The window fits what it holds, in this language (opened as a small window: not when it's a tab)
-(async () => {
-  const w = await chrome.windows.getCurrent().catch(() => null);
-  if (w?.type !== 'popup') return;
-  await document.fonts.ready; // (the line breaks are the fonts')
-  const frame = window.outerHeight - window.innerHeight;
-  const need = Math.ceil(document.body.getBoundingClientRect().height) + frame;
-  if (Math.abs(w.height - need) > 1) await chrome.windows.update(w.id, { height: need }).catch(() => {});
-})();
+fitWindow(); // (the window as tall as what it holds, in this language)
 // Esc closes it, as Cancel does
 addEventListener('keydown', (e) => { if (e.key === 'Escape') window.close(); });
 

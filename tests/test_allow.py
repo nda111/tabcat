@@ -5,7 +5,7 @@ import functools, http.server, threading
 from harness import *
 import harness
 
-OTHER = PORT + 1  # (another port on this computer: a page of some other program)
+OTHER = PORT + 2000  # (another port on this computer: a page of some other program; clear of the other tests' ports)
 class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 srv = http.server.ThreadingHTTPServer(('localhost', OTHER), functools.partial(Quiet, directory=harness.WEB))
@@ -21,7 +21,7 @@ with sync_playwright() as p:
     page = ctx.new_page(); page.goto(f'http://localhost:{OTHER}/')
     # (Playwright hears of a new window only while it's busy: a short wait of its own each time round)
     ask = until(lambda: page.wait_for_timeout(100) or next((pg for pg in ctx.pages if 'allow.html' in pg.url), None), timeout=15)
-    check(ask and f'localhost:{OTHER}' in ask.inner_text('#origin'), f'another address: the extension asks, in a window of its own ({ask and ask.url})')
+    check(ask and until(lambda: f'localhost:{OTHER}' in ask.inner_text('#origin')), f'another address: the extension asks, in a window of its own ({ask and ask.url})')
     got = page.evaluate("""() => new Promise((res) => {
       addEventListener('message', (e) => { if (e.data?.source === 'tabcat-ext' && e.data.reply === 'x1') res(e.data.error || 'answered'); });
       postMessage({ source: 'tabcat-page', cmd: 'hello' }, location.origin);

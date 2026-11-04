@@ -1,6 +1,7 @@
 import * as S from './lib/store.js';
 import * as A from './lib/actions.js';
-import { setLang, getLang, t } from './lib/i18n.js';
+import { t } from './lib/i18n.js';
+import { localizePage, applyLook } from './lib/page.js';
 import { scrollFeel } from './lib/scroll-feel.js';
 
 
@@ -42,17 +43,9 @@ async function showCounts() {
     chrome.tabs.query({ active: true, currentWindow: true }),
     S.load(), S.loadSettings(), chrome.commands.getAll(),
   ]);
-  setLang(settings.language);
-  document.documentElement.lang = getLang();
-  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
-  for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
-  for (const el of document.querySelectorAll('[data-i18n-placeholder]')) el.placeholder = t(el.dataset.i18nPlaceholder);
+  localizePage(settings.language);
   // the look, as set (popup-look.js showed the one kept from last time; kept again for next time)
-  const root = document.documentElement, hue = S.ACCENT_HUES[settings.accent];
-  if (settings.theme !== 'auto') root.dataset.theme = settings.theme; else delete root.dataset.theme;
-  if (settings.accent === 'mono') { root.dataset.accent = 'mono'; root.style.removeProperty('--hue'); } // (no hue: see popup.css)
-  else if (hue != null && settings.accent !== 'orange') { root.dataset.accent = settings.accent; root.style.setProperty('--hue', hue); }
-  else { delete root.dataset.accent; root.style.removeProperty('--hue'); }
+  const hue = applyLook(settings);
   try { localStorage.setItem('tabcat:popupLook', JSON.stringify({ theme: settings.theme, accent: settings.accent, hue })); } catch { /* storage unavailable */ }
   A.setDashboardUrl(settings.dashboardUrl);
   showCounts();

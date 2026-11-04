@@ -110,6 +110,8 @@ create table if not exists mail (  -- each account's mailbox: asked to join a sh
   seen real                        -- (when its owner first had the Mailbox open with it in: read)
 );
 create index if not exists mail_to on mail(to_id, at);
+create index if not exists mail_share on mail(share_id, kind);  -- (a share's invites: asked, taken back, ended with it)
+create index if not exists mail_from on mail(from_id, kind);    -- (an account's invites waiting: how many)
 create index if not exists share_members_user on share_members(user_id);
 create table if not exists events (  -- the security record (see app.log): sign-ins, changes, an admin's doings
   id integer primary key,
