@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>tabcat · Welcome</title>
+  <meta name="description" content="tabcat is installed: three ways to use it.">
+  <link rel="icon" href="icons/icon32.png">
+  <meta name="theme-color" content="#f4f2ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#18171a" media="(prefers-color-scheme: dark)">
+  <script src="js/look.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="fonts/pretendard.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="privacy.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body class="doc-page welcome-page">
+  <main class="doc-wrap welcome-wrap">
+    <header class="doc-head">
+      <a class="doc-brand" href="./"><span class="logo" role="img" aria-label=""></span>tabcat</a>
+      <select id="doc-lang" aria-label="Language"></select>
+    </header>
+    <section class="welcome-hero" id="hero"></section>
+    <section class="welcome-ways" id="ways"></section>
+    <footer class="doc-foot">© 2026 Yu Geunhyeok · <a href="./privacy" id="privacy-link">Privacy</a> · <a href="https://github.com/nda111/tabcat" target="_blank" rel="noopener">GitHub</a></footer>
+  </main>
+  <script type="module" src="js/welcome.js"></script>
+</body>
+</html>

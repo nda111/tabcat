@@ -1,0 +1,66 @@
+/* The welcome page (welcome.html): the privacy page's frame (privacy.css) and the dashboard's colours, cards and
+   springs. A heading, then the three ways to use tabcat as cards rising in one after another; a card's steps fold
+   open and shut as the dashboard's cards do. */
+.welcome-wrap { max-width: 760px; }
+
+.welcome-hero { text-align: center; padding: 18px 8px 26px; animation: rise-in .4s var(--spring-soft); }
+.welcome-hero .logo { display: block; width: 64px; height: 64px; margin: 0 auto 14px; animation: welcome-bob 2.4s ease-in-out .6s 2; }
+.welcome-hero h1 { font-size: 26px; line-height: 1.25; margin: 0 0 8px; }
+.welcome-hero p { margin: 0 auto 10px; max-width: 560px; color: var(--muted); }
+.welcome-hero .shortcut { color: var(--text); }
+.welcome-hero kbd { font-size: 12px; padding: 1px 6px; }
+@keyframes welcome-bob { 0%, 100% { transform: none; } 40% { transform: translateY(-5px) rotate(-4deg); } 70% { transform: translateY(0) rotate(2deg); } }
+
+.welcome-ways { display: flex; flex-direction: column; gap: 14px; }
+.way {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 20px 22px 18px; animation: rise-in .42s var(--spring-soft) both; animation-delay: calc(var(--i, 0) * 70ms + 80ms);
+  transition: border-color .16s, box-shadow .2s;
+}
+.settled :is(.welcome-hero, .welcome-hero .logo, .way) { animation: none; }
+.way:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.way.recommended { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); }
+.way-head { display: flex; align-items: flex-start; gap: 14px; }
+.way-body { flex: 1; min-width: 0; }
+.way-icon {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.way-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 1px 0 4px; font-size: 16px; line-height: 1.35; }
+.way-badge {
+  font-size: 11px; font-weight: 600; line-height: 1; padding: 4px 7px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent, #fff);
+}
+.way-text { margin: 0 0 10px; }
+.way-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 0; list-style: none; }
+.way-tags li { font-size: 12px; line-height: 1.4; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.way-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.way-actions .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; text-decoration: none; }
+.way-actions .btn:not(.primary) { color: var(--text); }
+.way-toggle .ico { transition: transform .3s var(--spring-soft); }
+.way.open .way-toggle .ico { transform: rotate(180deg); }
+
+/* the steps: folding open and shut (welcome.js animates the height) */
+.way-steps { overflow: hidden; }
+.way-steps[hidden] { display: none; }
+.way-steps ol { margin: 14px 0 2px; padding: 0; list-style: none; counter-reset: step; }
+.way-steps li { position: relative; padding-left: 34px; margin: 0 0 12px; counter-increment: step; }
+.way-steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--accent-soft); color: var(--accent);
+}
+.cmd {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 8px 7px 12px; border-radius: 9px;
+  background: var(--panel-2); border: 1px solid var(--border);
+}
+.cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+.cmd .btn { flex: none; display: inline-flex; align-items: center; gap: 4px; }
+.cmd .btn.done { color: var(--accent); }
+.word { font-weight: 600; }
+
+@media (max-width: 560px) {
+  .welcome-hero h1 { font-size: 22px; }
+  .way { padding: 16px 16px 14px; }
+  .way-head { gap: 12px; }
+  .way-icon { width: 34px; height: 34px; }
+}
