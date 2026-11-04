@@ -9,6 +9,11 @@ import { sampleWorkspaces } from './sample.js';
 import { scrollFeel } from './scroll-feel.js';
 import { matchLetters, findLetters } from './hangul.js';
 
+// Easings named once (with SPRING and GLIDE, under "motion"): a standard ease out of and into rest, and a quick start
+// slowing to a stop (no overshoot: GLIDE is its near-twin with a hint of one)
+const EASE_STD = 'cubic-bezier(.4, 0, .2, 1)';
+const EASE_OUT = 'cubic-bezier(.22, 1, .36, 1)';
+
 const tr = t; // for code where `t` is a tab or a drop target
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -113,7 +118,7 @@ function rollNum(key, n) {
     const up = n > c.prev;
     const old = h('span', { class: 'num-old', 'aria-hidden': 'true' }, c.prev);
     el.append(old);
-    const opts = { duration: ROLL, easing: 'cubic-bezier(.22, 1, .36, 1)', delay: -into, fill: 'backwards' };
+    const opts = { duration: ROLL, easing: EASE_OUT, delay: -into, fill: 'backwards' };
     cur.animate([{ transform: `translateY(${up ? 60 : -60}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], opts);
     old.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${up ? -60 : 60}%)`, opacity: 0 }], { ...opts, fill: 'forwards' })
       .finished.then(() => old.remove(), () => {});
@@ -317,7 +322,7 @@ function dismissToast(el, clicked = false) {
   if (el.classList.contains('leaving')) return;
   clearTimeout(el.timer);
   el.classList.add('leaving');
-  el.animate([{ opacity: 1, transform: getComputedStyle(el).transform === 'none' ? 'none' : getComputedStyle(el).transform },
+  el.animate([{ opacity: 1, transform: getComputedStyle(el).transform },
     clicked ? { opacity: 0, transform: 'scale(.9)' } : { opacity: 0, transform: 'translateY(8px)' }],
   { duration: clicked ? 180 : 160, easing: clicked ? 'cubic-bezier(.4, 0, .6, 1)' : 'ease-in', fill: 'forwards' })
     .finished.catch(() => {}).then(() => {
@@ -549,7 +554,7 @@ function switchCats() {
     .finished.catch(() => {}).then(() => g.remove()));
   [...bar.querySelectorAll('.cat-tab')].forEach((tab, i) => tab.animate(
     [{ opacity: 0, transform: 'translateY(-10px)' }, { opacity: 1, transform: 'none' }],
-    { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)', delay: 60 + Math.min(i, 8) * 30, fill: 'backwards' }));
+    { duration: 320, easing: EASE_OUT, delay: 60 + Math.min(i, 8) * 30, fill: 'backwards' }));
   const add = bar.querySelector(':scope > .cat-add');
   if (add && addBefore) {
     const dx = addBefore.left - add.getBoundingClientRect().left;
@@ -764,7 +769,7 @@ function relayoutBoard() {
 // It also closes up the space it took (and a group's gap), so the re-render that removes it moves nothing.
 function animateOut(ids) {
   const els = ids.map((id) => document.querySelector(`#board [data-id="${CSS.escape(id)}"], #ws-list [data-id="${CSS.escape(id)}"], #cat-bar [data-id="${CSS.escape(id)}"]`)).filter(Boolean);
-  const opts = { duration: 230, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' };
+  const opts = { duration: 230, easing: EASE_STD, fill: 'forwards' };
   return Promise.all(els.map((el) => {
     const r = el.getBoundingClientRect();
     el.dataset.leaving = '1'; // (so the state that takes it out doesn't play this again)
@@ -1418,7 +1423,7 @@ async function renderTabs() {
     await Promise.all(gone.map((el) => {
       el.style.overflow = 'hidden';
       return el.animate([{ opacity: 1, height: `${el.getBoundingClientRect().height}px` }, { opacity: 0, height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '0px' }],
-        { duration: 200, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+        { duration: 200, easing: EASE_STD, fill: 'forwards' }).finished.catch(() => {});
     }));
     if (seq !== tabsRenderSeq) return;
   }
@@ -1532,17 +1537,19 @@ const pendingHidden = new Map(); // (device: hidden, as ticked here and not yet 
 let pendingOrder = null;
 const remoteKey = (el) => (el.matches('.dev') ? `d${el.dataset.device}` : `r${el.closest('.dev').dataset.device}|${el.dataset.url}|${el.dataset.n}`);
 // (folding open from nothing, or shut to nothing, the rest of the panel following as it goes)
+// (shut: no height, nothing around it either; fold (below) does more, for a box with a border, and keeps a state)
+const FOLDED = { height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' };
 function foldIn(el, delay = 0) {
   const full = el.getBoundingClientRect().height;
   el.style.overflow = 'hidden';
-  return el.animate([{ height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }, { height: `${full}px`, opacity: 1 }],
+  return el.animate([FOLDED, { height: `${full}px`, opacity: 1 }],
     { duration: 300, delay, easing: GLIDE, fill: 'backwards' }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
 }
 function foldOut(el) {
   el.style.overflow = 'hidden';
   el.style.pointerEvents = 'none';
-  return el.animate([{ height: `${el.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0, marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }],
-    { duration: 240, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => el.remove());
+  return el.animate([{ height: `${el.getBoundingClientRect().height}px`, opacity: 1 }, FOLDED],
+    { duration: 240, easing: EASE_STD, fill: 'forwards' }).finished.catch(() => {}).then(() => el.remove());
 }
 function devPart(d, isOpen) {
   const n = d.windows.reduce((a, w) => a + w.tabs.length, 0);
@@ -1839,7 +1846,7 @@ async function toggleWin(id) {
     if (body) {
       body.style.overflow = 'hidden';
       await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
-        { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+        { duration: 220, easing: EASE_STD, fill: 'forwards' }).finished.catch(() => {});
     }
   }
   ui.winCollapsed = [...shut];
@@ -1988,7 +1995,7 @@ function dropTabRows(ids) {
     row.classList.add('closing');
     row.style.overflow = 'hidden';
     row.animate([{ opacity: 1, height: `${row.getBoundingClientRect().height}px` }, { opacity: 0, height: '0px', paddingTop: '0px', paddingBottom: '0px' }],
-      { duration: 160, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {}).then(() => row.remove());
+      { duration: 160, easing: EASE_STD, fill: 'forwards' }).finished.catch(() => {}).then(() => row.remove());
   }
 }
 
@@ -2071,13 +2078,13 @@ let turning = null; // id whose chevron turns open on the next render (see anima
 async function toggleCollapse(node) {
   if (!node.collapsed) {
     chevronOf(node.id)?.animate([{ transform: 'none' }, { transform: 'rotate(-90deg)' }],
-      { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }); // (with the contents closing)
+      { duration: 220, easing: EASE_STD, fill: 'forwards' }); // (with the contents closing)
     const body = contentsOf(node.id);
     if (body) {
       body.style.overflow = 'hidden';
       body.style.minHeight = '0'; // (nested lists keep a small min-height for dropping)
       await body.animate([{ height: `${body.getBoundingClientRect().height}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
-        { duration: 220, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' }).finished.catch(() => {});
+        { duration: 220, easing: EASE_STD, fill: 'forwards' }).finished.catch(() => {});
     }
   } else expanding = turning = node.id;
   apply({ op: 'patch', id: node.id, fields: { collapsed: !node.collapsed } });
@@ -2193,7 +2200,7 @@ function growNote(held) {
     const none = { height: '0px', paddingTop: '0px', paddingBottom: '0px', ...NO_RULE };
     const gone = note.matches('.note-spacer');
     note.animate([height ? { height: `${height}px` } : none, gone ? none : { height: `${to}px` }],
-      { duration: gone ? 280 : 340, easing: gone ? 'cubic-bezier(.22, 1, .36, 1)' : SPRING })
+      { duration: gone ? 280 : 340, easing: gone ? EASE_OUT : SPRING })
       .finished.catch(() => {}).then(() => {
         if (note.matches('.note-spacer')) note.remove();
         else { note.style.overflow = ''; note.style.minHeight = ''; }
@@ -2218,7 +2225,7 @@ function growBody({ body, group, shut, from, ghost, note }) {
   body.style.height = '';
   group.querySelector('.group-head').style.borderBottomWidth = '';
   const to = shut ? 0 : body.getBoundingClientRect().height;
-  const opts = shut ? { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' } : { duration: 340, easing: SPRING };
+  const opts = shut ? { duration: 280, easing: EASE_OUT } : { duration: 340, easing: SPRING };
   const line = [{ marginBottom: '0px' }, NO_RULE]; // the header's rule over the body
   group.querySelector('.group-head').animate(shut ? line : line.reverse(), opts);
   body.animate([{ height: `${from}px` }, { height: `${to}px` }], opts).finished.catch(() => {}).then(() => {
@@ -4212,7 +4219,7 @@ function switchTheme(s) {
     live.forEach((dlg, i) => { dlg.style.viewTransitionName = `fs-live-${i}`; dlg.style.viewTransitionClass = 'fs-live'; });
     const vt = document.startViewTransition(() => { settings = s; applyTheme(); });
     vt.ready.then(() => {
-      const ease = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'both' };
+      const ease = { duration: 380, easing: EASE_OUT, fill: 'both' };
       root.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, pseudoElement: '::view-transition-old(root)' });
       root.animate([{ opacity: 0 }, { opacity: 1 }], { ...ease, pseudoElement: '::view-transition-new(root)' });
       // (the open dialogs: their pictures from before never shown, only them live (else the thumb, the text, as they
@@ -4603,7 +4610,7 @@ async function renderTrash() {
   $('#trash-clear').disabled = !trashEntries.length;
   if (!from) return;
   const to = dlg.getBoundingClientRect().height;
-  const ease = { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  const ease = { duration: 240, easing: EASE_OUT };
   if (Math.abs(to - from) > .5) dlg.animate([{ height: `${from}px`, overflow: 'hidden' }, { height: `${to}px`, overflow: 'hidden' }], ease);
   if (!none.hidden && !noted) none.animate([{ opacity: 0 }, { opacity: 1 }], ease);
 }
@@ -4638,7 +4645,7 @@ function dropTrashRows(ids) {
     const height = li.getBoundingClientRect().height;
     const frames = all ? [{ opacity: 1 }, { opacity: 0 }]
       : [{ height: `${height}px`, opacity: 1 }, { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '-2px', opacity: 0 }];
-    return li.animate(frames, { duration: all ? 140 : 220, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' })
+    return li.animate(frames, { duration: all ? 140 : 220, easing: EASE_OUT, fill: 'forwards' })
       .finished.catch(() => {}).then(() => { if (!all) li.remove(); });
   }));
 }
@@ -4746,7 +4753,7 @@ function showUpdate() {
   dot.setAttribute('aria-label', t('info.updateBadge'));
   $('#info-update-text').textContent = t('info.update', { version: `v${rel.version}` });
   $('#info-update-get').href = rel.url;
-  if (appearing) dot.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  if (appearing) dot.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'scale(1)' }], { duration: 420, easing: EASE_OUT });
 }
 
 /* ---------- side panels: collapse and resize ---------- */
@@ -5392,7 +5399,7 @@ const nameLine = (a) => [h('span', { class: 'nm', 'data-p': 'name' }, a.name || 
 // A line changed in place, part by part: a part whose words changed fades out where it was as the new fades in, over
 // each other in the same line (nothing moves up or down); a part only moved (its words the same: a username after a
 // role that changed, the 2FA chip after a name) slides to its new place, never blinking; one new comes, one gone fades.
-const SLIDE = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' }, FADE = { duration: 280, easing: 'ease-in-out' };
+const SLIDE = { duration: 280, easing: EASE_OUT }, FADE = { duration: 280, easing: 'ease-in-out' };
 function morph(el, parts) {
   const at = el.getBoundingClientRect();
   const was = new Map([...el.querySelectorAll(':scope > [data-p]')].map((p) => { const r = p.getBoundingClientRect(); return [p.dataset.p, { p, x: r.left - at.left, y: r.top - at.top }]; }));
@@ -5469,7 +5476,7 @@ async function openAccountList(again = false) {
       h('span', { class: 'account-avatar small add' }, icon('plus', 16)), h('span', {}, t('account.add'))),
     ...(full ? [h('p', { class: 'account-full' }, t('account.full', { n: data.max }))] : []));
   if (again) {
-    if (from != null) list.animate([{ height: `${from}px` }, { height: `${list.offsetHeight}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    if (from != null) list.animate([{ height: `${from}px` }, { height: `${list.offsetHeight}px` }], { duration: 240, easing: EASE_OUT });
     return;
   }
   // (the dialog keeps its top where it is: the list opens downwards only, not the box growing both ways)
@@ -5518,7 +5525,7 @@ function outButton(a) {
     const from = b.offsetWidth;
     b.classList.toggle('armed', armed);
     const to = b.offsetWidth;
-    b.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+    b.animate([{ width: `${from}px` }, { width: `${to}px` }], { duration: 240, easing: EASE_OUT });
     if (armed) label.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 60, fill: 'backwards' });
   };
   const disarm = () => { clearTimeout(timer); if (b.classList.contains('armed')) morph(false); };
@@ -5680,7 +5687,7 @@ function shareButton(head, ws) {
       old.remove();
       const was = h('span', { class: 'was', style: `padding: ${getComputedStyle(c).padding}; justify-content: flex-start` }, t(ROLE_CHIP[before]));
       c.append(was);
-      const ease = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+      const ease = { duration: 280, easing: EASE_OUT };
       c.animate([{ width: `${w0}px` }, { width: `${w}px` }], ease);
       c.querySelector('.now').animate([{ opacity: 0 }, { opacity: 1 }], ease);
       was.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, fill: 'forwards' }).finished.then(() => was.remove(), () => {});
@@ -5733,7 +5740,7 @@ function mailBadge(n) {
   b.hidden = false;
   b.replaceChildren(n > 99 ? '99+' : rollNum('mail-badge', n));
   b.setAttribute('aria-label', t('mail.badge', { n }));
-  if (!was) b.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  if (!was) b.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)', offset: .6 }, { transform: 'none' }], { duration: 420, easing: EASE_OUT });
   else if (Math.abs(b.offsetWidth - from) > .5) b.animate([{ width: `${from}px` }, { width: `${b.offsetWidth}px` }], { duration: 260, easing: GLIDE });
 }
 function openMail() {
@@ -6217,7 +6224,7 @@ function showPeople(people) {
       peopleList.getAnimations().forEach((a) => a.cancel());
       peopleList.style.overflow = 'hidden';
       peopleList.animate([{ height: `${peopleList.offsetHeight}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
-        { duration: 180, easing: 'cubic-bezier(.4, 0, .2, 1)' }).finished.then(() => {
+        { duration: 180, easing: EASE_STD }).finished.then(() => {
         if (peopleList.dataset.going == null) return;
         peopleList.hidden = true; delete peopleList.dataset.going; peopleList.style.overflow = '';
       }, () => {});
@@ -6423,7 +6430,7 @@ function fold(el, show, animate) {
     shut.marginBottom = `${-border + (goneTop - shutTop)}px`;
   }
   el.style.overflow = 'hidden';
-  el.animate(show ? [shut, open] : [open, shut], { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }).finished.then(() => {
+  el.animate(show ? [shut, open] : [open, shut], { duration: 240, easing: EASE_OUT }).finished.then(() => {
     el.style.overflow = '';
     el.hidden = !show;
     delete el.dataset.folding;
@@ -6559,7 +6566,7 @@ function showTourStep(i) {
   placeTour();
   if (!old) return;
   card.append(old);
-  const glide = { duration: 380, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+  const glide = { duration: 380, easing: EASE_OUT };
   // the buttons glide (and stretch, for a new label) from where they were; one appearing fades in, one
   // going fades out where it was (a copy: the button itself is hidden already)
   const moves = buttons.flatMap((b) => {
