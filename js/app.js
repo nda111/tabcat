@@ -5164,6 +5164,16 @@ function showNoExtension() {
   $('#no-ext-step2').dataset.i18n = own ? 'noext.connect' : 'noext.step3';
   for (const el of [$('#no-ext-title'), $('#no-ext-step2')]) el.textContent = t(el.dataset.i18n);
 }
+// A page on this computer the user hasn't let use tabcat yet: the extension asked, in a window of its own (allow.html),
+// and answers nothing else meanwhile. Said here (not an empty board); allowed, the extension loads this page again.
+function showNotAllowed() {
+  showNoExtension();
+  const card = $('#no-ext .no-ext-card');
+  for (const el of card.querySelectorAll(':scope > p:not(#no-ext-allow), :scope > ol')) el.hidden = true;
+  $('#no-ext-allow').hidden = false;
+  $('#no-ext-title').dataset.i18n = 'noext.allowTitle';
+  $('#no-ext-title').textContent = t('noext.allowTitle');
+}
 // Connected to the user's own server, the extension's data is there: this dashboard (elsewhere) says so
 // and links to it, rather than showing the board.
 let extServer = null;
@@ -5261,6 +5271,11 @@ async function init() {
     const ask = setInterval(B.hello, 1000);
     B.on('ready', (late) => { if (started) return; started = true; clearInterval(ask); start(late); });
     return;
+  }
+  if (['localhost', '127.0.0.1'].includes(location.hostname)
+    && await B.call('getSettings').then(() => false, (e) => e.message === 'not-allowed')) {
+    showNotAllowed();
+    return show();
   }
   // (shown once the board's drawn: it rises in whole, not empty and then filled)
   try { await start(ext); } finally { show(); }

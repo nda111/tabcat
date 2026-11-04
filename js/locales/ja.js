@@ -5,6 +5,8 @@ export default {
   'name.window': 'ウィンドウ {date}',
   'name.untitled': '(無題)',
   'noext.title': 'tabcat 拡張機能が見つかりません。',
+  'noext.allowTitle': 'このページで tabcat を使いますか?',
+  'noext.allowText': 'このページに tabcat の使用を許可するか確認する小さなウィンドウを開きました。そこで「許可」を選ぶと、このページで tabcat が開きます。',
   'noext.need': 'tabcat はブラウザの拡張機能と一緒に動作します。',
   'noext.store.html': '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome ウェブストアから tabcat</a> をインストールしてください。',
   'noext.manual.html': 'ストアを使わずにインストールすることもできます。<a href="chrome://extensions" data-copy>chrome://extensions</a> を開いて <b>デベロッパー モード</b> をオンにし、<b>パッケージ化されていない拡張機能を読み込む</b> を押して <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 拡張機能</a> のフォルダをインストールしてください。',

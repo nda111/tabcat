@@ -8,6 +8,8 @@ export default {
 
   // page: no extension
   'noext.title': 'tabcat extension not found.',
+  'noext.allowTitle': 'Let this page use tabcat?',
+  'noext.allowText': 'tabcat opened a small window asking whether this page may use it. Choose Allow there, and this page opens your tabcat.',
   'noext.need': 'tabcat works together with a browser extension.',
   'noext.store.html': 'Install <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat from the Chrome Web Store</a>.',
   'noext.manual.html': 'Or install it by hand. Open <a href="chrome://extensions" data-copy>chrome://extensions</a>, turn on <b>Developer mode</b>, then click <b>Load unpacked</b> and install the <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat extension</a> folder.',

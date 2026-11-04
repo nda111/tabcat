@@ -5,6 +5,8 @@ export default {
   'name.window': '窗口 {date}',
   'name.untitled': '(无标题)',
   'noext.title': '找不到 tabcat 扩展程序。',
+  'noext.allowTitle': '允许此页面使用 tabcat 吗？',
+  'noext.allowText': 'tabcat 打开了一个小窗口，询问是否允许此页面使用它。在那里选择“允许”，此页面就会打开你的 tabcat。',
   'noext.need': 'tabcat 需要与浏览器扩展程序配合使用。',
   'noext.store.html': '从 <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 应用商店</a>安装 tabcat。',
   'noext.manual.html': '也可以手动安装：打开 <a href="chrome://extensions" data-copy>chrome://extensions</a>，开启<b>开发者模式</b>，然后点击<b>加载已解压的扩展程序</b>，安装 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 扩展程序</a> 文件夹。',

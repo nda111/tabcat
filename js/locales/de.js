@@ -7,6 +7,8 @@ export default {
   'name.window': 'Fenster {date}',
   'name.untitled': '(ohne Titel)',
   'noext.title': 'tabcat-Erweiterung nicht gefunden.',
+  'noext.allowTitle': 'Diese Seite tabcat nutzen lassen?',
+  'noext.allowText': 'tabcat hat ein kleines Fenster geöffnet, das fragt, ob diese Seite es nutzen darf. Wähle dort Erlauben, dann öffnet diese Seite dein tabcat.',
   'noext.need': 'tabcat arbeitet mit einer Browsererweiterung zusammen.',
   'noext.store.html': 'Installiere <a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">tabcat aus dem Chrome Web Store</a>.',
   'noext.manual.html': 'Oder installiere es von Hand. Öffne <a href="chrome://extensions" data-copy>chrome://extensions</a>, schalte den <b>Entwicklermodus</b> ein, klicke auf <b>Entpackte Erweiterung laden</b> und installiere den Ordner der <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat-Erweiterung</a>.',

@@ -5,6 +5,8 @@ export default {
   'name.window': '창 {date}',
   'name.untitled': '(제목 없음)',
   'noext.title': 'tabcat 확장 프로그램을 찾을 수 없습니다.',
+  'noext.allowTitle': '이 페이지에서 tabcat을 쓸까요?',
+  'noext.allowText': 'tabcat이 이 페이지를 허락할지 묻는 작은 창을 열었습니다. 그 창에서 허락을 누르면 이 페이지에 tabcat이 열립니다.',
   'noext.need': 'tabcat은 브라우저 확장 프로그램과 함께 작동합니다.',
   'noext.store.html': '<a href="https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib" target="_blank" rel="noopener">Chrome 웹 스토어에서 tabcat</a>을 설치하세요.',
   'noext.manual.html': '또는 직접 설치할 수도 있습니다. <a href="chrome://extensions" data-copy>chrome://extensions</a>를 열고 <b>개발자 모드</b>를 켠 뒤, <b>압축해제된 확장 프로그램을 로드합니다</b>를 눌러 <a href="https://github.com/nda111/tabcat/releases/latest"><span class="gh-mark"></span>tabcat 익스텐션</a> 폴더를 설치하세요.',
