@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" class="booting">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 · tabcat</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+  <link rel="icon" href="/icons/icon32.png">
+  <meta name="theme-color" content="#f4f2ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#18171a" media="(prefers-color-scheme: dark)">
+  <script src="/js/look.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="stylesheet" href="/app.css">
+  <style>
+    /* (an address that isn't there: the dashboard's look, its number large, in the accent, rising in) */
+    body.nf { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; overflow: auto; }
+    .nf-card { width: min(440px, 100%); padding: 28px 28px 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
+      box-shadow: 0 10px 40px rgba(0,0,0,.08); animation: rise-in .45s cubic-bezier(.22, 1, .36, 1) backwards; }
+    html.booting .nf-card { visibility: hidden; }
+    .nf-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; font-weight: 600; }
+    .nf-brand .logo { width: 22px; height: 22px; }
+    .nf-code { margin: 0; font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -.02em; color: var(--accent);
+      animation: nf-in .6s cubic-bezier(.34, 1.32, .64, 1) .08s backwards; }
+    @keyframes nf-in { from { opacity: 0; transform: translateY(8px) scale(.92); } }
+    .nf-card h1 { margin: 12px 0 6px; font-size: 20px; }
+    .nf-card p.muted { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+    .nf-card .btn { display: inline-flex; text-decoration: none; }
+  </style>
+  <script type="module" src="/js/notfound.js"></script>
+</head>
+<body class="nf">
+  <main class="nf-card">
+    <div class="nf-brand"><span class="logo" role="img" aria-label="tabcat"></span>tabcat</div>
+    <p class="nf-code">404</p>
+    <h1 data-i18n="nf.title">There's nothing here.</h1>
+    <p class="muted" data-i18n="nf.text">The address may be mistyped, or the page has moved.</p>
+    <a class="btn primary" href="/" data-i18n="nf.home">Go to the dashboard</a>
+  </main>
+</body>
+</html>

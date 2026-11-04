@@ -7,13 +7,19 @@ let loading = null;
 function load() {
   if (!loading) {
     window.MathJax = {
-      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], processEscapes: false },
+      // (a note may be someone else's, in a shared workspace: no \style, \class, \cssId or \data (the html extension),
+      // \href, and no extensions loaded on demand (require); see safeLinks too)
+      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], processEscapes: false,
+        packages: { '[-]': ['html', 'require'] }, autoload: { html: [], require: [] } },
       svg: { fontCache: 'local' }, // self-contained SVGs, so cached copies render anywhere
       startup: { typeset: false },
     };
     loading = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = MATHJAX_URL;
+      // (only this very file: a copy changed on the CDN is refused, not run)
+      s.integrity = 'sha384-KKWa9jJ1MZvssLeOoXG6FiOAZfAgmzsIIfw8BXwI9+kYm0lPCbC6yTQPBC00F1/L';
+      s.crossOrigin = 'anonymous';
       s.async = true;
       s.onload = () => window.MathJax.startup.promise.then(resolve, reject);
       s.onerror = () => { loading = null; reject(new Error('MathJax failed to load')); };
@@ -33,6 +39,18 @@ export const mathReady = () => queue;
 const cache = new Map(); // `${className}|${tex}` -> rendered node
 const keyOf = (el) => `${el.className}|${el.textContent}`;
 
+// (an address in what's drawn: MathJax's own references to its glyphs (#...), or a web page or an e-mail address;
+// anything else (javascript:, data:...) loses it. \href is gone with the html extension: this is a second guard)
+const SAFE_HREF = /^(#|https?:|mailto:)/i;
+function safeLinks(el) {
+  for (const n of el.querySelectorAll('*')) {
+    for (const at of [...n.attributes]) {
+      if (at.localName !== 'href') continue;
+      if (!SAFE_HREF.test(at.value.trim())) n.removeAttributeNode(at);
+      else if (n.localName === 'a') { n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener noreferrer'); }
+    }
+  }
+}
 // Typesets every not-yet-rendered math element under `root`; leaves the raw TeX if MathJax is unavailable.
 export function typesetMath(root = document) {
   const els = [];
@@ -50,6 +68,7 @@ export function typesetMath(root = document) {
       live.forEach((el) => { el.dataset.typeset = ''; });
       window.MathJax.typesetClear();
       return window.MathJax.typesetPromise(live).then(() => {
+        live.forEach(safeLinks);
         live.forEach((el, i) => { if (el.firstElementChild) cache.set(keys[i], el.firstElementChild.cloneNode(true)); });
       });
     })
