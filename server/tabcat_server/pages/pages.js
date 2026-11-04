@@ -178,7 +178,49 @@ export function eventDetail(e) {
   if (e.tried && !e.username) return t('evTried', { name: e.tried });
   return known[k] ? t(known[k], { n: v }) : (e.kind === 'settings_changed' || e.kind === 'db_moved' || e.kind === 'session_ended' || e.kind === 'server_updated' ? e.detail : '');
 }
-export const eventBad = (e) => ['login_fail', 'login_locked', 'login_refused', 'twofa_fail', 'password_wrong', 'rate_limited'].includes(e.kind);
+export const eventBad = (e) => (e.result ? e.result !== 'ok' : ['login_fail', 'login_locked', 'login_refused', 'twofa_fail', 'password_wrong', 'rate_limited'].includes(e.kind));
+
+// The record read as a story: the days apart (Today, Yesterday, then dates), each happening at its time of day; the
+// same thing again and again (the same kind, account, address and browser, within ten minutes of the next) as one,
+// with how many and over what time
+const dayKey = (s) => { const d = new Date(s * 1000); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+export function dayLabel(s) {
+  const k = dayKey(s), now = Date.now() / 1000;
+  if (k === dayKey(now)) return t('dayToday');
+  if (k === dayKey(now - 86400)) return t('dayYesterday');
+  return new Intl.DateTimeFormat(lang, { dateStyle: 'medium' }).format(new Date(s * 1000));
+}
+export const clock = (s) => new Intl.DateTimeFormat(lang, { timeStyle: 'short' }).format(new Date(s * 1000));
+export function groupEvents(list) {
+  const out = [];
+  for (const e of list) {
+    const g = out[out.length - 1], same = g && g.kind === e.kind && g.user_id === e.user_id && g.tried === e.tried && g.ip === e.ip && g.agent === e.agent
+      && g.detail === e.detail && g.actor === e.actor && dayKey(g.first) === dayKey(e.at) && g.first - e.at <= 600;
+    if (same) { g.count++; g.first = e.at; g.ids.push(e.id); } else out.push({ ...e, count: 1, first: e.at, ids: [e.id] });
+  }
+  return out;
+}
+// (when: its time, or the times it ran from and to, newest last)
+export const eventTime = (g) => (g.count > 1 && clock(g.first) !== clock(g.at) ? `${clock(g.first)}–${clock(g.at)}` : clock(g.at));
+// (what, in words: the happening, its detail, how many times, by whom)
+export function eventWords(g, { by = true, tried = true } = {}) {
+  const d = !tried && g.tried && !g.username ? '' : eventDetail(g); // (the username tried said beside already, as whose)
+  return [h('span', { class: 'ev-label' }, eventLabel(g)), g.count > 1 ? h('span', { class: 'ev-count' }, `×${g.count}`) : null,
+    d ? h('span', { class: 'muted small' }, ` · ${d}`) : null, by && g.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: g.by?.name || g.actor })}`) : null];
+}
+// (a mark for one that went wrong: failed, or held off)
+export const eventMark = (g) => (g.result === 'bad' || g.result === 'warn' ? h('span', { class: `ev-mark ${g.result}`, 'aria-hidden': 'true' }, '!') : null);
+// (rows with a day's heading before each new day: the rows made by `row`)
+export function withDays(groups, row) {
+  const out = [];
+  let day = null;
+  for (const g of groups) {
+    const k = dayKey(g.at);
+    if (k !== day) { day = k; out.push(h('div', { class: 'ev-day', 'data-key': `day-${k}` }, dayLabel(g.at))); }
+    out.push(row(g));
+  }
+  return out;
+}
 
 export const date = (s) => s ? new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(s * 1000)) : t('never');
 export const bytes = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;

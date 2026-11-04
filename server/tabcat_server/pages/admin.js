@@ -1,5 +1,5 @@
 // The admin page: users, sign-up and invitations, security, the server and its dashboard
-import { turnRows, appear, freshen, live, tint, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
+import { turnRows, appear, freshen, live, tint, $, api, bytes, date, deviceName, eventBad, eventDetail, eventLabel, eventMark, eventTime, eventWords, groupEvents, withDays, flip, fold, h, modal, randomPassword, reveal as showPage, say, stepper, t, toast } from './pages.js';
 
 const me = await api('me');
 const newPasswords = new Map(); // (a user's new password, shown in place of its button until the page loads again)
@@ -383,35 +383,49 @@ async function updateServer() {
 }
 
 // ---------- the security record ----------
-// Newest first: when, what (a failure in red), whose, from where (and the admin who did it); one account's, or
-// everyone's; a page of them at a time (‹ › or a page's number typed). Failures in the last day, by address, over it.
+// Newest first, the days apart: when (the time of day), whose (their photo and name, the username beside it), what
+// (in words, by whom; one that went wrong marked, in red), from where (the browser, the address); the same again and
+// again as one (×n). One account's, or everyone's; all of it, or one kind (sign-ins, account changes, an admin's
+// doings) or what went wrong only; a page of them at a time (‹ › or a page's number typed). Failures in the last day,
+// by address, over it.
 const PER_PAGE = 15;
-let evPage = 1;
-function eventRow(e) {
-  // (no account: a sign-in tried with a username that's no one's, a dash; an account gone since: its username, no
-  // type nor name)
-  const none = () => h('span', { class: 'muted no-account' }, t('evNoAccount'));
-  return h('div', { class: `event${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
-    h('span', { class: 'ev-when muted small' }, date(e.at)),
-    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
-    h('span', { class: 'ev-id' }, e.username || none()),
-    h('span', { class: 'ev-role muted small' }, e.admin == null ? '' : t(e.admin ? 'admin' : 'member')),
-    h('span', { class: 'ev-name' }, e.name || ''),
-    h('span', { class: 'ev-ip muted small' }, e.ip || ''),
-    h('span', { class: 'ev-browser muted small' }, (e.agent && deviceName(e.agent)) || ''));
+let evPage = 1, evShow = '';
+// (an account as the record shows it: its photo and its username, the ID it signs in with)
+// (one gone since, known by its username alone: its letter, in the plain colour)
+const person = (p) => [tint(h('span', { class: 'avatar', 'aria-hidden': 'true' }, p.avatar ? h('img', { src: p.avatar, alt: '' }) : [...p.username][0].toUpperCase()), p.accent || 'purple'),
+  h('span', { class: 'ev-name' }, p.username)];
+function eventRow(g) {
+  // (whose doing it was: the admin's, for an admin's doing (whom it was done to, beside what); else the account's
+  // own; a sign-in tried with a username that's no one's: that name; an account gone since: its username)
+  const doer = g.actor ? g.by || { username: g.actor } : g.who;
+  const who = doer ? person(doer) : g.username ? person({ username: g.username })
+    : g.tried ? [h('span', { class: 'muted' }, t('evTried', { name: g.tried }))] : [h('span', { class: 'muted no-account' }, t('evNoAccount'))];
+  // (whom it was done to, when that's another account: an admin's doing)
+  const target = g.actor && g.username && g.username !== g.actor ? person(g.who || { username: g.username }) : [];
+  return h('div', { class: `event${eventBad(g) ? ' bad' : ''}`, 'data-key': g.ids.join('-') },
+    h('span', { class: 'ev-when muted small' }, eventTime(g)),
+    h('span', { class: 'ev-who' }, ...who),
+    h('span', { class: 'ev-what' }, eventMark(g), ...eventWords(g, { tried: false, by: false })),
+    h('span', { class: 'ev-who ev-target' }, ...target),
+    h('span', { class: 'ev-device muted small' }, (g.agent && deviceName(g.agent)) || ''),
+    h('span', { class: 'ev-ip muted small' }, g.ip || ''));
 }
+const evQuery = (more = {}) => {
+  const q = new URLSearchParams(more);
+  if ($('#ev-user').value) q.set('user', $('#ev-user').value);
+  if (evShow) q.set('show', evShow);
+  return q;
+};
 // `to`: another page (its rows slide in from the side it's on); none: this one again, as it now is
 async function events(to = null) {
   const page = Math.max(1, to ?? evPage);
-  const q = new URLSearchParams({ limit: String(PER_PAGE), offset: String((page - 1) * PER_PAGE) });
-  if ($('#ev-user').value) q.set('user', $('#ev-user').value);
-  const r = await api(`admin/events?${q}`);
+  const r = await api(`admin/events?${evQuery({ limit: String(PER_PAGE), offset: String((page - 1) * PER_PAGE) })}`);
   const pages = Math.max(1, Math.ceil(r.total / PER_PAGE));
   if (page > pages && r.total) return events(pages); // (fewer now: the last there is)
   const dir = Math.sign(page - evPage);
   evPage = page;
   const list = $('#events');
-  const rows = r.events.length ? r.events.map(eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
+  const rows = r.events.length ? withDays(groupEvents(r.events), eventRow) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
   if (!dir) await flip(list, () => list.replaceChildren(...rows));
   else {
     // (another page: each row's place turns over, the old going up and out as the new comes in from below; going
@@ -420,7 +434,7 @@ async function events(to = null) {
   }
   $('#ev-fails').replaceChildren(...(r.failures_24h.length ? [h('p', { class: 'small ev-fails' }, h('b', {}, t('fails24h')), ' ',
     ...r.failures_24h.map((f) => h('span', { class: 'tag off' }, t('failsAt', { ip: f.ip || '?', n: f.count }))))] : []));
-  // (nothing kept for the account chosen, or anyone: nothing to export; the button fades still, and back)
+  // (nothing kept for what's chosen: nothing to export; the button fades still, and back)
   if (!$('#ev-export').classList.contains('busy')) $('#ev-export').disabled = !r.total;
   $('#ev-cols').hidden = !r.events.length; // (the column heads: over rows only)
   // the pages: shown once there's more than one
@@ -437,6 +451,15 @@ async function events(to = null) {
   const pager = $('#ev-pager');
   if (pager.hidden !== (pages <= 1)) appear(pager, pages > 1); // (beside the failures: it grows in sideways)
 }
+// (one kind or all: the chosen chip lit, the record from its first page)
+$('#ev-show').setAttribute('aria-label', t('evShow'));
+$('#ev-show').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-show]');
+  if (!b || b.dataset.show === evShow) return;
+  for (const x of $('#ev-show').children) x.classList.toggle('on', x === b);
+  evShow = b.dataset.show;
+  evPage = 1; events();
+});
 $('#ev-prev').addEventListener('click', () => events(evPage - 1));
 $('#ev-next').addEventListener('click', () => events(evPage + 1));
 // (a page's number: gone to on Enter, or leaving the field; past the last, the last)
@@ -455,17 +478,18 @@ $('#ev-user').addEventListener('change', (e) => {
   e.target.animate([{ color: 'transparent' }, { color: getComputedStyle(e.target).color }], { duration: 220, easing: 'ease-out' });
   evPage = 1; events();
 });
-// Export: the record kept (for the account chosen, or everyone), as a CSV file in the page's language. Excel
-// reads it as UTF-8 (the byte-order mark); a cell starting like a formula is kept as text (it may hold what a
-// stranger typed, as a username)
+// Export: the record kept (for the account and the kind chosen, or everyone and all), as a CSV file in the page's
+// language: a row a happening, never put together as on the page, each with its date and time (and the time zone):
+// when, of what kind, how it went, by whom, what, whose (their username and name), from where; then its code, the
+// same in any language (see the server's README). Excel reads it as UTF-8 (the byte-order mark); a cell starting like
+// a formula is kept as text (it may hold what a stranger typed, as a username)
 async function exportEvents() {
   const b = $('#ev-export');
   b.disabled = true; b.classList.add('busy');
   try {
     const all = [];
     for (let before = null; ;) {
-      const q = new URLSearchParams({ limit: '200' });
-      if ($('#ev-user').value) q.set('user', $('#ev-user').value);
+      const q = evQuery({ limit: '200' });
       if (before) q.set('before', before);
       const { events: page } = await api(`admin/events?${q}`);
       all.push(...page);
@@ -477,10 +501,14 @@ async function exportEvents() {
       if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`;
       return /[",\n\r]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
     };
-    // (beside what happened in words, its code and the detail as kept: the same in any language; see the server's README)
-    const head = ['csvWhen', 'csvAccount', 'csvTried', 'csvWhat', 'csvCode', 'csvDetail', 'csvDetailCode', 'csvIp', 'csvDevice', 'csvAgent', 'csvAdmin'].map((k) => t(k));
-    const iso = (s) => { const d = new Date(s * 1000), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
-    const rows = all.map((e) => [iso(e.at), e.username || t('evNoAccount'), e.tried || '', eventLabel(e), e.kind, eventDetail(e), e.detail, e.ip, e.agent && deviceName(e.agent), e.agent, e.actor].map(cell).join(','));
+    const head = ['csvWhen', 'csvCategory', 'csvResult', 'csvBy', 'csvWhat', 'csvAccount', 'csvName', 'csvDevice', 'csvIp', 'csvCode'].map((k) => t(k));
+    const iso = (s) => {
+      const d = new Date(s * 1000), p = (n) => String(n).padStart(2, '0'), off = -d.getTimezoneOffset();
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ${off < 0 ? '-' : '+'}${p(Math.floor(Math.abs(off) / 60))}:${p(Math.abs(off) % 60)}`;
+    };
+    const what = (e) => [eventLabel(e), eventDetail(e)].filter(Boolean).join(' · ');
+    const rows = all.map((e) => [iso(e.at), t(`evCat_${e.category}`), t(`evRes_${e.result}`), e.actor || '', what(e), e.username || e.tried || '', e.who?.name || e.name || '',
+      (e.agent && deviceName(e.agent)) || '', e.ip, e.kind].map(cell).join(','));
     const blob = new Blob(['\ufeff' + [head.map(cell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const day = new Date().toISOString().slice(0, 10);
     const a = h('a', { href: URL.createObjectURL(blob), download: `tabcat-security-${day}.csv` });

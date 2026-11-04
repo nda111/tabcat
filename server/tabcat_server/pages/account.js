@@ -1,5 +1,5 @@
 // Your account: who you are, your password, signing out (here or on your other devices)
-import { turnRows, $, api, appear, tint, date, deviceName, eventBad, eventDetail, eventLabel, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
+import { turnRows, $, api, appear, tint, date, deviceName, eventBad, eventDetail, eventLabel, eventMark, eventTime, eventWords, groupEvents, withDays, flip, fold, h, live, modal, reveal, say, t, toast } from './pages.js';
 
 const me = await api('me');
 $('#who').textContent = t('signedInAs', { name: me.username });
@@ -276,11 +276,14 @@ async function myEvents(to = null) {
   const first = !shownEvents;
   shownEvents = seen;
   const box = $('#my-events');
-  const rows = r.events.length ? r.events.map((e) => h('div', { class: `event mine${eventBad(e) ? ' bad' : ''}`, 'data-key': e.id },
-    h('span', { class: 'ev-what' }, eventLabel(e), eventDetail(e) ? h('span', { class: 'muted small' }, ` · ${eventDetail(e)}`) : null, e.actor ? h('span', { class: 'muted small' }, ` · ${t('byAdmin', { name: e.actor })}`) : null),
-    h('span', { class: 'ev-when muted small' }, date(e.at)),
-    h('span', { class: 'ev-where muted small' }, [e.ip, e.agent && deviceName(e.agent)].filter(Boolean).join(' · '))))
-    : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
+  // (the days apart; each: what (marked if it went wrong; by whom, an admin's doing), when, and from where, "This
+  // browser" for this one; the same again and again as one)
+  const row = (g) => h('div', { class: `event mine${eventBad(g) ? ' bad' : ''}`, 'data-key': g.ids.join('-') },
+    h('span', { class: 'ev-what' }, eventMark(g), ...eventWords(g)),
+    h('span', { class: 'ev-when muted small' }, eventTime(g)),
+    h('span', { class: 'ev-where muted small' }, [(g.agent && deviceName(g.agent)) || '', g.ip].filter(Boolean).join(' · '), g.here ? h('span', { class: 'tag ev-here' }, t('evHere')) : null));
+  const rows = r.events.length ? withDays(groupEvents(r.events), row) : [h('p', { class: 'muted small', 'data-key': 'none' }, t('eventsNone'))];
+  $('#ev-act').hidden = !r.events.length;
   if (first) box.replaceChildren(...rows);
   else if (!dir) await flip(box, () => box.replaceChildren(...rows));
   else {
@@ -371,3 +374,15 @@ async function refreshMe() {
 }
 live({ me: refreshMe });
 reveal(); // (shown now its name's in: see reveal)
+
+// Something in the record that wasn't you: straight to what to do about it. The password: its form, the current one
+// to type (the form glides into view, lit a moment); other devices: signed out as from their own button (asked first)
+$('#ev-pw').addEventListener('click', () => {
+  const form = $('#pw-form');
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => {
+    $('#current').focus({ preventScroll: true });
+    form.animate([{ boxShadow: '0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent)' }, { boxShadow: '0 0 0 8px transparent' }], { duration: 700, easing: 'ease-out' });
+  }, 350);
+});
+$('#ev-others').addEventListener('click', () => $('#others').click());

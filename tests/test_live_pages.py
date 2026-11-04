@@ -34,7 +34,9 @@ with sync_playwright() as p:
     check(soon(a, "document.querySelector('#name-view').textContent === 'Big Boss'"), 'the name changed in another browser: the account page shows it at once')
     t3 = b.new_context(); x = t3.new_page(); x.goto(SERVER + '/login'); call(x, 'POST', '/api/login', {'username': 'boss', 'password': 'correct horse'})
     check(soon(a, f"document.querySelectorAll('#devices .device').length === {devices + 1}"), 'signed in on another device: it joins the list')
-    check(soon(a, "document.querySelector('#my-events').textContent.length > 0 && document.querySelectorAll('#my-events .event').length >= 3"), 'and the recent security activity')
+    check(soon(a, "document.querySelector('#my-events').textContent.length > 0 && [...document.querySelectorAll('#my-events .event')].reduce((n, e) => n + e.dataset.key.split('-').length, 0) >= 3"), 'and the recent security activity')
+    check(a.is_visible('#ev-act') and a.is_visible('#ev-pw') and a.is_visible('#ev-others'), 'under it: not you? change the password, sign out of other devices')
+    a.click('#ev-pw'); check(until(lambda: a.evaluate("document.activeElement.id") == 'current'), 'change the password: to its form, the current one to type')
 
     a.goto(SERVER + '/admin'); a.wait_for_selector('#users tr'); time.sleep(1)
     call(o, 'POST', '/api/admin/users', {'username': 'newbie', 'password': 'newbiepass9'})

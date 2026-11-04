@@ -91,9 +91,28 @@ def create_app(config) -> FastAPI:
                client(request) if request else None, (request.headers.get('user-agent', '') if request else '')[:200],
                actor['username'] if actor else None, str(detail)[:200], tried[:60] if tried else None)
 
+    # (what kind of happening each is: signing in and out, a change to one's own account, an admin's doing; and how it
+    # went: failed, a warning (held off), or fine)
+    EVENT_KINDS = {
+        'signin': ('login_ok', 'login_fail', 'login_locked', 'login_refused', 'twofa_fail', 'recovery_used', 'logout', 'logout_others', 'session_ended', 'rate_limited'),
+        'account': ('signup', 'password_changed', 'password_wrong', 'account_deleted', 'twofa_on', 'twofa_off', 'recovery_new'),
+        'admin': ('setup', 'user_added', 'role_changed', 'suspended', 'unsuspended', 'twofa_reset', 'password_reset', 'user_deleted', 'settings_changed',
+                  'logout_all', 'invite_created', 'invite_deleted', 'db_moved', 'server_updated', 'tailscale_serve'),
+    }
+    EVENT_BAD = ('login_fail', 'login_refused', 'twofa_fail', 'password_wrong')
+    EVENT_WARN = ('login_locked', 'rate_limited')
+
     def event(r) -> dict:
-        return {'id': r['id'], 'at': r['at'], 'user_id': r['user_id'], 'username': r['username'], 'kind': r['kind'],
-                'ip': r['ip'] or '', 'agent': r['agent'] or '', 'actor': r['actor'], 'detail': r['detail'] or '', 'tried': r['tried']}
+        k = r['kind']
+        return {'id': r['id'], 'at': r['at'], 'user_id': r['user_id'], 'username': r['username'], 'kind': k,
+                'ip': r['ip'] or '', 'agent': r['agent'] or '', 'actor': r['actor'], 'detail': r['detail'] or '', 'tried': r['tried'],
+                'category': next((c for c, ks in EVENT_KINDS.items() if k in ks), 'admin'),
+                'result': 'bad' if k in EVENT_BAD else 'warn' if k in EVENT_WARN else 'ok'}
+
+    def event_filter(show: str | None):
+        """The record narrowed to one kind (signin, account, admin) or to what went wrong (bad: failed or held off)."""
+        ks = EVENT_BAD + EVENT_WARN if show == 'bad' else EVENT_KINDS.get(show or '')
+        return (f" and kind in ({','.join('?' * len(ks))})", list(ks)) if ks else ('', [])
 
     def clean_name(v) -> str:
         """A name to go by: up to auth.NAME_MAX characters (as many as show whole), spaces tidied; empty: none."""
@@ -896,13 +915,16 @@ def create_app(config) -> FastAPI:
     # The security record: for the admin page (everyone's, or one account's; older pages after `before`), and each
     # account's own on its account page
     @app.get('/api/admin/events')
-    def admin_events(request: Request, user: int | None = None, before: int | None = None, limit: int = 50, offset: int = 0):
+    def admin_events(request: Request, user: int | None = None, before: int | None = None, limit: int = 50, offset: int = 0, show: str | None = None):
         """Newest first: `limit` of them, after `offset` (a page of them) or older than `before` (going on from
-        one); `total`: how many there are (for the account, or everyone)."""
+        one); `total`: how many there are (for the account, or everyone; of the kind shown: see event_filter). Each
+        with whom it's about and who did it, as they are now (`who`, `by`: their name and photo)."""
         need_admin(request)
         q, args = ' from events where 1 = 1', []
         if user is not None:
             q += ' and user_id = ?'; args.append(user)
+        fq, fargs = event_filter(show)
+        q += fq; args += fargs
         total = db.one('select count(*) n' + q, *args)['n']
         if before:
             q += ' and id < ?'; args.append(before)
@@ -911,17 +933,22 @@ def create_app(config) -> FastAPI:
         fails = db.q("select ip, count(*) n from events where kind in ('login_fail', 'twofa_fail', 'login_locked', 'password_wrong', 'rate_limited') and at > ? group by ip order by n desc limit 5", day)
         # (each one's account as it is now: its name and whether an admin, for the record's own columns)
         ids = sorted({r['user_id'] for r in rows if r['user_id'] is not None})
-        who = {u['id']: dict(u) for u in db.q(f"select id, name, admin from users where id in ({','.join('?' * len(ids))})", *ids)} if ids else {}
-        out = [{**event(r), 'name': (who.get(r['user_id']) or {}).get('name') or '', 'admin': bool((who.get(r['user_id']) or {}).get('admin')) if r['user_id'] in who else None} for r in rows]
+        who = {u['id']: u for u in db.q(f"select * from users where id in ({','.join('?' * len(ids))})", *ids)} if ids else {}
+        names = sorted({r['actor'] for r in rows if r['actor']})
+        by = {u['username']: u for u in db.q(f"select * from users where username in ({','.join('?' * len(names))})", *names)} if names else {}
+        out = [{**event(r), 'name': (who[r['user_id']]['name'] or '') if r['user_id'] in who else '', 'admin': bool(who[r['user_id']]['admin']) if r['user_id'] in who else None,
+                'who': person(who.get(r['user_id'])), 'by': person(by.get(r['actor']))} for r in rows]
         return {'events': out, 'total': total, 'failures_24h': [{'ip': r['ip'], 'count': r['n']} for r in fails]}
 
     @app.get('/api/me/events')
     def my_events(request: Request, limit: int = 20, offset: int = 0):
-        """Newest first: `limit` of them, after `offset` (a page of them); `total`: how many there are."""
+        """Newest first: `limit` of them, after `offset` (a page of them); `total`: how many there are. `here`: from
+        this browser, as far as can be told (its address and its browser the same)."""
         u = need_user(request)
         total = db.one('select count(*) n from events where user_id = ?', u['id'])['n']
         rows = db.q('select * from events where user_id = ? order by id desc limit ? offset ?', u['id'], min(max(limit, 1), 100), max(offset, 0))
-        return {'events': [event(r) for r in rows], 'total': total}
+        ip, agent = client(request), request.headers.get('user-agent', '')[:200]
+        return {'events': [{**event(r), 'here': r['ip'] == ip and (r['agent'] or '') == agent} for r in rows], 'total': total}
 
     # ---------- live: open pages told at once when what they show changes ----------
     # Server-sent events, one connection a page: `head` (the account's latest sync change, for the dashboard's

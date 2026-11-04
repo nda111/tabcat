@@ -515,20 +515,44 @@ th > span { display: inline-block; } /* (a column head, to slide as its column m
 .ev-page input::-webkit-inner-spin-button, .ev-page input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .event { display: grid; grid-template-columns: 150px minmax(120px, 1fr) minmax(100px, .8fr) minmax(140px, 1fr); gap: 12px; align-items: start; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; } /* (each column from the top of the row, however many lines one takes) */
 .event:last-child { border-bottom: 0; }
-/* the record's column heads: as the rows lay out, quieter */
-.ev-cols { padding: 4px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
 .event.bad .ev-what { color: var(--danger); }
 .ev-where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* the admin page's: who and from where, each in a column of its own (ID, type, name; IP, browser) */
-#events .event, #ev-cols { grid-template-columns: 128px minmax(150px, 1.6fr) minmax(64px, .8fr) minmax(52px, .5fr) minmax(56px, .8fr) minmax(84px, .8fr) minmax(90px, .9fr); gap: 10px; }
-.ev-id, .ev-role, .ev-name, .ev-ip, .ev-browser { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* a day's heading: the rows under it that day's */
+.ev-day { padding: 12px 0 0; font-size: 12px; font-weight: 600; color: var(--muted); } /* (its rows straight under it, no line between) */
+.ev-day:first-child { padding-top: 2px; }
+/* one that went wrong: a mark before it (failed: red; held off: amber) */
+.ev-mark { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 6px; border-radius: 50%; font-size: 10px; font-weight: 700; color: #fff; vertical-align: 1px; }
+.ev-mark.bad { background: var(--danger); }
+.ev-mark.warn { background: #d9a400; }
+.ev-count { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 99px; background: var(--hover); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* the admin page's: when (the time), whose (photo, name, username), what, from where */
+#events .event, #ev-cols { grid-template-columns: 76px minmax(100px, .8fr) minmax(150px, 1.5fr) minmax(100px, .8fr) minmax(100px, .9fr) minmax(84px, .7fr); gap: 12px; line-height: 22px; }
+.ev-device, .ev-ip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* the record's column heads: as the rows lay out, quieter */
+#ev-cols { padding: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+#ev-cols[hidden] { display: none; }
+#ev-cols + .events > .ev-day:first-child { padding-top: 8px; } /* (a line as tall as a photo: each column's first line level with the others') */
+.ev-who { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+.ev-who .avatar { flex: none; width: 22px; height: 22px; font-size: 11px; }
+.ev-who .ev-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ev-who .muted { flex: none; }
+.ev-when { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* which to show: all, or one kind, or what went wrong (chips; the chosen in the accent) */
+.ev-show { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.ev-show button { font: inherit; font-size: 12.5px; padding: 3px 11px; border-radius: 99px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: background-color .16s ease, color .16s ease, border-color .16s ease; }
+.ev-show button:hover:not(.on) { background: var(--hover); color: var(--text); }
+.ev-show button.on { background: color-mix(in srgb, var(--accent) 16%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); font-weight: 600; }
+/* the account page's: what and when on a line, from where under it ("This browser" for this one) */
 .event.mine { grid-template-columns: 1fr auto; row-gap: 0; }
 .event.mine .ev-where { grid-column: 1 / -1; }
-@media (max-width: 700px) { .event { grid-template-columns: 1fr auto; row-gap: 2px; } .event .ev-who, .event .ev-where { grid-column: 1 / -1; } .ev-cols { display: none; }
-  /* (narrow: time and event, then who on a line, then from where) */
-  #events .event { grid-template-columns: auto auto auto 1fr; column-gap: 8px; }
-  #events .ev-when { grid-column: 1 / 4; } #events .ev-what { grid-column: 4; justify-self: end; text-align: end; }
-  #events .ev-ip { grid-column: 1 / 3; } #events .ev-browser { grid-column: 3 / -1; } }
+.ev-here { margin-left: 8px; font-size: 11px; padding: 0 6px; line-height: 16px; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--accent); }
+@media (max-width: 700px) {
+  /* (narrow: the time and whose on a line, what under it, from where under that) */
+  #events .event { grid-template-columns: auto 1fr; row-gap: 2px; column-gap: 10px; }
+  #events .ev-what { grid-column: 1 / -1; }
+  #events .ev-target:empty { display: none; }
+  #ev-cols { display: none; }
+}
 
 /* drop-downs, as the dashboard's: a chevron instead of the native arrow; where the browser lets the list be
    styled (appearance: base-select), it drops in from the field, the chevron flips, the chosen one in the accent */
@@ -586,3 +610,7 @@ select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%);
 #users .pw-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow: hidden; padding: 0 0 10px; }
 #users .pw-done { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 17px; line-height: 1; cursor: pointer; transition: background-color .12s ease, color .12s ease; }
 #users .pw-done:hover { background: var(--hover); color: var(--text); }
+
+/* under one's own record: what to do if something there wasn't you */
+.ev-act { margin: 8px 0 0; }
+.ev-act .link-btn { font-size: inherit; }

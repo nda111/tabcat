@@ -318,8 +318,14 @@ check(ann_ev and all(e['user_id'] == ann_id for e in ann_ev), "one account's rec
 c.patch(f'/api/admin/users/{ann_id}', json={'disabled': True}); c.patch(f'/api/admin/users/{ann_id}', json={'disabled': False})
 top = c.get('/api/admin/events').json()['events'][:2]
 check([e['kind'] for e in top] == ['unsuspended', 'suspended'] and top[0]['actor'] == 'boss', "an admin's doings, and whose")
+check(top[0]['category'] == 'admin' and top[0]['result'] == 'ok' and top[0]['who']['username'] == 'ann' and top[0]['by']['username'] == 'boss', f"each: its kind, how it went, whom it's about and who did it ({top[0]})")
+bad = c.get('/api/admin/events', params={'show': 'bad'}).json()
+check(bad['events'] and all(e['result'] in ('bad', 'warn') for e in bad['events']) and bad['total'] == len([1 for e in c.get('/api/admin/events', params={'limit': 200}).json()['events'] if e['result'] != 'ok']), 'only what went wrong')
+sign = c.get('/api/admin/events', params={'show': 'signin'}).json()['events']
+check(sign and all(e['category'] == 'signin' for e in sign), 'only signing in and out')
 mine = e1.post('/api/login', json=J(username='ann', password='annpass99')) and e1.get('/api/me/events').json()['events']
 check(mine and all(e['user_id'] == ann_id for e in mine) and mine[0]['kind'] == 'login_ok', 'each account sees its own record')
+check(mine[0]['here'] is True and mine[0]['category'] == 'signin', f"from this browser, marked so ({mine[0].get('here')})")
 # guessing the current password (a session borrowed): counted as failed sign-ins, held off as they are
 gs = TestClient(app, follow_redirects=False, client=('192.0.2.81', 1))
 gs.post('/api/login', json=J(username='ben', password='benpass99'))

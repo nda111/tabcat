@@ -39,6 +39,8 @@ def streams(pages): return sum(pg.evaluate('window.__open()') for pg in pages)
 def states(pages, js): return [pg.evaluate(js) for pg in pages]
 SHOWN = "[location.pathname, document.querySelector('#name-view')?.textContent || document.querySelector('#users b')?.textContent, window.__open()]"
 
+# (how many happenings a record shows: a row may hold several, the same again and again)
+n_ev = lambda pg, sel: pg.evaluate(f"[...document.querySelectorAll('{sel} .event')].reduce((n, e) => n + e.dataset.key.split('-').length, 0)")
 errors = []
 with sync_playwright() as p:
     b = p.chromium.launch()
@@ -136,8 +138,8 @@ with sync_playwright() as p:
     acc = one.new_page(); acc.on('pageerror', lambda e: errors.append(str(e))); acc.goto(SERVER + '/account'); acc.wait_for_selector('#my-events .event')
     mine = acc.evaluate("fetch('/api/me/events?limit=1').then(r => r.json()).then(r => r.total)")
     mp = -(-mine // 5)
-    until(lambda: acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp)); settle(acc)
-    check(acc.locator('#my-events .event').count() == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp), f'the account page: its record five a page, {mp} pages ({mine} in all)')
+    until(lambda: n_ev(acc, '#my-events') == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp)); settle(acc)
+    check(n_ev(acc, '#my-events') == 5 and acc.locator('#my-ev-pager').is_visible() and acc.locator('#my-ev-pages').inner_text() == str(mp), f'the account page: its record five a page, {mp} pages ({mine} in all)')
     top = acc.locator('#my-events .event').first.get_attribute('data-key')
     TURN = '''(sel) => new Promise((done) => { const seen = []; const look = () => { for (const a of document.getAnimations()) { const t = a.effect?.target, k = a.effect.getKeyframes();
       if (t?.closest?.(sel) && /translateY/.test(k[0].transform + k[1].transform)) seen.push((t.closest('.event')?.parentElement?.closest('.event') ? 'old ' : 'new ') + (k[0].transform === 'none' ? 'out ' + k[1].transform : 'in ' + k[0].transform)); }
@@ -152,8 +154,8 @@ with sync_playwright() as p:
     check('old out translateY(N)' in turn and 'new in translateY(-N)' in turn, f'back: the other way ({turn})')
     acc.click('#my-ev-next'); until(lambda: acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top); settle(acc)
     check(acc.locator('#my-ev-page').input_value() == '2' and acc.locator('#my-events .event').first.get_attribute('data-key') != top, 'next: page 2')
-    acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); until(lambda: acc.locator('#my-ev-page').input_value() == str(mp) and acc.locator('#my-events .event').count() == mine - 5 * (mp - 1))
-    check(acc.locator('#my-ev-page').input_value() == str(mp) and acc.locator('#my-events .event').count() == mine - 5 * (mp - 1), 'a page typed, past the last: the last')
+    acc.fill('#my-ev-page', '99'); acc.press('#my-ev-page', 'Enter'); until(lambda: acc.locator('#my-ev-page').input_value() == str(mp) and n_ev(acc, '#my-events') == mine - 5 * (mp - 1))
+    check(acc.locator('#my-ev-page').input_value() == str(mp) and n_ev(acc, '#my-events') == mine - 5 * (mp - 1), 'a page typed, past the last: the last')
     if os.environ.get('SHOT2'): acc.locator('#my-events').locator('..').screenshot(path=os.environ['SHOT2'])
     acc.close()
 
@@ -163,8 +165,8 @@ with sync_playwright() as p:
     adm.reload(); adm.wait_for_selector('#events .event')
     total = adm.evaluate("fetch('/api/admin/events?limit=1').then(r => r.json()).then(r => r.total)")
     pages_n = -(-total // 15)
-    until(lambda: adm.locator('#events .event').count() == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n)); settle(adm)
-    check(adm.locator('#events .event').count() == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n),
+    until(lambda: n_ev(adm, '#events') == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n)); settle(adm)
+    check(n_ev(adm, '#events') == 15 and adm.locator('#ev-pager').is_visible() and adm.locator('#ev-pages').inner_text() == str(pages_n),
           f'the record: 15 a page, {pages_n} pages ({adm.locator("#events .event").count()}, {total} in all)')
     first = adm.locator('#events .event').first.inner_text()
     # (rows taller or shorter on the next page: each grows or shrinks at the turn's own pace, its line gliding with it)
@@ -178,8 +180,16 @@ with sync_playwright() as p:
     check(not differ or (grow['rows'] and set(grow['rows']) == {340}), f'rows taller or shorter on the next page: their heights glide, at the turn\'s pace ({grow}, heights differ: {differ})')
     check(not differ or grow['list'], 'and the record itself grows or shrinks to them, the box with it')
     check(adm.locator('#ev-page').input_value() == '2' and adm.locator('#events .event').first.inner_text() != first, 'next: page 2')
-    adm.fill('#ev-page', '99'); adm.press('#ev-page', 'Enter'); until(lambda: adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1)); settle(adm)
-    check(adm.locator('#ev-page').input_value() == str(pages_n) and adm.locator('#events .event').count() == total - 15 * (pages_n - 1), 'a page typed, past the last: the last')
+    adm.fill('#ev-page', '99'); adm.press('#ev-page', 'Enter'); until(lambda: adm.locator('#ev-page').input_value() == str(pages_n) and n_ev(adm, '#events') == total - 15 * (pages_n - 1)); settle(adm)
+    check(adm.locator('#ev-page').input_value() == str(pages_n) and n_ev(adm, '#events') == total - 15 * (pages_n - 1), 'a page typed, past the last: the last')
+    # the days apart, column heads over them; one kind only; the export: a row a happening, its columns in order
+    check(adm.locator('#events .ev-day').count() >= 1 and adm.is_visible('#ev-cols'), 'days apart, under the column heads')
+    adm.click('#ev-show button[data-show=signin]')
+    check(until(lambda: adm.evaluate("(l => l.length > 0 && l.every(e => /^(Signed in|Signed out|Wrong password|Too many)/.test(e.querySelector('.ev-label').textContent)))([...document.querySelectorAll('#events .event')])")), 'Sign-ins: only signing in and out')
+    with adm.expect_download() as dl: adm.click('#ev-export')
+    head = open(dl.value.path(), encoding='utf-8-sig').readline().strip()
+    check(head == 'Time,Category,Result,By (ID),Event,Account,Name,Device,IP address,Event code', f'the export: when, kind, how it went, by whom, what, whose, from where, its code ({head})')
+    adm.click('#ev-show button[data-show=""]')
     adm.fill('#ev-page', '1'); adm.press('#ev-page', 'Enter'); until(lambda: adm.locator('#events .event').first.inner_text() == first and adm.locator('#ev-prev').is_disabled())
     check(adm.locator('#events .event').first.inner_text() == first and adm.locator('#ev-prev').is_disabled(), 'page 1 typed: the first again')
     if os.environ.get('SHOT'): adm.screenshot(path=os.environ['SHOT'], full_page=True)
