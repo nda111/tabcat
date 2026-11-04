@@ -35,6 +35,7 @@ const DOCKER_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="curre
   + '<path d="M1.6 12.4h18.2c.5-1.1 1.6-1.7 2.6-1.5-.2-1-.9-1.6-1.8-1.6.1-.9-.3-1.7-.9-2.1-.6.6-.8 1.6-.5 2.5-.4.3-.9.6-1.4.6H1.6c-.2 2.4.5 4.8 2.2 6.4 1.5 1.4 3.6 2.1 6.1 2.1 5 0 8.8-2.4 10.6-6.4h-18.9z"/></svg>';
 // The browser's page for extensions' shortcuts: a page can't open it itself, the extension can (asked through its
 // bridge, as the dashboard does); without it, the address is copied, to paste
+const OPEN_SHORTCUTS = 'chrome://extensions/shortcuts';
 const SHORTCUTS = /Edg\//.test(navigator.userAgent) ? 'edge://extensions/shortcuts'
   : /Whale\//.test(navigator.userAgent) ? 'whale://extensions/shortcuts' : 'chrome://extensions/shortcuts';
 const EASE_OUT = 'cubic-bezier(.22, 1, .36, 1)';
@@ -134,8 +135,15 @@ document.addEventListener('click', async (e) => {
   const shortcuts = e.target.closest('.shortcuts-link');
   if (shortcuts) {
     e.preventDefault();
-    if (await B.connect(800)) return B.call('openUrls', { urls: [SHORTCUTS], active: true }).catch(() => {});
-    try { await navigator.clipboard.writeText(SHORTCUTS); } catch { /* not allowed: the address is the link's */ }
+    // (asked of the extension as chrome://: what it opens for a page (whale:// and edge:// it doesn't), and what Edge
+    // and Whale open as their own; without the extension, or refused, the address is copied, and the link says so)
+    const opened = await B.connect(800) && await B.call('openUrls', { urls: [OPEN_SHORTCUTS], active: true }).then(() => true, () => false);
+    if (opened) return;
+    try { await navigator.clipboard.writeText(SHORTCUTS); } catch { return; }
+    const t = TEXT[pick.value];
+    shortcuts.textContent = `${t.links.shortcuts} · ${t.copied}`;
+    clearTimeout(shortcuts.timer);
+    shortcuts.timer = setTimeout(() => { shortcuts.textContent = TEXT[pick.value].links.shortcuts; }, 1800);
     return;
   }
   const copy = e.target.closest('.copy');
