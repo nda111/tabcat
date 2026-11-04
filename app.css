@@ -619,6 +619,13 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 .devs:empty { display: none; }
 .devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 6px 0; /* (its button in line with the windows' buttons above) */ border-top: 1px solid var(--border); font-size: calc(11px * var(--fs, 1)); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
 .devs-title .grow { flex: 1; min-width: 0; }
+/* this browser's name, above its windows: written as the other browsers' heading, with no line above it */
+.self-title { margin: 0 0 2px; padding: 2px 6px 0; border-top: 0; min-height: 26px; }
+.self-title .self-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
+.self-title .self-edit { opacity: 0; transition: opacity .16s ease; }
+.self-title:hover .self-edit, .self-title .self-edit:focus-visible { opacity: 1; }
+.self-title .dev-rename { text-transform: none; letter-spacing: 0; font-size: calc(12px * var(--fs, 1)); }
+body.tabs-collapsed .self-title { display: none; }
 .devs-list-btn { width: 24px; height: 24px; }
 /* the list of them, in a dialog: each in a row of its own, a handle on the left, a tick on the right; the whole
    row a click (tick) or, pressed and moved, a drag (order) */
@@ -1008,7 +1015,7 @@ dialog[open]::backdrop { animation: fade-in .16s ease-out; }
 /* things that only exist in one state fade in instead of popping (only during a toggle, not on re-renders) */
 /* (scoped to the panel being toggled, so the other panel doesn't replay it) */
 body.ws-collapsed #sidebar.panel-anim .ws-add,
-body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count),
+body:not(.ws-collapsed) #sidebar.panel-anim :is(.side-btn .label, .ws-item .name, .ws-item .count, .ws-split .label),
 body:not(.tabs-collapsed) #tabs-panel.panel-anim :is(.panel-title, .win-head .grow, .win-head .icon-btn, .tab-row .name) { animation: fade-in .3s ease-out; }
 /* the rail's per-window tab counts fade in as it closes, and fade out where they were as it opens (out of
    the flow, so the full header lays out as usual meanwhile) */
@@ -1315,10 +1322,14 @@ html.fs-vt::view-transition-new(*.fs-live), html.fs-vt::view-transition-group(*.
 .mail-head label.check { margin: 0; font-weight: 400; color: var(--muted); cursor: pointer; }
 #mail-del { color: var(--danger); }
 /* (many: the list scrolls, the row to tick them all and Close staying in view) */
-#mail-list { list-style: none; margin: 0; padding: 0; max-height: min(56vh, 520px); overflow-y: auto; }
+#mail-list { list-style: none; margin: 0; padding: 0; max-height: min(56vh, 520px); overflow-y: auto; } /* (seven rows tall at most: see capRows) */
 #mail-list:focus { outline: none; } /* (focused to scroll by keys: no ring around the whole list) */
 .mail-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; transition: background-color .16s ease; }
 .mail-row:hover { background: var(--hover); transition-duration: .05s; }
+/* read (as it was when the Mailbox opened): a shade darker (lighter in the dark theme: the text's colour, a touch) */
+.mail-row.read { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.mail-row.read:hover { background: var(--hover); }
+#mail-list.picking, #mail-list.picking * { user-select: none; cursor: default; }
 .mail-row + .mail-row { margin-top: 2px; }
 .mail-row input:disabled, #mail-all:disabled { opacity: .35; cursor: default; }
 .mail-text { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -1351,7 +1362,8 @@ dialog .share-ask input { flex: 1; min-width: 0; width: auto; margin: 0; }
 dialog .share-ask select, dialog .share-role select { margin: 0; height: 100%; }
 #share-go { flex: none; }
 .share-invite .error { margin: 4px 2px 6px; }
-#share-list { list-style: none; margin: 0; padding: 0; }
+#share-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; } /* (five rows tall at most: see capRows) */
+#share-list:focus { outline: none; }
 .share-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; transition: background-color .16s ease; }
 .share-row:hover { background: var(--hover); transition-duration: .05s; }
 .share-row + .share-row { margin-top: 2px; }
@@ -1362,6 +1374,7 @@ dialog .share-ask select, dialog .share-role select { margin: 0; height: 100%; }
 .share-me { display: inline-block; margin-left: 5px; color: var(--muted); font-weight: 400; }
 .share-role { position: relative; flex: none; display: flex; justify-content: flex-end; color: var(--muted); font-size: calc(13px * var(--fs, 1)); white-space: nowrap; overflow: hidden; }
 .share-role .select-wrap { width: 150px; height: 30px; }
+.share-role select { color: var(--text); } /* (a choice: as any text, not the muted words of a role only shown) */
 .share-x { flex: none; }
 #share-end { color: var(--danger); }
 
@@ -1371,17 +1384,27 @@ dialog .share-ask select, dialog .share-role select { margin: 0; height: 100%; }
 
 /* whom to invite: found as typed, a list under the field (in the dialog's flow: nothing clipped) */
 .share-found { list-style: none; margin: 4px 0 0; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel);
-  box-shadow: 0 4px 16px rgba(0,0,0,.10); max-height: 240px; overflow-y: auto; transform-origin: top; }
+  box-shadow: 0 4px 16px rgba(0,0,0,.10); overflow-y: auto; } /* (five rows tall at most: see capRows) */
 .share-found-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: background-color .12s ease; }
 .share-found-row:hover, .share-found-row.on { background: var(--hover); }
-.share-found-row .account-who { display: flex; flex-direction: column; min-width: 0; }
+.share-found-row .account-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.share-found-row.taken { cursor: default; }
+.share-found-row.taken:hover { background: transparent; }
+.share-found-row.taken :is(.account-avatar, .account-who) { opacity: .55; }
+/* (in it already, or asked: said on the right) */
+.share-found-tag { flex: none; padding: 2px 8px; border-radius: 999px; font-size: calc(11px * var(--fs, 1)); background: var(--hover); color: var(--muted); white-space: nowrap; }
+.share-found-tag[hidden] { display: none; }
 .share-found-row .account-name { font-size: calc(13.5px * var(--fs, 1)); }
 .share-found-row .account-role { font-size: calc(11.5px * var(--fs, 1)); color: var(--muted); }
 /* the sidebar: workspaces shared with this account, below a line with a small share icon */
-.ws-split { display: flex; align-items: center; gap: 5px; margin: 8px 6px 2px; padding: 6px 4px 0; border-top: 1px solid var(--border); color: var(--muted); list-style: none; }
+/* (its icon 14px in from the panel's edge, collapsed or not: in the workspaces' icon column, never moving sideways;
+   up and down it glides with the rows: see PANEL_FLIP) */
+.ws-split { display: flex; align-items: center; gap: 5px; margin: 8px 6px 2px; padding: 6px 4px 0 8px; border-top: 1px solid var(--border); color: var(--muted); list-style: none;
+  transition: padding .35s cubic-bezier(.22, 1, .36, 1); }
+.ws-split svg { flex: none; }
 .ws-split .label { font-size: calc(11.5px * var(--fs, 1)); text-box: trim-both cap alphabetic; } /* (its capitals centred on the icon) */
 body.ws-collapsed .ws-split .label { display: none; }
-body.ws-collapsed .ws-split { justify-content: center; margin: 8px 4px 2px; padding: 6px 0 0; }
+body.ws-collapsed .ws-split { margin: 8px 4px 2px 6px; padding: 9px 0 8px 8px; } /* (its icon where the workspaces' are; half as tall again) */
 
 /* the Mailbox's pages: ‹ 1 / 3 › beside Close */
 .mail-pager { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; color: var(--muted); font-size: calc(12.5px * var(--fs, 1)); font-variant-numeric: tabular-nums; }
@@ -1392,5 +1415,6 @@ body.ws-collapsed .ws-split { justify-content: center; margin: 8px 4px 2px; padd
 .mail-row .mail-x[hidden] { display: none; }
 
 /* a shared workspace only viewed: nothing there to change it with */
-body.viewing :is(#board .edits, #board .add-group, #board .gap-slot, #board .tools-split, #cat-bar .cat-add) { display: none !important; }
+body.viewing :is(#board .edits, #board .add-group, #board .tools-split, #cat-bar .cat-add) { display: none !important; }
+body.viewing #board .gap-slot { visibility: hidden; pointer-events: none; } /* (their room kept: the space between the cards) */
 body.viewing #board .note { cursor: default; }

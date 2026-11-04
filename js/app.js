@@ -7,6 +7,7 @@ import { icon, hydrateIcons } from './icons.js';
 import { LANGS, setLang, getLang, t, translateDom, randomName } from './i18n.js';
 import { sampleWorkspaces } from './sample.js';
 import { scrollFeel } from './scroll-feel.js';
+import { hasLetters, findLetters } from './hangul.js';
 
 const tr = t; // for code where `t` is a tab or a drop target
 
@@ -244,15 +245,15 @@ function blankFavicon() {
   return blankLearnt;
 }
 
+// (where it matches, letter by letter for Korean: see hangul.js)
 function highlight(text, q) {
   text = String(text || '');
   if (!q) return text;
   const out = [];
-  const lower = text.toLowerCase();
-  let i = 0, j;
-  while ((j = lower.indexOf(q, i)) !== -1) {
-    out.push(text.slice(i, j), h('mark', {}, text.slice(j, j + q.length)));
-    i = j + q.length;
+  let i = 0;
+  for (const [j, k] of findLetters(text, q)) {
+    out.push(text.slice(i, j), h('mark', {}, text.slice(j, k)));
+    i = k;
   }
   out.push(text.slice(i));
   return out;
@@ -653,15 +654,20 @@ function raiseWhile(el, anim) {
 // browser): on a card the new one springs in while the old one shrinks away where it was, and the name and tools beside
 // it slide over rather than jump; a folder's springs in. (A card being edited does the same itself, see growCard; what's
 // being previewed, showPreview; and relabel leaves these symbols to this.)
+// (and its colour: changed, the card's colours fade from the old to the new, as when changed here (see growCard); what
+// each colour looks like taken once from a card that has it)
 function symbolsBefore(rects) {
-  const cards = new Map();
+  const cards = new Map(), looks = new Map();
   for (const el of document.querySelectorAll('#board .group')) {
     const box = rects.get(el.dataset.id), sym = el.querySelector(':scope > .group-head > .node-sym');
     const info = el.querySelector(':scope > .group-head > .node-info');
     if (!box || !info) continue;
-    cards.set(el.dataset.id, { el, info: info.getBoundingClientRect().left - box.left,
+    const color = el.dataset.color || '';
+    if (!looks.has(color)) looks.set(color, cardLook(el).parts);
+    cards.set(el.dataset.id, { el, color, info: info.getBoundingClientRect().left - box.left,
       sym: sym && { rect: sym.getBoundingClientRect(), size: getComputedStyle(sym).fontSize } });
   }
+  cards.looks = looks;
   return cards;
 }
 function morphSymbols(before, held) {
@@ -672,6 +678,8 @@ function morphSymbols(before, held) {
     if (id === held || id === preview?.id) continue;
     const el = document.querySelector(`#board .group[data-id="${CSS.escape(id)}"]`);
     if (!el || el === was.el) continue; // (not redrawn: nothing changed)
+    const parts = (el.dataset.color || '') !== was.color && before.syms.looks.get(was.color);
+    if (parts) LOOK_PARTS.forEach(([sel], i) => { const part = sel ? el.querySelector(sel) : el; if (part && parts[i]) part.animate([parts[i], {}], { duration: 240, easing: 'ease' }); });
     const old = was.el.querySelector(':scope > .group-head > .node-sym'), sym = el.querySelector(':scope > .group-head > .node-sym');
     if (old?.innerHTML !== sym?.innerHTML) {
       if (old && was.sym?.rect.width) {
@@ -1191,8 +1199,8 @@ function renderSearchResults() {
   T.walk(state.workspaces, (n, anc) => {
     const path = anc.map((a) => a.name).join(' › ');
     if (n.type === 'link') {
-      if ([n.name, n.url, n.description].some((x) => (x || '').toLowerCase().includes(q))) links.push({ n, anc, path });
-    } else if ([n.name, n.note, n.description].some((x) => (x || '').toLowerCase().includes(q))) {
+      if ([n.name, n.url, n.description].some((x) => hasLetters(x, q))) links.push({ n, anc, path });
+    } else if ([n.name, n.note, n.description].some((x) => hasLetters(x, q))) {
       containers.push({ n, anc, path });
     }
   });
@@ -1360,7 +1368,7 @@ async function renderTabs() {
   const keyOf = (el) => (el.matches('.tab-row') ? `t${el.dataset.tab}` : `w${el.dataset.window}`);
   const hadRows = document.querySelectorAll('#windows .tab-row').length > 0;
   const before = new Map([...document.querySelectorAll('#windows .tab-row, #windows .win')].map((el) => [keyOf(el), el.getBoundingClientRect()]));
-  $('#windows').replaceChildren(...blocks, devs); // (the account's other browsers after this one's: see renderRemote)
+  $('#windows').replaceChildren(selfHead, ...blocks, devs); // (this browser's name above its windows, the account's other browsers after them: see renderRemote)
   // a window being expanded: its tabs are held shut while the rest is measured (so the windows below
   // get no slide of their own), then open up with them following
   let opening = null;
@@ -1426,8 +1434,28 @@ async function refreshRemote() {
   let devices = r.devices.filter((d) => d.device !== me);
   for (const d of devices) if (pendingHidden.has(d.device)) d.hidden = pendingHidden.get(d.device);
   if (pendingOrder) devices = pendingOrder.map((id) => devices.find((d) => d.device === id)).filter(Boolean).concat(devices.filter((d) => !pendingOrder.includes(d.device)));
-  remote = { me, devices };
+  remote = { me, devices, self: r.devices.find((d) => d.device === me) };
   renderRemote();
+  renderSelf();
+}
+// This browser's own name, above its windows, as the other browsers' heading is written: named here as they are (its
+// pencil, a double click, or its menu)
+const selfHead = h('div', { class: 'devs-title self-title', hidden: true });
+function renderSelf() {
+  if (selfHead.querySelector('input')) return; // (being named: once that's done)
+  const d = remote?.self, name = d ? d.name || t('remote.device') : '', look = d ? `${name}|${getLang()}` : '';
+  if (look && selfHead.dataset.look !== look) {
+    const was = selfHead.dataset.look;
+    selfHead.dataset.look = look;
+    const text = h('span', { class: 'self-name', title: name, ondblclick: () => renameDevice(d, text) }, name);
+    selfHead.replaceChildren(h('span', { class: 'grow' }, text),
+      Object.assign(btn(icon('edit', 14), t('remote.rename'), (e) => { e.stopPropagation(); renameDevice(remote.self, selfHead.querySelector('.self-name')); }), { className: 'icon-btn self-edit' }));
+    selfHead.oncontextmenu = (e) => showMenu(e, [{ icon: 'edit', label: t('remote.rename'), key: 'R', fn: () => renameDevice(remote.self, selfHead.querySelector('.self-name')) }]);
+    if (was) text.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  }
+  if (!look) delete selfHead.dataset.look;
+  fold(selfHead, !!look, selfHead.isConnected && selfHead.dataset.seen != null);
+  selfHead.dataset.seen = '';
 }
 const pendingHidden = new Map(); // (device: hidden, as ticked here and not yet kept by the server)
 let pendingOrder = null;
@@ -1690,8 +1718,8 @@ async function setDeviceHidden(d, hidden) {
 }
 // Named in place (from its menu): Enter or leaving keeps it, Escape doesn't; empty, its own name again. For all of
 // the account's browsers (the server keeps it), and undoable (Ctrl+Z, the toast's Undo) like the data's changes.
-function renameDevice(d) {
-  const name = devs.querySelector(`.dev[data-device="${CSS.escape(d.device)}"] .dev-name`);
+function renameDevice(d, el = null) {
+  const name = el || devs.querySelector(`.dev[data-device="${CSS.escape(d.device)}"] .dev-name`);
   if (!name || name.querySelector('input')) return;
   const input = h('input', { class: 'dev-rename', value: d.name || '', maxlength: '30', placeholder: d.own || '', 'aria-label': t('remote.rename') });
   name.replaceChildren(input);
@@ -1701,7 +1729,7 @@ function renameDevice(d) {
     if (done) return;
     done = true;
     const label = input.value.replace(/\s+/g, ' ').trim();
-    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } };
+    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } if (el) renderSelf(); };
     if (!keep || label === (d.name || '')) { name.textContent = d.name || t('remote.device'); caughtUp(); return; }
     const was = d.name === d.own ? '' : d.name;
     d.name = label || d.own || d.name;
@@ -2190,8 +2218,8 @@ async function runAct(a) {
   if (a?.kind === 'mail') { await api(`/api/mail/${a.restore ? 'restore' : 'delete'}`, 'POST', { ids: a.ids }); refreshMail(); }
   if (a?.kind === 'deviceName') {
     await nameDevice(a.device, a.name);
-    const d = remote?.devices.find((x) => x.device === a.device);
-    if (d) { d.name = a.name || d.own; renderRemote(); }
+    const d = remote?.devices.find((x) => x.device === a.device) || (remote?.self?.device === a.device ? remote.self : null);
+    if (d) { d.name = a.name || d.own; renderRemote(); renderSelf(); }
   }
 }
 // Returns the entry's id, for its toast's Undo
@@ -2827,6 +2855,7 @@ function showMenu(e, entries) {
   e.preventDefault();
   e.stopPropagation();
   const menu = $('#menu');
+  if (!entries.some((x) => x && x !== '-')) return; // (nothing to do here, as for a viewer: no menu at all)
   if (menu.dataset.closing != null) { delete menu.dataset.closing; menu.getAnimations().forEach((a) => a.cancel()); }
   // each entry may have a one-letter shortcut (shown on the right; press it while the menu is open)
   menu.replaceChildren(...entries.filter(Boolean).map((it) => (it === '-' ? h('hr') :
@@ -2881,11 +2910,11 @@ function nodeMenu(e, node) {
   // viewed: nothing that would change it)
   const sh = node.type === 'workspace' && sharing() && shareOf(node), mine = !sh || sh.role === 'owner';
   if (node.type === 'workspace' && sharing()) {
-    const share = { icon: 'people', label: t('share.menu'), key: 'H', fn: () => openShare(node) };
+    const share = { icon: 'people', label: t('share.menu'), key: 'S', fn: () => openShare(node) };
     entries = mine ? [entries[0], share, ...entries.slice(1)]
       : [share, ...entries.slice(0, -2), '-', { icon: 'logout', label: t('share.leaveOk'), key: 'D', danger: true, fn: () => endShare(node) }];
   }
-  if (readOnly(wsOfId(node.id))) entries = entries.filter((x) => x === '-' || ['O', 'W', 'H', 'X'].includes(x.key) || x.label === t('menu.copyUrl') || x.danger && x.key === 'D' && node.type === 'workspace');
+  if (readOnly(wsOfId(node.id))) entries = entries.filter((x) => x === '-' || ['O', 'W', 'X'].includes(x.key) || x.icon === 'people' || x.label === t('menu.copyUrl') || x.danger && x.key === 'D' && node.type === 'workspace');
   showMenu(e, entries.filter((x, i, l) => x !== '-' || (i && i < l.length - 1 && l[i - 1] !== '-')));
 }
 
@@ -3798,8 +3827,19 @@ for (const dlg of document.querySelectorAll('dialog')) {
   let closing = 0; // id of the close in progress (0: none); reopening cancels it
   dlg.showModal = () => {
     if (closing) { closing = 0; delete dlg.dataset.closing; dlg.getAnimations().forEach((a) => a.cancel()); }
-    if (!dlg.open) nativeShow();
+    if (!dlg.open) { nativeShow(); center(); }
   };
+  // Centred on a whole pixel (the browser would centre it on a fraction: its text, drawn a fraction off while it pops
+  // in, then settled onto the pixel grid when it stops, would jump a pixel); again whenever it changes size. (One kept
+  // where its top is, its growing downwards only, sets its own margin and height limit: left as it is.)
+  const center = () => {
+    if (!dlg.open || dlg.style.maxHeight) return;
+    const top = `${Math.max(0, Math.round((innerHeight - dlg.offsetHeight) / 2))}px`;
+    if (dlg.style.marginTop !== top) Object.assign(dlg.style, { marginTop: top, marginBottom: '0px' });
+  };
+  new ResizeObserver(center).observe(dlg);
+  addEventListener('resize', center);
+  dlg.addEventListener('close', () => { if (!dlg.style.maxHeight) Object.assign(dlg.style, { marginTop: '', marginBottom: '' }); });
   dlg.close = (value) => {
     if (!dlg.open || closing) return;
     const id = (closing = Date.now());
@@ -4675,7 +4715,7 @@ function applyRailTitles() {
   }
 }
 
-const PANEL_FLIP = '.brand-logo, #ws-toggle, .ws-item, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
+const PANEL_FLIP = '.brand-logo, #ws-toggle, .ws-item, .ws-split, .side-btn, #tabs-toggle, .panel-actions .btn, .win-head, .tab-row';
 const panelAnimTimer = {};
 
 // The logo collapses the workspaces panel like its button does (collapsed, the expand button sits on it).
@@ -5274,7 +5314,7 @@ async function openAccountList(again = false) {
     return;
   }
   // (the dialog keeps its top where it is: the list opens downwards only, not the box growing both ways)
-  const dlg = $('#account'), top = dlg.getBoundingClientRect().top;
+  const dlg = $('#account'), top = Math.round(dlg.getBoundingClientRect().top);
   dlg.style.margin = `${top}px auto auto`;
   dlg.style.maxHeight = `calc(100vh - ${top + 16}px)`; // (a short window: it scrolls inside, as every dialog, rather than running off)
   $('#account-more').setAttribute('aria-expanded', 'true');
@@ -5493,7 +5533,18 @@ async function refreshMail() {
   if (seq !== mailSeq || !r.ok) return;
   mail = r.data.mail;
   mailBadge(r.data.asking);
-  if ($('#mail').open) fillMail();
+  if ($('#mail').open) { fillMail(); sawMail(); }
+}
+// Read and not: mail is read once the Mailbox has been open with it in (what's there as it opens, and what comes while
+// it's open). Read mail has a darker row, from the next time the Mailbox opens: as it opens, which were read is noted,
+// and that is what the rows show until it closes.
+let mailRead = new Set();
+function sawMail() {
+  const ids = mail.filter((m) => !m.seen).map((m) => m.id);
+  if (!ids.length) return;
+  const now = Date.now() / 1000;
+  for (const m of mail) if (!m.seen) m.seen = now;
+  api('/api/mail/seen', 'POST', { ids });
 }
 // (the badge: pops in, its number rolls as it changes, shrinks away at none; past 99, "99+")
 function mailBadge(n) {
@@ -5516,13 +5567,17 @@ function mailBadge(n) {
 function openMail() {
   mailPicked.clear();
   mailPage = 0;
+  mailRead = new Set(mail.filter((m) => m.seen).map((m) => m.id));
+  mailList.scrollTop = 0;
   fillMail(false);
   $('#mail').showModal();
   $('#mail').querySelector('button[type=submit]').blur();
+  capRows(mailList, MAIL_ROWS);
+  sawMail();
   refreshMail();
 }
 // (ten a page: past ten, a pager beside Close; the page turned, the old rows slide up and away, the next come from below)
-const MAIL_PAGE = 10;
+const MAIL_PAGE = 10, MAIL_ROWS = 7; // (seven rows tall at most, the rest of the page scrolled to)
 let mailPage = 0;
 const mailPages = () => Math.max(1, Math.ceil(mail.length / MAIL_PAGE));
 const pageMail = () => mail.slice(mailPage * MAIL_PAGE, (mailPage + 1) * MAIL_PAGE);
@@ -5530,6 +5585,7 @@ function fillMail(animate = true) {
   for (const id of mailPicked) { const m = mail.find((x) => x.id === id); if (!m || !deletable(m)) mailPicked.delete(id); }
   mailPage = Math.min(mailPage, mailPages() - 1);
   syncRows(mailList, pageMail().map((m) => [String(m.id), m]), mailRow, updateMailRow, animate);
+  capRows(mailList, MAIL_ROWS);
   fold($('#mail-head'), mail.length > 0, animate);
   fold($('#mail-none'), !mail.length, animate);
   mailHead(animate);
@@ -5553,6 +5609,7 @@ async function turnMail(by) {
   const h0 = mailList.offsetHeight, dy = by > 0 ? 14 : -14;
   await mailList.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${-dy}px)` }], { duration: 130, easing: 'ease-in' }).finished.catch(() => {});
   mailPage = to;
+  mailList.scrollTop = 0;
   fillMail(false);
   mailPager();
   const h1 = mailList.offsetHeight;
@@ -5588,6 +5645,7 @@ function mailActs(m) {
 // takes the buttons' place, the room for them gliding to its)
 function updateMailRow(row, m, animate = true) {
   row.m = m;
+  row.classList.toggle('read', mailRead.has(m.id));
   const ok = deletable(m), box = row.querySelector('.mail-pick'), x = row.querySelector('.mail-x');
   box.disabled = !ok;
   box.checked = mailPicked.has(m.id);
@@ -5659,6 +5717,62 @@ async function deleteMail(ids) {
   refreshMail();
 }
 $('#btn-mail').addEventListener('click', openMail);
+// Ticking several at once: pressed on a tick box and dragged over the rows, each passed over is ticked as that first
+// one became (or unticked); held past the list's top or bottom, it scrolls on
+let mailDrag = null;
+function pickRow(row, on) {
+  if (!row.m || !deletable(row.m)) return false;
+  if (on === mailPicked.has(row.m.id)) return false;
+  if (on) mailPicked.add(row.m.id); else mailPicked.delete(row.m.id);
+  row.querySelector('.mail-pick').checked = on;
+  return true;
+}
+mailList.addEventListener('pointerdown', (e) => {
+  const box = e.target.closest('.mail-pick');
+  if (!box || box.disabled || e.button !== 0) return;
+  e.preventDefault();
+  const row = box.closest('.mail-row'), rows = [...mailList.children].filter((r) => r.dataset.leaving == null);
+  mailDrag = { on: !box.checked, at: rows.indexOf(row), box };
+  mailList.classList.add('picking');
+  if (pickRow(row, mailDrag.on)) mailHead();
+});
+function dragPick(x, y) {
+  const rows = [...mailList.children].filter((r) => r.dataset.leaving == null), r = mailList.getBoundingClientRect();
+  const row = document.elementFromPoint(Math.min(Math.max(x, r.left + 4), r.right - 4), Math.min(Math.max(y, r.top + 2), r.bottom - 2))?.closest('.mail-row');
+  const i = rows.indexOf(row);
+  if (i < 0) return;
+  // (every row from the last one to this: none skipped by a quick move)
+  let changed = false;
+  for (let k = Math.min(i, mailDrag.at); k <= Math.max(i, mailDrag.at); k++) changed = pickRow(rows[k], mailDrag.on) || changed;
+  mailDrag.at = i;
+  if (changed) mailHead();
+}
+document.addEventListener('pointermove', (e) => {
+  if (!mailDrag) return;
+  mailDrag.x = e.clientX; mailDrag.y = e.clientY;
+  dragPick(e.clientX, e.clientY);
+  const r = mailList.getBoundingClientRect(), by = e.clientY < r.top + 10 ? -1 : e.clientY > r.bottom - 10 ? 1 : 0;
+  if (by && !mailDrag.scroll) {
+    mailDrag.scroll = setInterval(() => {
+      const r2 = mailList.getBoundingClientRect(), d = mailDrag.y < r2.top + 10 ? -1 : mailDrag.y > r2.bottom - 10 ? 1 : 0;
+      if (!d) { clearInterval(mailDrag.scroll); mailDrag.scroll = null; return; }
+      mailList.scrollTop += d * 10;
+      dragPick(mailDrag.x, mailDrag.y);
+    }, 16);
+  }
+});
+const endMailDrag = () => {
+  if (!mailDrag) return;
+  clearInterval(mailDrag.scroll);
+  mailList.classList.remove('picking');
+  const d = mailDrag;
+  setTimeout(() => { if (mailDrag === d) mailDrag = null; }); // (the click that follows: see below)
+};
+document.addEventListener('pointerup', endMailDrag);
+document.addEventListener('pointercancel', endMailDrag);
+// (the tick box pressed: already set as the press began, its own click not to undo that)
+mailList.addEventListener('click', (e) => { if (mailDrag && e.target.closest('.mail-pick')) e.preventDefault(); });
+$('#mail').addEventListener('close', () => { mailRead = new Set(mail.map((m) => m.id)); });
 $('#mail-all').addEventListener('change', (e) => {
   for (const m of pageMail()) if (deletable(m)) { if (e.target.checked) mailPicked.add(m.id); else mailPicked.delete(m.id); }
   mailHead();
@@ -5684,10 +5798,35 @@ async function openShare(ws) {
   $('#share-error').textContent = '';
   peopleList.hidden = true; peopleList.replaceChildren();
   $('#share-list').replaceChildren();
+  $('#share-list').style.maxHeight = '';
   await fillShare(false);
-  $('#share').showModal();
-  $('#share').querySelector('button[type=submit]').blur();
+  const dlg = $('#share');
+  dlg.style.margin = ''; dlg.style.maxHeight = '';
+  dlg.showModal();
+  dlg.querySelector('button[type=submit]').blur();
+  capRows(shareRows, SHARE_ROWS);
+  // (it keeps its top where it opens, on a whole pixel: what opens in it (the list of whom to invite, someone more in
+  // it) grows it downwards only)
+  const top = Math.max(16, Math.round((innerHeight - dlg.offsetHeight) / 2));
+  dlg.style.margin = `${top}px auto auto`;
+  dlg.style.maxHeight = `calc(100vh - ${top + 16}px)`;
 }
+$('#share').addEventListener('close', () => { $('#share').style.margin = ''; $('#share').style.maxHeight = ''; });
+// (grown past the window's bottom: it rises, as far as it must and no further, to stay whole on the screen; with what
+// grows in it, frame by frame)
+new ResizeObserver(() => {
+  const dlg = $('#share');
+  if (!dlg.open || !dlg.style.margin) return;
+  const top = parseFloat(dlg.style.margin), cs = getComputedStyle(dlg);
+  const need = dlg.firstElementChild.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const to = Math.max(16, Math.min(top, Math.round(innerHeight - 16 - need)));
+  if (to >= top) return;
+  dlg.style.margin = `${to}px auto auto`;
+  dlg.style.maxHeight = `calc(100vh - ${to + 16}px)`; // (step by step as what's in it grows, which glides itself)
+}).observe($('#share > form'));
+const shareRows = $('#share-list');
+scrollFeel(shareRows, { inner: true });
+const SHARE_ROWS = 5;
 function shareTitle(animate) {
   const ws = state?.workspaces.find((w) => w.id === shareWs), el = $('#share-title');
   if (!ws) return;
@@ -5710,12 +5849,14 @@ async function fillShare(animate = true, info = null) {
   }
   shareInfo = info;
   shareTitle(animate);
-  const owner = !info || info.role === 'owner';
+  const owner = !info || info.role === 'owner', mine = info ? info.role : 'owner';
   const members = info ? info.members : meNow ? [{ ...meNow, role: 'owner', me: true }] : [];
   // (keyed by who: someone asked who accepts, their row becomes theirs as a member, in place)
-  const items = [...members.map((p) => [`u${p.id}`, { p, role: p.role, owner }]),
-    ...(info?.invites || []).map((i) => [`u${i.user.id}`, { p: i.user, role: i.role, invite: i.mail, owner }])];
-  syncRows($('#share-list'), items, shareRow, updateShareRow, animate);
+  const items = [...members.map((p) => [`u${p.id}`, { p, role: p.role, owner, mine }]),
+    ...(info?.invites || []).map((i) => [`u${i.user.id}`, { p: i.user, role: i.role, invite: i.mail, owner, mine }])];
+  syncRows(shareRows, items, shareRow, updateShareRow, animate);
+  capRows(shareRows, SHARE_ROWS);
+  retagPeople();
   fold($('#share-note'), !info, animate);
   fold($('#share-invite'), owner, animate);
   const others = !!info && (info.members.length > 1 || info.invites.length > 0);
@@ -5733,13 +5874,17 @@ function shareRow(it) {
   updateShareRow(row, it, false);
   return row;
 }
-// (its role: for the owner, a choice for each of the others, handing it on among them; else as words)
-const roleKey = (it) => JSON.stringify([it.invite ? '' : it.role, !it.invite && it.owner && !it.p.me, getLang()]);
+// (its role: for the owner, a choice for each of the others, handing it on among them; for a manager, for anyone but
+// the owner (themselves too: down only), never making anyone the owner; else as words)
+const roleChoices = (it) => (it.invite ? null : it.mine === 'owner' ? (it.p.me ? null : ['manager', 'editor', 'viewer', 'owner'])
+  : it.mine === 'manager' && it.role !== 'owner' ? ['manager', 'editor', 'viewer'] : null);
+const roleKey = (it) => JSON.stringify([it.invite ? '' : it.role, roleChoices(it), getLang()]);
 function roleCell(it, row) {
   if (it.invite) return [];
-  if (!it.owner || it.p.me) return [h('span', { class: 'share-role-name' }, t(`role.${it.role}`))];
+  const choices = roleChoices(it);
+  if (!choices) return [h('span', { class: 'share-role-name' }, t(`role.${it.role}`))];
   const sel = h('select', { 'aria-label': t('share.roleOf', { name: whoOf(it.p) }) },
-    ...['editor', 'viewer', 'owner'].map((r) => h('option', { value: r }, t(`role.${r}`))));
+    ...choices.map((r) => h('option', { value: r }, t(`role.${r}`))));
   sel.value = it.role;
   sel.dataset.shown = sel.selectedIndex;
   sel.addEventListener('change', () => setRole(row, sel));
@@ -5750,7 +5895,7 @@ function updateShareRow(row, it, animate = true) {
   row.classList.toggle('pending', !!it.invite);
   const p = it.p, was = row.look || {};
   const now = { name: JSON.stringify([p.name, p.username, p.twofa, p.me, getLang()]), sub: JSON.stringify([p.name && p.username, it.invite && it.role, getLang()]),
-    photo: `${p.avatar}|${p.accent}`, role: roleKey(it) };
+    photo: `${p.avatar}|${p.accent}|${p.name}|${p.username}`, role: roleKey(it) };
   row.look = now;
   const first = !was.name, live = !first && animate;
   const set = (el, parts) => (live ? morph(el, parts) : el.replaceChildren(...parts));
@@ -5782,9 +5927,11 @@ async function setRole(row, sel) {
   const back = () => { sel.reverting = true; sel.value = it.role; sel.dispatchEvent(new Event('change')); sel.reverting = false; };
   if (role === it.role) return;
   if (role === 'owner' && !(await confirmDialog({ title: t('share.ownerTitle', { name: whoOf(it.p) }), text: t('share.ownerText'), ok: t('share.ownerOk') }))) return back();
+  // (a manager stepping down: told what they give up first)
+  if (it.p.me && it.role === 'manager' && !(await confirmDialog({ title: t('share.demoteTitle', { role: t(`role.${role}`) }), ok: t('share.demoteOk') }))) return back();
   const r = await api(`/api/shares/${shareId}/members/${it.p.id}`, 'PUT', { role });
   if (!r.ok) { toast(t('share.failed')); return back(); }
-  if (role !== 'owner') row.look.role = roleKey({ ...it, role }); // (shown already: the choice stays as it is)
+  if (role !== 'owner' && !it.p.me) row.look.role = roleKey({ ...it, role }); // (shown already: the choice stays as it is)
   fillShare(true, r.data);
   refreshShares();
 }
@@ -5823,10 +5970,14 @@ slideSelect($('#share-role'));
 $('#share-go').addEventListener('click', inviteShare);
 $('#share-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inviteShare(); } });
 $('#share-user').addEventListener('input', () => { shareError(''); findPeople(); });
-// Whom to invite: accounts whose username or name has what's typed in it, in a list under the field (arrows and
-// Enter, or a click, pick one); it folds open and shut, its rows coming and going as the list changes
+// Whom to invite: accounts whose username or name has what's typed in it (letter by letter for Korean), in a list
+// under the field (arrows and Enter, or a click, pick one). It folds open downwards (the dialog keeps its top: see
+// openShare), five rows tall at most, scrolling past that; its rows come and go as the list changes. Someone in the
+// workspace already, or asked, is there too with a chip saying so (their role, or Invited: kept up to date as the
+// share changes), and can't be picked.
 let peopleSeq = 0, peopleTimer = null, peopleAt = -1;
 const peopleList = $('#share-found');
+scrollFeel(peopleList, { inner: true });
 function findPeople() {
   clearTimeout(peopleTimer);
   const q = $('#share-user').value.trim();
@@ -5834,50 +5985,116 @@ function findPeople() {
   peopleTimer = setTimeout(async () => {
     const seq = ++peopleSeq, r = await api(`/api/users/search?q=${encodeURIComponent(q)}`);
     if (seq !== peopleSeq || q !== $('#share-user').value.trim()) return;
-    const taken = new Set([...(shareInfo?.members || []).map((p) => p.id), ...(shareInfo?.invites || []).map((i) => i.user.id)]);
-    showPeople(r.ok ? r.data.users.filter((p) => !taken.has(p.id)) : []);
+    showPeople(r.ok ? r.data.users : []);
   }, 120);
 }
+// (what they are in it already: a role, 'invited', or nothing)
+function tagOf(p) {
+  const m = shareInfo?.members.find((x) => x.id === p.id);
+  return m ? m.role : shareInfo?.invites.some((i) => i.user.id === p.id) ? 'invited' : '';
+}
+// (at most `n` rows tall, scrolling past that: measured from the rows themselves, as they are once in; again
+// after rows fold in or out, which changes them meanwhile)
+function capRows(list, n, again = true) {
+  if (!list.offsetParent) return; // (not shown yet: measured once it is)
+  const rows = [...list.children].filter((r) => r.dataset.leaving == null && r.style.display !== 'none');
+  if (rows.length <= n) list.style.maxHeight = '';
+  else {
+    const cs = getComputedStyle(list);
+    let px = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+    rows.slice(0, n).forEach((r, i) => { px += r.offsetHeight + (i ? parseFloat(getComputedStyle(r).marginTop) || 0 : 0); });
+    list.style.maxHeight = `${px}px`;
+  }
+  if (again) setTimeout(() => capRows(list, n, false), 340);
+}
+const PEOPLE_ROWS = 5;
 function showPeople(people) {
   const open = !peopleList.hidden && peopleList.dataset.going == null;
   if (!people.length) {
     peopleAt = -1;
-    if (open) { peopleList.dataset.going = ''; peopleList.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px) scale(.98)' }], { duration: 140, easing: 'ease-in' }).finished.then(() => { if (peopleList.dataset.going != null) { peopleList.hidden = true; delete peopleList.dataset.going; } }, () => {}); }
+    if (open) {
+      peopleList.dataset.going = '';
+      peopleList.getAnimations().forEach((a) => a.cancel());
+      peopleList.style.overflow = 'hidden';
+      peopleList.animate([{ height: `${peopleList.offsetHeight}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
+        { duration: 180, easing: 'cubic-bezier(.4, 0, .2, 1)' }).finished.then(() => {
+        if (peopleList.dataset.going == null) return;
+        peopleList.hidden = true; delete peopleList.dataset.going; peopleList.style.overflow = '';
+      }, () => {});
+    }
     return;
   }
   delete peopleList.dataset.going;
   peopleList.getAnimations().forEach((a) => a.cancel());
+  peopleList.style.overflow = '';
   const h0 = open ? peopleList.offsetHeight : 0;
   peopleAt = Math.min(peopleAt, people.length - 1);
+  if (!open) { peopleList.hidden = false; peopleList.scrollTop = 0; }
   syncRows(peopleList, people.map((p) => [`p${p.id}`, p]), personRow, updatePersonRow, open);
+  capRows(peopleList, PEOPLE_ROWS);
   paintPeople();
-  if (!open) {
-    peopleList.hidden = false;
-    peopleList.animate([{ opacity: 0, transform: 'translateY(-4px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: GLIDE });
-  } else if (Math.abs(peopleList.offsetHeight - h0) > .5) peopleList.animate([{ height: `${h0}px` }, { height: `${peopleList.offsetHeight}px` }], { duration: 200, easing: GLIDE });
+  const h1 = peopleList.offsetHeight;
+  if (Math.abs(h1 - h0) > .5) {
+    peopleList.style.overflow = 'hidden';
+    peopleList.animate(open ? [{ height: `${h0}px` }, { height: `${h1}px` }]
+      : [{ height: '0px', opacity: 0 }, { height: `${h1}px`, opacity: 1 }], // (only its height: what's in it never moves inside it)
+    { duration: open ? 200 : 240, easing: GLIDE }).finished.then(() => { if (peopleList.dataset.going == null) peopleList.style.overflow = ''; }, () => {});
+  }
 }
 function personRow(p) {
-  const row = h('li', { class: 'share-found-row', onpointerdown: (e) => { e.preventDefault(); pickPerson(row.p); } },
-    accountPhoto(p, 'account-avatar small'), h('span', { class: 'account-who' }, h('span', { class: 'account-name' }), h('span', { class: 'account-role' })));
-  updatePersonRow(row, p);
+  const row = h('li', { class: 'share-found-row', onpointerdown: (e) => { e.preventDefault(); if (!row.classList.contains('taken')) pickPerson(row.p); } },
+    accountPhoto(p, 'account-avatar small'), h('span', { class: 'account-who' }, h('span', { class: 'account-name' }), h('span', { class: 'account-role' })),
+    h('span', { class: 'share-found-tag' }));
+  updatePersonRow(row, p, false);
   return row;
 }
-function updatePersonRow(row, p) {
+function updatePersonRow(row, p, animate = true) {
   row.p = p;
-  row.querySelector('.account-name').replaceChildren(...nameLine(p));
-  row.querySelector('.account-role').textContent = p.name ? p.username : '';
+  const look = JSON.stringify([p.name, p.username, p.twofa, getLang()]);
+  if (row.look !== look) {
+    row.look = look;
+    row.querySelector('.account-name').replaceChildren(...nameLine(p));
+    row.querySelector('.account-role').textContent = p.name ? p.username : '';
+  }
+  const tag = tagOf(p), el = row.querySelector('.share-found-tag');
+  row.classList.toggle('taken', !!tag);
+  if ((el.dataset.tag || '') === tag && el.dataset.lang === getLang()) return;
+  const had = !!el.dataset.tag;
+  el.dataset.tag = tag; el.dataset.lang = getLang();
+  const text = tag ? t(tag === 'invited' ? 'share.chipInvited' : `role.${tag}`) : '';
+  if (!animate) { el.textContent = text; el.hidden = !tag; return; }
+  if (had && tag) crossfade(el, () => { el.textContent = text; });
+  else if (tag) { el.textContent = text; appear(el, true); }
+  else appear(el, false).then(() => { if (!el.dataset.tag) el.textContent = ''; });
 }
-const paintPeople = () => [...peopleList.children].filter((r) => r.dataset.leaving == null).forEach((r, i) => r.classList.toggle('on', i === peopleAt));
+// (the share changed while the list is open: the chips with it, a row just taken no longer picked)
+function retagPeople() {
+  if (peopleList.hidden) return;
+  for (const r of peopleList.children) if (r.p && r.dataset.leaving == null) updatePersonRow(r, r.p);
+  const free = pickable();
+  if (peopleAt >= 0 && !free.includes(livePeople()[peopleAt])) peopleAt = -1;
+  paintPeople();
+}
+const livePeople = () => [...peopleList.children].filter((r) => r.dataset.leaving == null);
+const pickable = () => livePeople().filter((r) => !r.classList.contains('taken'));
+const paintPeople = () => livePeople().forEach((r, i) => r.classList.toggle('on', i === peopleAt));
 function pickPerson(p) {
   $('#share-user').value = p.username;
   showPeople([]);
   $('#share-user').focus();
 }
 $('#share-user').addEventListener('keydown', (e) => {
-  const rows = [...peopleList.children].filter((r) => r.dataset.leaving == null);
+  const rows = livePeople(), free = pickable();
   if (peopleList.hidden || !rows.length) return;
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); peopleAt = (peopleAt + (e.key === 'ArrowDown' ? 1 : rows.length - 1 + (peopleAt < 0 ? 1 : 0))) % rows.length; paintPeople(); }
-  else if (e.key === 'Enter' && peopleAt >= 0) { e.preventDefault(); e.stopImmediatePropagation(); pickPerson(rows[peopleAt].p); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!free.length) return;
+    // (from one that can be picked to the next, round the end; those in it already passed over)
+    const at = free.indexOf(rows[peopleAt]), next = at < 0 ? (e.key === 'ArrowDown' ? 0 : free.length - 1) : (at + (e.key === 'ArrowDown' ? 1 : free.length - 1)) % free.length;
+    peopleAt = rows.indexOf(free[next]);
+    paintPeople();
+    rows[peopleAt].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && peopleAt >= 0 && !rows[peopleAt].classList.contains('taken')) { e.preventDefault(); e.stopImmediatePropagation(); pickPerson(rows[peopleAt].p); }
   else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); showPeople([]); }
 }, { capture: true });
 $('#share-user').addEventListener('blur', () => setTimeout(() => showPeople([]), 100));
