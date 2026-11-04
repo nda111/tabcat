@@ -6,6 +6,7 @@ import { LANGS, resolveLang } from './i18n.js';
 import { TEXT, EXTENSION_WORDS } from './welcome-text.js';
 import { iconSvg } from './icons.js';
 import { scrollFeel } from './scroll-feel.js';
+import * as B from './bridge.js';
 
 // (each step's command, in order of its {copy}; the server's release is the one these notes go with)
 const SERVER_WHEEL = 'https://github.com/nda111/tabcat/releases/download/server-v1.0.0/tabcat_server-1.0.0-py3-none-any.whl';
@@ -18,13 +19,30 @@ const LINKS = {
   self: 'https://github.com/nda111/tabcat#hosting-the-dashboard-locally',
   server: 'https://github.com/nda111/tabcat/tree/main/server#readme',
 };
+// (in a step: the dashboard served here, the server on this computer, and the Docker guide)
+const STEP_LINKS = {
+  dashboard: 'http://localhost:8080/',
+  tabcat: 'http://localhost:8080/',
+  docker: 'https://github.com/nda111/tabcat/blob/main/server/DOCKER.md',
+  dockerSite: 'https://www.docker.com/get-started/',
+};
 const ICONS = { online: 'compass', self: 'monitor', server: 'server' };
+// Docker's mark (a whale carrying containers), drawn as the other icons are: in the text's colour
+const DOCKER_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">'
+  + '<rect x="3" y="9" width="3" height="2.6" rx=".4"/><rect x="6.6" y="9" width="3" height="2.6" rx=".4"/><rect x="10.2" y="9" width="3" height="2.6" rx=".4"/>'
+  + '<rect x="6.6" y="5.8" width="3" height="2.6" rx=".4"/><rect x="10.2" y="5.8" width="3" height="2.6" rx=".4"/><rect x="13.8" y="9" width="3" height="2.6" rx=".4"/>'
+  + '<rect x="10.2" y="2.6" width="3" height="2.6" rx=".4"/>'
+  + '<path d="M1.6 12.4h18.2c.5-1.1 1.6-1.7 2.6-1.5-.2-1-.9-1.6-1.8-1.6.1-.9-.3-1.7-.9-2.1-.6.6-.8 1.6-.5 2.5-.4.3-.9.6-1.4.6H1.6c-.2 2.4.5 4.8 2.2 6.4 1.5 1.4 3.6 2.1 6.1 2.1 5 0 8.8-2.4 10.6-6.4h-18.9z"/></svg>';
+// The browser's page for extensions' shortcuts: a page can't open it itself, the extension can (asked through its
+// bridge, as the dashboard does); without it, the address is copied, to paste
+const SHORTCUTS = /Edg\//.test(navigator.userAgent) ? 'edge://extensions/shortcuts'
+  : /Whale\//.test(navigator.userAgent) ? 'whale://extensions/shortcuts' : 'chrome://extensions/shortcuts';
 const EASE_OUT = 'cubic-bezier(.22, 1, .36, 1)';
-const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 const $ = (s) => document.querySelector(s);
 const pick = $('#doc-lang'), hero = $('#hero'), ways = $('#ways');
 const open = new Set(); // (the cards whose steps are shown: kept across a change of language)
+let serverTab = 'computer'; // (the server card's tab: this computer, or Docker)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function wanted() {
@@ -37,23 +55,36 @@ function wanted() {
 
 // (a step's text, the extension's words in it marked; a box with a Copy button where its command goes, filled in by
 // render from COMMANDS, the card's commands in turn)
-function step(text, words, t) {
-  let html = esc(text).replace(/\{(allow|connect)\}/g, (_, w) => `<span class="word">${esc(words[w])}</span>`);
+const copyButton = (t, value = '') => `<button type="button" class="btn small copy"${value ? ` data-copy="${esc(value)}"` : ''}>${iconSvg('copy', 13)}<span>${esc(t.copy)}</span></button>`;
+function words(text, words, t) {
+  return esc(text).replace(/\{(allow|connect|command)\}/g, (_, w) => `<span class="word">${esc(words[w])}</span>`)
+    .replace(/\{(dashboard|tabcat|docker|dockerSite)\}/g, (_, w) => `<a href="${STEP_LINKS[w]}" target="_blank" rel="noopener">${esc(t.links[w])}</a>`)
+    .replace('{shortcuts}', `<a href="${SHORTCUTS}" class="shortcuts-link">${esc(t.links.shortcuts)}</a>`);
+}
+function step(text, wordsOf, t) {
+  let html = words(text, wordsOf, t);
   let boxes = 0;
   html = html.replace(/\s*\{copy\}/g, () => { boxes++; return ''; });
-  const box = `<div class="cmd"><code></code><button type="button" class="btn small copy">${iconSvg('copy', 13)}<span>${esc(t.copy)}</span></button></div>`;
+  const box = `<div class="cmd"><code></code>${copyButton(t)}</div>`;
   return `<li>${html}${box.repeat(boxes)}</li>`;
 }
 
 function render(lang) {
-  const t = TEXT[lang], words = EXTENSION_WORDS[lang];
+  const t = TEXT[lang], words_ = EXTENSION_WORDS[lang];
   document.documentElement.lang = lang;
   document.title = `tabcat · ${t.title}`;
-  const keys = (mac ? ['⌘', 'Shift', 'X'] : ['Ctrl', 'Shift', 'X']).map((k) => `<kbd>${k}</kbd>`).join('+');
-  hero.innerHTML = `<span class="logo" role="img" aria-label=""></span><h1>${esc(t.hello)}</h1><p>${esc(t.lead)}</p>`
-    + `<p class="shortcut">${esc(t.shortcut).replace('{keys}', keys)}</p>`;
+  // (each sentence whole on a line where it fits: the lines break between them, and come out about as long)
+  hero.innerHTML = `<span class="logo" role="img" aria-label=""></span><h1>${esc(t.hello)}</h1>`
+    + `<p class="lead">${t.lead.map((s) => `<span class="sentence">${esc(s)}</span>`).join(' ')}</p>`
+    + `<p class="shortcut">${words(t.shortcut, words_, t)}</p>`;
   ways.innerHTML = Object.entries(t.ways).map(([key, w], i) => {
-    const steps = w.steps ? `<div class="way-steps"${open.has(key) ? '' : ' hidden'}><ol>${w.steps.map((s) => step(s, words, t)).join('')}</ol></div>` : '';
+    const list = w.steps && `<ol>${w.steps.map((s) => step(s, words_, t)).join('')}</ol>`;
+    // (the server: on this computer, or with Docker, a tab each)
+    const panes = w.tabs && `<div class="way-tabs" role="tablist">${Object.entries(w.tabs).map(([k, label]) => `<button type="button" role="tab" class="way-tab" data-tab="${k}" aria-selected="${k === serverTab}">${k === 'docker' ? DOCKER_ICON : iconSvg('monitor', 15)}<span>${esc(label)}</span></button>`).join('')}</div>`
+      // (both panes in one place, the box as tall as the taller: switching, nothing below moves)
+      + `<div class="way-panes"><div class="way-pane" data-pane="computer"${serverTab === 'computer' ? '' : ' inert'}>${list}</div>`
+      + `<div class="way-pane" data-pane="docker"${serverTab === 'docker' ? '' : ' inert'}><ol>${w.dockerSteps.map((s) => step(s, words_, t)).join('')}</ol></div></div>`;
+    const steps = w.steps ? `<div class="way-steps"${open.has(key) ? '' : ' hidden'}>${panes || list}</div>` : '';
     const toggle = w.steps ? `<button type="button" class="btn way-toggle" aria-expanded="${open.has(key)}">${esc(open.has(key) ? t.hide : t.show)}${iconSvg('chevron', 14).replace('<svg', '<span class="ico"><svg').replace('</svg>', '</svg></span>')}</button>` : '';
     const external = !LINKS[key].startsWith('./');
     const go = `<a class="btn${key === 'online' ? ' primary' : ''}" href="${LINKS[key]}"${external ? ' target="_blank" rel="noopener"' : ''}>${esc(w.go)}${external ? iconSvg('open', 13) : ''}</a>`;
@@ -87,9 +118,26 @@ function fold(card) {
   anim.onfinish = () => { if (!opening) box.hidden = true; };
 }
 
-ways.addEventListener('click', async (e) => {
+// The server card's tabs: the other pane fades in, the box gliding to its height
+function showTab(card, tab) {
+  if (tab === serverTab) return;
+  serverTab = tab;
+  card.querySelectorAll('.way-tab').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  card.querySelectorAll('.way-pane').forEach((p) => { p.inert = p.dataset.pane !== tab; });
+}
+
+document.addEventListener('click', async (e) => {
   const toggle = e.target.closest('.way-toggle');
   if (toggle) return fold(toggle.closest('.way'));
+  const tab = e.target.closest('.way-tab');
+  if (tab) return showTab(tab.closest('.way'), tab.dataset.tab);
+  const shortcuts = e.target.closest('.shortcuts-link');
+  if (shortcuts) {
+    e.preventDefault();
+    if (await B.connect(800)) return B.call('openUrls', { urls: [SHORTCUTS], active: true }).catch(() => {});
+    try { await navigator.clipboard.writeText(SHORTCUTS); } catch { /* not allowed: the address is the link's */ }
+    return;
+  }
   const copy = e.target.closest('.copy');
   if (!copy) return;
   try { await navigator.clipboard.writeText(copy.dataset.copy); } catch { return; }
