@@ -161,7 +161,10 @@ chrome.runtime.onStartup.addListener(init);
 init();
 chrome.runtime.onInstalled.addListener(retirePinnedDashboards);
 // newly installed: the dashboard comes up (and offers its tour)
-chrome.runtime.onInstalled.addListener(({ reason }) => { if (reason === 'install') openDashboard(); });
+// Installed: the welcome page (the three ways to use tabcat: the online dashboard, a copy served here, a server of
+// one's own), in a tab of its own; the dashboard comes from there, or from the shortcut
+const WELCOME = 'https://tabcat.ghyeok.com/welcome';
+chrome.runtime.onInstalled.addListener(({ reason }) => { if (reason === 'install') chrome.tabs.create({ url: WELCOME }); });
 tintActionIcon();
 relinkAll(); // tab groups restored before the worker woke up (a browser restart)
 

@@ -12,7 +12,7 @@ tabcat/                      main branch: the extension (Chromium MV3)
   lib/                       modules shared by the worker and the pages
   _locales/  fonts/  icons/
   web/                       pages branch (git worktree): the web dashboard, tabcat.ghyeok.com
-    index.html  app.css  js/  js/locales/  privacy.*  404.html
+    index.html  app.css  js/  js/locales/  privacy.*  welcome.*  404.html
   server/                    tabcat-server (FastAPI + SQLite), released apart
     tabcat_server/           the package
       pages/                 the server's own pages (sign-in, setup, account, admin, error)
@@ -57,7 +57,7 @@ tabcat.ghyeok.com, by `python -m http.server` locally, or by tabcat-server.
 | File | What it does |
 |---|---|
 | `index.html` | The dashboard page: its dialogs and panels as markup; loads `js/boot.js` (classic) then `js/app.js` (module). |
-| `app.css` | All of the dashboard's styles (also used by `privacy.html` and `404.html`). |
+| `app.css` | All of the dashboard's styles (also used by `privacy.html`, `welcome.html` and `404.html`). |
 | `js/app.js` | The dashboard (one module). Sections: utilities; rendering (sidebar, categories, board columns, group and folder cards, search results, the open tabs panel with other devices' tabs); mutations (edit dialogs, notes, add/delete/move, undo/redo through the extension's history); group and item selection; drag & drop (links, tabs, groups, workspaces, columns); settings, import/export; wiring (bridge events `ready`, `state`, `settings`, `tabs`, `trash`, `disconnected`; start-up `start(ext)`; update check `newestExtension`; tour). On a tabcat server also: Account dialog, account switching, shares, mailbox, and `listenForChanges` (imports the server's `/_server/live.js`). Calls the extension only through `bridge.js`. |
 | `js/boot.js` | Runs before the page draws: last theme/accent from `localStorage`, page hidden until `app.js` is ready, keeps `beforeinstallprompt`. |
 | `js/bridge.js` | Page side of the bridge protocol: `connect` (sends `hello`, waits for `ready`), `call(cmd, args)` (promise per request id), `apply(...ops)`, `on(event, fn)`, `info` (what the extension reported). |
@@ -72,6 +72,7 @@ tabcat.ghyeok.com, by `python -m http.server` locally, or by tabcat-server.
 | `js/sample.js` | `sampleWorkspaces(lang)`: Help > Add sample workspaces, translated. |
 | `js/scroll-feel.js` | Same as `lib/scroll-feel.js`. |
 | `privacy.html`, `privacy.css`, `js/privacy.js`, `js/privacy-text.js` | The privacy policy page; `privacy-text.js` holds the text in every language, `privacy.js` picks the language and renders it. |
+| `welcome.html`, `welcome.css`, `js/welcome.js`, `js/welcome-text.js` | The welcome page (`/welcome`), which the extension opens once installed (`WELCOME` in `background.js`): the three ways to use tabcat (the online dashboard, a copy served on this computer, a server of one's own) as cards whose steps fold open, with commands to copy. `welcome-text.js` holds the text in every language; `welcome.js` holds the commands (`COMMANDS`, with the server release's wheel address `SERVER_WHEEL`) and renders it. |
 | `404.html`, `js/notfound.js`, `js/look.js` | GitHub Pages' not-found page; `look.js` applies the last look before paint, `notfound.js` translates it. |
 | `manifest.webmanifest` | Web app manifest (installable dashboard). `connect.js` checks its `name` to recognise a tabcat server. |
 | `fonts/pretendard.css`, `icons/` | As in the extension; `icons/app-*.png` for the web app manifest. |

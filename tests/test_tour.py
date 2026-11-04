@@ -7,10 +7,10 @@ errors = []
 with sync_playwright() as p:
     ctx, sw = launch(p, fresh=True)
     for _ in range(40):
-        first = sw.evaluate("chrome.tabs.query({}).then(ts=>ts.filter(t=>t.pinned).map(t=>[t.index,(t.url||t.pendingUrl)]))")
+        first = sw.evaluate("chrome.tabs.query({}).then(ts=>ts.filter(t=>/tabcat\\.ghyeok\\.com/.test(t.url||t.pendingUrl||'')).map(t=>[t.pinned,(t.url||t.pendingUrl)]))")
         if first: break
         time.sleep(.1)
-    check(len(first) == 1 and first[0][0] == 0 and 'tabcat.ghyeok.com' in first[0][1], f'installed: the dashboard opens, pinned first {first}')
+    check(len(first) == 1 and not first[0][0] and first[0][1] == 'https://tabcat.ghyeok.com/welcome', f'installed: the welcome page opens, in a tab of its own {first}')
     d = dashboard(ctx, errors); until(lambda: d.locator('#confirm[open]').count() == 1)
     sample = sw.evaluate("""chrome.storage.local.get('tabcat').then(r => { const g = r.tabcat.workspaces[0].categories[0].groups;
       const f = g[1].items.find(i => i.type === 'folder'); return [g.map(x => x.name), g[1].items.filter(i => i.type === 'link').map(l => l.name), f.name, f.items.find(i => i.type === 'folder')?.name]; })""")

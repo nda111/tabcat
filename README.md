@@ -32,7 +32,8 @@ It works in Chromium-based browsers: Chrome, Edge, Brave, Whale and others.
 Install tabcat from the [Chrome Web Store](https://chromewebstore.google.com/detail/tabcat/ojkddimicblompbmfelkfocpgmeflaib).
 It updates itself from there.
 
-The dashboard opens at <https://tabcat.ghyeok.com/> with a short tour. After that, press
+A welcome page shows the ways to use it: the online dashboard, a copy you host yourself, or [your own server](#your-own-server-sync-and-teams).
+The dashboard, at <https://tabcat.ghyeok.com/>, starts with a short tour. After that, press
 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> on macOS) to bring it up
 any time, and press it again to go back to your tab.
 

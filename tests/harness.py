@@ -84,7 +84,7 @@ def profile():
 def launch(p, developer_mode=False, fresh=False, manifest=None, extra_args=(), **kw):
     """Chromium with the extension; returns (context, service worker). developer_mode: as for anyone
     loading it unpacked (needed to reload it: without, Chrome turns a reloaded unpacked one off).
-    Unless `fresh`, as if used before: the dashboard it opens on install is closed, and the page has
+    Unless `fresh`, as if used before: the welcome page it opens on install is closed, and the page has
     offered its tour already. `manifest`: fields to change in the extension's manifest."""
     ext = extension_copy(manifest)
     prof = profile()
@@ -101,7 +101,7 @@ def launch(p, developer_mode=False, fresh=False, manifest=None, extra_args=(), *
     sw.evaluate(f"chrome.storage.local.set({{ 'tabcat:allowedOrigins': ['http://localhost:{PORT}'] }})")
     if not fresh:
         ctx.add_init_script("try { localStorage.setItem('tabcat:tourOffered', '1'); } catch {}")
-        for _ in range(30):  # (the dashboard it opens on install: gone)
+        for _ in range(30):  # (the welcome page it opens on install: gone)
             opened = sw.evaluate("chrome.tabs.query({}).then(ts=>ts.filter(t=>/^https:\\/\\/tabcat\\.ghyeok\\.com/.test(t.url||t.pendingUrl||'')).map(t=>t.id))")
             if opened:
                 sw.evaluate(f"chrome.tabs.remove({opened})")

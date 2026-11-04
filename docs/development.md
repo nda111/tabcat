@@ -85,7 +85,9 @@ The extension and the server are released apart from this one repository, each w
 | Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `tabcat-extension-<version>.zip` (a `tabcat/` folder, to install by hand), `tabcat-extension-<version>-store.zip` (for the Chrome Web Store only) |
 | Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl` |
 
-1. Bump the version, add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md` (server), commit.
+1. Bump the version, add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md` (server), commit. For a
+   server release, also point `SERVER_WHEEL` in `web/js/welcome.js` (the welcome page's install command) and the
+   install line in `server/README.md` at the new wheel.
 2. `python tools/release.py <part>` builds the files from `HEAD` into `releases/` (ignored by git; `--worktree` to try
    it with uncommitted changes). The extension's zips hold every tracked file but the server, tests, tools, docs,
    store listing and icon source; `tests/test_release.py` checks they hold all the extension refers to and load.
