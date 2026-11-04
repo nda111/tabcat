@@ -1,7 +1,7 @@
 web/
 .DS_Store
 Thumbs.db
-releases/
+/releases/
 __pycache__/
 .venv/
 .tabcat-server/
