@@ -551,7 +551,8 @@ img.fav.fav-blank {
 #drop-line.on { opacity: 1; transform: none; transition-timing-function: ease-out, cubic-bezier(.34, 1.32, .64, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1), cubic-bezier(.22, 1, .36, 1); transition-duration: .12s, .2s, .16s, .16s, .16s, .16s; }
 
 /* ---------- search ---------- */
-mark { background: var(--accent-soft); color: inherit; border-radius: 2px; }
+/* what a search matched: in the accent colour (letters matched apart from each other would read as patches with a background) */
+mark { background: none; color: var(--accent); }
 
 /* ---------- open tabs panel ---------- */
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
@@ -617,14 +618,14 @@ body:not(.tabs-collapsed) .tab-row:hover .icon-btn, body:not(.tabs-collapsed) .t
 #windows { position: relative; } /* (for the list of browsers, and the part's copy fading as the panel closes) */
 .devs { position: relative; }
 .devs:empty { display: none; }
-.devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 6px 0; /* (its button in line with the windows' buttons above) */ border-top: 1px solid var(--border); font-size: calc(11px * var(--fs, 1)); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+.devs-title { display: flex; align-items: center; gap: 6px; margin: 14px 0 4px; padding: 10px 6px 0; /* (its button in line with the windows' buttons above) */ border-top: 1px solid var(--border); font-size: calc(11.5px * var(--fs, 1)); font-weight: 600; color: var(--muted); } /* (as written: a browser's name keeps its capitals) */
 .devs-title .grow { flex: 1; min-width: 0; }
 /* this browser's name, above its windows: written as the other browsers' heading, with no line above it */
 .self-title { margin: 0 0 2px; padding: 2px 6px 0; border-top: 0; min-height: 26px; }
 .self-title .self-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
 .self-title .self-edit { opacity: 0; transition: opacity .16s ease; }
 .self-title:hover .self-edit, .self-title .self-edit:focus-visible { opacity: 1; }
-.self-title .dev-rename { text-transform: none; letter-spacing: 0; font-size: calc(12px * var(--fs, 1)); }
+.self-title .dev-rename { font-size: calc(12px * var(--fs, 1)); }
 body.tabs-collapsed .self-title { display: none; }
 .devs-list-btn { width: 24px; height: 24px; }
 /* the list of them, in a dialog: each in a row of its own, a handle on the left, a tick on the right; the whole
@@ -1386,10 +1387,9 @@ dialog .share-ask select, dialog .share-role select { margin: 0; height: 100%; }
 .share-found { list-style: none; margin: 4px 0 0; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel);
   box-shadow: 0 4px 16px rgba(0,0,0,.10); overflow-y: auto; } /* (five rows tall at most: see capRows) */
 .share-found-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: background-color .12s ease; }
-.share-found-row:hover, .share-found-row.on { background: var(--hover); }
+.share-found-row.on { background: var(--hover); } /* (the one picked, by the arrows or the pointer: one at a time) */
 .share-found-row .account-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .share-found-row.taken { cursor: default; }
-.share-found-row.taken:hover { background: transparent; }
 .share-found-row.taken :is(.account-avatar, .account-who) { opacity: .55; }
 /* (in it already, or asked: said on the right) */
 .share-found-tag { flex: none; padding: 2px 8px; border-radius: 999px; font-size: calc(11px * var(--fs, 1)); background: var(--hover); color: var(--muted); white-space: nowrap; }

@@ -7,7 +7,7 @@ import { icon, hydrateIcons } from './icons.js';
 import { LANGS, setLang, getLang, t, translateDom, randomName } from './i18n.js';
 import { sampleWorkspaces } from './sample.js';
 import { scrollFeel } from './scroll-feel.js';
-import { hasLetters, findLetters } from './hangul.js';
+import { matchLetters, findLetters } from './hangul.js';
 
 const tr = t; // for code where `t` is a tab or a drop target
 
@@ -245,13 +245,14 @@ function blankFavicon() {
   return blankLearnt;
 }
 
-// (where it matches, letter by letter for Korean: see hangul.js)
-function highlight(text, q) {
+// (where it matches, letter by letter for Korean, whole syllables marked; `loose`: its letters in order with others
+// between too: see hangul.js)
+function highlight(text, q, loose = false) {
   text = String(text || '');
   if (!q) return text;
   const out = [];
   let i = 0;
-  for (const [j, k] of findLetters(text, q)) {
+  for (const [j, k] of findLetters(text, q, loose)) {
     out.push(text.slice(i, j), h('mark', {}, text.slice(j, k)));
     i = k;
   }
@@ -1196,21 +1197,24 @@ function renderSearchResults() {
   out.hidden = !q;
   if (!q || !state) return;
   const links = [], containers = [];
+  // (as typed, anywhere; or, in a name, its letters in order with others between ('adf' in 'abcdef', Korean by
+  // initials too); the closest first. Long text (addresses, notes) only as typed: loosely, it would match nearly anything)
+  const scoreOf = (name, rest) => Math.min(...[matchLetters(name, q)?.score, ...rest.map((x) => matchLetters(x, q, false)?.score)].filter((x) => x != null));
   T.walk(state.workspaces, (n, anc) => {
     const path = anc.map((a) => a.name).join(' › ');
-    if (n.type === 'link') {
-      if ([n.name, n.url, n.description].some((x) => hasLetters(x, q))) links.push({ n, anc, path });
-    } else if ([n.name, n.note, n.description].some((x) => hasLetters(x, q))) {
-      containers.push({ n, anc, path });
-    }
+    const score = scoreOf(n.name, n.type === 'link' ? [n.url, n.description] : [n.note, n.description]);
+    if (score === Infinity) return;
+    (n.type === 'link' ? links : containers).push({ n, anc, path, score });
   });
+  links.sort((a, b) => a.score - b.score);
+  containers.sort((a, b) => a.score - b.score);
   const row = (item, lead, sub, act) => {
     const el = h('div', {
       class: 'result',
       onclick: (e) => { closeSearch(); act(e); },
       onmousemove: () => setHit(hits.indexOf(el), false),
     }, lead, h('span', { class: 'result-text' },
-      h('span', { class: 'name' }, highlight(item.n.name || item.n.url, q)),
+      h('span', { class: 'name' }, highlight(item.n.name || item.n.url, q, !!item.n.name)),
       h('span', { class: 'path' }, sub)));
     hits.push(el);
     return el;
@@ -1729,7 +1733,7 @@ function renameDevice(d, el = null) {
     if (done) return;
     done = true;
     const label = input.value.replace(/\s+/g, ' ').trim();
-    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } if (el) renderSelf(); };
+    const caughtUp = () => { if (remoteHeld) { remoteHeld = false; renderRemote(); } if (el) { selfHead.dataset.look = `${d.name || t('remote.device')}|${getLang()}`; el.title = d.name || ''; renderSelf(); } }; // (shown already, faded in once: not again)
     if (!keep || label === (d.name || '')) { name.textContent = d.name || t('remote.device'); caughtUp(); return; }
     const was = d.name === d.own ? '' : d.name;
     d.name = label || d.own || d.name;
@@ -5480,9 +5484,9 @@ function syncRows(list, items, make, update, animate = true) {
 // The heading's button: the people icon, and how many are in it once it's shared
 let headShared = null; // ({ ws, n, w }: what it showed last, for what changes to move)
 // (shown only while someone else is in it or asked, the count everyone so: sharing starts from the workspace's menu)
+const ROLE_CHIP = { viewer: 'share.viewing', editor: 'share.canEdit', manager: 'share.chipManager' };
 function shareButton(head, ws) {
   const sh = shareOf(ws), on = sharedWithOthers(sh), n = on ? sh.members + sh.invited : 0, was = headShared, same = was?.ws === ws.id;
-  const viewer = sh?.role === 'viewer';
   headShared = { ws: ws.id, n, w: 0, role: sh?.role, on };
   // (a stand-in for what just went: shrinks away where it was)
   const away = (el, wide) => {
@@ -5504,17 +5508,25 @@ function shareButton(head, ws) {
   } else if (same && was.on) {
     away(h('span', { class: 'icon-btn ws-share shared' }, icon('people', 17), h('span', { class: 'ws-share-n' }, String(was.n))), was.w);
   }
-  // (only viewing it: said beside, and nothing in it can be changed; coming and going, it grows and shrinks)
-  const chip = () => h('span', { class: 'ws-readonly', title: t('share.readOnly') }, t('share.viewing'));
-  if (viewer) {
-    const c = chip();
+  // (shared with this account: what it may do, said beside (only viewing it: nothing in it can be changed); coming and
+  // going, it grows and shrinks; changed, the words cross-fade as it takes the new width)
+  const roleOf = (r) => (r && r !== 'owner' ? r : null), now = roleOf(sh?.role), before = same ? roleOf(was.role) : null;
+  const chip = (r) => h('span', { class: `ws-readonly ws-role-${r}`, title: r === 'viewer' ? t('share.readOnly') : '' }, t(ROLE_CHIP[r]));
+  if (now) {
+    const c = chip(now);
     head.append(c);
-    if (!same || was.role !== 'viewer') {
-      const w = c.getBoundingClientRect().width;
-      c.animate([{ opacity: 0, transform: 'scale(.7)', width: '0px', marginLeft: '0px', paddingLeft: '0px', paddingRight: '0px' }, { opacity: 1, transform: 'none', width: `${w}px` }], { duration: 300, easing: SPRING });
+    const w = c.getBoundingClientRect().width;
+    if (!before) c.animate([{ opacity: 0, transform: 'scale(.7)', width: '0px', marginLeft: '0px', paddingLeft: '0px', paddingRight: '0px' }, { opacity: 1, transform: 'none', width: `${w}px` }], { duration: 300, easing: SPRING });
+    else if (before !== now) {
+      const old = chip(before);
+      head.append(old);
+      const w0 = old.getBoundingClientRect().width;
+      old.remove();
+      c.animate([{ width: `${w0}px` }, { width: `${w}px` }], { duration: 260, easing: GLIDE });
+      c.animate([{ opacity: .2 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
     }
-  } else if (same && was.role === 'viewer') {
-    const c = chip();
+  } else if (before) {
+    const c = chip(before);
     head.append(c);
     away(c, c.getBoundingClientRect().width);
   }
@@ -5569,15 +5581,36 @@ function openMail() {
   mailPage = 0;
   mailRead = new Set(mail.filter((m) => m.seen).map((m) => m.id));
   mailList.scrollTop = 0;
+  mailCap = 0; // (measured afresh as it opens: the text size may have changed)
   fillMail(false);
   $('#mail').showModal();
   $('#mail').querySelector('button[type=submit]').blur();
-  capRows(mailList, MAIL_ROWS);
+  sizeMail();
   sawMail();
   refreshMail();
 }
 // (ten a page: past ten, a pager beside Close; the page turned, the old rows slide up and away, the next come from below)
 const MAIL_PAGE = 10, MAIL_ROWS = 7; // (seven rows tall at most, the rest of the page scrolled to)
+// (one page: as tall as its rows, seven at most; more pages: always seven tall, every page the same, so turning a page
+// or mail coming doesn't change the box. Seven rows measured from rows that are in, not folding in or out (else as
+// many of one such as there would be), and kept: a row coming in mid-way never changes it)
+let mailCap = 0;
+function sizeMail() {
+  if (!mailList.offsetParent) return;
+  const rows = [...mailList.children].filter((r) => r.dataset.leaving == null && r.style.display !== 'none');
+  const still = rows.filter((r) => !r.getAnimations().length);
+  if (still.length) {
+    const cs = getComputedStyle(mailList), gap = rows.length > 1 ? parseFloat(getComputedStyle(rows[1]).marginTop) || 0 : 2;
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const firsts = rows.slice(0, MAIL_ROWS);
+    mailCap = firsts.length === MAIL_ROWS && firsts.every((r) => still.includes(r))
+      ? pad + firsts.reduce((a, r, i) => a + r.offsetHeight + (i ? gap : 0), 0)
+      : mailCap || pad + MAIL_ROWS * still[0].offsetHeight + (MAIL_ROWS - 1) * gap;
+  }
+  const many = mailPages() > 1 && mailCap;
+  mailList.style.height = many ? `${mailCap}px` : '';
+  mailList.style.maxHeight = !many && rows.length > MAIL_ROWS && mailCap ? `${mailCap}px` : '';
+}
 let mailPage = 0;
 const mailPages = () => Math.max(1, Math.ceil(mail.length / MAIL_PAGE));
 const pageMail = () => mail.slice(mailPage * MAIL_PAGE, (mailPage + 1) * MAIL_PAGE);
@@ -5585,7 +5618,7 @@ function fillMail(animate = true) {
   for (const id of mailPicked) { const m = mail.find((x) => x.id === id); if (!m || !deletable(m)) mailPicked.delete(id); }
   mailPage = Math.min(mailPage, mailPages() - 1);
   syncRows(mailList, pageMail().map((m) => [String(m.id), m]), mailRow, updateMailRow, animate);
-  capRows(mailList, MAIL_ROWS);
+  sizeMail();
   fold($('#mail-head'), mail.length > 0, animate);
   fold($('#mail-none'), !mail.length, animate);
   mailHead(animate);
@@ -6027,12 +6060,15 @@ function showPeople(people) {
   delete peopleList.dataset.going;
   peopleList.getAnimations().forEach((a) => a.cancel());
   peopleList.style.overflow = '';
-  const h0 = open ? peopleList.offsetHeight : 0;
-  peopleAt = Math.min(peopleAt, people.length - 1);
+  const h0 = open ? peopleList.offsetHeight : 0, was = livePeople()[peopleAt]?.p?.id;
   if (!open) { peopleList.hidden = false; peopleList.scrollTop = 0; }
   syncRows(peopleList, people.map((p) => [`p${p.id}`, p]), personRow, updatePersonRow, open);
   capRows(peopleList, PEOPLE_ROWS);
+  // (one picked already: the one highlighted, whom Enter takes; still there, kept, else the first that can be)
+  const rows = livePeople(), free = pickable(), kept = free.find((r) => r.p.id === was);
+  peopleAt = rows.indexOf(kept || free[0]);
   paintPeople();
+  rows[peopleAt]?.scrollIntoView({ block: 'nearest' });
   const h1 = peopleList.offsetHeight;
   if (Math.abs(h1 - h0) > .5) {
     peopleList.style.overflow = 'hidden';
@@ -6042,7 +6078,9 @@ function showPeople(people) {
   }
 }
 function personRow(p) {
-  const row = h('li', { class: 'share-found-row', onpointerdown: (e) => { e.preventDefault(); if (!row.classList.contains('taken')) pickPerson(row.p); } },
+  // (the pointer over one picks it, as the arrows do: one highlighted at a time)
+  const row = h('li', { class: 'share-found-row', onpointerdown: (e) => { e.preventDefault(); if (!row.classList.contains('taken')) pickPerson(row.p); },
+    onpointermove: () => { const i = livePeople().indexOf(row); if (i !== peopleAt && !row.classList.contains('taken')) { peopleAt = i; paintPeople(); } } },
     accountPhoto(p, 'account-avatar small'), h('span', { class: 'account-who' }, h('span', { class: 'account-name' }), h('span', { class: 'account-role' })),
     h('span', { class: 'share-found-tag' }));
   updatePersonRow(row, p, false);
@@ -6050,11 +6088,14 @@ function personRow(p) {
 }
 function updatePersonRow(row, p, animate = true) {
   row.p = p;
-  const look = JSON.stringify([p.name, p.username, p.twofa, getLang()]);
+  // (what's typed marked where it matched, in the name and the username)
+  const q = $('#share-user').value.trim(), look = JSON.stringify([p.name, p.username, p.twofa, q, getLang()]);
   if (row.look !== look) {
     row.look = look;
-    row.querySelector('.account-name').replaceChildren(...nameLine(p));
-    row.querySelector('.account-role').textContent = p.name ? p.username : '';
+    const [nm, ...rest] = nameLine(p);
+    nm.replaceChildren(...[highlight(p.name || p.username, q, true)].flat());
+    row.querySelector('.account-name').replaceChildren(nm, ...rest);
+    row.querySelector('.account-role').replaceChildren(...(p.name ? [highlight(p.username, q, true)].flat() : []));
   }
   const tag = tagOf(p), el = row.querySelector('.share-found-tag');
   row.classList.toggle('taken', !!tag);

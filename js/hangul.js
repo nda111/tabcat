@@ -26,19 +26,62 @@ export function letters(text) {
   return { out, at };
 }
 
-// Whether `text` has `q` in it, letter by letter
-export const hasLetters = (text, q) => !q || letters(text).out.includes(letters(q).out);
-
-// Where `q` is in `text`: [start, end) character ranges (a syllable matched in part, all of it)
-export function findLetters(text, q) {
-  const a = letters(text), b = letters(q).out, found = [];
-  if (!b) return found;
-  let i = 0, j;
-  while ((j = a.out.indexOf(b, i)) !== -1) {
-    const start = a.at[j], end = a.at[j + b.length - 1] + 1;
-    if (found.length && start < found[found.length - 1][1]) found[found.length - 1][1] = Math.max(found[found.length - 1][1], end);
-    else found.push([start, end]);
-    i = j + b.length;
+// How `q` is in `text`, letter by letter: as it is (score 0 and up: the earlier, the better), or failing that,
+// consonants alone as syllables' initials in order ('ㅎㄱ' in '한글': 500 and up), or its letters in order with others
+// between ('adf' in 'abcdef': 1000 and up; the closer together, the better; `loose` false: neither), or not at all (null). `ranges`: [start, end)
+// character ranges matched, a syllable matched in part counting whole.
+export function matchLetters(text, q, loose = true) {
+  const a = letters(text), b = letters(q).out;
+  if (!b) return { score: 0, ranges: [] };
+  const i = a.out.indexOf(b);
+  if (i >= 0) return { score: i, ranges: spans(a.at, Array.from(b, (_, k) => i + k)) };
+  const c = b.replace(/\s+/g, '');
+  if (!loose || !c) return null;
+  // (consonants alone: each one a syllable's first, in order (Korean typed by initials: 'ㅎㄱㄹ' in '한글 레시피'))
+  if (/^[ㄱ-ㅎ]+$/.test(c)) {
+    const heads = initials(text), got = run(heads.out, c);
+    if (got) return { score: 500 + got[got.length - 1] - got[0], ranges: spans(heads.at, got) };
   }
-  return found;
+  const best = run(a.out, c);
+  return best && { score: 1000 + best[best.length - 1] - best[0], ranges: spans(a.at, best) };
 }
+// (where `c`'s letters are in `s` in order, the tightest run: from each place its first is, the rest as soon as they come)
+function run(s, c) {
+  let best = null;
+  for (let i = s.indexOf(c[0]); i >= 0; i = s.indexOf(c[0], i + 1)) {
+    const at = [i];
+    for (let k = 1, j = i + 1; k < c.length; k++, j++) {
+      j = s.indexOf(c[k], j);
+      if (j < 0) { at.length = 0; break; }
+      at.push(j);
+    }
+    if (!at.length) break; // (none from here: none from further on either)
+    if (!best || at[at.length - 1] - at[0] < best[best.length - 1] - best[0]) best = at;
+  }
+  return best;
+}
+// (each syllable's first consonant, anything else as it is; and where each came from)
+function initials(text) {
+  let out = '';
+  const at = [], s = String(text || '').toLowerCase();
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    out += c >= 0xac00 && c <= 0xd7a3 ? L[Math.floor((c - 0xac00) / 588)] : s[i];
+    at.push(i);
+  }
+  return { out, at };
+}
+// (letters matched, as the characters they came from: neighbours run together)
+function spans(at, idx) {
+  const out = [];
+  for (const ch of [...new Set(idx.map((k) => at[k]))].sort((x, y) => x - y)) {
+    const last = out[out.length - 1];
+    if (last && ch === last[1]) last[1] = ch + 1; else out.push([ch, ch + 1]);
+  }
+  return out;
+}
+
+// Whether `text` has `q` in it (see matchLetters)
+export const hasLetters = (text, q, loose = true) => !q || !!matchLetters(text, q, loose);
+// Where: [start, end) character ranges
+export const findLetters = (text, q, loose = true) => matchLetters(text, q, loose)?.ranges || [];
