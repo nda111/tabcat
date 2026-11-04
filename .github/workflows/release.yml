@@ -5,8 +5,9 @@
 #   server-v1.0.1      the server: its wheel on a GitHub release (not made the latest: that stays the extension's), and
 #                      its image on Docker Hub for linux/amd64 and linux/arm64, tagged with the version and latest
 #
-# Each release's notes are docs/releases/<tag>.md. Run by hand (Actions → Release → Run workflow) with a tag, it builds
-# and tests all the same but publishes nothing, unless `publish` is ticked.
+# Each release's notes are docs/releases/<tag>.md. Run by hand (Actions → Release → Run workflow), it builds and tests
+# the code of the branch or tag picked there, named as the tag given, and publishes nothing unless `publish` is ticked
+# (and then only from that tag: run it from the tag itself).
 #
 # Secrets (Settings → Secrets and variables → Actions): DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (a Docker Hub personal
 # access token, Read, Write, Delete: Delete is what updating the repository's overview needs).
@@ -46,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.sha }}   # (the tag pushed; run by hand: the branch or tag picked to run it from)
       - id: part
         name: The part, its version as the code says, and its notes
         run: |
@@ -69,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.sha }}   # (the tag pushed; run by hand: the branch or tag picked to run it from)
       - uses: actions/checkout@v4   # (the dashboard the tests serve: the pages branch, as tabcat.ghyeok.com has it)
         with:
           ref: pages
@@ -92,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.sha }}   # (the tag pushed; run by hand: the branch or tag picked to run it from)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -119,7 +120,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.sha }}   # (the tag pushed; run by hand: the branch or tag picked to run it from)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
