@@ -14,12 +14,12 @@ export const TEXT = {
       online: {
         title: 'Use the online dashboard', go: 'Open the dashboard',
         text: 'Try it with no setup. The dashboard at tabcat.ghyeok.com works without a server, and your data stays on your computer.',
-        tags: ['Easy to use', 'Always up to date'],
+        tags: ['Easy to use', 'Always up to date', 'Just for you'],
       },
       self: {
         title: 'Host the dashboard yourself', go: 'More in the README',
         text: 'Use a dashboard of your own on this computer, with no account and no server. Your data stays on your computer.',
-        tags: ['Works offline', 'Needs Python'],
+        tags: ['Works offline', 'Needs Python', 'Just for you'],
         steps: ['Download the dashboard\'s files {copy}', 'Start the dashboard on this computer {copy}', 'Open {dashboard} and choose {allow} when tabcat asks.'],
       },
       server: {
@@ -42,12 +42,12 @@ export const TEXT = {
       online: {
         title: '온라인 대시보드 사용하기', go: '대시보드 열기',
         text: '설정 없이 사용해보세요. tabcat.ghyeok.com의 대시보드는 서버 없이 사용할 수 있어요. 데이터는 컴퓨터 안에만 저장돼요.',
-        tags: ['쉬운 사용', '항상 최신 버전'],
+        tags: ['쉬운 사용', '항상 최신 버전', '혼자 사용'],
       },
       self: {
         title: '대시보드를 직접 호스팅하기', go: 'README에서 더 보기',
         text: '계정이나 서버 없이 이 컴퓨터에서 나만의 대시보드를 사용할 수 있어요. 데이터는 컴퓨터 안에만 저장돼요.',
-        tags: ['오프라인 가능', 'Python 필요'],
+        tags: ['오프라인 가능', 'Python 필요', '혼자 사용'],
         steps: ['대시보드 파일을 다운로드 받아요. {copy}', '이 컴퓨터에서 대시보드를 시작해요. {copy}', '{dashboard}를 열고, tabcat이 물으면 {allow}을 눌러요.'],
       },
       server: {
@@ -70,12 +70,12 @@ export const TEXT = {
       online: {
         title: 'オンラインのダッシュボードを使う', go: 'ダッシュボードを開く',
         text: '設定なしで使ってみてください。tabcat.ghyeok.com のダッシュボードはサーバーなしで使えます。データはパソコンの中だけに保存されます。',
-        tags: ['かんたん', 'いつも最新'],
+        tags: ['かんたん', 'いつも最新', 'ひとりで使う'],
       },
       self: {
         title: 'ダッシュボードを自分でホストする', go: 'README で詳しく',
         text: 'アカウントもサーバーもなしに、このパソコンで自分だけのダッシュボードを使えます。データはパソコンの中だけに保存されます。',
-        tags: ['オフラインで使える', 'Python が必要'],
+        tags: ['オフラインで使える', 'Python が必要', 'ひとりで使う'],
         steps: ['ダッシュボードのファイルをダウンロード {copy}', 'このパソコンでダッシュボードを起動します。 {copy}', '{dashboard}を開き、tabcat に聞かれたら {allow} を選びます。'],
       },
       server: {
@@ -98,12 +98,12 @@ export const TEXT = {
       online: {
         title: '使用在线仪表板', go: '打开仪表板',
         text: '无需设置即可试用。tabcat.ghyeok.com 上的仪表板无需服务器即可使用，数据只保存在你的电脑中。',
-        tags: ['简单易用', '始终是最新版本'],
+        tags: ['简单易用', '始终是最新版本', '个人使用'],
       },
       self: {
         title: '自行托管仪表板', go: '在 README 中了解更多',
         text: '无需账户和服务器，就能在这台电脑上使用你自己的仪表板。数据只保存在你的电脑中。',
-        tags: ['可离线使用', '需要 Python'],
+        tags: ['可离线使用', '需要 Python', '个人使用'],
         steps: ['下载仪表板文件 {copy}', '在这台电脑上启动仪表板。 {copy}', '打开{dashboard}，tabcat 询问时选择{allow}。'],
       },
       server: {
@@ -126,12 +126,12 @@ export const TEXT = {
       online: {
         title: 'Usar el panel en línea', go: 'Abrir el panel',
         text: 'Pruébalo sin configurar nada. El panel de tabcat.ghyeok.com funciona sin servidor, y tus datos se quedan en tu equipo.',
-        tags: ['Fácil de usar', 'Siempre al día'],
+        tags: ['Fácil de usar', 'Siempre al día', 'Para ti solo'],
       },
       self: {
         title: 'Alojar el panel tú mismo', go: 'Más en el README',
         text: 'Usa tu propio panel en este equipo, sin cuenta ni servidor. Tus datos se quedan en tu equipo.',
-        tags: ['Funciona sin conexión', 'Requiere Python'],
+        tags: ['Funciona sin conexión', 'Requiere Python', 'Para ti solo'],
         steps: ['Descarga los archivos del panel {copy}', 'Inicia el panel en este equipo. {copy}', 'Abre {dashboard} y elige {allow} cuando tabcat lo pregunte.'],
       },
       server: {
@@ -154,12 +154,12 @@ export const TEXT = {
       online: {
         title: 'Das Online-Dashboard nutzen', go: 'Dashboard öffnen',
         text: 'Probier es ohne Einrichtung aus. Das Dashboard auf tabcat.ghyeok.com funktioniert ohne Server, und deine Daten bleiben auf deinem Computer.',
-        tags: ['Einfach', 'Immer aktuell'],
+        tags: ['Einfach', 'Immer aktuell', 'Nur für dich'],
       },
       self: {
         title: 'Das Dashboard selbst hosten', go: 'Mehr in der README',
         text: 'Nutze dein eigenes Dashboard auf diesem Computer, ohne Konto und ohne Server. Deine Daten bleiben auf deinem Computer.',
-        tags: ['Auch offline', 'Braucht Python'],
+        tags: ['Auch offline', 'Braucht Python', 'Nur für dich'],
         steps: ['Lade die Dateien des Dashboards herunter {copy}', 'Starte das Dashboard auf diesem Computer. {copy}', 'Öffne {dashboard} und wähle {allow}, wenn tabcat fragt.'],
       },
       server: {
@@ -182,12 +182,12 @@ export const TEXT = {
       online: {
         title: 'Utiliser le tableau de bord en ligne', go: 'Ouvrir le tableau de bord',
         text: 'Essayez-le sans rien configurer. Le tableau de bord de tabcat.ghyeok.com fonctionne sans serveur, et vos données restent sur votre ordinateur.',
-        tags: ['Facile à utiliser', 'Toujours à jour'],
+        tags: ['Facile à utiliser', 'Toujours à jour', 'Pour vous seul'],
       },
       self: {
         title: 'Héberger le tableau de bord vous-même', go: 'En savoir plus dans le README',
         text: 'Utilisez votre propre tableau de bord sur cet ordinateur, sans compte ni serveur. Vos données restent sur votre ordinateur.',
-        tags: ['Fonctionne hors ligne', 'Python requis'],
+        tags: ['Fonctionne hors ligne', 'Python requis', 'Pour vous seul'],
         steps: ['Téléchargez les fichiers du tableau de bord {copy}', 'Lancez le tableau de bord sur cet ordinateur. {copy}', 'Ouvrez {dashboard} et choisissez {allow} quand tabcat le demande.'],
       },
       server: {
@@ -210,12 +210,12 @@ export const TEXT = {
       online: {
         title: 'Usar o painel on-line', go: 'Abrir o painel',
         text: 'Experimente sem configurar nada. O painel em tabcat.ghyeok.com funciona sem servidor, e seus dados ficam no seu computador.',
-        tags: ['Fácil de usar', 'Sempre atualizado'],
+        tags: ['Fácil de usar', 'Sempre atualizado', 'Só para você'],
       },
       self: {
         title: 'Hospedar o painel você mesmo', go: 'Mais no README',
         text: 'Use seu próprio painel neste computador, sem conta e sem servidor. Seus dados ficam no seu computador.',
-        tags: ['Funciona off-line', 'Requer Python'],
+        tags: ['Funciona off-line', 'Requer Python', 'Só para você'],
         steps: ['Baixe os arquivos do painel {copy}', 'Inicie o painel neste computador. {copy}', 'Abra {dashboard} e escolha {allow} quando o tabcat perguntar.'],
       },
       server: {
