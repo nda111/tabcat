@@ -82,7 +82,7 @@ n2.post('/api/login', json=J(username='new2', password='12345678'))
 space2 = n2.get('/api/me').json()['space']
 n3 = TestClient(app, follow_redirects=False, client=('127.0.0.1', 50002))
 check(n3.post('/api/signup', json=J(username='new3', password='12345678', invite=code)).status_code == 403, 'an invitation is used once')
-check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()], 'the admin sees who used it')
+check('new2' in [i['used_by'] for i in c.get('/api/admin/invites').json()['invites']], 'the admin sees who used it')
 
 # deleting your own account (the last admin can't)
 check(n2.request('DELETE', '/api/me', json={'confirm': True}).status_code == 403, 'deleting your account: not without your password')
@@ -253,16 +253,16 @@ check(r.json()['name'] == 'Named One', 'an admin adds a user with a name')
 d1 = TestClient(app, follow_redirects=False, client=('192.0.2.40', 1), headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36'})
 d2 = TestClient(app, follow_redirects=False, client=('192.0.2.41', 1), headers={'User-Agent': 'Mozilla/5.0 (iPhone) Version/18 Mobile Safari/604.1'})
 d1.post('/api/login', json=J(username='ann', password='annpass99')); d2.post('/api/login', json=J(username='ann', password='annpass99'))
-ss = d1.get('/api/me/sessions').json()
+ss = d1.get('/api/me/sessions').json()['sessions']
 mine = [x for x in ss if x['current']]
 other = next(x for x in ss if x['ip'] == '192.0.2.41')
 check(len(mine) == 1 and mine[0]['ip'] == '192.0.2.40' and 'Windows' in mine[0]['agent'] and other['created_at'] > 0, f'the sessions: this one, the other device, with their addresses ({len(ss)})')
 check(d1.delete(f"/api/me/sessions/{mine[0]['id']}").status_code == 400, 'this one is signed out of by signing out, not from the list')
 check(d1.delete(f"/api/me/sessions/{other['id']}").status_code == 200 and d2.get('/api/me').status_code == 401, 'the other device signed out of from here')
 check(d1.get('/api/me').status_code == 200, 'this one still signed in')
-n_before = len(d1.get('/api/me/sessions').json())
+n_before = len(d1.get('/api/me/sessions').json()['sessions'])
 d1.post('/api/login', json=J(username='ann', password='annpass99'))
-check(len(d1.get('/api/me/sessions').json()) == n_before, 'signing in again in the same browser: still one sign-in for it, not another device')
+check(len(d1.get('/api/me/sessions').json()['sessions']) == n_before, 'signing in again in the same browser: still one sign-in for it, not another device')
 
 # ended sign-ins are cleared away (on each new one), not kept for ever
 app.state.db.run("insert into sessions (token, user_id, created_at, expires_at) values ('oldone', ?, 0, 1)", boss)
@@ -415,12 +415,18 @@ sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'wi
 check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc1', 'pc2'], 'one speaking again: still in its place')
 sa.put('/api/sync/tabs/order', json={'devices': ['pc2', 'pc1']})
 check([d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] == ['pc2', 'pc1'], 'put in order by the user: kept so')
-sess = [x for x in sa.get('/api/me/sessions').json() if x['current']][0]['id']
+sess = [x for x in sa.get('/api/me/sessions').json()['sessions'] if x['current']][0]['id']
 check(pc1['session'] == sess, f"each with the sign-in it sends from, to sign it out ({pc1['session']} {sess})")
 t = pc1['windows'][0]['tabs']
 check(len(pc1['windows']) == 1 and len(t) == 2 and t[0]['icon'] == '' and t[0]['group'] == 3 and len(t[1]['title']) == 300, 'kept tidy: a window with no tabs, a tab with no address, an icon not on the web: left out; a long title cut')
 check(sb.get('/api/sync/tabs').json()['devices'] == [], "another account doesn't see them")
 check(sa.put('/api/sync/tabs', json={'windows': []}).status_code == 400 and sa.put('/api/sync/tabs', headers={'X-Tabcat-Account': 'someone-else'}, json={'device': 'x'}).status_code == 409, 'no browser named, or as another account: refused')
+other = {'X-Tabcat-Account': 'someone-else'}
+check(all(r.status_code == 409 for r in (sa.get('/api/sync/tabs', headers=other), sa.put('/api/sync/tabs/order', headers=other, json={'order': []}),
+                                         sa.put('/api/sync/tabs/pc1/name', headers=other, json={'name': 'x'}), sa.put('/api/sync/tabs/pc1/hidden', headers=other, json={'hidden': True}))),
+      "the other browsers' list, its order, a name or hiding one, as another account: refused too")
+check(all(sa.post('/api/sync/ops', json={'device': 'd1', 'ops': bad}).status_code == 400 for bad in (['x'], [5], [None], 'x', {'id': 1})), 'changes that are not a list of objects: refused, not a server error')
+check(sa.post('/api/sync/ops', json={'device': 'd1'}).status_code == 200, 'no changes at all: nothing to do')
 sa.put('/api/sync/tabs/pc2/name', json={'name': '  Work   laptop  '})
 pc2 = next(d for d in sa.get('/api/sync/tabs').json()['devices'] if d['device'] == 'pc2')
 check(pc2['name'] == 'Work laptop' and pc2['own'] == 'Edge on macOS', f"a browser named: that name, its own kept beside ({pc2['name']!r})")
@@ -570,6 +576,31 @@ check(c.get('/api/admin/info').json()['dashboard']['source'] == 'folder', 'info 
 check(c.get('/api/admin/backup').content[:15] == b'SQLite format 3', 'the backup is the database')
 check(c.get('/../config.toml').status_code == 404 and c.get('/%2e%2e/tabcat.db').status_code == 404, "files outside the dashboard can't be fetched")
 check(c.get('/privacy').status_code == 200, '/privacy finds privacy.html')
+# The fixes from the docs' review: bad input refused as such (400), not a server error; deleting no invitation said so
+check(all(c.post('/api/admin/invites', json=J(days=d)).status_code == 400 for d in ('abc', -1, True, 99999)), 'an invitation for a bad number of days: refused')
+check(c.post('/api/admin/invites', json=J(days=0)).status_code == 200 and c.post('/api/admin/invites', json=J()).status_code == 200, 'for 0 days or none: one that never ends')
+n_log = len(c.get('/api/admin/events').json()['events'])
+check(c.delete('/api/admin/invites/no-such-code').status_code == 404 and len(c.get('/api/admin/events').json()['events']) == n_log, 'deleting an invitation there is none of: 404, nothing recorded')
+check(all(c.post(f'/api/mail/{w}', json={'ids': bad}).status_code == 400 for w in ('seen', 'delete', 'restore') for bad in (5, 'x', [1, 'x'], [True])), 'mail ids not a list of numbers: refused')
+check(c.post('/api/mail/seen', json={'ids': []}).status_code == 200, 'an empty list: fine')
+# lists answered as objects, as the others are
+check(isinstance(c.get('/api/admin/users').json().get('users'), list) and isinstance(c.get('/api/admin/invites').json().get('invites'), list)
+      and isinstance(c.get('/api/me/sessions').json().get('sessions'), list), 'the users, invitations and sign-ins: each in its own field')
+# the database at version 2: its indexes there, and used where looked up by them
+from tabcat_server.db import SCHEMA_VERSION as V
+check(V == 2, f'the database at version 2 ({V})')
+idx_db = DB(pathlib.Path(tempfile.mkdtemp()) / 'tabcat.db')
+idx = {r['name'] for r in idx_db.q("select name from sqlite_master where type = 'index'")}
+check({'sessions_user', 'sessions_short', 'device_tabs_session', 'device_tabs_device', 'mail_deleted', 'invites_created_by', 'invites_used_by'} <= idx, f'its indexes ({sorted(idx)})')
+uses = ' '.join(r[3] for r in idx_db.q("explain query plan select 1 from sessions where substr(token, 1, 16) = ? and expires_at > ?", 'x', 0))
+check('sessions_short' in uses, f'a sign-in found by its short id through its index ({uses})')
+# invitations long used or ended: let go
+now = time.time()
+idx_db.run("insert into users (username, password, created_at) values ('u', 'x', 0)")
+for code, used, ends in (('old-used', now - 200 * 86400, None), ('old-ended', None, now - 200 * 86400), ('fresh', now - 86400, None), ('open', None, None)):
+    idx_db.run('insert into invites (code, created_at, used_at, expires_at) values (?, ?, ?, ?)', code, now - 300 * 86400, used, ends)
+idx_db.purge_invites()
+check({r['code'] for r in idx_db.q('select code from invites')} == {'fresh', 'open'}, 'invitations used or ended longer ago than the record keeps: let go; the rest kept')
 check(c.post('/api/logout').status_code == 200 and c.get('/api/me').status_code == 401, 'signing out ends the session')
 print('all passed' if not failed else f'{len(failed)} failed')
 sys.exit(1 if failed else 0)

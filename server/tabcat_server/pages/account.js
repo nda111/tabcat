@@ -212,7 +212,7 @@ const PER_PAGE = 5;
 let page = 0, all = [];
 let shownDevices = '';
 async function devices(onlyChanged = false) {
-  const now = (await api('me/sessions')).sort((a, b) => b.current - a.current); // (this one first, the rest by last use)
+  const now = (await api('me/sessions')).sessions.sort((a, b) => b.current - a.current); // (this one first, the rest by last use)
   if (onlyChanged && JSON.stringify(now) === shownDevices) return;
   shownDevices = JSON.stringify(now);
   all = now;

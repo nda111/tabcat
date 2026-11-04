@@ -11,6 +11,7 @@ import re
 import secrets
 import mimetypes
 import tempfile
+import threading
 import time
 import shutil
 from collections import deque
@@ -27,6 +28,7 @@ from .db import DB
 PAGES = Path(__file__).parent / 'pages'
 MAX_BODY = 64 * 1024          # (the API's bodies: names, passwords, settings)
 MAX_SYNC_BODY = 8 * 1024 * 1024  # (sync's: a whole copy of someone's tabcat at most)
+MAIL_KEEP_DAYS = 30             # (mail put away: kept this long, for undoing)
 DEVICE_TABS_DAYS = 30           # (a browser's open tabs, unheard from this long: let go)
 SYNC_KEEP_OPS = 5000             # (changes kept past the latest copy, for browsers a little behind)
 API_PER_MINUTE = 240          # (per address)
@@ -37,8 +39,25 @@ NUMBERS = {'session_days': (0, 365), 'login_tries': (3, 50), 'login_lock_minutes
 
 def create_app(config) -> FastAPI:
     db = DB(config.db_path)
-    db.purge_sessions()  # (ended sign-ins go: on starting, and on each new one, see sign_in)
-    db.purge_events()    # (the security record's old entries too)
+    # What has had its time goes: ended sign-ins, the security record's old entries, invitations long used or ended,
+    # mail put away a while ago, browsers unheard from: on starting, then every hour (and some as they're met: see
+    # sign_in, mailbox, get_device_tabs)
+    def tidy():
+        db.purge_sessions()
+        db.purge_events()
+        db.purge_invites()
+        db.run('delete from mail where deleted is not null and deleted < ?', time.time() - MAIL_KEEP_DAYS * 86400)
+        db.run('delete from device_tabs where at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
+
+    def tidy_hourly():
+        while True:
+            time.sleep(3600)
+            try:
+                tidy()
+            except Exception as e:  # (never the end of it: next hour again)
+                print(f'tabcat-server: could not tidy up: {e}')
+    tidy()
+    threading.Thread(target=tidy_hourly, daemon=True).start()
     if not os.environ.get('TABCAT_NO_UPDATES'):  # (tests: no looking things up on GitHub)
         updates.keep_up(db, config, dashboard)
     tickets: dict[str, tuple] = {}  # (two-step sign-ins half done: ticket -> (user id, until when, kept signed in, wrong codes); see login)
@@ -679,8 +698,8 @@ def create_app(config) -> FastAPI:
         u = need_user(request)
         mine = auth.token_hash(request.cookies.get(auth.COOKIE, ''))
         rows = db.q('select * from sessions where user_id = ? and expires_at > ? order by coalesce(last_seen, created_at) desc', u['id'], time.time())
-        return [{'id': r['token'][:16], 'current': r['token'] == mine, 'agent': r['agent'] or '', 'ip': r['ip'] or '',
-                 'created_at': r['created_at'], 'last_seen': r['last_seen'] or r['created_at']} for r in rows]
+        return {'sessions': [{'id': r['token'][:16], 'current': r['token'] == mine, 'agent': r['agent'] or '', 'ip': r['ip'] or '',
+                 'created_at': r['created_at'], 'last_seen': r['last_seen'] or r['created_at']} for r in rows]}
 
     @app.delete('/api/me/sessions/{sid}')
     def end_my_session(sid: str, request: Request):
@@ -709,7 +728,7 @@ def create_app(config) -> FastAPI:
     @app.get('/api/admin/users')
     def users(request: Request):
         need_admin(request)
-        return [public(u) for u in db.q('select * from users order by created_at')]
+        return {'users': [public(u) for u in db.q('select * from users order by created_at')]}
 
     @app.post('/api/admin/users')
     async def add_user(request: Request):
@@ -820,8 +839,8 @@ def create_app(config) -> FastAPI:
         need_admin(request)
         rows = db.q('''select i.*, u.username used_by_name from invites i left join users u on u.id = i.used_by
                        order by i.created_at desc''')
-        return [{'code': r['code'], 'created_at': r['created_at'], 'expires_at': r['expires_at'],
-                 'used_by': r['used_by_name'], 'used_at': r['used_at']} for r in rows]
+        return {'invites': [{'code': r['code'], 'created_at': r['created_at'], 'expires_at': r['expires_at'],
+                             'used_by': r['used_by_name'], 'used_at': r['used_at']} for r in rows]}
 
     @app.post('/api/admin/invites')
     async def add_invite(request: Request):
@@ -830,6 +849,8 @@ def create_app(config) -> FastAPI:
         import secrets
         code = secrets.token_urlsafe(12)
         days = data.get('days')
+        if days is not None and (isinstance(days, bool) or not isinstance(days, (int, float)) or not 0 <= days <= 3650):
+            raise HTTPException(400, 'days: a number from 0 to 3650 (0 or none: never ends)')
         expires = time.time() + float(days) * 86400 if days else None
         db.run('insert into invites (code, created_by, created_at, expires_at) values (?, ?, ?, ?)', code, u['id'], time.time(), expires)
         log('invite_created', request, actor=u, detail=f'days:{days}' if days else '')
@@ -838,6 +859,8 @@ def create_app(config) -> FastAPI:
     @app.delete('/api/admin/invites/{code}')
     def delete_invite(code: str, request: Request):
         me_ = need_admin(request)
+        if not db.one('select 1 from invites where code = ?', code):
+            raise HTTPException(404, 'no such invitation')
         db.run('delete from invites where code = ?', code)
         log('invite_deleted', request, actor=me_)
         return {'ok': True}
@@ -1125,6 +1148,13 @@ def create_app(config) -> FastAPI:
             raise HTTPException(409, 'another account is signed in')
         return u
 
+    def ops_of(data) -> list:
+        """A request's changes: a list of objects (each its id and body), so many at most; anything else is refused."""
+        ops = data.get('ops', [])
+        if not isinstance(ops, list) or not all(isinstance(o, dict) for o in ops):
+            raise HTTPException(400, 'ops: a list of {id, body}')
+        return ops[:2000]
+
     def sync_ops_after(uid, after, limit=1000):
         rows = db.q('select seq, op_id, device, body from sync_ops where user_id = ? and seq > ? order by seq limit ?', uid, after, limit)
         return [{'seq': r['seq'], 'id': r['op_id'], 'device': r['device'], 'body': json.loads(r['body'])} for r in rows]
@@ -1217,7 +1247,7 @@ def create_app(config) -> FastAPI:
         """The account's browsers and what each has open, in the order the user put them (the rest as they came;
         `name`: its own, or the one given; `hidden`: kept out of the open tabs panel, shown in its list of them to be
         shown again; `session`: its sign-in while it lasts, for the list of sign-ins to end)."""
-        u = need_user(request)
+        u = sync_user(request)
         db.run('delete from device_tabs where at < ?', time.time() - DEVICE_TABS_DAYS * 86400)
         rows = db.q('''select d.device, d.name, d.label, d.at, d.body, d.forgotten, d.session,
                               exists(select 1 from sessions s where s.user_id = d.user_id and substr(s.token, 1, 16) = d.session and s.expires_at > ?) signed_in
@@ -1230,7 +1260,7 @@ def create_app(config) -> FastAPI:
     @app.put('/api/sync/tabs/order')
     async def order_devices(request: Request):
         """The account's browsers in the order given (the rest after them, as they were), for all of them to show."""
-        u = need_user(request)
+        u = sync_user(request)
         ids = [str(x)[:64] for x in ((await body(request)).get('devices') or [])][:200]
         with db.lock:
             for i, device in enumerate(ids):
@@ -1241,7 +1271,7 @@ def create_app(config) -> FastAPI:
     @app.put('/api/sync/tabs/{device}/name')
     async def name_device(device: str, request: Request):
         """A name for one of the account's browsers (empty: its own again), for all of them to show."""
-        u = need_user(request)
+        u = sync_user(request)
         label = ' '.join(str((await body(request)).get('name') or '').split())[:30]
         db.run('update device_tabs set label = ? where user_id = ? and device = ?', label, u['id'], device[:64])
         notify([u['id']], 'tabs')
@@ -1251,7 +1281,7 @@ def create_app(config) -> FastAPI:
     async def hide_device(device: str, request: Request):
         """Kept out of the open tabs panel (or shown again): for all of the account's browsers; one hidden is shown
         again by itself once it signs in again."""
-        u = need_user(request)
+        u = sync_user(request)
         hidden = (await body(request)).get('hidden') is True
         db.run('update device_tabs set forgotten = ? where user_id = ? and device = ?', time.time() if hidden else None, u['id'], device[:64])
         notify([u['id']], 'tabs')
@@ -1264,12 +1294,12 @@ def create_app(config) -> FastAPI:
         u = sync_user(request)
         data = await body(request)
         device = str(data.get('device', ''))[:64]
-        ops = data.get('ops') if isinstance(data.get('ops'), list) else []
+        ops = ops_of(data)
         acked = []
         with db.lock:
             seq = sync_head(u['id'])
-            for o in ops[:2000]:
-                oid = str((o or {}).get('id', ''))[:64]
+            for o in ops:
+                oid = str(o.get('id', ''))[:64]
                 if not oid or 'body' not in o:
                     continue
                 had = db.one('select seq from sync_ops where user_id = ? and op_id = ?', u['id'], oid)
@@ -1282,7 +1312,7 @@ def create_app(config) -> FastAPI:
                 acked.append({'id': oid, 'seq': seq})
         notify([u['id']], 'head', sync_head(u['id']))
         # (the look changed: its colour, where the account is shown)
-        if any('"o":"look"' in json.dumps((o or {}).get('body'), separators=(',', ':')) for o in ops[:2000]):
+        if any('"o":"look"' in json.dumps(o.get('body'), separators=(',', ':')) for o in ops):
             notify([u['id']], 'me')
             notify_admins()
             notify(related(u['id']), 'shares')
@@ -1323,7 +1353,6 @@ def create_app(config) -> FastAPI:
     ROLES = ('owner', 'manager', 'editor', 'viewer')
     EDITS = ('owner', 'manager', 'editor')  # (may change it)
     RANK = "case m.role when 'owner' then 0 when 'manager' then 1 when 'editor' then 2 else 3 end"
-    MAIL_KEEP_DAYS = 30  # (mail put away: kept this long, for undoing)
     MAX_INVITES_WAITING = 50  # (an account's invites not answered yet, at most)
     MAX_SHARES = 200  # (workspaces an account shares, at most)
 
@@ -1472,12 +1501,12 @@ def create_app(config) -> FastAPI:
         need_share(request, sid, EDITS, user=u)
         data = await body(request)
         device = str(data.get('device', ''))[:64]
-        ops = data.get('ops') if isinstance(data.get('ops'), list) else []
+        ops = ops_of(data)
         acked = []
         with db.lock:
             seq = share_head(sid)
-            for o in ops[:2000]:
-                oid = str((o or {}).get('id', ''))[:64]
+            for o in ops:
+                oid = str(o.get('id', ''))[:64]
                 if not oid or 'body' not in o:
                     continue
                 had = db.one('select seq from share_ops where share_id = ? and op_id = ?', sid, oid)
@@ -1688,8 +1717,11 @@ def create_app(config) -> FastAPI:
         return {u['id']: u for u in db.q(f"select {PERSON_COLS} from users where id in ({','.join('?' * len(ids))})", *ids)} if ids else {}
 
     async def ids_of(request: Request, most=500) -> list:
-        """The mail ids a request names (whole numbers only, so many at most)."""
-        return [x for x in ((await body(request)).get('ids') or [])[:most] if isinstance(x, int) and not isinstance(x, bool)]
+        """The mail ids a request names (a list of whole numbers, so many at most; anything else is refused)."""
+        ids = (await body(request)).get('ids', [])
+        if not isinstance(ids, list) or not all(isinstance(x, int) and not isinstance(x, bool) for x in ids):
+            raise HTTPException(400, 'ids: a list of mail ids')
+        return ids[:most]
 
     def mail_item(r, senders=None) -> dict:
         frm = (senders if senders is not None else people([r['from_id']])).get(r['from_id'])

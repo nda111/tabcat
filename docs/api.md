@@ -194,7 +194,7 @@ cached for a year (its URL changes with it). `404` with no photo.
 
 | | |
 |---|---|
-| `GET /api/me/sessions` | Signed in. A list (newest use first) of `{id, current, agent, ip, created_at, last_seen}`; `id` is 16 hex characters |
+| `GET /api/me/sessions` | Signed in. `{sessions: [...]}`, newest use first, each `{id, current, agent, ip, created_at, last_seen}`; `id` is 16 hex characters |
 | `DELETE /api/me/sessions/{sid}` | Signed in. Ends another of your sessions. `{ok: true}` (also when there was none). `400 not that one` for your own or a malformed id |
 | `POST /api/me/logout-others` | Signed in. Ends all your other sessions. `{ok: true}` |
 
@@ -234,8 +234,8 @@ The changes after `N`, up to 1000: `{ops, head, more}` (`more`: there may be mor
 start again from `/api/sync/state`.
 
 ### `POST /api/sync/ops` (X)
-Body: `{device, ops: [{id, body}]}` (up to 2000 ops; `id` up to 64 characters; entries without `id` or `body`
-skipped). Answer: `{acked: [{id, seq}], head}`, each op's number (an op already kept: its earlier number).
+Body: `{device, ops: [{id, body}]}` (up to 2000 ops; `id` up to 64 characters; objects without `id` or `body`
+skipped; `ops` not a list of objects: `400 ops: a list of {id, body}`). Answer: `{acked: [{id, seq}], head}`, each op's number (an op already kept: its earlier number).
 Tells the account's live streams `head`.
 
 ### `PUT /api/sync/snapshot` (X)
@@ -254,10 +254,10 @@ Browsers not heard from in 30 days are deleted. Changes are told to live streams
 | | Who | Body | Answer |
 |---|---|---|---|
 | `PUT /api/sync/tabs` | (X) | `{device, name?, windows}` | `{ok: true}`; `400 which browser?` without `device` |
-| `GET /api/sync/tabs` | signed in | | `{devices: [...]}` (below) |
-| `PUT /api/sync/tabs/order` | signed in | `{devices: [device ids]}` (up to 200) | `{ok: true}` |
-| `PUT /api/sync/tabs/{device}/name` | signed in | `{name}` (up to 30 characters; empty: its own name again) | `{ok: true}` |
-| `PUT /api/sync/tabs/{device}/hidden` | signed in | `{hidden: true\|false}` | `{ok: true}` |
+| `GET /api/sync/tabs` | (X) | | `{devices: [...]}` (below) |
+| `PUT /api/sync/tabs/order` | (X) | `{devices: [device ids]}` (up to 200) | `{ok: true}` |
+| `PUT /api/sync/tabs/{device}/name` | (X) | `{name}` (up to 30 characters; empty: its own name again) | `{ok: true}` |
+| `PUT /api/sync/tabs/{device}/hidden` | (X) | `{hidden: true\|false}` | `{ok: true}` |
 
 - `windows`: up to 50 of `{focused, tabs, groups}`; `tabs` up to 500 of `{url, title, icon, pinned, active,
   group}` (`icon` kept only if `http(s)://`; `group` a tab group id or `-1`); `groups` up to 100 of
@@ -352,7 +352,7 @@ null). `answer`: `accepted`, `declined` or `null`. `seen`: when read, or `null`.
 | `POST /api/mail/delete` | `{ids}` | `{ids}`: those deleted (an invite only once answered) |
 | `POST /api/mail/restore` | `{ids}` | `{ids}`: those restored |
 
-- `ids`: integer mail ids, up to 500.
+- `ids`: a list of integer mail ids, up to 500 (anything else: `400 ids: a list of mail ids`).
 - Answering an invite joins the share when accepted (as the invited role) and mails a `reply` to the sender.
   Errors: `404 no such invite`, `409 answered already`, `410 the shared workspace is gone` (accepting).
 - Deleted mail is kept 30 days for undoing, then removed.
@@ -393,7 +393,7 @@ All need an admin account from an `admin_from` address. Changes are logged to th
 
 | | Body | Answer | Errors |
 |---|---|---|---|
-| `GET /api/admin/users` | | list of Account, oldest first | |
+| `GET /api/admin/users` | | `{users: [Account]}`, oldest first | |
 | `POST /api/admin/users` | `{username, password, name?, admin?}` | Account | `400`, `409 that username is taken` |
 | `PATCH /api/admin/users/{uid}` | any of `{admin, disabled, twofa: false, password}` | Account | `404`, `409`, `400` |
 | `DELETE /api/admin/users/{uid}` | | `{ok: true}` | `404`, `409 you can't delete yourself or the last admin` |
@@ -429,9 +429,9 @@ Ends every session but yours; every live stream hears `me`. `{ok: true}`.
 
 | | Body | Answer |
 |---|---|---|
-| `GET /api/admin/invites` | | list of `{code, created_at, expires_at, used_by, used_at}`, newest first (`used_by`: a username) |
-| `POST /api/admin/invites` | `{days?}` | `{code, expires_at}` (`null`: never expires) |
-| `DELETE /api/admin/invites/{code}` | | `{ok: true}` |
+| `GET /api/admin/invites` | | `{invites: [{code, created_at, expires_at, used_by, used_at}]}`, newest first (`used_by`: a username) |
+| `POST /api/admin/invites` | `{days?}`: 0 to 3650 (0 or left out: never expires; else `400`) | `{code, expires_at}` (`null`: never expires) |
+| `DELETE /api/admin/invites/{code}` | | `{ok: true}`; `404 no such invitation` |
 
 ### `GET /api/admin/info`
 The server's state:

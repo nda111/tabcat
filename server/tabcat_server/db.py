@@ -188,9 +188,24 @@ def _v1(conn):
                  'begin update users set space = lower(hex(randomblob(12))) where id = new.id; end')
 
 
+def _v2(conn):
+    """Indexes for what's looked up often: an account's sign-ins, a sign-in by the short id the device list keeps
+    (its hash's first 16 characters), a browser's row by its sign-in or its id, mail put away (cleared out after a
+    while), and invitations by who made or used them (let go with the account)."""
+    for stmt in ('create index if not exists sessions_user on sessions(user_id)',
+                 'create index if not exists sessions_short on sessions(substr(token, 1, 16))',
+                 'create index if not exists device_tabs_session on device_tabs(session)',
+                 'create index if not exists device_tabs_device on device_tabs(device)',
+                 'create index if not exists mail_deleted on mail(deleted) where deleted is not null',
+                 'create index if not exists invites_created_by on invites(created_by)',
+                 'create index if not exists invites_used_by on invites(used_by)'):
+        conn.execute(stmt)
+
+
 # Each version's step from the one before (index n takes version n to n + 1). Versions:
 #   1  tabcat-server 1.0.0
-MIGRATIONS = [_v1]
+#   2  tabcat-server 1.0.0: indexes (see _v2)
+MIGRATIONS = [_v1, _v2]
 SCHEMA_VERSION = len(MIGRATIONS)
 
 
@@ -278,6 +293,11 @@ class DB:
 
     def purge_events(self):
         self.run('delete from events where at < ?', time.time() - float(self.setting('log_days') or 90) * 86400)
+
+    def purge_invites(self):
+        """Invitations used, or past their end, longer ago than the security record keeps its entries."""
+        since = time.time() - float(self.setting('log_days') or 90) * 86400
+        self.run('delete from invites where (used_at is not null and used_at < ?) or (expires_at is not null and expires_at < ?)', since, since)
 
     def purge_sessions(self):
         self.run('delete from sessions where expires_at < ?', time.time())

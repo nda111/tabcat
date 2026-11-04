@@ -35,7 +35,7 @@ addEventListener('resize', () => fitNames());
 async function users() {
   // (you first, then the other admins, then everyone else, each as they were made)
   const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
-  const list = (await api('admin/users')).sort((a, b) => rank(a) - rank(b));
+  const list = (await api('admin/users')).users.sort((a, b) => rank(a) - rank(b));
   adminCount = list.filter((u) => u.admin).length;
   // (the same as shown: nothing redrawn. Told twice of one change, a redraw would cut short what's moving)
   const seen = JSON.stringify([list, [...newPasswords]]);
@@ -307,7 +307,7 @@ $('#logout-all').addEventListener('click', async () => {
 stepper($('#invite-days'));
 const inviteLink = (code) => `${location.origin}/login?invite=${encodeURIComponent(code)}`;
 async function invites() {
-  const list = await api('admin/invites');
+  const list = (await api('admin/invites')).invites;
   await flip($('#invites'), () => {
     if (!list.length) return $('#invites').replaceChildren(h('tr', { 'data-key': 'none' }, h('td', { class: 'muted small' }, t('noInvites'))));
     $('#invites').replaceChildren(...list.map((i) => {
@@ -521,7 +521,7 @@ async function exportEvents() {
 $('#ev-export').addEventListener('click', exportEvents);
 
 async function eventAccounts() {
-  const list = await api('admin/users');
+  const list = (await api('admin/users')).users;
   const keep = $('#ev-user').value;
   // (the same as shown: left as it is; a name changed, an account added or gone: the list as it now is)
   const shown = [...$('#ev-user').options].slice(1).map((o) => `${o.value}|${o.textContent}`).join();

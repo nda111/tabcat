@@ -1,6 +1,6 @@
 # tabcat server database
 
-The tabcat server keeps everything it knows in one SQLite file, `tabcat.db`, in its data folder (or wherever the admin page moved it to: that path is kept in the data folder's `config.toml` as `database`). The code is in [`server/tabcat_server/db.py`](../server/tabcat_server/db.py); this page describes the database as of schema version 1.
+The tabcat server keeps everything it knows in one SQLite file, `tabcat.db`, in its data folder (or wherever the admin page moved it to: that path is kept in the data folder's `config.toml` as `database`). The code is in [`server/tabcat_server/db.py`](../server/tabcat_server/db.py); this page describes the database as of schema version 2.
 
 The connection is opened with:
 
@@ -179,9 +179,9 @@ One row per sign-in (a browser signed in to an account).
 
 - Inserted on each sign-in (`auth.new_session`).
 - Deleted on sign-out, when ended from the account page, and by "sign out everywhere else" (`/api/me/logout-others`). A password change ends all of the account's other sessions; an admin's password reset or suspension ends all of them. The admin's "sign everyone out" (`/api/admin/logout-all`) ends every session but the admin's own.
-- Expired rows stop working at once (each lookup checks `expires_at`) but are only deleted by `purge_sessions`, which runs when the server starts and on each sign-in.
+- Expired rows stop working at once (each lookup checks `expires_at`); `purge_sessions` deletes them when the server starts, every hour, and on each sign-in.
 
-**Indexes:** only the primary key.
+**Indexes:** `sessions_user (user_id)` for an account's sign-ins, and `sessions_short` on the expression `substr(token, 1, 16)`, for a sign-in found by its short id (the device list's, and signing out of one device). Both from version 2.
 
 ## invites
 
@@ -196,7 +196,7 @@ Sign-up invitations made on the admin page. They are used when sign-up is set to
 | `used_by` | integer | null, FK `users(id)` on delete set null | The account that signed up with it. Null: unused. |
 | `used_at` | real | null | |
 
-An invite is valid while `used_by is null` and it hasn't expired; each one can be used once. Rows are deleted only by an admin (`DELETE /api/admin/invites/<code>`); used and expired ones are kept and listed until then.
+An invite is valid while `used_by is null` and it hasn't expired; each one can be used once. Rows are deleted by an admin (`DELETE /api/admin/invites/<code>`), or by `purge_invites` once used or ended longer ago than the security record is kept (`log_days`): when the server starts and every hour. **Indexes** (version 2): `invites_created_by`, `invites_used_by`, for letting go of an account.
 
 ## settings
 
@@ -265,14 +265,14 @@ Each of an account's browsers: the windows and tabs it has open, as it last said
 | `position` | integer | null | Its place in the list as the user ordered it. Null: after those, in the order they came (`rowid`). Added by `_v1` for older files. |
 | `session` | text | null | The first 16 characters of the session hash it last sent from (see `sessions.token`): the list shows it only while that session is alive, and can end it. Null once signed out. Added by `_v1` for older files. |
 
-**Keys:** primary key `(user_id, device)`.
+**Keys:** primary key `(user_id, device)`. **Indexes** (version 2): `device_tabs_session (session)`, `device_tabs_device (device)`.
 
 **Rows come and go:**
 
 - Upserted by `PUT /api/sync/tabs`. On the same call, the same browser's rows under other accounts (one of this browser's own sessions, or a session that has ended) get `session = null` and empty windows. The row and its label stay for when that account signs in there again.
 - Signing out or switching accounts does the same to the row the session sent.
 - Changed by `PUT /api/sync/tabs/order`, `/<device>/name` and `/<device>/hidden`.
-- Rows not heard from for 30 days (`DEVICE_TABS_DAYS`) are deleted, each time `GET /api/sync/tabs` is asked.
+- Rows not heard from for 30 days (`DEVICE_TABS_DAYS`) are deleted when the server starts, every hour, and each time `GET /api/sync/tabs` is asked.
 
 ## shares
 
@@ -360,7 +360,7 @@ Each account's mailbox: invitations to join a share, the answers to them, and no
 | `deleted` | real | null | When its owner put it away. Null: in the mailbox. Can be restored until purged. |
 | `seen` | real | null | When its owner first had the Mailbox open with it in it. Null: unread (counts toward the badge). Added by `_v1` for older files. |
 
-**Indexes:** `mail_to (to_id, at)` for a mailbox, `mail_share (share_id, kind)` for a share's invites, `mail_from (from_id, kind)` for counting an account's waiting invites.
+**Indexes:** `mail_to (to_id, at)` for a mailbox, `mail_share (share_id, kind)` for a share's invites, `mail_from (from_id, kind)` for counting an account's waiting invites, and (version 2) `mail_deleted (deleted)`, partial, over mail put away only, for clearing it out.
 
 **Rows come and go:**
 
@@ -369,7 +369,7 @@ Each account's mailbox: invitations to join a share, the answers to them, and no
 - `removed` and `left` are inserted by `tell`.
 - An owner taking an invite back, ending or stopping the share, and the sender's account being deleted all delete the unanswered invites (`answer is null`).
 - `POST /api/mail/delete` sets `deleted`; an invite only once it's answered. `POST /api/mail/restore` clears it.
-- Mail put away more than 30 days ago (`MAIL_KEEP_DAYS`) is deleted each time a mailbox is opened (`GET /api/mail`). Mail not put away is kept until its recipient's account goes.
+- Mail put away more than 30 days ago (`MAIL_KEEP_DAYS`) is deleted when the server starts, every hour, and each time a mailbox is opened (`GET /api/mail`). Mail not put away is kept until its recipient's account goes.
 - A mailbox shows the newest 500.
 
 ## events
@@ -418,7 +418,7 @@ The security record: sign-ins, account changes and admins' actions. It never hol
 | admin | `server_updated` | ok | the release tag |
 | admin | `tailscale_serve` | ok | `on` or `off` |
 
-**Rows come and go:** inserted by `log()` in `app.py`. Rows older than `log_days` days are deleted by `purge_events`, which runs when the server starts and on each sign-in.
+**Rows come and go:** inserted by `log()` in `app.py`. Rows older than `log_days` days are deleted by `purge_events`: when the server starts, every hour, and on each sign-in.
 
 ## Schema versions and migrations
 
@@ -428,6 +428,7 @@ The schema's version is SQLite's `PRAGMA user_version`. `db.SCHEMA_VERSION` is `
 |---|---|---|
 | 0 | | A new, empty file, or one made by a development build before the version was kept. |
 | 1 | tabcat-server 1.0.0, the first release | `_v1` |
+| 2 | tabcat-server 1.0.0 | `_v2`: indexes for what's looked up often (`sessions_user`, `sessions_short`, `device_tabs_session`, `device_tabs_device`, `mail_deleted`, `invites_created_by`, `invites_used_by`) |
 
 `DB.migrate()` runs each time the database is opened (by the server, and by the CLI commands before they act):
 

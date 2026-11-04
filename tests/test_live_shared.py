@@ -119,7 +119,7 @@ with sync_playwright() as p:
     ann.goto(SERVER + '/account'); time.sleep(1.2)
     check(ann.locator('#admin-link').is_hidden(), 'a member: no admin button')
     ann.evaluate('window.__moved.clear()')
-    ann_id = o.evaluate("fetch('/api/admin/users').then(r => r.json()).then(l => l.find(u => u.username === 'ann').id)")
+    ann_id = o.evaluate("fetch('/api/admin/users').then(r => r.json()).then(l => l.users.find(u => u.username === 'ann').id)")
     call(o, 'PATCH', f'/api/admin/users/{ann_id}', {'admin': True})
     check(soon(ann, "!document.querySelector('#admin-link').hidden"), 'made an admin elsewhere: the button comes')
     check(soon(oa, "!document.querySelector('#delete-me').closest('#delete-row').hidden && document.querySelector('#only-admin').hidden"), 'another made an admin: the Delete button comes back, live')
