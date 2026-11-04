@@ -215,7 +215,7 @@ with sync_playwright() as p:
     bd.click('#confirm-ok')
     check(until(lambda: mine()[:2] == [['boss', 'Owner'], ['Annie(you)', 'Editor']]), f'an editor now: no roles to choose ({mine()})')
     chip = lambda: bd.evaluate("[...document.querySelectorAll('#ws-head .ws-readonly')].filter(c => c.style.pointerEvents !== 'none').map(c => c.textContent).join()")
-    check(until(lambda: chip() == 'Can edit'), f'beside the share button: "Can edit" ({chip()!r})')
+    check(until(lambda: chip() == 'Editor'), f'beside the share button: "Editor" ({chip()!r})')
     bd.keyboard.press('Escape'); settle(bd)
     # a jamo at a time: a name in Korean found as it's being typed
     api(ad, '/api/admin/users', 'POST', {'username': 'minji', 'password': 'minjipass9', 'name': '김민지'})

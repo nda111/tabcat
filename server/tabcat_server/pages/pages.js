@@ -361,12 +361,13 @@ export function modal({ title, text = '', ok, danger = false, input = null, pass
 // Number fields: − / + beside the value; the wheel over it steps it too; a step slides the new value in from
 // the side it came. Changes are announced as a 'change' (once a burst of steps settles). `zero`: what 0 means,
 // said in its place (as the dashboard's "Off").
-export function stepper(input, { zero = null } = {}) {
+// (`delay`: how long after the last step it's saved; `pending()`: a step not saved yet)
+export function stepper(input, { zero = null, delay = 400 } = {}) {
   const wrap = h('div', { class: 'stepper' });
   input.replaceWith(wrap);
   const zeroLabel = zero ? h('span', { class: 'step-zero' }, zero) : null;
   let timer = null;
-  const changed = () => { clearTimeout(timer); timer = setTimeout(() => input.dispatchEvent(new Event('change', { bubbles: true })), 400); };
+  const changed = () => { clearTimeout(timer); timer = setTimeout(() => { timer = null; input.dispatchEvent(new Event('change', { bubbles: true })); }, delay); };
   const sync = () => {
     down.disabled = input.min !== '' && +input.value <= +input.min;
     up.disabled = input.max !== '' && +input.value >= +input.max;
@@ -395,7 +396,7 @@ export function stepper(input, { zero = null } = {}) {
   input.addEventListener('input', sync);
   wrap.append(input, ...(zeroLabel ? [zeroLabel] : []), down, up);
   sync();
-  return { sync };
+  return { sync, pending: () => timer != null };
 }
 
 // Open or close a part of the page in place: its height glides, it fades in or out (what's below glides with it)

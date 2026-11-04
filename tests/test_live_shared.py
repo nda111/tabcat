@@ -86,7 +86,7 @@ with sync_playwright() as p:
     time.sleep(.3)
     m = adm.evaluate('[...window.__moved]')
     check('f:name:fade' in m, f"the name: the old fading out as the new fades in ({m})")
-    check('head:Last seen' in m, f'the column heads after the name slide with their columns ({m})')
+    check('head:Last seen' in m, f'last seen, just after the names, slides with its column (its head too) ({m})')
     check('f:uname:slide' in m and not {'f:uname:fade', 'f:uname:rise', 'f:seen:rise'} & set(m) and 'f:seen:slide' in m, f"the username beside it, and last seen after it, slide to their new places, not blinking ({m})")
     adm.evaluate('window.__moved.clear()')
     call(o, 'PUT', '/api/admin/settings', {'signup': 'open'})
@@ -104,6 +104,14 @@ with sync_playwright() as p:
     oa_open = True
     # the account page's admin button, made an admin elsewhere: it comes, moving
     call(o, 'POST', '/api/admin/users', {'username': 'ann', 'password': 'annpass123'})
+    # the admin page: another's account, its role a choice, the rest under its "⋯" (none on one's own)
+    check(soon(adm, "document.querySelectorAll('#users tr[data-key]').length === 2"), 'ann listed on the admin page')
+    check(adm.locator('#users tr[data-key]').first.locator('.more').count() == 0, 'your own row: no menu')
+    adm.locator('#users tr[data-key]').nth(1).locator('.more').click(); adm.wait_for_selector('#row-menu:popover-open')
+    items = adm.evaluate("[...document.querySelectorAll('#row-menu button')].map(b => b.textContent)")
+    check(items == ['Suspend account', 'Reset password', 'Delete'], f'its menu: suspend, a new password, delete ({items})')
+    adm.keyboard.press('Escape')
+    check(until(lambda: not adm.evaluate("document.querySelector('#row-menu').matches(':popover-open')")), 'Escape: shut')
     four = b.new_context(); four.add_init_script(COUNT)
     ann = four.new_page(); ann.goto(SERVER + '/login'); call(ann, 'POST', '/api/login', {'username': 'ann', 'password': 'annpass123'})
     ann.goto(SERVER + '/account'); time.sleep(1.2)

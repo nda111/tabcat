@@ -69,7 +69,7 @@ def end_session(db, token):
 
 # A username: letters, digits, . _ - (2–14: as long as shows whole, as the account page's heading too); a
 # password: 8 characters or more
-USERNAME_MAX, NAME_MAX = 14, 12  # (the name to go by: see app.clean_name)
+USERNAME_MAX, NAME_MAX = 14, 24  # (the name to go by: see app.clean_name)
 
 
 def valid_username(name: str) -> bool:

@@ -172,7 +172,9 @@ input:checked::before { transform: scale(1); }
 .step-btn:active:not(:disabled) span { transform: scale(.78); transition-duration: .06s; }
 .step-btn:disabled { opacity: .35; cursor: default; }
 /* a user's role: two choices side by side, the one they have filled in */
-.seg { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; width: max-content; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+/* (its own width, not the narrowest the table would give it: its two halves alike, each the longer word's, the
+   highlight (half of it) over either exactly, in any language) */
 .seg button { position: relative; font: inherit; font-size: 12.5px; padding: 4px 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .16s ease, color .2s ease; }
 /* (the filled part: under the one chosen, sliding across as it changes) */
 .seg-pill { position: absolute; top: 0; bottom: 0; left: 0; width: 50%; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
@@ -410,7 +412,8 @@ dd > * { min-width: 0; overflow-wrap: anywhere; }
 :root { --blue: #2f6fe0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --blue: #6ea2ff; } }
 :root[data-theme="dark"] { --blue: #6ea2ff; }
-.tag.twofa { margin-left: 8px; background: transparent; color: var(--blue); border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent); padding: 0 6px; }
+.tag.off + .tag.twofa { margin-left: 6px; } /* (after Suspended; on its own, where Suspended would be) */
+.tag.twofa { margin-left: 10px; background: transparent; color: var(--blue); border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent); padding: 0 6px; }
 
 /* the devices' pages: ‹ 1 / 2 › under the list */
 .pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 12px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -478,16 +481,19 @@ dd.crossfade > * { grid-area: 1 / 1; }
 .ts-note p { margin: 0; flex: 1; min-width: 200px; }
 
 /* the users' rows: the name, the username and its chips on one line, in the row's middle; the date on one line */
-#users .pic { width: 32px; padding-right: 0; }
+#users .pic { width: 32px; padding-right: 4px; } /* (a little room before the name) */
 #users td.pic { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
-#users td.user { position: relative; display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; min-height: 49px; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
-#users .who { white-space: nowrap; }
-#users .who { display: inline-flex; align-items: baseline; gap: 4px; }
+/* (the names' column: as wide as its widest row (see fitNames), giving way only when there's no room) */
+#users td.user { position: relative; width: var(--names-full, 200px); min-width: var(--names, 120px); height: 49px; vertical-align: middle; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border); }
+#users .user-line { display: flex; align-items: center; min-width: 0; contain: inline-size; } /* (its words don't widen the column: the column's width is set, see fitNames) */
+#users .who { flex: 0 1 auto; min-width: 0; display: flex; align-items: baseline; white-space: nowrap; }
+#users .who > * { flex: none; white-space: pre; }
+#users .who > b.cut { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; } /* (only the name gives way; the ID stays whole) */
 #users .tag { flex: none; line-height: 18px; }
 #users td { position: relative; }
 th > span { display: inline-block; } /* (a column head, to slide as its column moves) */ /* (what was there fades where it stood, over the cell: see ghost in admin.js) */
 #users [data-f="seen"] { display: inline-block; } /* (to slide, as the name before it grows or shrinks) */
-#users td.hide-narrow { min-width: 90px; } /* (the date may take two lines: the row fits its box) */
+#users td.hide-narrow { min-width: 90px; white-space: nowrap; } /* (just after the names, the room left over its own; one line: the names give way instead) */
 
 /* the security record: a row a happening (when, what, whose, from where); failures in red */
 .ev-head { margin-bottom: 8px; gap: 8px; }
@@ -507,7 +513,7 @@ th > span { display: inline-block; } /* (a column head, to slide as its column m
 .ev-page { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .ev-page input { margin: 0; padding: 4px 6px; text-align: center; appearance: textfield; font-variant-numeric: tabular-nums; }
 .ev-page input::-webkit-inner-spin-button, .ev-page input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.event { display: grid; grid-template-columns: 150px minmax(120px, 1fr) minmax(100px, .8fr) minmax(140px, 1fr); gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.event { display: grid; grid-template-columns: 150px minmax(120px, 1fr) minmax(100px, .8fr) minmax(140px, 1fr); gap: 12px; align-items: start; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; } /* (each column from the top of the row, however many lines one takes) */
 .event:last-child { border-bottom: 0; }
 /* the record's column heads: as the rows lay out, quieter */
 .ev-cols { padding: 4px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
@@ -563,3 +569,20 @@ select:hover { border-color: color-mix(in srgb, var(--border), var(--text) 18%);
 
 /* the account page, the server's only admin: their account can't be deleted, said in red in place of the button */
 .only-admin { margin: 0; color: var(--danger); white-space: pre-line; } /* (as big as the note above it: .small) */
+
+/* the users' rows: the role, then a "⋯" for the rest (see openRowMenu in admin.js) */
+#users .more { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; }
+#users .more svg { fill: currentColor; }
+#users .more[aria-expanded="true"] { background: var(--hover); }
+.row-menu { position: fixed; inset: auto; margin: 0; min-width: 180px; padding: 4px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel); color: var(--text); box-shadow: 0 8px 28px rgba(0,0,0,.16); }
+.row-menu button { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px; padding: 7px 10px; border: 0; border-radius: 6px; background: none; color: inherit; cursor: pointer; transition: background-color .12s ease; }
+.row-menu button:hover, .row-menu button:focus-visible { background: var(--hover); outline: none; }
+.row-menu button.danger { color: var(--danger); }
+.row-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 2px; }
+/* a new password: on a line of its own under its row */
+#users .pw-row td { padding-top: 0; vertical-align: top; }
+#users tr:has(+ .pw-row) td { border-bottom: 0; box-shadow: none; } /* (the row and its new password: one, no line between) */
+#users .pw-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow: hidden; padding: 0 0 10px; }
+#users .pw-done { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 17px; line-height: 1; cursor: pointer; transition: background-color .12s ease, color .12s ease; }
+#users .pw-done:hover { background: var(--hover); color: var(--text); }

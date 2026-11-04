@@ -15,6 +15,23 @@ const leave = (el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 
 const was = new Map();
 let adminCount = 0;
 let shownUsers = '';
+// (the names' column: as wide as its widest row, last seen just after it, the room left over after that; short of
+// room, it gives way, but never to less than every row's username and chips with a few of its name's letters: a long
+// name gives way, the username (the ID) never)
+function fitNames() {
+  let need = 0, full = 0;
+  for (const line of $('#users').querySelectorAll('.user-line')) {
+    const cut = line.querySelector('b.cut'), margins = (el) => { const cs = getComputedStyle(el); return parseFloat(cs.marginLeft) + parseFloat(cs.marginRight); };
+    const rest = [...line.querySelectorAll('.who > :not(b.cut), :scope > .tag')].reduce((a, el) => a + el.getBoundingClientRect().width + margins(el), 0);
+    need = Math.max(need, rest + (cut ? Math.min(cut.scrollWidth, 48) : 0));
+    full = Math.max(full, rest + (cut ? cut.scrollWidth : 0));
+  }
+  // (the cell's own sides too: its width counts them)
+  const td = $('#users td.user'), cs = td && getComputedStyle(td), pad = cs ? parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) : 0;
+  $('#users').style.setProperty('--names', `${Math.ceil(need + pad) + 4}px`);
+  $('#users').style.setProperty('--names-full', `${Math.ceil(full + pad) + 4}px`);
+}
+addEventListener('resize', () => fitNames());
 async function users() {
   // (you first, then the other admins, then everyone else, each as they were made)
   const rank = (u) => (u.id === me.id ? 0 : u.admin ? 1 : 2);
@@ -25,7 +42,7 @@ async function users() {
   if (seen === shownUsers) return;
   shownUsers = seen;
   // (gone since, another admin's doing say: they fade aside first, the rest gliding up after)
-  const ids = new Set(list.map((u) => String(u.id)));
+  const ids = new Set(list.flatMap((u) => [String(u.id), `pw${u.id}`]));
   await Promise.all([...$('#users').children].filter((tr) => !ids.has(tr.dataset.key)).map((tr) => leave(tr)));
   // (each row's cells as they read before: what reads otherwise now comes in, see below; and where each part of
   // them stood, from the row's top, and as left as it was: a name longer or shorter moves what's after it, which
@@ -38,7 +55,7 @@ async function users() {
   const olds = [...$('#users').children];
   const before = new Map(olds.map((tr) => [tr.dataset.key, read(tr)]));
   const spots = new Map(olds.map((tr) => [tr.dataset.key, spot(tr)]));
-  await flip($('#users'), () => $('#users').replaceChildren(...list.map(row)));
+  await flip($('#users'), () => { $('#users').replaceChildren(...list.flatMap((u) => [row(u), newPasswords.has(u.id) ? pwRow(u) : null].filter(Boolean))); fitNames(); });
   heads.forEach((el, i) => {
     const dx = headsAt[i] - el.getBoundingClientRect().left;
     if (Math.abs(dx) > .5) el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 300, easing: GLIDE });
@@ -60,7 +77,7 @@ async function users() {
     // (a button come or gone, a new photo: not the name, the chips, last seen, done above, nor the role, suspending, a
     // new password, done below)
     now.forEach((x, i) => {
-      if (x === old[i] || [1, 2, 3, 4, 5].includes(i)) return;
+      if (x === old[i] || [1, 2, 3, 4].includes(i) || tr.matches('.pw-row')) return;
       if (i === 0) tr.cells[0].firstChild?.animate([{ opacity: 0, transform: 'scale(.7)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: SPRING }); // (a new photo, or colour: it springs in)
       else [...tr.cells[i].children].forEach(freshen);
     });
@@ -71,8 +88,8 @@ async function users() {
     was.set(u.id, now);
     if (!before || !tr) continue;
     if (before.admin !== now.admin) slidePill(tr.parts.pill, now.admin);
-    if (before.disabled !== now.disabled) { chip(tr.parts.chip, now.disabled); swap(tr.parts.suspend, now.disabled); }
-    if (before.pw !== now.pw && now.pw) reveal(tr.parts.newpw);
+    const pr = $(`#users tr[data-key="pw${u.id}"]`);
+    if (before.pw !== now.pw && now.pw && pr) reveal(pr.querySelector('.pw-box'));
   }
 }
 // What was there, fading where it stood, over the row now (in the cell given, from the row's top as it was)
@@ -83,89 +100,129 @@ function ghost(w, el, top) {
   td.append(g);
   g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out', fill: 'forwards' }).finished.then(() => g.remove(), () => g.remove());
 }
-// the role's filled part slides to the other side
+// the role's filled half slides to the other side
 function slidePill(pill, admin) {
   pill.animate([{ transform: admin ? 'translateX(100%)' : 'none' }, { transform: admin ? 'none' : 'translateX(100%)' }], { duration: 320, easing: GLIDE });
 }
-// "Suspended" pops in beside the name, or shrinks away (its room stays: nothing beside it moves)
-function chip(el, on) {
-  el.animate(on ? [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }]
-    : [{ opacity: 1, transform: 'none', visibility: 'visible' }, { opacity: 0, transform: 'scale(.6)', visibility: 'visible' }],
-  { duration: on ? 300 : 200, easing: on ? SPRING : 'ease-in' });
-}
-// a button with two labels in one place (as wide as the wider): the new one rises in, the old one out
-function swap(button, second) {
-  if (!button) return;
-  const [a, b] = button.children, [inn, out] = second ? [b, a] : [a, b];
-  inn.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: GLIDE });
-  out.animate([{ opacity: 1, transform: 'none', visibility: 'visible' }, { opacity: 0, transform: 'translateY(-6px)', visibility: 'visible' }], { duration: 180, easing: 'ease-in' });
-}
-// a new password unrolls in place of the button that made it
+// a new password's line folds open under its row
 function reveal(el) {
-  el.animate([{ clipPath: 'inset(0 100% 0 0 round 6px)', opacity: .4 }, { clipPath: 'inset(0 0 0 0 round 6px)', opacity: 1 }], { duration: 380, easing: GLIDE });
+  if (!el) return;
+  const full = el.offsetHeight;
+  el.animate([{ height: '0px', opacity: 0 }, { height: `${full}px`, opacity: 1 }], { duration: 300, easing: GLIDE });
+}
+
+// A row's "⋯": what's done to an account now and then (suspend, a new password, 2FA off, delete) in a menu under it,
+// not a row of buttons (which took the room the names need). It pops from the button; a click elsewhere, Escape or
+// a choice closes it; the arrows move through it.
+const rowMenu = h('div', { id: 'row-menu', class: 'row-menu', popover: 'auto', role: 'menu' });
+document.body.append(rowMenu);
+let menuFor = null, shutFrom = null, shutAt = 0;
+function openRowMenu(btn, items) {
+  if (menuFor === btn && rowMenu.matches(':popover-open')) { rowMenu.hidePopover(); return; }
+  // (its button pressed again while it's open: the press outside shuts it first (the browser does), and the click
+  // that follows mustn't open it again)
+  if (shutFrom === btn && performance.now() - shutAt < 500) { shutFrom = null; return; }
+  rowMenu.replaceChildren(...items.filter(Boolean).map((it) => (it === '-' ? h('hr') :
+    h('button', { type: 'button', role: 'menuitem', class: it.danger ? 'danger' : '', onclick: () => { rowMenu.hidePopover(); it.fn(); } }, it.label))));
+  menuFor = btn;
+  rowMenu.showPopover();
+  const r = btn.getBoundingClientRect(), w = rowMenu.offsetWidth, hgt = rowMenu.offsetHeight;
+  const below = r.bottom + 4 + hgt <= innerHeight - 8;
+  Object.assign(rowMenu.style, { left: `${Math.max(8, Math.min(innerWidth - w - 8, r.right - w))}px`, top: `${below ? r.bottom + 4 : r.top - 4 - hgt}px`, transformOrigin: below ? 'top right' : 'bottom right' });
+  rowMenu.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: SPRING });
+  btn.setAttribute('aria-expanded', 'true');
+  rowMenu.querySelector('button')?.focus({ focusVisible: false });
+}
+rowMenu.addEventListener('beforetoggle', (e) => {
+  if (e.newState !== 'closed') return;
+  // (at once, not later as 'toggle' is: before the click that pressed it shut)
+  menuFor?.setAttribute('aria-expanded', 'false'); shutFrom = menuFor; shutAt = performance.now(); menuFor = null;
+  // (going, however it goes (a click outside, Escape, a choice, its button): a copy of it shrinks away where it was,
+  // as it popped in, backwards)
+  const r = rowMenu.getBoundingClientRect(), ghost = rowMenu.cloneNode(true);
+  ghost.removeAttribute('id'); ghost.removeAttribute('popover');
+  Object.assign(ghost.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, margin: '0', zIndex: '1000', pointerEvents: 'none', transformOrigin: rowMenu.style.transformOrigin });
+  document.body.append(ghost);
+  ghost.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.94)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' })
+    .finished.then(() => ghost.remove(), () => ghost.remove());
+});
+rowMenu.addEventListener('keydown', (e) => {
+  const items = [...rowMenu.querySelectorAll('button')], i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus(); }
+});
+const DOTS = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+
+// A new password, under its row: the password (click, or Copy: copied), until put away with its ×
+function pwRow(u) {
+  const pw = newPasswords.get(u.id);
+  const copy = async () => { await navigator.clipboard?.writeText(pw); code.animate([{ transform: 'scale(.94)' }, { transform: 'none' }], { duration: 260, easing: SPRING }); toast(t('copiedPassword')); };
+  const code = h('button', { type: 'button', class: 'newpw', title: t('copyPw'), onclick: copy }, pw);
+  const tr = h('tr', { class: 'pw-row', 'data-key': `pw${u.id}` }, h('td', { class: 'pic' }),
+    h('td', { colspan: '4' }, h('div', { class: 'pw-box' }, h('span', { class: 'muted small' }, t('pwIs', { name: u.username })), code,
+      h('button', { type: 'button', class: 'pw-done', title: t('pwDone'), 'aria-label': t('pwDone'), onclick: async () => {
+        const box = tr.querySelector('.pw-box');
+        await box.animate([{ height: `${box.offsetHeight}px`, opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {});
+        newPasswords.delete(u.id); tr.remove(); shownUsers = ''; users();
+      } }, '×'))));
+  return tr;
 }
 
 function row(u) {
   const self = u.id === me.id;
   const fail = (e) => say($('#users-msg'), e.message, 'error');
   const edit = (patch) => api(`admin/users/${u.id}`, { method: 'PATCH', body: patch }).then(() => { say($('#users-msg'), ''); return users(); }, fail);
+  // (the role: Admin | Member, its filled half sliding over; yourself to a member, asked first (the username typed
+  // out), then this page isn't yours any more, so your account's; the only admin: refused at once, not asked first)
   const role = (admin, label) => h('button', { type: 'button', class: u.admin === admin ? 'on' : '', 'aria-pressed': String(u.admin === admin),
     onclick: async () => {
       if (u.admin === admin) return;
       if (!(self && !admin)) return edit({ admin });
-      // (the only admin: it can't be done, said at once, not asked first and refused after)
       if (adminCount <= 1) return fail(new Error(t('errLastAdmin')));
-      // (yourself to a user: the username typed out first; then this page isn't yours any more, so your account's)
       if (!(await modal({ title: t('selfDemoteTitle'), text: t('selfDemoteText', { name: u.username }), input: u.username, ok: t('selfDemoteOk'), danger: true }))) return;
       try { await api(`admin/users/${u.id}`, { method: 'PATCH', body: { admin: false } }); location.assign('/account'); }
       catch (e) { fail(e); }
     } }, t(label));
   const pill = h('span', { class: `seg-pill${u.admin ? '' : ' second'}`, 'aria-hidden': 'true' });
-  // (always there, hidden unless suspended: the columns beside it don't move as it comes and goes)
-  const chipEl = h('span', { class: `tag off${u.disabled ? '' : ' ghost'}`, 'aria-hidden': String(!u.disabled), 'data-f': 'off' }, t('off'));
-  const suspend = self ? null : h('button', { type: 'button', class: `btn small swap${u.disabled ? ' second' : ''}`, 'data-f': 'suspend', onclick: () => edit({ disabled: !u.disabled }) },
-    h('span', {}, t('turnOff')), h('span', {}, t('turnOn')));
-  // reset: a new random password, set at once, shown in place of the button (click: copied). Both in one
-  // place, as wide as a password: the row doesn't change width as it comes
-  const pw = newPasswords.get(u.id);
-  const newpw = h('button', { type: 'button', class: 'newpw', title: t('copy'), onclick: async () => {
-    await navigator.clipboard?.writeText(pw);
-    newpw.animate([{ transform: 'scale(.92)' }, { transform: 'none' }], { duration: 260, easing: SPRING });
-    toast(t('copiedPassword'));
-  } }, pw || 'x'.repeat(14));
-  // (not your own: that's changed on your account page, with the current one; here it would sign you out)
-  const reset = h('button', { type: 'button', class: 'btn small', onclick: async () => {
+  // (suspended: a chip by the name, there only then: the 2FA chip in its place otherwise, sliding over as it comes)
+  const chipEl = u.disabled ? h('span', { class: 'tag off', 'data-f': 'off' }, t('off')) : null;
+  // (a new password: a random one, set at once, shown under the row (see pwRow))
+  const reset = async () => {
     if (!(await modal({ title: t('resetTitle', { name: u.username }), text: t('resetText'), ok: t('resetOk') }))) return;
     const fresh = randomPassword();
     const ok = await api(`admin/users/${u.id}`, { method: 'PATCH', body: { password: fresh } }).then(() => true, (e) => { fail(e); return false; });
     if (!ok) return;
     newPasswords.set(u.id, fresh);
     users();
-  } }, t('resetPassword'));
-  // each kind of button in a column of its own (the same ones under each other, whoever's row): suspend, the
-  // role, reset, delete; your own row leaves out what you can't do to yourself
+  };
+  // (what's done to someone else's account: not your own, which is your account page's)
+  const more = self ? null : h('button', { type: 'button', class: 'btn small more', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-label': t('moreActions'), title: t('moreActions'), 'data-f': 'more', onclick: (e) => openRowMenu(e.currentTarget, [
+    { label: t(u.disabled ? 'turnOn' : 'turnOff'), fn: () => edit({ disabled: !u.disabled }) },
+    { label: t('resetPassword'), fn: reset },
+    // (turning someone's 2FA off, locked out of it: a plain warning first)
+    u.twofa && { label: t('twofaResetOk'), fn: async () => {
+      if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaResetOk'), danger: true }))) return;
+      edit({ twofa: false });
+    } },
+    '-',
+    { label: t('remove'), danger: true, fn: async () => {
+      if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
+      await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
+    } },
+  ]) });
+  if (more) more.innerHTML = DOTS;
   const tr = h('tr', { 'data-key': u.id },
     // (the profile photo, or the name's first letter in the account's own colour)
     h('td', { class: 'pic' }, tint(h('span', { class: 'avatar', 'aria-hidden': 'true' }, u.avatar ? h('img', { src: u.avatar, alt: '' }) : [...u.username][0].toUpperCase()), u.accent)),
-    // (the name to go by, if any, then the username, smaller)
-    h('td', { class: 'user' }, h('span', { class: 'who' }, h('b', { 'data-f': 'name' }, u.name || u.username), u.name ? h('span', { class: 'muted small', 'data-f': 'uname' }, ` ${u.username}`) : null,
+    // (the name to go by, if any, then the username, smaller: all on one line, however long: the name cut short with
+    // an ellipsis, the username (the ID) and the chips always whole)
+    h('td', { class: 'user' }, h('div', { class: 'user-line' }, h('span', { class: 'who', title: u.name ? `${u.name} ${u.username}` : u.username }, h('b', { 'data-f': 'name', class: u.name ? 'cut' : '' }, u.name || u.username), u.name ? h('span', { class: 'muted small', 'data-f': 'uname' }, ` ${u.username}`) : null,
       self ? h('span', { class: 'muted small', 'data-f': 'you' }, ` (${t('you')})`) : null), chipEl,
       // (two-step sign-in on: a blue chip by the name)
-      u.twofa ? h('span', { class: 'tag twofa', 'data-f': 'twofa' }, t('twofaTag')) : null),
+      u.twofa ? h('span', { class: 'tag twofa', 'data-f': 'twofa' }, t('twofaTag')) : null)),
     h('td', { class: 'hide-narrow muted small' }, h('span', { 'data-f': 'seen' }, date(u.last_seen))),
-    h('td', { class: 'act' }, suspend),
     h('td', { class: 'act' }, h('span', { class: 'seg', role: 'group', 'data-f': 'role' }, pill, role(true, 'admin'), role(false, 'member'))),
-    h('td', { class: 'act' }, self ? null : h('span', { class: `pw-slot${pw ? ' second' : ''}`, 'data-f': 'pw' }, reset, newpw)),
-    // (turning someone's 2FA off, locked out of it: a plain warning first; not your own, that's on your account page)
-    h('td', { class: 'act' }, u.twofa && !self ? h('button', { type: 'button', class: 'btn small', 'data-f': 'twofaReset', onclick: async () => {
-      if (!(await modal({ title: t('twofaReset', { name: u.name || u.username }), text: t('twofaResetText'), ok: t('twofaResetOk'), danger: true }))) return;
-      edit({ twofa: false });
-    } }, t('twofaResetOk')) : null),
-    h('td', { class: 'act' }, self ? null : h('button', { type: 'button', class: 'btn small danger', 'data-f': 'del', onclick: async () => {
-      if (!(await modal({ title: t('confirmDeleteTitle', { name: u.username }), text: t('confirmDelete', { name: u.username }), ok: t('remove'), danger: true }))) return;
-      await api(`admin/users/${u.id}`, { method: 'DELETE' }).then(async () => { await leave(tr); was.delete(u.id); return users(); }, fail);
-    } }, t('remove'))));
-  tr.parts = { pill, chip: chipEl, suspend, newpw };
+    h('td', { class: 'act' }, more));
+  tr.parts = { pill };
   return tr;
 }
 $('#add-form').addEventListener('input', () => say($('#add-msg'), '')); // (typed again: the error goes)
@@ -181,12 +238,16 @@ $('#add-form').addEventListener('submit', async (e) => {
 
 // ---------- settings: sign-up, security ----------
 const NUMBERS = { session_days: '#session-days', login_tries: '#login-tries', login_lock_minutes: '#login-lock', log_days: '#log-days' };
+// (saved a while after the last step, not at each; a value saving or still to be saved is never overwritten by the
+// server's answer to an earlier one: see saveNumber)
+const STEP_DELAY = 900;
 const steppers = {
-  session_days: stepper($('#session-days'), { zero: t('sessionOff') }),
-  login_tries: stepper($('#login-tries')),
-  login_lock_minutes: stepper($('#login-lock')),
-  log_days: stepper($('#log-days')),
+  session_days: stepper($('#session-days'), { zero: t('sessionOff'), delay: STEP_DELAY }),
+  login_tries: stepper($('#login-tries'), { delay: STEP_DELAY }),
+  login_lock_minutes: stepper($('#login-lock'), { delay: STEP_DELAY }),
+  log_days: stepper($('#log-days'), { delay: STEP_DELAY }),
 };
+const saving = new Set(); // (the numbers on their way to the server)
 // (changed elsewhere, by another admin: the new choice springs in, a number rises in; not one being typed in)
 let settingsShown = false;
 async function settings() {
@@ -206,7 +267,7 @@ async function settings() {
   }
   for (const [k, sel] of Object.entries(NUMBERS)) {
     const input = $(sel);
-    if (input.value === String(s[k]) || document.activeElement === input) continue;
+    if (input.value === String(s[k]) || document.activeElement === input || saving.has(k) || steppers[k].pending()) continue;
     input.value = s[k];
     steppers[k].sync();
     if (shown) freshen(input.parentElement.classList.contains('zero') ? input.parentElement.querySelector('.step-zero') : input);
@@ -223,7 +284,19 @@ async function save(patch, msg) {
   catch (err) { clearTimeout(fades.get(msg)); say(msg, err.message, 'error'); await settings(); }
 }
 $('#signup').addEventListener('change', (e) => save({ signup: e.target.value }, $('#settings-msg')));
-for (const [k, sel] of Object.entries(NUMBERS)) $(sel).addEventListener('change', (e) => save({ [k]: +e.target.value }, $('#security-msg')));
+// A number: saved as it is now; saved, if it changed again meanwhile, the latest saved too (until they're the same)
+async function saveNumber(k) {
+  const input = $(NUMBERS[k]);
+  if (saving.has(k)) return; // (the one on its way, done: sends the latest after it)
+  saving.add(k);
+  try {
+    for (let sent = null; input.value !== sent && !steppers[k].pending();) {
+      sent = input.value;
+      await save({ [k]: +sent }, $('#security-msg'));
+    }
+  } finally { saving.delete(k); }
+}
+for (const k of Object.keys(NUMBERS)) $(NUMBERS[k]).addEventListener('change', () => saveNumber(k));
 $('#logout-all').addEventListener('click', async () => {
   if (!(await modal({ title: t('logoutAllTitle'), text: t('logoutAllText'), ok: t('logoutAllOk'), danger: true }))) return;
   try { await api('admin/logout-all', { method: 'POST' }); toast(t('loggedOutAll')); await info(); }
