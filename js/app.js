@@ -1574,6 +1574,9 @@ function renderRemote({ opening = null } = {}) {
   const all = remote?.devices || [], list = all.filter((d) => !d.hidden);
   const open = new Set((ui.devOpen || []).filter((id) => all.some((d) => d.device === id)));
   const first = !devs.dataset.shown && all.length > 0; // (the first time there's anything: it all comes in)
+  // (the panel's scroll, kept: drawn again, what's gone is out a moment before it's back to fold shut, and the
+  // browser, finding less to scroll, would pull the panel up at once; put back, it follows the folding instead)
+  const scroller = $('#windows'), keep = scroller.scrollTop;
   const before = new Map([...devs.querySelectorAll('.dev, .rtab')].map((el) => [remoteKey(el), el.getBoundingClientRect()]));
   const names = new Map([...devs.querySelectorAll('.dev')].map((el) => [el.dataset.device, el.querySelector('.dev-name').cloneNode(true)]));
   const oldDevs = [...devs.querySelectorAll(':scope > .dev')], oldTitle = devs.querySelector(':scope > .devs-title');
@@ -1592,6 +1595,7 @@ function renderRemote({ opening = null } = {}) {
     foldOut(el);
   }
   if (oldTitle && !title) { devs.prepend(oldTitle); foldOut(oldTitle); }
+  if (scroller.scrollTop !== keep) scroller.scrollTop = keep;
   // what's new folds open (on the first showing, all of it, one after another)
   if (title && (!oldTitle || first)) foldIn(title);
   parts.forEach((el, i) => { if (first || !oldDevs.some((o) => o.dataset.device === el.dataset.device)) foldIn(el, first ? 40 + i * 40 : 0); });

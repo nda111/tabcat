@@ -640,7 +640,8 @@ body.tabs-collapsed .self-title { display: none; }
 .dev-row:hover { background: var(--hover); transition-duration: .05s; }
 .dev-row + .dev-row { margin-top: 6px; }
 .dev-grip { flex: none; display: inline-grid; place-items: center; width: 22px; height: 28px; color: var(--muted); cursor: grab; }
-.dev-row.dragging-row { z-index: 2; cursor: grabbing; border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: 0 6px 18px rgb(0 0 0 / .16); }
+.dev-row.dragging-row { z-index: 2; cursor: grabbing; border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: 0 6px 18px rgb(0 0 0 / .16);
+  background: var(--hover); transition: none; } /* (its own tint while held: moved in the list, it would lose the pointer's for a moment, white) */
 .dev-row .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 18px; transition: opacity .2s ease; }
 .dev-row.off .grow { opacity: .5; } /* (hidden: dimmed, gliding there and back) */
 .dev-row .dev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
