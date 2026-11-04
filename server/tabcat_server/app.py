@@ -1103,8 +1103,8 @@ def create_app(config) -> FastAPI:
             return
         h = auth.token_hash(token)[:16]
         users = [r['user_id'] for r in db.q('select user_id from device_tabs where session = ?', h)]
-        if users:
-            db.run('delete from device_tabs where session = ?', h)
+        if users:  # (kept, with the name given it in that account, for when it signs in again: just no longer shown)
+            db.run('''update device_tabs set session = null, body = '{"windows":[]}' where session = ?''', h)
             notify(users, 'tabs')
 
     @app.put('/api/sync/tabs')
@@ -1121,10 +1121,11 @@ def create_app(config) -> FastAPI:
                   forgotten = case when device_tabs.forgotten is not null and device_tabs.forgotten < ? then null else device_tabs.forgotten end""",
                u['id'], device, str(data.get('name', ''))[:60], time.time(), json.dumps({'windows': clean_tabs(data.get('windows'))}, separators=(',', ':')),
                auth.token_hash(request.cookies.get(auth.COOKIE, ''))[:16], u['session_created'] or 0)
-        # (the same browser, signed in to another account before: no longer that one's)
-        before = [r['user_id'] for r in db.q('select user_id from device_tabs where device = ? and user_id != ?', device, u['id'])]
+        # (the same browser, signed in to another account before: no longer shown to that one, its tabs gone; kept
+        # there with the name given it in that account, for when it comes back)
+        before = [r['user_id'] for r in db.q('select user_id from device_tabs where device = ? and user_id != ? and session is not null', device, u['id'])]
         if before:
-            db.run('delete from device_tabs where device = ? and user_id != ?', device, u['id'])
+            db.run('''update device_tabs set session = null, body = '{"windows":[]}' where device = ? and user_id != ?''', device, u['id'])
             notify(before, 'tabs')
         notify([u['id']], 'tabs')
         return {'ok': True}
@@ -1500,7 +1501,7 @@ def create_app(config) -> FastAPI:
 
     @app.put('/api/shares/{sid}/members/{uid}')
     async def set_role(sid: str, uid: int, request: Request):
-        """The owner changes what someone may do; making them the owner hands it on (the owner an editor then). A
+        """The owner changes what someone may do; making them the owner hands it on (the owner a manager then). A
         manager changes what anyone but the owner may do (their own too, down to an editor or a viewer), never making
         anyone the owner."""
         u, mine = need_share(request, sid, ('owner', 'manager'))
@@ -1516,7 +1517,7 @@ def create_app(config) -> FastAPI:
             raise HTTPException(403, 'owners only')
         with db.lock:
             if role == 'owner':
-                db.run("update share_members set role = 'editor' where share_id = ? and user_id = ?", sid, u['id'])
+                db.run("update share_members set role = 'manager' where share_id = ? and user_id = ?", sid, u['id'])
             db.run('update share_members set role = ? where share_id = ? and user_id = ?', role, sid, uid)
         notify(share_users(sid), 'shares')
         return share_info(sid, u['id'])

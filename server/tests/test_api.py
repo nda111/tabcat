@@ -401,9 +401,14 @@ sx.put('/api/sync/tabs', json={'device': 'pcx', 'name': 'Firefox', 'windows': [w
 check('pcx' in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'another browser of ann: listed')
 sx.post('/api/logout')
 check('pcx' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']], 'signed out there: gone from the list at once')
+sa.put('/api/sync/tabs/pc1/name', json={'name': 'Ann desk'})
 sb.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
 check('pc1' not in [d['device'] for d in sa.get('/api/sync/tabs').json()['devices']] and [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']] == ['pc1'],
       "the same browser, signed in to ben now: ben's, no longer among ann's")
+sb.put('/api/sync/tabs/pc1/name', json={'name': 'Ben desk'})
+sa.put('/api/sync/tabs', json={'device': 'pc1', 'name': 'Chrome on Windows', 'windows': [win]})
+got = {d['device']: d['name'] for d in sa.get('/api/sync/tabs').json()['devices']}
+check(got.get('pc1') == 'Ann desk' and 'pc1' not in [d['device'] for d in sb.get('/api/sync/tabs').json()['devices']], f"back to ann: the name ann gave it, not ben's ({got})")
 
 # shared workspaces and the mailbox
 ws = {'id': 'w1', 'type': 'workspace', 'name': 'Research', 'categories': []}
@@ -447,7 +452,7 @@ check(sb.post(f'/api/sync/shares/{sid}/ops', json={'device': 'b', 'ops': [{'id':
 check(sb.put(f'/api/shares/{sid}/members/{ann_id}', json={'role': 'viewer'}).status_code == 403, "an editor can't change others")
 check(sa.delete(f'/api/shares/{sid}/members/{ann_id}').status_code == 409, "the owner can't leave without handing it on")
 info = sa.put(f'/api/shares/{sid}/members/{ben_id}', json={'role': 'owner'}).json()
-check({m['username']: m['role'] for m in info['members']} == {'ben': 'owner', 'ann': 'editor'}, 'handed on: ben the owner, ann an editor')
+check({m['username']: m['role'] for m in info['members']} == {'ben': 'owner', 'ann': 'manager'}, 'handed on: ben the owner, ann a manager')
 check(sb.post('/api/mail/delete', json={'ids': [inv['id']]}).json()['ids'] == [inv['id']] and sb.get('/api/mail').json()['mail'] == [], 'answered: put away')
 check(sb.post('/api/mail/restore', json={'ids': [inv['id']]}).json()['ids'] == [inv['id']] and len(sb.get('/api/mail').json()['mail']) == 1, 'and back again (undo)')
 check(sa.delete(f'/api/shares/{sid}/members/{ann_id}').json() == {'ok': True} and sa.get('/api/sync/shares').json()['shares'] == [], 'ann leaves')

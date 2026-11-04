@@ -97,6 +97,12 @@ with sync_playwright() as p:
       .observe(document.querySelector('#board'), { childList: true, subtree: true }); }""")
     call(ac, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'color': 'blue'}}])
     check(until(lambda: bd.evaluate("window.__fades").__len__() > 0, timeout=20) and bd.evaluate("window.__fades")[0][0] == 'blue', f"boss colours a card: on ben's board it fades into blue ({bd.evaluate('window.__fades')})")
+    # a card shut by ben: his alone (not kept in step); boss's stays open, through later changes too
+    call(bc, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'collapsed': True}}])
+    call(ac, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'name': 'After shut'}}])
+    shut = lambda sw: sw.evaluate(f"{TREE}.then(s => s.workspaces.flatMap(w => w.categories).flatMap(c => c.groups).find(g => g.id === 'g-A')?.collapsed)")
+    check(until(lambda: gname(b) == 'After shut', timeout=20) and shut(b) is True and shut(a) is False, f'a card shut: shut for ben only, through a change from boss ({shut(b)}, {shut(a)})')
+    call(bc, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'collapsed': False}}])
     # moved in from one's own workspace: a copy there for the others, gone from one's own
     call(bc, 'apply', [{'op': 'move', 'id': 'g-B', 'parentId': 'c-A', 'index': 1}])
     check(until(lambda: gname(a, 'g-B') == 'G B', timeout=20), f"a group moved into it by ben: boss has it ({gname(a, 'g-B')})")
@@ -113,9 +119,9 @@ with sync_playwright() as p:
     call(bc, 'syncNow')
     until(lambda: (s := b.evaluate("chrome.storage.local.get('tabcat:sync').then(r => r['tabcat:sync'].shares)")) and list(s.values())[0]['role'] == 'viewer', timeout=15)
     call(bc, 'apply', [{'op': 'patch', 'id': 'g-A', 'fields': {'name': 'Not kept'}}])
-    check(until(lambda: gname(b) == 'From ben', timeout=10), f"made a viewer: ben's change goes back ({gname(b)})")
+    check(until(lambda: gname(b) == 'After shut', timeout=10), f"made a viewer: ben's change goes back ({gname(b)})")
     time.sleep(1)
-    check(gname(a) == 'From ben', f'and never reaches boss ({gname(a)})')
+    check(gname(a) == 'After shut', f'and never reaches boss ({gname(a)})')
 
     # deleted the usual way: refused (left or deleted for everyone instead)
     r = call(bc, 'apply', [{'op': 'remove', 'id': 'own-A', 'trash': True}])

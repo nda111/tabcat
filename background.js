@@ -1074,7 +1074,8 @@ function syncTxn(space, fn, pre = null) {
       const show = res?.show || (sync && joined);
       if (show) {
         // (only what's different: an unchanged tree written again would draw the dashboards again)
-        if (!same(show.workspaces, was.workspaces)) write[S.KEY] = { version: S.VERSION, workspaces: show.workspaces };
+        const ws = Y.keepLocal(show.workspaces, was.workspaces); // (cards open or shut as they are here: not kept in step)
+        if (!same(ws, was.workspaces)) write[S.KEY] = { version: S.VERSION, workspaces: ws };
         if (!same(show.trash, was.trash)) { write[TRASH_KEY] = show.trash; trash.splice(0, trash.length, ...show.trash); }
         if (!same(show.look, was.look)) write[S.SETTINGS_KEY] = { ...settings, ...show.look };
         if (res?.show) write[SYNC_KEY] = res.sync || sync;

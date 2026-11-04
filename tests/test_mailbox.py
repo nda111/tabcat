@@ -133,6 +133,8 @@ with sync_playwright() as p:
     check(until(lambda: badge(ad) == ''), f'opened: read, the badge gone ({badge(ad)!r})')
     shaded = lambda: rows(ad).evaluate_all("rs => rs.map(r => r.classList.contains('read'))")
     check(shaded() == [False, False], f'read as it opened: not shaded yet ({shaded()})')
+    rows(ad).nth(1).locator('.mail-text').click()
+    check(until(lambda: shaded() == [False, True]), f'one clicked: shaded as read at once ({shaded()})')
     ad.keyboard.press('Escape'); settle(ad); ad.click('#btn-mail'); ad.wait_for_selector('#mail[open]'); settle(ad)
     check(shaded() == [True, True], f'opened again: shaded as read ({shaded()})')
 
