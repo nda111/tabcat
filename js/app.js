@@ -362,7 +362,9 @@ const readOnly = (ws) => shareOf(ws)?.role === 'viewer';
 // (an edit asked for there, from a button, a menu or a shortcut: said why not, no editor opening)
 const viewOnly = (id) => { if (!readOnly(wsOfId(id))) return false; toast(t('share.readOnly')); return true; };
 function blocked(ops) {
-  const ids = ops.flatMap((o) => [o.id, o.parentId, o.categoryId, o.workspaceId]);
+  // (a card opened or shut: this browser's own, not a change to the workspace: a viewer may)
+  const ids = ops.filter((o) => !(o.op === 'patch' && Object.keys(o.fields || {}).every((k) => k === 'collapsed')))
+    .flatMap((o) => [o.id, o.parentId, o.categoryId, o.workspaceId]);
   return ids.some((id) => readOnly(wsOfId(id)));
 }
 const apply = (...ops) => {
@@ -464,14 +466,51 @@ function render() {
   const before = snapshotLayout();
   const wsChanged = before.ws && before.ws !== currentWs()?.id;
   const catChanged = before.board && before.board !== currentCat()?.id;
-  document.body.classList.toggle('viewing', readOnly(currentWs())); // (a workspace only viewed: no editing controls)
+  // (a workspace only viewed: no editing controls; switching to it, at once; its role changing, after the cards are
+  // drawn again (they are, the role changed), on the new ones)
+  const viewing = readOnly(currentWs()), glide = !!before.ws && !wsChanged;
+  if (!glide) setViewing(viewing, false);
   renderSidebar();
   renderHead();
   if (wsChanged) switchCats(); else renderCats();
   if (catChanged || boardSwitch) switchBoard(); // groups: old ones leave, then the new ones arrive
   else renderBoard();
   animateLayout(before);
+  if (glide) setViewing(viewing, true);
   restoreHover();
+}
+
+// Only viewing the workspace or not: its editing buttons (a card's new link and folder, the new category) go or come.
+// The same workspace's role changing, they shrink away, the buttons beside them sliding over into their place, or grow
+// back, the others making room; switching workspaces, simply as they are.
+let viewingTo = null;
+function setViewing(on, animate) {
+  const body = document.body, is = viewingTo ?? body.classList.contains('viewing');
+  if (on === is) return;
+  const parts = () => [...document.querySelectorAll('#board .edits, #board .tools-split, #cat-bar .cat-add')].filter((el) => el.offsetParent);
+  const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
+  const keys = (el) => { const cs = getComputedStyle(el); return [{ width: `${el.getBoundingClientRect().width}px`, opacity: 1, transform: 'none', ...Object.fromEntries(sides.map((k) => [k, cs[k]])) },
+    { width: '0px', opacity: 0, transform: 'scale(.7)', ...Object.fromEntries(sides.map((k) => [k, '0px'])) }]; };
+  if (!animate) { viewingTo = null; body.classList.toggle('viewing', on); return; }
+  viewingTo = on;
+  if (on) {
+    const anims = parts().map((el) => { el.style.overflow = 'hidden'; return el.animate(keys(el), { duration: 200, easing: 'ease-in', fill: 'forwards' }); });
+    Promise.all(anims.map((a) => a.finished.catch(() => {}))).then(() => {
+      if (viewingTo !== true) return;
+      viewingTo = null;
+      body.classList.add('viewing');
+      anims.forEach((a) => { a.effect.target.style.overflow = ''; a.cancel(); });
+    });
+  } else {
+    viewingTo = null;
+    body.classList.remove('viewing');
+    for (const el of parts()) {
+      el.getAnimations().forEach((x) => x.cancel()); // (still going the other way: from where it is now)
+      const [full, none] = keys(el);
+      el.style.overflow = 'hidden';
+      el.animate([none, full], { duration: 300, easing: GLIDE }).finished.catch(() => {}).then(() => { el.style.overflow = ''; });
+    }
+  }
 }
 
 /* ---------- motion ---------- */
@@ -5511,19 +5550,24 @@ function shareButton(head, ws) {
   // (shared with this account: what it may do, said beside (only viewing it: nothing in it can be changed); coming and
   // going, it grows and shrinks; changed, the words cross-fade as it takes the new width)
   const roleOf = (r) => (r && r !== 'owner' ? r : null), now = roleOf(sh?.role), before = same ? roleOf(was.role) : null;
-  const chip = (r) => h('span', { class: `ws-readonly ws-role-${r}`, title: r === 'viewer' ? t('share.readOnly') : '' }, t(ROLE_CHIP[r]));
+  const chip = (r) => h('span', { class: `ws-readonly ws-role-${r}` }, h('span', { class: 'now' }, t(ROLE_CHIP[r])));
   if (now) {
     const c = chip(now);
     head.append(c);
     const w = c.getBoundingClientRect().width;
     if (!before) c.animate([{ opacity: 0, transform: 'scale(.7)', width: '0px', marginLeft: '0px', paddingLeft: '0px', paddingRight: '0px' }, { opacity: 1, transform: 'none', width: `${w}px` }], { duration: 300, easing: SPRING });
     else if (before !== now) {
+      // (its pill eases from the old words' width to the new's, the old words fading out as the new fade in, together)
       const old = chip(before);
       head.append(old);
       const w0 = old.getBoundingClientRect().width;
       old.remove();
-      c.animate([{ width: `${w0}px` }, { width: `${w}px` }], { duration: 260, easing: GLIDE });
-      c.animate([{ opacity: .2 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+      const was = h('span', { class: 'was', style: `padding: ${getComputedStyle(c).padding}; justify-content: flex-start` }, t(ROLE_CHIP[before]));
+      c.append(was);
+      const ease = { duration: 280, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+      c.animate([{ width: `${w0}px` }, { width: `${w}px` }], ease);
+      c.querySelector('.now').animate([{ opacity: 0 }, { opacity: 1 }], ease);
+      was.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, fill: 'forwards' }).finished.then(() => was.remove(), () => {});
     }
   } else if (before) {
     const c = chip(before);
@@ -5654,7 +5698,12 @@ function mailRow(m) {
     if (e.target.checked) mailPicked.add(row.m.id); else mailPicked.delete(row.m.id);
     mailHead();
   } });
-  const row = h('li', { class: 'mail-row' }, box, accountPhoto(m.from, 'account-avatar small'),
+  // (one not shaded as read yet, clicked: read from now on, shaded at once)
+  const row = h('li', { class: 'mail-row', onclick: (e) => {
+    if (e.target.closest('button, input, a') || mailRead.has(row.m.id)) return;
+    mailRead.add(row.m.id);
+    row.classList.add('read');
+  } }, box, accountPhoto(m.from, 'account-avatar small'),
     h('span', { class: 'mail-text' }, h('span', { class: 'mail-line' }), h('span', { class: 'mail-when' })),
     h('span', { class: 'mail-acts' }),
     h('button', { type: 'button', class: 'icon-btn mail-x', onclick: () => { if (deletable(row.m)) deleteMail([row.m.id]); } }, icon('close', 14)));

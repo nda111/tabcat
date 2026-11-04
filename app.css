@@ -383,8 +383,8 @@ body.select-mode #board .group :is(.icon-btn, .link-row, .folder-head) { opacity
 body.select-mode #board :is(.gap-slot, .add-group) { pointer-events: none; }
 /* the header's empty space toggles the group: hover tint there, not over the name, symbol or buttons */
 .group-head { border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; transition: background .1s; }
-.group.collapsed .group-head { border-radius: calc(var(--radius) - 1px); }
-.group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover)) { background: var(--hover); }
+.group:is(.collapsed, .empty-group) .group-head { border-radius: calc(var(--radius) - 1px); }
+.group > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover)) { background: var(--hover); } /* (an empty card too, though it has nothing to open or shut) */
 .group:not(.empty-group) > .group-head:is(:hover, .hover):not(:has(.name:hover, .node-sym:hover, button:hover)) { cursor: pointer; }
 .node-sym {
   flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px;
@@ -552,7 +552,11 @@ img.fav.fav-blank {
 
 /* ---------- search ---------- */
 /* what a search matched: in the accent colour (letters matched apart from each other would read as patches with a background) */
-mark { background: none; color: var(--accent); }
+mark { background: none; color: var(--mark); font-weight: 600; }
+/* (the accent itself is too light to read on the panel: darker in the light theme, lighter in the dark) */
+:root { --mark: color-mix(in oklab, var(--accent) 84%, #000); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark: color-mix(in oklab, var(--accent) 86%, #fff); } }
+:root[data-theme="dark"] { --mark: color-mix(in oklab, var(--accent) 86%, #fff); }
 
 /* ---------- open tabs panel ---------- */
 #tabs-panel { width: var(--tabs-w, 290px); display: flex; flex-direction: column; container-type: inline-size; }
@@ -1330,6 +1334,7 @@ html.fs-vt::view-transition-new(*.fs-live), html.fs-vt::view-transition-group(*.
 /* read (as it was when the Mailbox opened): a shade darker (lighter in the dark theme: the text's colour, a touch) */
 .mail-row.read { background: color-mix(in srgb, var(--text) 5%, transparent); }
 .mail-row.read:hover { background: var(--hover); }
+.mail-row:not(.read) { cursor: pointer; } /* (clicked: read) */
 #mail-list.picking, #mail-list.picking * { user-select: none; cursor: default; }
 .mail-row + .mail-row { margin-top: 2px; }
 .mail-row input:disabled, #mail-all:disabled { opacity: .35; cursor: default; }
@@ -1380,8 +1385,9 @@ dialog .share-ask select, dialog .share-role select { margin: 0; height: 100%; }
 #share-end { color: var(--danger); }
 
 /* a shared workspace only viewed: said beside its name */
-.ws-readonly { align-self: center; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: calc(11.5px * var(--fs, 1));
-  background: var(--hover, rgba(127,127,127,.12)); color: var(--muted, inherit); white-space: nowrap; }
+.ws-readonly { position: relative; align-self: center; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: calc(11.5px * var(--fs, 1)); font-weight: 600;
+  background: color-mix(in srgb, var(--text) 9%, transparent); color: color-mix(in srgb, var(--text) 80%, transparent); white-space: nowrap; overflow: hidden; }
+.ws-readonly .was { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; } /* (the words before, fading where they were) */
 
 /* whom to invite: found as typed, a list under the field (in the dialog's flow: nothing clipped) */
 .share-found { list-style: none; margin: 4px 0 0; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel);
