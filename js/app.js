@@ -491,8 +491,13 @@ function setViewing(on, animate) {
   const sides = ['paddingLeft', 'paddingRight', 'marginLeft', 'marginRight', 'borderLeftWidth', 'borderRightWidth'];
   // (only their room and how much they show: no scaling, which would draw them a fraction off and settle them a
   // pixel over when it stops)
-  const keys = (el) => { const cs = getComputedStyle(el); return [{ width: `${el.getBoundingClientRect().width}px`, opacity: 1, ...Object.fromEntries(sides.map((k) => [k, cs[k]])) },
-    { width: '0px', opacity: 0, ...Object.fromEntries(sides.map((k) => [k, '0px'])) }]; };
+  // (gone, its share of the row's gap goes too: taken up by a margin as far below nothing, so nothing beside it jumps
+  // that last bit when it's really gone)
+  const keys = (el) => {
+    const cs = getComputedStyle(el), gap = parseFloat(getComputedStyle(el.parentElement).columnGap) || 0;
+    return [{ width: `${el.getBoundingClientRect().width}px`, opacity: 1, ...Object.fromEntries(sides.map((k) => [k, cs[k]])) },
+      { width: '0px', opacity: 0, ...Object.fromEntries(sides.map((k) => [k, '0px'])), marginRight: `${-gap}px` }];
+  };
   const EASE = 'cubic-bezier(.45, 0, .2, 1)'; // (slow to start, slower still to stop: what slides in settles, not knocks)
   if (!animate) { viewingTo = null; body.classList.toggle('viewing', on); return; }
   viewingTo = on;
@@ -4250,6 +4255,17 @@ async function switchLang(setting = 'auto', fade = true) {
     await renderTabs();
   };
   if (!fade || !document.startViewTransition) { langStarted(); return swap(); }
+  // Settings shut (changed elsewhere, or from the toolbar): only what's written changes, each word cross-fading where it
+  // is; nothing else moves or flickers, and nothing waits for the open tabs (asked after: their part cross-fades then)
+  if (!$('#settings').open) {
+    const before = textSnapshot();
+    applyText();
+    if (state) { renderSidebar(); renderHead(); renderCats(); renderBoard(); }
+    textCrossfade(before, (el) => !el.closest('#windows'));
+    langStarted();
+    if (state) { await renderTabs(); textCrossfade(before, (el) => !!el.closest('#windows')); }
+    return;
+  }
   // An open Settings dialog moves with a spring instead: its boxes (the dialog, each fieldset) are
   // pictured empty and stretch to their new size, and everything in them moves the same way at its own
   // size, so nothing shifts against the box it sits in; only the text itself cross-fades.
@@ -4265,6 +4281,56 @@ async function switchLang(setting = 'auto', fade = true) {
     el.style.viewTransitionName = '';
     el.style.viewTransitionClass = '';
   }));
+}
+
+// Words on the screen before a change of language: each element with words of its own (not only in what's in it), in
+// view, with where it is and how it looks, to fade from (see textCrossfade)
+function textSnapshot() {
+  const out = [], taken = new Set();
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.closest('svg, script, style, #tip, .tip, [hidden]') || el.matches('input, textarea, select, option')) continue;
+    if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+    if (el.parentElement && [...taken].some((t) => t.contains(el))) continue; // (in one taken already: faded with it)
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || +cs.opacity === 0) continue;
+    taken.add(el);
+    // (an inline one's box is as tall as its font, not its line: laid out so, its words land where they were)
+    const inline = cs.display === 'inline';
+    out.push({ el, text: el.textContent, rect: r, copy: el.cloneNode(true), inline, look: { font: cs.font, color: cs.color, lineHeight: inline ? 'normal' : cs.lineHeight, letterSpacing: cs.letterSpacing,
+      textAlign: cs.textAlign, whiteSpace: cs.whiteSpace, textTransform: cs.textTransform, padding: cs.padding, display: cs.display === 'inline' ? 'inline-block' : cs.display,
+      alignItems: cs.alignItems, justifyContent: cs.justifyContent, gap: cs.gap, textBoxTrim: cs.textBoxTrim, textBoxEdge: cs.textBoxEdge } });
+  }
+  return out;
+}
+// What a snapshot had, as it is now: where the words changed (the same element, or what's now where it was), the old
+// fade out where they were, the new fading in. `only`: the elements (as they were) to look at this time.
+function textCrossfade(before, only = () => true) {
+  const ease = { duration: 280, easing: 'ease-in-out' };
+  const seen = new Set();
+  for (const b of before) {
+    if (!only(b.el) || b.done) continue;
+    let now = b.el.isConnected ? b.el : null;
+    if (!now) {
+      // (drawn again: what has words of its own where it was)
+      const x = b.rect.left + Math.min(b.rect.width / 2, 12), y = b.rect.top + b.rect.height / 2;
+      for (let n = document.elementFromPoint(x, y); n && n !== document.body; n = n.parentElement) {
+        if ([...n.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim())) { now = n; break; }
+      }
+    }
+    if (now && now.textContent === b.text) continue;
+    b.done = true;
+    const host = (now || b.el).closest?.('dialog[open]') || document.body;
+    const ghost = b.copy;
+    ghost.removeAttribute('id');
+    Object.assign(ghost.style, { position: 'fixed', left: `${b.rect.left}px`, top: `${b.rect.top}px`, width: `${b.rect.width}px`, height: b.inline ? '' : `${b.rect.height}px`,
+      margin: '0', boxSizing: 'border-box', pointerEvents: 'none', zIndex: '45', overflow: 'visible', background: 'none', border: '0', boxShadow: 'none', ...b.look,
+      ...(b.inline ? { padding: '0', whiteSpace: 'nowrap' } : {}) });
+    host.append(ghost);
+    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { ...ease, fill: 'forwards' }).finished.then(() => ghost.remove(), () => ghost.remove());
+    if (now && !seen.has(now)) { seen.add(now); now.animate([{ opacity: 0 }, { opacity: 1 }], ease); }
+  }
 }
 
 // Everything built once from strings: the page's own text, panel tooltips, the action row's fit.
