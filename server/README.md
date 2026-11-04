@@ -205,6 +205,16 @@ Everything the server keeps is one SQLite file, `tabcat.db` in the data folder (
 To restore: stop the server, put the copy in place as `tabcat.db`, delete any `tabcat.db-wal` and `tabcat.db-shm`
 beside it, and start the server. A copy from an older version is brought up to date as it starts (see below).
 
+With Docker, the file must belong to the server's user (uid 10001), or it can't write to it. With the copy in the
+current folder as `tabcat-backup.db`, and the container stopped:
+
+```sh
+docker run --rm -v tabcat-data:/data -v "$PWD":/backup alpine sh -c \
+  'cp /backup/tabcat-backup.db /data/tabcat.db && rm -f /data/tabcat.db-wal /data/tabcat.db-shm && chown -R 10001:10001 /data'
+```
+
+then start the container again.
+
 To keep it elsewhere (another disk, a synced folder), move it on the admin page, from the server's own computer;
 the new place is kept in `config.toml` as `database`.
 
@@ -232,6 +242,8 @@ the `.bak` copy made before upgrading (changes since then are lost).
 - There's no storage limit per account: anyone with an account can keep as much as they like (each sync body is at
   most 8 MB).
 - Behind a reverse proxy, the proxy must send `X-Forwarded-For` and be in `--trusted-proxies` (see [HTTPS](#https)).
+  Addresses in that list are taken for proxies, so a visitor coming from one of them (with Docker: from the server's
+  own computer, through Docker's network) could give the server another address of their own choosing.
 - One server process with one database file: run one copy of it per data folder.
 
 ## More

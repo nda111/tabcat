@@ -50,6 +50,16 @@ docker run -d --name tabcat --restart unless-stopped -p 127.0.0.1:8080:8080 -v t
 
 (With Compose: `docker compose pull && docker compose up -d`.)
 
+## Back up and restore
+
+Download a copy from the admin page. To restore it, with the container stopped and the copy in the current folder as
+`tabcat-backup.db` (the file must belong to uid 10001):
+
+```sh
+docker run --rm -v tabcat-data:/data -v "$PWD":/backup alpine sh -c \
+  'cp /backup/tabcat-backup.db /data/tabcat.db && rm -f /data/tabcat.db-wal /data/tabcat.db-shm && chown -R 10001:10001 /data'
+```
+
 ## Locked out
 
 `docker exec -it tabcat tabcat-server reset-password USERNAME`; more in the

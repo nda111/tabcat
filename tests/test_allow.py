@@ -18,7 +18,8 @@ with sync_playwright() as p:
     d = dashboard(ctx, errors)
     check(d.locator('.ws-item').count() > 0, 'the dashboard at its allowed address: works as ever')
 
-    page = ctx.new_page(); page.goto(f'http://localhost:{OTHER}/')
+    other_errors = []
+    page = ctx.new_page(); page.on('pageerror', lambda e: other_errors.append(str(e))); page.goto(f'http://localhost:{OTHER}/')
     # (Playwright hears of a new window only while it's busy: a short wait of its own each time round)
     ask = until(lambda: page.wait_for_timeout(100) or next((pg for pg in ctx.pages if 'allow.html' in pg.url), None), timeout=15)
     check(ask and until(lambda: f'localhost:{OTHER}' in ask.inner_text('#origin')), f'another address: the extension asks, in a window of its own ({ask and ask.url})')
@@ -29,6 +30,10 @@ with sync_playwright() as p:
       setTimeout(() => res('no answer'), 4000);
     })""")
     check(got == 'not-allowed', f'meanwhile: nothing for it ({got})')
+    shown = until(lambda: page.is_visible('#no-ext-allow') and page.inner_text('#no-ext-title'))
+    check(shown == 'Let this page use tabcat?' and not page.is_visible('#no-ext ol') and not page.locator('.ws-item').count() and not page.is_visible('#confirm'),
+          f'the page says why: allow it in the window tabcat opened (not an empty board, nor the tour) ({shown!r})')
+    check(not other_errors, f'and no errors on it ({other_errors[:2]})')
     ask.click('#go')
     check(until(lambda: page.locator('.ws-item').count() > 0, timeout=15), 'allowed: loaded again, linked up')
     allowed = sw.evaluate("chrome.storage.local.get('tabcat:allowedOrigins').then(r => r['tabcat:allowedOrigins'])")
