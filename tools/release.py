@@ -10,7 +10,8 @@
 #
 # The extension's releases are GitHub's "latest" (the README and the install notes link there); the server's are
 # published with "Set as the latest release" off. Both update checks find their own by tag (the dashboard: web/js/app.js
-# newestExtension; the server: updates.newest_tag). The notes for each go beside the files: releases/<tag>.md.
+# newestExtension; the server: updates.newest_tag). Each release's notes are docs/releases/<tag>.md. Pushing the tag
+# runs all of this on GitHub (.github/workflows/release.yml); by hand, it builds into releases/ (not kept in git).
 #
 # Usage: python tools/release.py [extension|server|docker] [--worktree] [--out DIR] [--push]
 #   (from HEAD, as committed; --worktree: the files as they are now, to try it out before committing)
@@ -20,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GIT = shutil.which('git') or '/mnt/c/Program Files/Git/cmd/git.exe'
 # (the repository's files the extension doesn't need: the server, the tests and tools, the store listing, the icon's
 # source; anything else tracked goes in)
-NOT_EXTENSION = ('server/', 'tests/', 'tools/', 'docs/', 'store/', 'icons/source/', '.gitattributes', '.gitignore', 'CHANGELOG.md')
+NOT_EXTENSION = ('server/', 'tests/', 'tools/', 'docs/', 'store/', '.github/', 'icons/source/', '.gitattributes', '.gitignore', 'CHANGELOG.md')
 LOCAL = ('http://localhost/', 'http://127.0.0.1/')  # (pages on this computer: for working on the dashboard, not the store's)
 
 

@@ -1,0 +1,155 @@
+# Releasing: push a tag, and this does the rest (see docs/development.md, Releases).
+#
+#   extension-v1.2.0   the extension: its two zips; a GitHub release, made the latest, with the zip to install by hand
+#                      (the store's zip is kept as this run's artifact, to upload to the Chrome Web Store)
+#   server-v1.0.1      the server: its wheel on a GitHub release (not made the latest: that stays the extension's), and
+#                      its image on Docker Hub for linux/amd64 and linux/arm64, tagged with the version and latest
+#
+# Each release's notes are docs/releases/<tag>.md. Run by hand (Actions → Release → Run workflow) with a tag, it builds
+# and tests all the same but publishes nothing, unless `publish` is ticked.
+#
+# Secrets (Settings → Secrets and variables → Actions): DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (a Docker Hub personal
+# access token, Read, Write, Delete: Delete is what updating the repository's overview needs).
+name: Release
+
+on:
+  push:
+    tags: ['extension-v*', 'server-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (extension-v1.2.0, server-v1.0.1)'
+        required: true
+      publish:
+        description: 'Publish it (a release, Docker Hub); else only build and test'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  PUBLISH: ${{ github.event_name == 'push' || github.event.inputs.publish == 'true' }}
+  IMAGE: ${{ vars.DOCKERHUB_IMAGE || 'nda111/tabcat-server' }}
+
+jobs:
+  check:
+    name: Check the tag
+    runs-on: ubuntu-latest
+    outputs:
+      part: ${{ steps.part.outputs.part }}
+      version: ${{ steps.part.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - id: part
+        name: The part, its version as the code says, and its notes
+        run: |
+          case "$TAG" in
+            extension-v*) part=extension; have=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])") ;;
+            server-v*) part=server; have=$(python3 -c "import tomllib; print(tomllib.load(open('server/pyproject.toml', 'rb'))['project']['version'])")
+              init=$(python3 -c "import re; print(re.search(r\"__version__ = '([^']+)'\", open('server/tabcat_server/__init__.py').read())[1])")
+              [ "$init" = "$have" ] || { echo "::error::server/tabcat_server/__init__.py says $init, pyproject.toml $have"; exit 1; } ;;
+            *) echo "::error::$TAG: not extension-v… or server-v…"; exit 1 ;;
+          esac
+          want="${TAG#*-v}"
+          [ "$have" = "$want" ] || { echo "::error::$TAG, but the code is version $have"; exit 1; }
+          [ -s "docs/releases/$TAG.md" ] || { echo "::error::no notes: docs/releases/$TAG.md"; exit 1; }
+          echo "part=$part" >> "$GITHUB_OUTPUT"; echo "version=$want" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/checkout@v4   # (the dashboard the tests serve: the pages branch, as tabcat.ghyeok.com has it)
+        with:
+          ref: pages
+          path: web
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          python -m pip install --disable-pip-version-check ./server playwright httpx
+          python -m playwright install --with-deps chromium
+      - name: The server's API, the release files, every language's strings
+        run: python tests/run.py test_api test_release test_locales
+
+  extension:
+    name: Extension
+    needs: [check, test]
+    if: needs.check.outputs.part == 'extension'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build
+        run: python tools/release.py extension --out out
+      - name: The store's zip, to upload by hand
+        uses: actions/upload-artifact@v4
+        with:
+          name: tabcat-extension-${{ needs.check.outputs.version }}-store
+          path: out/tabcat-extension-${{ needs.check.outputs.version }}-store.zip
+      - name: Release (the latest)
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "out/tabcat-extension-${{ needs.check.outputs.version }}.zip" \
+            --verify-tag --title "tabcat ${{ needs.check.outputs.version }}" --notes-file "docs/releases/$TAG.md" --latest
+
+  server:
+    name: Server
+    needs: [check, test]
+    if: needs.check.outputs.part == 'server'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the wheel
+        run: python tools/release.py server --out out
+      - uses: docker/setup-qemu-action@v3     # (arm64, built on amd64)
+      - uses: docker/setup-buildx-action@v3
+      - name: Sign in to Docker Hub
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: The image, for both platforms (pushed when publishing)
+        env:
+          TABCAT_IMAGE: ${{ env.IMAGE }}
+        run: python tools/release.py docker $([ "$PUBLISH" = true ] && echo --push)
+      - name: Release (not the latest)
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" out/tabcat_server-*.whl \
+            --verify-tag --title "tabcat server ${{ needs.check.outputs.version }}" --notes-file "docs/releases/$TAG.md" --latest=false
+      - name: Docker Hub's overview
+        if: env.PUBLISH == 'true'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE }}
+          readme-filepath: server/DOCKERHUB.md
+          short-description: 'Your own tabcat server: your tabs in step across browsers, shared workspaces, accounts.'

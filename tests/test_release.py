@@ -37,7 +37,7 @@ for path, prefix in ((hand, 'tabcat/'), (store, '')):
     files = {n[len(prefix):]: z.read(n) for n in names}
     missing = sorted(r for r in refs(files) if r not in files)
     check(not missing, f'{os.path.basename(path)}: every file it refers to ({missing})')
-    stray = sorted(n for n in files if n.split('/')[0] in ('server', 'tests', 'tools', 'docs', 'store', 'web') or n.startswith('icons/source'))
+    stray = sorted(n for n in files if n.split('/')[0] in ('server', 'tests', 'tools', 'docs', 'store', 'web', '.github') or n.startswith('icons/source'))
     check(not stray, f'{os.path.basename(path)}: nothing else ({stray[:5]})')
 m = json.loads(zipfile.ZipFile(store).read('manifest.json'))
 check(not any('localhost' in x or '127.0.0.1' in x for e in m['content_scripts'] + m.get('web_accessible_resources', []) for x in e['matches']), "the store's: no localhost pages")

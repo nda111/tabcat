@@ -85,15 +85,27 @@ The extension and the server are released apart from this one repository, each w
 | Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `tabcat-extension-<version>.zip` (a `tabcat/` folder, to install by hand), `tabcat-extension-<version>-store.zip` (for the Chrome Web Store only) |
 | Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl`; the Docker image (`python tools/release.py docker --push`) |
 
-1. Bump the version, add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md` (server), commit. For a
-   server release, also point `SERVER_WHEEL` in `web/js/welcome.js` (the welcome page's install command) and the
-   install line in `server/README.md` at the new wheel.
-2. `python tools/release.py <part>` builds the files from `HEAD` into `releases/` (ignored by git; `--worktree` to try
-   it with uncommitted changes). The extension's zips hold every tracked file but the server, tests, tools, docs,
-   store listing and icon source; `tests/test_release.py` checks they hold all the extension refers to and load.
-3. Tag the commit and make a GitHub release with the files and its notes (`releases/<tag>.md`). An extension release
-   is the **latest** release (the README and the install notes link to `releases/latest`); a server release is
-   published with **Set as the latest release** off.
+1. Bump the version (and, for a server release, point `SERVER_WHEEL` in `web/js/welcome.js` and the install line in
+   `server/README.md` at the new wheel), add the changes to `CHANGELOG.md` (extension) or `server/CHANGELOG.md`
+   (server), and write the release's notes as `docs/releases/<tag>.md`. Commit, and merge into `main`.
+2. Deploy the dashboard first if the release needs it (`pages`): the extension opens its welcome page, and a server
+   takes the dashboard from there.
+3. Tag the commit and push the tag (`git tag extension-v1.2.0 && git push origin extension-v1.2.0`). GitHub Actions
+   ([`.github/workflows/release.yml`](../.github/workflows/release.yml)) does the rest:
+   - checks the tag against the code's version and that the notes are there;
+   - runs the server's API tests, `test_release` and `test_locales` (against the `pages` branch's dashboard);
+   - **extension**: builds both zips, makes the GitHub release (the **latest**) with the zip to install by hand and the
+     notes, and keeps the store's zip as the run's artifact, to upload to the Chrome Web Store by hand;
+   - **server**: builds the wheel and the image, pushes the image to Docker Hub (`<version>` and `latest`, amd64 and
+     arm64), makes the GitHub release (**not** the latest) with the wheel, and updates Docker Hub's overview from
+     `server/DOCKERHUB.md`.
+4. To try it without publishing: Actions → Release → Run workflow, with the tag (already pushed) and `publish`
+   unticked: it builds and tests only. (Run by hand only once the workflow is on `main`.)
+
+By hand instead: `python tools/release.py <part>` builds the files from `HEAD` into `releases/` (ignored by git;
+`--worktree` to try it with uncommitted changes), and `gh release create` publishes them. The extension's zips hold
+every tracked file but the server, tests, tools, docs, store listing and icon source; `tests/test_release.py` checks
+they hold all the extension refers to and load.
 
 The update checks find their own part's newest release by its tag, among the newest 50: the dashboard looks for the
 extension's (`newestExtension` in `web/js/app.js`), the server for its own (`updates.newest_tag`), so a release of one
@@ -103,10 +115,10 @@ and a server takes it up once a day.
 ### Docker Hub
 
 The server's image is `nda111/tabcat-server` (`TABCAT_IMAGE` to name another), for `linux/amd64` and `linux/arm64`,
-tagged with the release's version and `latest`. Once, to set it up: make the repository on Docker Hub (public), paste
-`server/DOCKERHUB.md` as its overview (its first comment has the short description), and, for releasing from GitHub
-Actions, make an access token (Account settings → Personal access tokens, read and write) kept as the repository's
-secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. To release by hand: `docker login`, then
+tagged with the release's version and `latest`. Once, to set it up: make the repository on Docker Hub (public), make
+an access token (Account settings → Personal access tokens, **Read, Write, Delete**: Delete is what updating the
+overview needs) and keep it as the GitHub repository's secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. (Another
+image name: the repository variable `DOCKERHUB_IMAGE`.) The workflow fills in the overview from `server/DOCKERHUB.md`. To release by hand: `docker login`, then
 `python tools/release.py docker --push` (Docker with buildx; Docker Desktop has both platforms). Without `--push` it
 builds both, to check, and loads this computer's into Docker to try.
 
