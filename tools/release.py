@@ -1,7 +1,7 @@
 # The files a release puts out. The extension and the server are released apart, each tagged with its own version:
 #
-#   extension-v<version>   (manifest.json)          tabcat-extension-<version>.zip         on GitHub: to install by hand
-#                                                   tabcat-extension-<version>-store.zip   to the Chrome Web Store only
+#   extension-v<version>   (manifest.json)          extension-v<version>.zip                 on GitHub: to install by hand
+#                                                   extension-v<version>-store.zip           to the Chrome Web Store only
 #   server-v<version>      (server/pyproject.toml)  tabcat_server-<version>-py3-none-any.whl
 #                                                   the Docker image nda111/tabcat-server:<version> and :latest,
 #                                                   for linux/amd64 and linux/arm64 (`docker`; TABCAT_IMAGE to name
@@ -13,7 +13,7 @@
 # newestExtension; the server: updates.newest_tag). Each release's notes are docs/releases/<tag>.md. Pushing the tag
 # runs all of this on GitHub (.github/workflows/release.yml); by hand, it builds into releases/ (not kept in git).
 #
-# Usage: python tools/release.py [extension|server|docker] [--worktree] [--out DIR] [--push]
+# Usage: python tools/release.py [extension|server|docker] [--worktree | --ref TAG] [--out DIR] [--push]
 #   (from HEAD, as committed; --worktree: the files as they are now, to try it out before committing)
 import argparse, io, json, os, shutil, subprocess, sys, tempfile, tomllib, zipfile
 
@@ -29,12 +29,15 @@ def git(*args) -> bytes:
     return subprocess.run([GIT, *args], cwd=ROOT, check=True, capture_output=True).stdout
 
 
+REF = 'HEAD'  # (--ref: another commit or tag, as a release was made from)
+
+
 def tracked(prefix='', worktree=False) -> dict:
-    """The repository's files (under `prefix`), by path: as committed (HEAD), or as they are now."""
+    """The repository's files (under `prefix`), by path: as committed (REF), or as they are now."""
     if worktree:
         paths = [p for p in git('ls-files', '-z', '--', prefix or '.').decode().split('\0') if p and os.path.exists(os.path.join(ROOT, p))]
         return {p: open(os.path.join(ROOT, p), 'rb').read() for p in paths}
-    archive = zipfile.ZipFile(io.BytesIO(git('archive', '--format=zip', 'HEAD', *([prefix] if prefix else []))))
+    archive = zipfile.ZipFile(io.BytesIO(git('archive', '--format=zip', REF, *([prefix] if prefix else []))))
     return {i.filename: archive.read(i) for i in archive.infolist() if not i.is_dir()}
 
 
@@ -48,11 +51,11 @@ def extension(out, worktree=False) -> list:
     files = {p: b for p, b in tracked(worktree=worktree).items() if not p.startswith(NOT_EXTENSION)}
     manifest = json.loads(files['manifest.json'])
     version = manifest['version']
-    hand = os.path.join(out, f'tabcat-extension-{version}.zip')
+    hand = os.path.join(out, f'extension-v{version}.zip')
     write_zip(hand, files, prefix='tabcat/')  # (a tabcat/ folder: unzipped, the folder to load)
     for entry in manifest.get('content_scripts', []) + manifest.get('web_accessible_resources', []):
         entry['matches'] = [m for m in entry['matches'] if not m.startswith(LOCAL)]
-    store = os.path.join(out, f'tabcat-extension-{version}-store.zip')
+    store = os.path.join(out, f'extension-v{version}-store.zip')
     write_zip(store, {**files, 'manifest.json': json.dumps(manifest, indent=2, ensure_ascii=False).encode() + b'\n'})  # (the manifest at the top)
     return [hand, store]
 
@@ -106,7 +109,9 @@ if __name__ == '__main__':
     ap.add_argument('--worktree', action='store_true', help='the files as they are now, not as committed')
     ap.add_argument('--out', default=os.path.join(ROOT, 'releases'))
     ap.add_argument('--push', action='store_true', help='docker: push the image to its registry')
+    ap.add_argument('--ref', default='HEAD', help='the commit or tag to build from (default: HEAD)')
     a = ap.parse_args()
+    REF = a.ref
     os.makedirs(a.out, exist_ok=True)
     for part in [a.part] if a.part else ['extension', 'server']:
         build = {'extension': extension, 'server': server, 'docker': lambda out, wt: docker(out, wt, a.push)}[part]

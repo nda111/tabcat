@@ -9,7 +9,7 @@ from harness import ROOT
 out = tempfile.mkdtemp(prefix='tabcat-release-')
 subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'release.py'), 'extension', '--worktree', '--out', out], check=True, capture_output=True)
 version = json.load(open(os.path.join(ROOT, 'manifest.json')))['version']
-hand, store = (os.path.join(out, f'tabcat-extension-{version}{s}.zip') for s in ('', '-store'))
+hand, store = (os.path.join(out, f'extension-v{version}{s}.zip') for s in ('', '-store'))
 check(os.path.exists(hand) and os.path.exists(store), f'named for the extension and its version ({os.listdir(out)})')
 
 def refs(files):

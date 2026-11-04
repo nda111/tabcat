@@ -82,7 +82,7 @@ The extension and the server are released apart from this one repository, each w
 
 | Part | Version in | Tag | Files (`python tools/release.py [extension\|server]`) |
 |---|---|---|---|
-| Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `tabcat-extension-<version>.zip` (a `tabcat/` folder, to install by hand), `tabcat-extension-<version>-store.zip` (for the Chrome Web Store only) |
+| Extension | `manifest.json` | `extension-v<version>` (before 1.1.0: `v<version>`) | `extension-v<version>.zip` (a `tabcat/` folder, to install by hand), `extension-v<version>-store.zip` (for the Chrome Web Store only) |
 | Server | `server/pyproject.toml` and `server/tabcat_server/__init__.py` | `server-v<version>` | `tabcat_server-<version>-py3-none-any.whl`; the Docker image (`python tools/release.py docker --push`) |
 
 1. Bump the version (and, for a server release, point `SERVER_WHEEL` in `web/js/welcome.js` and the install line in

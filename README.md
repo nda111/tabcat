@@ -42,7 +42,7 @@ any time, and press it again to go back to your tab.
 
 For a browser that can't use the Chrome Web Store, or to try a release before it reaches the store:
 
-1. Download `tabcat-extension-<version>.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
+1. Download `extension-v<version>.zip` from the [latest release](https://github.com/nda111/tabcat/releases/latest) and unzip it.
 2. Open `chrome://extensions` (`edge://extensions` in Edge) and turn on **Developer mode**.
 3. Click **Load unpacked** and pick the unzipped `tabcat` folder.
 
@@ -117,7 +117,9 @@ and connect the extension to it.
 - **Yours to run.** Two-step sign-in, a list of devices signed in, waits after wrong passwords, a security record,
   backups and updates from an admin page. One process and one SQLite file: pip or Docker.
 
-Install it, put it behind HTTPS and keep it backed up: see [server/README.md](server/README.md).
+Install it, put it behind HTTPS and keep it backed up: see [server/README.md](server/README.md). Then right-click
+tabcat's toolbar button, choose **Connect to a server…** and enter its address. Disconnecting brings back the
+browser's own tabcat, as it was.
 
 ### Which versions work together
 
@@ -128,9 +130,6 @@ has none: tabcat.ghyeok.com is always the newest, and a server fetches the newes
 |---|:-:|:-:|
 | 1.1.0 | ✅ | ✅ |
 | 1.0.0 – 1.0.4 | ✅ | ❌ (no *Connect to a server*: update the extension) |
- Then right-click
-tabcat's toolbar button, choose **Connect to a server…** and enter its address. Disconnecting brings back the
-browser's own tabcat, as it was.
 
 ## Your data
 

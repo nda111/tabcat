@@ -4,7 +4,7 @@ Installed from the [Chrome Web Store](https://chromewebstore.google.com/detail/t
 
 ## Update
 
-1. Download `tabcat-extension-1.1.0.zip` below and unzip it.
+1. Download `extension-v1.1.0.zip` below and unzip it.
 2. Replace the contents of your `tabcat` folder with it.
 3. Open `chrome://extensions` and press **Reload** on tabcat.
 

@@ -4,14 +4,14 @@ Everything to paste into the Developer Dashboard (https://chrome.google.com/webs
 
 ## Submitting a new version
 
-1. **Package** tab → *Upload new package*: `tabcat-extension-<version>-store.zip` (the release workflow's artifact,
+1. **Package** tab → *Upload new package*: `extension-v<version>-store.zip` (the release workflow's artifact,
    or `python tools/release.py extension` from the release's commit).
 2. **Store listing** tab: paste the English description, then each language's under *Localized listings*.
 3. **Privacy practices** tab: check the single purpose, every permission's justification (new ones are marked
    *new in 1.1.0*), the host permissions, remote code and data usage as below. Save.
 4. **Submit for review** (with *Publish automatically after review* if wanted). The test instructions below go in
    the box the submission asks for them in.
-Upload `releases/tabcat-extension-<version>-store.zip` (built by `python tools/release.py extension`).
+Upload `releases/extension-v<version>-store.zip` (built by `python tools/release.py extension`).
 Images are in `en/` (the default listing) and `ko/` (the Korean listing); the other languages use the English ones.
 
 ---

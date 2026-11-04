@@ -138,7 +138,7 @@ What the tests cover, by file:
 
 | File | What it does |
 |---|---|
-| `tools/release.py` | `python tools/release.py [extension\|server] [--worktree] [--out DIR]`: builds `tabcat-extension-<v>.zip`, `-store.zip` (manifest without the localhost origins) or the server wheel into `releases/`, from `HEAD` or the working tree. |
+| `tools/release.py` | `python tools/release.py [extension\|server] [--worktree] [--out DIR]`: builds `extension-v<v>.zip`, `extension-v<v>-store.zip` (manifest without the localhost origins) or the server wheel into `releases/`, from `HEAD` or the working tree. |
 | `store/listing.md`, `store/en/`, `store/ko/` | Chrome Web Store listing text, screenshots, promo tiles and the demo video. |
 | `docs/development.md`, `docs/structure.md` | Developer docs. |
 | `README.md`, `CHANGELOG.md`, `LICENSE` | The project readme, the extension's changelog, the licence. |

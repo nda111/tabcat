@@ -102,14 +102,14 @@ jobs:
       - name: The store's zip, to upload by hand
         uses: actions/upload-artifact@v4
         with:
-          name: tabcat-extension-${{ needs.check.outputs.version }}-store
-          path: out/tabcat-extension-${{ needs.check.outputs.version }}-store.zip
+          name: extension-v${{ needs.check.outputs.version }}-store
+          path: out/extension-v${{ needs.check.outputs.version }}-store.zip
       - name: Release (the latest)
         if: env.PUBLISH == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" "out/tabcat-extension-${{ needs.check.outputs.version }}.zip" \
+          gh release create "$TAG" "out/extension-v${{ needs.check.outputs.version }}.zip" \
             --verify-tag --title "$TAG" --notes-file "docs/releases/$TAG.md" --latest
 
   server:
